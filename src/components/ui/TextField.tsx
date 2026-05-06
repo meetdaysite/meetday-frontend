@@ -46,14 +46,14 @@ export function TextField({
 						<label
 							htmlFor={inputId}
 							className={clsx(
-								"text-sm font-medium leading-5",
+								"text-label-md",
 								disabled ? "text-action-disabled-text" : "text-text-primary",
 							)}
 						>
 							{label}
 						</label>
 					)}
-					{hint && <span className="text-xs text-text-muted">{hint}</span>}
+					{hint && <span className="text-caption text-text-muted">{hint}</span>}
 				</div>
 			)}
 
@@ -65,9 +65,9 @@ export function TextField({
 					"has-disabled:border-border-subtle has-disabled:bg-action-disabled has-disabled:cursor-not-allowed",
 					error
 						? [
-								"border-red-300 bg-surface-brand-soft",
-								"hover:border-red-400",
-								"focus-within:border-red-500",
+								"border-border-brand bg-surface-brand-soft",
+								"hover:border-border-focus",
+								"focus-within:border-border-focus",
 							]
 						: [
 								"border-border-default bg-surface-canvas",
@@ -113,7 +113,7 @@ export function TextField({
 			</div>
 
 			{helperText && (
-				<p className={clsx("text-xs leading-4", error ? "text-text-danger" : "text-text-tertiary")}>
+				<p className={clsx("text-caption", error ? "text-text-danger" : "text-text-tertiary")}>
 					{helperText}
 				</p>
 			)}

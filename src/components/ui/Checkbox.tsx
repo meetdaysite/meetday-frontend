@@ -106,7 +106,7 @@ export function Checkbox({
 					disabled
 						? "bg-action-disabled border-action-disabled-border"
 						: indeterminate
-							? "bg-neutral-400 border-neutral-400"
+							? "bg-icon-muted border-icon-muted"
 							: isChecked
 								? "bg-action-primary border-action-primary"
 								: "bg-surface-canvas border-border-default group-hover:border-border-focus",
@@ -117,7 +117,7 @@ export function Checkbox({
 					<CheckIcon
 						className={clsx(
 							config.icon,
-							disabled ? "text-action-disabled-text" : "text-white",
+							disabled ? "text-action-disabled-text" : "text-text-inverse",
 						)}
 					/>
 				)}
@@ -126,7 +126,7 @@ export function Checkbox({
 					<MinusIcon
 						className={clsx(
 							config.icon,
-							disabled ? "text-action-disabled-text" : "text-white",
+							disabled ? "text-action-disabled-text" : "text-text-inverse",
 						)}
 					/>
 				)}

@@ -52,6 +52,7 @@
 	--color-action-secondary-border: var(--action-secondary-border);
 	--color-action-disabled: var(--action-disabled-bg);
 	--color-action-disabled-text: var(--action-disabled-text);
+	--color-action-disabled-border: var(--action-disabled-border);
 
 	/* ICON */
 	--color-icon-primary: var(--icon-primary);
@@ -59,6 +60,10 @@
 	--color-icon-muted: var(--icon-muted);
 	--color-icon-inverse: var(--icon-inverse);
 	--color-icon-brand: var(--icon-brand);
+	--color-icon-info: var(--icon-info);
+	--color-icon-vibe: var(--icon-vibe);
+	--color-icon-warning: var(--icon-warning);
+	--color-icon-success: var(--icon-success);
 
 	/* STATUS */
 	--color-status-trending-bg: var(--status-trending-bg);
@@ -93,6 +98,20 @@
 	--shadow-floating: var(--effect-floating);
 	--shadow-brand-glow: var(--effect-brand-glow);
 	--shadow-vibe-glow: var(--effect-vibe-glow);
+
+	/* SEMANTIC SPACING */
+	--spacing-page-x-mobile: var(--space-page-x-mobile);
+	--spacing-page-x-tablet: var(--space-page-x-tablet);
+	--spacing-page-x-desktop: var(--space-page-x-desktop);
+	--spacing-section-gap: var(--space-section-gap);
+	--spacing-card-sm: var(--space-card-sm);
+	--spacing-card-md: var(--space-card-md);
+	--spacing-card-lg: var(--space-card-lg);
+	--spacing-stack-xs: var(--space-stack-xs);
+	--spacing-stack-sm: var(--space-stack-sm);
+	--spacing-stack-md: var(--space-stack-md);
+	--spacing-stack-lg: var(--space-stack-lg);
+	--spacing-stack-xl: var(--space-stack-xl);
 }
 
 html {

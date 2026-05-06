@@ -10,8 +10,8 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
-  sm: "h-[var(--size-action-sm)] px-3 gap-1.5 text-xs font-medium",
-  md: "h-[var(--size-action-md)] px-4 gap-2 text-sm font-medium",
+  sm: "h-[var(--size-action-sm)] px-3 gap-1.5 text-label-sm",
+  md: "h-[var(--size-action-md)] px-4 gap-2 text-label-md",
   lg: "h-[var(--size-action-lg)] px-5 gap-2 text-base font-medium",
 };
 
@@ -22,10 +22,10 @@ const iconSizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
 };
 
 const radiusClasses: Record<NonNullable<ButtonProps["radius"]>, string> = {
-  sm: "rounded-[var(--radius-8)]",
-  md: "rounded-[var(--radius-action)]",
-  lg: "rounded-[var(--radius-20)]",
-  pill: "rounded-[var(--radius-full)]",
+  sm: "rounded-badge",
+  md: "rounded-action",
+  lg: "rounded-card",
+  pill: "rounded-avatar",
 };
 
 const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
@@ -34,7 +34,7 @@ const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
     "hover:bg-action-primary-hover",
     "active:bg-action-primary-pressed",
     "focus-visible:bg-action-primary-pressed focus-visible:outline-none",
-    "focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-action-primary",
+    "focus-visible:ring-2 focus-visible:ring-text-inverse focus-visible:ring-offset-2 focus-visible:ring-offset-action-primary",
     "disabled:bg-action-disabled disabled:text-action-disabled-text disabled:cursor-not-allowed"
   ),
   secondary: clsx(
