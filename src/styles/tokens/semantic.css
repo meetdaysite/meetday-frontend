@@ -1,0 +1,132 @@
+:root {
+	/* SURFACE */
+	--surface-page: var(--color-warm-50);
+	--surface-canvas: var(--color-neutral-0);
+	--surface-card: var(--color-neutral-0);
+	--surface-card-muted: var(--color-warm-100);
+	--surface-elevated: var(--color-neutral-0);
+	--surface-inverse: var(--color-neutral-900);
+	--surface-brand-soft: var(--color-red-50);
+	--surface-info-soft: var(--color-blue-50);
+	--surface-vibe-soft: var(--color-purple-50);
+	--surface-warning-soft: var(--color-amber-50);
+	--surface-success-soft: var(--color-green-50);
+
+	/* TEXT */
+	--text-primary: var(--color-neutral-900);
+	--text-secondary: var(--color-neutral-600);
+	--text-tertiary: var(--color-neutral-500);
+	--text-muted: var(--color-neutral-400);
+	--text-inverse: var(--color-neutral-0);
+	--text-brand: var(--color-red-500);
+	--text-link: var(--color-blue-600);
+	--text-success: var(--color-green-700);
+	--text-warning: var(--color-amber-700);
+	--text-danger: var(--color-red-600);
+	--text-vibe: var(--color-purple-600);
+
+	/* BORDER */
+	--border-subtle: var(--color-neutral-100);
+	--border-default: var(--color-neutral-200);
+	--border-strong: var(--color-neutral-300);
+	--border-focused: var(--color-neutral-800);
+	--border-brand: var(--color-red-200);
+	--border-focus: var(--color-red-500);
+	--border-info: var(--color-blue-200);
+	--border-vibe: var(--color-purple-200);
+	--border-warning: var(--color-amber-200);
+	--border-success: var(--color-green-200);
+
+	/* ACTION — PRIMARY */
+	--action-primary-bg: var(--color-red-500);
+	--action-primary-bg-hover: var(--color-red-600);
+	--action-primary-bg-pressed: var(--color-red-700);
+	--action-primary-text: var(--color-neutral-0);
+	--action-primary-icon: var(--color-neutral-0);
+
+	/* ACTION — SECONDARY */
+	--action-secondary-bg: var(--color-neutral-0);
+	--action-secondary-bg-hover: var(--color-neutral-50);
+	--action-secondary-text: var(--color-neutral-900);
+	--action-secondary-border: var(--color-neutral-200);
+	--action-secondary-icon: var(--color-neutral-700);
+
+	/* ACTION — DISABLED */
+	--action-disabled-bg: var(--color-neutral-100);
+	--action-disabled-text: var(--color-neutral-400);
+	--action-disabled-border: var(--color-neutral-200);
+
+	/* ICON */
+	--icon-primary: var(--color-neutral-900);
+	--icon-secondary: var(--color-neutral-500);
+	--icon-muted: var(--color-neutral-400);
+	--icon-inverse: var(--color-neutral-0);
+	--icon-brand: var(--color-red-500);
+	--icon-info: var(--color-blue-500);
+	--icon-vibe: var(--color-purple-500);
+	--icon-warning: var(--color-amber-500);
+	--icon-success: var(--color-green-600);
+
+	/* STATUS — SEMANTIC BADGES */
+	--status-trending-bg: var(--color-amber-50);
+	--status-trending-text: var(--color-amber-700);
+	--status-trending-icon: var(--color-amber-500);
+	--status-new-bg: var(--color-blue-50);
+	--status-new-text: var(--color-blue-700);
+	--status-popular-bg: var(--color-purple-50);
+	--status-popular-text: var(--color-purple-700);
+	--status-success-bg: var(--color-green-50);
+	--status-success-text: var(--color-green-700);
+	--status-error-bg: var(--color-red-50);
+	--status-error-text: var(--color-red-700);
+	--status-verified-bg: var(--color-blue-50);
+	--status-verified-text: var(--color-blue-700);
+
+	/* SEMANTIC RADIUS */
+	--radius-action: 12px;
+	--radius-input: 12px;
+	--radius-chip: 12px;
+	--radius-badge: 8px;
+	--radius-card: 20px;
+	--radius-panel: 24px;
+	--radius-modal: 24px;
+	--radius-image: 16px;
+	--radius-avatar: 9999px;
+
+	/* SEMANTIC SPACING */
+	--space-page-x-mobile: 16px;
+	--space-page-x-tablet: 24px;
+	--space-page-x-desktop: 40px;
+	--space-section-gap: 48px;
+	--space-card-sm: 12px;
+	--space-card-md: 16px;
+	--space-card-lg: 24px;
+	--space-stack-xs: 4px;
+	--space-stack-sm: 8px;
+	--space-stack-md: 16px;
+	--space-stack-lg: 24px;
+	--space-stack-xl: 32px;
+
+	/* SEMANTIC SIZES */
+	--size-icon-sm: 16px;
+	--size-icon-md: 20px;
+	--size-icon-lg: 24px;
+	--size-avatar-sm: 24px;
+	--size-avatar-md: 32px;
+	--size-avatar-lg: 48px;
+	--size-action-sm: 40px;
+	--size-action-md: 48px;
+	--size-action-lg: 56px;
+	--size-input-md: 48px;
+	--size-input-lg: 56px;
+
+	/* SEMANTIC SHADOWS */
+	--effect-card: var(--shadow-1);
+	--effect-card-hover: var(--shadow-2);
+	--effect-panel: var(--shadow-2);
+	--effect-modal: var(--shadow-4);
+	--effect-floating: var(--shadow-3);
+	--effect-brand-glow: var(--shadow-glow-red);
+	--effect-vibe-glow: var(--shadow-glow-purple);
+	--effect-info-glow: var(--shadow-glow-blue);
+}
