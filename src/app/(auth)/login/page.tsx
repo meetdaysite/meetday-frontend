@@ -2,27 +2,65 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { AuthShell } from "@/components/auth/AuthShell"
 import { AuthTabs } from "@/components/auth/AuthTabs"
 import { SocialSignIn } from "@/components/auth/SocialSignIn"
 import { Button } from "@/components/ui/Button"
-import { TextField } from "@/components/ui/TextField"
-import { Checkbox } from "@/components/ui/Checkbox"
-import { Icon } from "@/components/ui/Icon"
-import UserSvg from "@/icons/outlined/user.svg"
-import LockPasswordSvg from "@/icons/outlined/lock-password.svg"
-import EyeOpenSvg from "@/icons/outlined/eye-open.svg"
-import EyeClosedSvg from "@/icons/outlined/eye-closed.svg"
+import { PhoneField } from "@/components/auth/PhoneField"
+import { useAuth } from "@/context/AuthContext"
+import { fetchUserDetails, UserNotFoundError } from "@/lib/api"
+import { DEFAULT_COUNTRY, type Country } from "@/lib/countries"
+import type { AuthSession } from "@/context/AuthContext"
 
 export default function LoginPage() {
-	const [showPassword, setShowPassword] = useState(false)
-	const [rememberMe, setRememberMe] = useState(false)
+	const [phone, setPhone] = useState("")
+	const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY)
+	const [error, setError] = useState("")
+	const [loading, setLoading] = useState(false)
+	const { sendOtp, signInWithGoogle } = useAuth()
+	const router = useRouter()
+
+	async function handleSendOtp(e: React.FormEvent<HTMLFormElement>) {
+		e.preventDefault()
+		if (!phone || phone.length < 10) return
+		setError("")
+		setLoading(true)
+		try {
+			await sendOtp(`${country.dialCode}${phone}`, "recaptcha-container")
+			const session: AuthSession = { intent: "login", phone: `${country.dialCode}${phone}` }
+			sessionStorage.setItem("authSession", JSON.stringify(session))
+			router.push("/verify")
+		} catch {
+			setError("Failed to send OTP. Please check the number and try again.")
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	async function handleGoogleSignIn() {
+		setError("")
+		setLoading(true)
+		try {
+			const { idToken } = await signInWithGoogle()
+			await fetchUserDetails(idToken)
+			router.push("/dashboard")
+		} catch (e) {
+			if (e instanceof UserNotFoundError) {
+				setError("Account not found. Please sign up.")
+			} else {
+				setError("Google sign-in failed. Please try again.")
+			}
+		} finally {
+			setLoading(false)
+		}
+	}
 
 	return (
 		<AuthShell phoneImage="/assets/phone_image_login.svg" pointsImage="/assets/points_login.svg">
+			<div id="recaptcha-container" />
 			<AuthTabs />
 
-			{/* Heading */}
 			<div className="mb-6">
 				<h1 className="text-heading-sm text-text-primary mb-1">
 					Start hosting on <span className="text-text-brand">meetday</span>
@@ -32,71 +70,36 @@ export default function LoginPage() {
 				</p>
 			</div>
 
-			<form className="flex flex-col gap-4" onSubmit={e => e.preventDefault()}>
-				<TextField
-					label="Email or phone number"
-					placeholder="Enter your email or phone number"
-					type="text"
-					leftIcon={<Icon as={UserSvg} />}
-					size="md"
-					autoComplete="email"
+			<form className="flex flex-col gap-4" onSubmit={handleSendOtp}>
+				<PhoneField
+					label="Phone number"
+					value={phone}
+					onChange={setPhone}
+					country={country}
+					onCountryChange={setCountry}
+					disabled={loading}
 				/>
 
-				<TextField
-					label="Password"
-					placeholder="Enter your password"
-					type={showPassword ? "text" : "password"}
-					leftIcon={<Icon as={LockPasswordSvg} />}
-					rightIcon={
-						<button
-							type="button"
-							onClick={() => setShowPassword(v => !v)}
-							className="text-icon-muted hover:text-icon-secondary transition-colors"
-							aria-label={showPassword ? "Hide password" : "Show password"}
-						>
-							{showPassword ? <Icon as={EyeClosedSvg} /> : <Icon as={EyeOpenSvg} />}
-						</button>
-					}
-					size="md"
-					autoComplete="current-password"
-				/>
-
-				{/* Remember me + Forgot password */}
-				<div className="flex items-center justify-between">
-					<Checkbox label="Remember me" checked={rememberMe} onChange={setRememberMe} size="sm" />
-					<Link
-						href="/forgot-password"
-						className="text-sm font-medium text-text-link hover:underline"
-					>
-						Forgot password?
-					</Link>
-				</div>
-
-				<Button type="submit" variant="primary" size="md" radius="pill" className="w-full mt-1">
-					Log in
-				</Button>
+				{error && <p className="text-caption text-text-danger">{error}</p>}
 
 				<Button
-					type="button"
-					variant="secondary"
+					type="submit"
+					variant="primary"
 					size="md"
 					radius="pill"
-					className="w-full"
-					onClick={() => {
-						/* TODO: wire OTP login */
-					}}
+					className="w-full mt-1"
+					disabled={phone.length < 10 || loading}
 				>
-					Use OTP Instead
+					Send OTP
 				</Button>
 
-				{/* Divider */}
 				<div className="flex items-center gap-3 my-1">
 					<div className="flex-1 h-px bg-border-default" />
 					<span className="text-caption text-text-muted">or</span>
 					<div className="flex-1 h-px bg-border-default" />
 				</div>
 
-				<SocialSignIn layout="stacked" />
+				<SocialSignIn layout="stacked" onGoogleSignIn={handleGoogleSignIn} disabled={loading} />
 
 				<p className="text-center text-body-sm text-text-secondary mt-1">
 					New to meetday?{" "}

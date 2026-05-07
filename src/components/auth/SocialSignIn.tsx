@@ -33,9 +33,11 @@ function GoogleIcon() {
 
 interface SocialSignInProps {
 	layout?: "stacked" | "side-by-side"
+	onGoogleSignIn?: () => void
+	disabled?: boolean
 }
 
-export function SocialSignIn({ layout = "stacked" }: SocialSignInProps) {
+export function SocialSignIn({ layout = "stacked", onGoogleSignIn, disabled }: SocialSignInProps) {
 	const btnClass = layout === "side-by-side" ? "flex-1" : "w-full"
 
 	const buttons = (
@@ -47,6 +49,8 @@ export function SocialSignIn({ layout = "stacked" }: SocialSignInProps) {
 				leftIcon={<GoogleIcon />}
 				className={btnClass}
 				type="button"
+				onClick={onGoogleSignIn}
+				disabled={disabled}
 			>
 				Continue with Google
 			</Button>

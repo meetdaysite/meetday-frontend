@@ -1,10 +1,9 @@
 import Image from "next/image"
 import Link from "next/link"
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
 	return (
-		<div className="relative h-screen flex flex-col overflow-hidden">
-			{/* Full-viewport background */}
+		<div className="relative min-h-screen flex flex-col">
 			<Image
 				src="/assets/auth_bg.svg"
 				alt=""
@@ -14,7 +13,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 				aria-hidden
 			/>
 
-			{/* Navbar — full width, content constrained */}
 			<header className="relative w-full shrink-0 bg-surface-page z-10">
 				<div className="flex h-16 items-center max-w-screen-2xl mx-auto px-6 lg:px-10">
 					<Link href="/" className="inline-flex items-center">
@@ -23,8 +21,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 				</div>
 			</header>
 
-			{/* Page content — fills remaining viewport height */}
-			<main className="relative flex flex-1 w-full max-w-screen-2xl mx-auto">{children}</main>
+			<main className="relative flex flex-1 w-full justify-center items-start py-10 px-4">
+				{children}
+			</main>
 		</div>
 	)
 }

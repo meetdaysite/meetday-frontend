@@ -2,29 +2,80 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { AuthShell } from "@/components/auth/AuthShell"
 import { AuthTabs } from "@/components/auth/AuthTabs"
 import { SocialSignIn } from "@/components/auth/SocialSignIn"
 import { Button } from "@/components/ui/Button"
-import { TextField } from "@/components/ui/TextField"
 import { Checkbox } from "@/components/ui/Checkbox"
-import { Icon } from "@/components/ui/Icon"
-import UserSvg from "@/icons/outlined/user.svg"
-import EmailSvg from "@/icons/outlined/email.svg"
-import PhoneSvg from "@/icons/outlined/phone.svg"
-import LockPasswordSvg from "@/icons/outlined/lock-password.svg"
-import EyeOpenSvg from "@/icons/outlined/eye-open.svg"
-import EyeClosedSvg from "@/icons/outlined/eye-closed.svg"
+import { PhoneField } from "@/components/auth/PhoneField"
+import { useAuth } from "@/context/AuthContext"
+import { fetchUserDetails, UserNotFoundError } from "@/lib/api"
+import { DEFAULT_COUNTRY, type Country } from "@/lib/countries"
+import type { AuthSession } from "@/context/AuthContext"
 
 export default function SignupPage() {
-	const [showPassword, setShowPassword] = useState(false)
+	const [phone, setPhone] = useState("")
+	const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY)
 	const [agreed, setAgreed] = useState(false)
+	const [error, setError] = useState("")
+	const [loading, setLoading] = useState(false)
+	const { sendOtp, signInWithGoogle } = useAuth()
+	const router = useRouter()
+
+	async function handleSendOtp(e: React.FormEvent<HTMLFormElement>) {
+		e.preventDefault()
+		if (!phone || phone.length < 10 || !agreed) return
+		setError("")
+		setLoading(true)
+		try {
+			await sendOtp(`${country.dialCode}${phone}`, "recaptcha-container")
+			const session: AuthSession = { intent: "signup", phone: `${country.dialCode}${phone}` }
+			sessionStorage.setItem("authSession", JSON.stringify(session))
+			router.push("/verify")
+		} catch {
+			setError("Failed to send OTP. Please check the number and try again.")
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	async function handleGoogleSignIn() {
+		if (!agreed) {
+			setError("Please agree to the Terms of Service and Privacy Policy.")
+			return
+		}
+		setError("")
+		setLoading(true)
+		try {
+			const { idToken, email, displayName } = await signInWithGoogle()
+			try {
+				await fetchUserDetails(idToken)
+				// User already exists
+				setError("Account already exists. Please log in.")
+			} catch (e) {
+				if (e instanceof UserNotFoundError) {
+					const session: AuthSession = { intent: "signup", email: email ?? undefined, displayName: displayName ?? undefined }
+					sessionStorage.setItem("authSession", JSON.stringify(session))
+					router.push("/onboarding")
+				} else {
+					throw e
+				}
+			}
+		} catch (e) {
+			if (!(e instanceof UserNotFoundError)) {
+				setError("Google sign-in failed. Please try again.")
+			}
+		} finally {
+			setLoading(false)
+		}
+	}
 
 	return (
 		<AuthShell phoneImage="/assets/phone_image_login.svg" pointsImage="/assets/points_login.svg">
+			<div id="recaptcha-container" />
 			<AuthTabs />
 
-			{/* Heading */}
 			<div className="mb-6">
 				<h1 className="text-heading-sm text-text-primary mb-1">
 					Start hosting on <span className="text-text-brand">meetday</span>
@@ -34,54 +85,16 @@ export default function SignupPage() {
 				</p>
 			</div>
 
-			<form className="flex flex-col gap-4" onSubmit={e => e.preventDefault()}>
-				<TextField
-					label="Full name"
-					placeholder="Enter your full name"
-					type="text"
-					leftIcon={<Icon as={UserSvg} />}
-					size="md"
-					autoComplete="name"
-				/>
-
-				<TextField
-					label="Work email"
-					placeholder="name@company.com"
-					type="email"
-					leftIcon={<Icon as={EmailSvg} />}
-					size="md"
-					autoComplete="email"
-				/>
-
-				<TextField
+			<form className="flex flex-col gap-4" onSubmit={handleSendOtp}>
+				<PhoneField
 					label="Phone number"
-					placeholder="Enter your phone number"
-					type="tel"
-					leftIcon={<Icon as={PhoneSvg} />}
-					size="md"
-					autoComplete="tel"
+					value={phone}
+					onChange={setPhone}
+					country={country}
+					onCountryChange={setCountry}
+					disabled={loading}
 				/>
 
-				<TextField
-					label="Password"
-					placeholder="Create a strong password"
-					type={showPassword ? "text" : "password"}
-					leftIcon={<Icon as={LockPasswordSvg} />}
-					rightIcon={
-						<button
-							type="button"
-							onClick={() => setShowPassword(v => !v)}
-							className="text-icon-muted hover:text-icon-secondary transition-colors"
-							aria-label={showPassword ? "Hide password" : "Show password"}
-						>
-							{showPassword ? <Icon as={EyeClosedSvg} /> : <Icon as={EyeOpenSvg} />}
-						</button>
-					}
-					size="md"
-					autoComplete="new-password"
-				/>
-
-				{/* Terms */}
 				<label className="flex items-start gap-2.5 cursor-pointer">
 					<Checkbox checked={agreed} onChange={setAgreed} size="sm" />
 					<span className="text-body-sm text-text-secondary leading-snug">
@@ -96,25 +109,26 @@ export default function SignupPage() {
 					</span>
 				</label>
 
+				{error && <p className="text-caption text-text-danger">{error}</p>}
+
 				<Button
 					type="submit"
 					variant="primary"
 					size="md"
 					radius="pill"
 					className="w-full mt-1"
-					disabled={!agreed}
+					disabled={phone.length < 10 || !agreed || loading}
 				>
-					Sign up
+					Send OTP
 				</Button>
 
-				{/* Divider */}
 				<div className="flex items-center gap-3 my-1">
 					<div className="flex-1 h-px bg-border-default" />
 					<span className="text-caption text-text-muted">or</span>
 					<div className="flex-1 h-px bg-border-default" />
 				</div>
 
-				<SocialSignIn layout="side-by-side" />
+				<SocialSignIn layout="stacked" onGoogleSignIn={handleGoogleSignIn} disabled={loading} />
 
 				<p className="text-center text-body-sm text-text-secondary mt-1">
 					Already have an account?{" "}
