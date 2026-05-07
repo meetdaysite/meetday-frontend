@@ -8,107 +8,13 @@ import { SocialSignIn } from "@/components/auth/SocialSignIn"
 import { Button } from "@/components/ui/Button"
 import { TextField } from "@/components/ui/TextField"
 import { Checkbox } from "@/components/ui/Checkbox"
-
-function UserIcon() {
-	return (
-		<svg
-			viewBox="0 0 20 20"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.5}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className="size-full"
-		>
-			<circle cx="10" cy="7" r="3.5" />
-			<path d="M2.5 17.5c0-4.142 3.358-7.5 7.5-7.5s7.5 3.358 7.5 7.5" />
-		</svg>
-	)
-}
-
-function MailIcon() {
-	return (
-		<svg
-			viewBox="0 0 20 20"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.5}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className="size-full"
-		>
-			<rect x="2" y="4" width="16" height="13" rx="2" />
-			<path d="M2 7l8 5 8-5" />
-		</svg>
-	)
-}
-
-function PhoneIcon() {
-	return (
-		<svg
-			viewBox="0 0 20 20"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.5}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className="size-full"
-		>
-			<path d="M6.5 2h7A1.5 1.5 0 0 1 15 3.5v13A1.5 1.5 0 0 1 13.5 18h-7A1.5 1.5 0 0 1 5 16.5v-13A1.5 1.5 0 0 1 6.5 2z" />
-			<circle cx="10" cy="15.5" r=".75" fill="currentColor" stroke="none" />
-		</svg>
-	)
-}
-
-function LockIcon() {
-	return (
-		<svg
-			viewBox="0 0 20 20"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.5}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className="size-full"
-		>
-			<rect x="4" y="9" width="12" height="9" rx="2" />
-			<path d="M7 9V6.5a3 3 0 1 1 6 0V9" />
-		</svg>
-	)
-}
-
-function EyeIcon() {
-	return (
-		<svg
-			viewBox="0 0 20 20"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.5}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className="size-full"
-		>
-			<path d="M2 10s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z" />
-			<circle cx="10" cy="10" r="2.5" />
-		</svg>
-	)
-}
-
-function EyeOffIcon() {
-	return (
-		<svg
-			viewBox="0 0 20 20"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.5}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className="size-full"
-		>
-			<path d="M3 3l14 14M8.46 8.53A2.5 2.5 0 0 0 10 12.5a2.5 2.5 0 0 0 1.47-.53M6.11 6.18C4.5 7.23 3 10 3 10s3 6 7 6c1.5 0 2.87-.56 4-1.49M10 4c4 0 7 6 7 6-.7 1.28-1.59 2.38-2.6 3.25" />
-		</svg>
-	)
-}
+import { Icon } from "@/components/ui/Icon"
+import UserSvg from "@/icons/outlined/user.svg"
+import EmailSvg from "@/icons/outlined/email.svg"
+import PhoneSvg from "@/icons/outlined/phone.svg"
+import LockPasswordSvg from "@/icons/outlined/lock-password.svg"
+import EyeOpenSvg from "@/icons/outlined/eye-open.svg"
+import EyeClosedSvg from "@/icons/outlined/eye-closed.svg"
 
 export default function SignupPage() {
 	const [showPassword, setShowPassword] = useState(false)
@@ -133,7 +39,7 @@ export default function SignupPage() {
 					label="Full name"
 					placeholder="Enter your full name"
 					type="text"
-					leftIcon={<UserIcon />}
+					leftIcon={<Icon as={UserSvg} />}
 					size="md"
 					autoComplete="name"
 				/>
@@ -142,7 +48,7 @@ export default function SignupPage() {
 					label="Work email"
 					placeholder="name@company.com"
 					type="email"
-					leftIcon={<MailIcon />}
+					leftIcon={<Icon as={EmailSvg} />}
 					size="md"
 					autoComplete="email"
 				/>
@@ -151,7 +57,7 @@ export default function SignupPage() {
 					label="Phone number"
 					placeholder="Enter your phone number"
 					type="tel"
-					leftIcon={<PhoneIcon />}
+					leftIcon={<Icon as={PhoneSvg} />}
 					size="md"
 					autoComplete="tel"
 				/>
@@ -160,7 +66,7 @@ export default function SignupPage() {
 					label="Password"
 					placeholder="Create a strong password"
 					type={showPassword ? "text" : "password"}
-					leftIcon={<LockIcon />}
+					leftIcon={<Icon as={LockPasswordSvg} />}
 					rightIcon={
 						<button
 							type="button"
@@ -168,7 +74,7 @@ export default function SignupPage() {
 							className="text-icon-muted hover:text-icon-secondary transition-colors"
 							aria-label={showPassword ? "Hide password" : "Show password"}
 						>
-							{showPassword ? <EyeOffIcon /> : <EyeIcon />}
+							{showPassword ? <Icon as={EyeClosedSvg} /> : <Icon as={EyeOpenSvg} />}
 						</button>
 					}
 					size="md"
@@ -212,7 +118,7 @@ export default function SignupPage() {
 
 				<p className="text-center text-body-sm text-text-secondary mt-1">
 					Already have an account?{" "}
-					<Link href="/auth/login" className="font-medium text-text-link hover:underline">
+					<Link href="/login" className="font-medium text-text-link hover:underline">
 						Log in
 					</Link>
 				</p>

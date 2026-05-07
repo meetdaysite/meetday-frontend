@@ -19,7 +19,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/icons/filled/*": ["./public/icons/filled/*"],
+      "@/icons/outlined/*": ["./public/icons/outlined/*"]
     }
   },
   "include": [

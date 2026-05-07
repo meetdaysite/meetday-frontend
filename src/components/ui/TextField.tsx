@@ -59,7 +59,7 @@ export function TextField({
 
 			<div
 				className={clsx(
-					"flex items-center rounded-input border transition-colors duration-(--duration-120)",
+					"group flex items-center rounded-input border transition-colors duration-(--duration-120)",
 					sizeClasses[size],
 					// disabled — checked first via has-[:disabled] so it takes precedence on hover
 					"has-disabled:border-border-subtle has-disabled:bg-action-disabled has-disabled:cursor-not-allowed",
@@ -81,7 +81,11 @@ export function TextField({
 						className={clsx(
 							"flex items-center justify-center shrink-0 transition-colors duration-(--duration-120)",
 							iconSizeClasses[size],
-							disabled ? "text-icon-muted" : error ? "text-icon-brand" : "text-icon-secondary",
+							disabled
+								? "text-icon-muted"
+								: error
+									? "text-icon-brand"
+									: "text-icon-secondary group-focus-within:text-icon-primary",
 						)}
 					>
 						{leftIcon}

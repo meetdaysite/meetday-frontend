@@ -5,6 +5,8 @@ import Link from "next/link"
 import { AuthShell } from "@/components/auth/AuthShell"
 import { OtpInput } from "@/components/auth/OtpInput"
 import { Button } from "@/components/ui/Button"
+import { Icon } from "@/components/ui/Icon"
+import LockKeyholeSvg from "@/icons/outlined/lock-keyhole.svg"
 
 function ShieldCheckIcon() {
 	return (
@@ -46,78 +48,6 @@ function ArrowLeftIcon() {
 	)
 }
 
-function LockIcon() {
-	return (
-		<svg
-			viewBox="0 0 20 20"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.5}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className="size-full"
-		>
-			<rect x="4" y="9" width="12" height="9" rx="2" />
-			<path d="M7 9V6.5a3 3 0 1 1 6 0V9" />
-		</svg>
-	)
-}
-
-// function SafeIcon() {
-// 	return (
-// 		<svg
-// 			viewBox="0 0 24 24"
-// 			fill="none"
-// 			stroke="currentColor"
-// 			strokeWidth={1.5}
-// 			strokeLinecap="round"
-// 			strokeLinejoin="round"
-// 			aria-hidden
-// 			className="size-9 shrink-0 text-icon-success"
-// 		>
-// 			<path d="M12 2 4 6v6c0 5.5 3.8 10.74 8 12 4.2-1.26 8-6.5 8-12V6L12 2z" />
-// 			<path d="M9 12l2 2 4-4" />
-// 		</svg>
-// 	)
-// }
-
-// function SecureIcon() {
-// 	return (
-// 		<svg
-// 			viewBox="0 0 24 24"
-// 			fill="none"
-// 			stroke="currentColor"
-// 			strokeWidth={1.5}
-// 			strokeLinecap="round"
-// 			strokeLinejoin="round"
-// 			aria-hidden
-// 			className="size-9 shrink-0 text-icon-warning"
-// 		>
-// 			<circle cx="12" cy="12" r="9" />
-// 			<circle cx="12" cy="9.5" r="2.5" />
-// 			<path d="M7 19c0-2.76 2.24-5 5-5s5 2.24 5 5" />
-// 		</svg>
-// 	)
-// }
-
-// function ClockIcon() {
-// 	return (
-// 		<svg
-// 			viewBox="0 0 24 24"
-// 			fill="none"
-// 			stroke="currentColor"
-// 			strokeWidth={1.5}
-// 			strokeLinecap="round"
-// 			strokeLinejoin="round"
-// 			aria-hidden
-// 			className="size-9 shrink-0 text-icon-vibe"
-// 		>
-// 			<circle cx="12" cy="12" r="9" />
-// 			<path d="M12 7v5l3 3" />
-// 		</svg>
-// 	)
-// }
-
 const RESEND_SECONDS = 42
 
 export default function VerifyPage() {
@@ -147,7 +77,7 @@ export default function VerifyPage() {
 		>
 			{/* Back link */}
 			<Link
-				href="/auth/signup"
+				href="/signup"
 				className="inline-flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors mb-8"
 			>
 				<ArrowLeftIcon />
@@ -165,7 +95,7 @@ export default function VerifyPage() {
 					Verify your account and <span className="text-text-brand">unlock your vibe.</span>
 				</h1>
 				<p className="text-body-sm text-text-secondary mt-2">
-					We&apos;ve sent a 5-digit OTP to your phone number. Enter the code below to verify your
+					We&apos;ve sent a 6-digit OTP to your phone number. Enter the code below to verify your
 					account.
 				</p>
 			</div>
@@ -189,8 +119,8 @@ export default function VerifyPage() {
 
 				{/* OTP boxes */}
 				<div>
-					<p className="text-label-md text-text-primary mb-3">Enter 5-digit OTP</p>
-					<OtpInput value={otp} onChange={setOtp} length={5} />
+					<p className="text-label-md text-text-primary mb-3">Enter 6-digit OTP</p>
+					<OtpInput value={otp} onChange={setOtp} length={6} />
 				</div>
 
 				{/* Resend */}
@@ -216,8 +146,8 @@ export default function VerifyPage() {
 					size="md"
 					radius="pill"
 					className="w-full"
-					leftIcon={<LockIcon />}
-					disabled={otp.length < 5}
+					leftIcon={<Icon as={LockKeyholeSvg} />}
+					disabled={otp.length < 6}
 				>
 					Verify OTP
 				</Button>
@@ -229,44 +159,13 @@ export default function VerifyPage() {
 					radius="pill"
 					className="w-full"
 				>
-					Use instead Password
+					Use Password Instead
 				</Button>
 
 				{/* Privacy note */}
 				<p className="text-caption text-text-muted text-center leading-relaxed">
 					Your information is secure and encrypted. We never share your details with anyone.
 				</p>
-
-				{/* Trust badges */}
-				{/* <div className="flex gap-2 pt-2">
-					<div className="flex-1 flex items-start gap-2.5 rounded-card border border-border-subtle bg-surface-canvas p-3">
-						<SafeIcon />
-						<div className="min-w-0">
-							<p className="text-label-sm text-text-primary">Safe &amp; Verified</p>
-							<p className="text-[11px] text-text-muted leading-tight mt-0.5">
-								All events and hosts are verified for your safety
-							</p>
-						</div>
-					</div>
-					<div className="flex-1 flex items-start gap-2.5 rounded-card border border-border-subtle bg-surface-canvas p-3">
-						<SecureIcon />
-						<div className="min-w-0">
-							<p className="text-label-sm text-text-primary">Secure Checkout</p>
-							<p className="text-[11px] text-text-muted leading-tight mt-0.5">
-								Your payments and data are 100% secure.
-							</p>
-						</div>
-					</div>
-					<div className="flex-1 flex items-start gap-2.5 rounded-card border border-border-subtle bg-surface-canvas p-3">
-						<ClockIcon />
-						<div className="min-w-0">
-							<p className="text-label-sm text-text-primary">Limited spots held</p>
-							<p className="text-[11px] text-text-muted leading-tight mt-0.5">
-								Your spot is held for 10 minutes.
-							</p>
-						</div>
-					</div>
-				</div> */}
 			</form>
 		</AuthShell>
 	)

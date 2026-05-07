@@ -23,13 +23,13 @@ function GoogleIcon() {
 	)
 }
 
-function AppleIcon() {
-	return (
-		<svg viewBox="0 0 20 20" fill="currentColor" className="size-5" aria-hidden>
-			<path d="M14.18 0c.08 1.09-.32 2.16-.97 2.95-.68.82-1.74 1.46-2.82 1.38-.1-1.06.38-2.17 1-2.93C12.07.6 13.18 0 14.18 0zm3.6 14.62c-.47 1.04-1 1.98-1.76 2.86-.76.9-1.55 1.82-2.73 1.82-1.17 0-1.56-.73-2.91-.73-1.38 0-1.8.75-2.94.75-1.16 0-1.93-.88-2.72-1.8C2.59 15.92 1.25 13.06 1.25 10.3c0-3.76 2.45-5.75 4.86-5.75 1.3 0 2.38.85 3.19.85.78 0 2.02-.9 3.46-.9 1.1 0 3.03.48 4.11 2.27-3.63 2-3.04 7.18.91 7.85z" />
-		</svg>
-	)
-}
+// function AppleIcon() {
+// 	return (
+// 		<svg viewBox="0 0 20 20" fill="currentColor" className="size-5" aria-hidden>
+// 			<path d="M14.18 0c.08 1.09-.32 2.16-.97 2.95-.68.82-1.74 1.46-2.82 1.38-.1-1.06.38-2.17 1-2.93C12.07.6 13.18 0 14.18 0zm3.6 14.62c-.47 1.04-1 1.98-1.76 2.86-.76.9-1.55 1.82-2.73 1.82-1.17 0-1.56-.73-2.91-.73-1.38 0-1.8.75-2.94.75-1.16 0-1.93-.88-2.72-1.8C2.59 15.92 1.25 13.06 1.25 10.3c0-3.76 2.45-5.75 4.86-5.75 1.3 0 2.38.85 3.19.85.78 0 2.02-.9 3.46-.9 1.1 0 3.03.48 4.11 2.27-3.63 2-3.04 7.18.91 7.85z" />
+// 		</svg>
+// 	)
+// }
 
 interface SocialSignInProps {
 	layout?: "stacked" | "side-by-side"
@@ -50,7 +50,7 @@ export function SocialSignIn({ layout = "stacked" }: SocialSignInProps) {
 			>
 				Continue with Google
 			</Button>
-			<Button
+			{/* <Button
 				variant="secondary"
 				size="md"
 				radius="pill"
@@ -59,7 +59,7 @@ export function SocialSignIn({ layout = "stacked" }: SocialSignInProps) {
 				type="button"
 			>
 				Continue with Apple
-			</Button>
+			</Button> */}
 		</>
 	)
 

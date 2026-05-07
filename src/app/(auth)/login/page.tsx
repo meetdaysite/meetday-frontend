@@ -8,73 +8,11 @@ import { SocialSignIn } from "@/components/auth/SocialSignIn"
 import { Button } from "@/components/ui/Button"
 import { TextField } from "@/components/ui/TextField"
 import { Checkbox } from "@/components/ui/Checkbox"
-
-function UserIcon() {
-	return (
-		<svg
-			viewBox="0 0 20 20"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.5}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className="size-full"
-		>
-			<circle cx="10" cy="7" r="3.5" />
-			<path d="M2.5 17.5c0-4.142 3.358-7.5 7.5-7.5s7.5 3.358 7.5 7.5" />
-		</svg>
-	)
-}
-
-function LockIcon() {
-	return (
-		<svg
-			viewBox="0 0 20 20"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.5}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className="size-full"
-		>
-			<rect x="4" y="9" width="12" height="9" rx="2" />
-			<path d="M7 9V6.5a3 3 0 1 1 6 0V9" />
-		</svg>
-	)
-}
-
-function EyeIcon() {
-	return (
-		<svg
-			viewBox="0 0 20 20"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.5}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className="size-full"
-		>
-			<path d="M2 10s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z" />
-			<circle cx="10" cy="10" r="2.5" />
-		</svg>
-	)
-}
-
-function EyeOffIcon() {
-	return (
-		<svg
-			viewBox="0 0 20 20"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.5}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className="size-full"
-		>
-			<path d="M3 3l14 14M8.46 8.53A2.5 2.5 0 0 0 10 12.5a2.5 2.5 0 0 0 1.47-.53M6.11 6.18C4.5 7.23 3 10 3 10s3 6 7 6c1.5 0 2.87-.56 4-1.49M10 4c4 0 7 6 7 6-.7 1.28-1.59 2.38-2.6 3.25" />
-		</svg>
-	)
-}
+import { Icon } from "@/components/ui/Icon"
+import UserSvg from "@/icons/outlined/user.svg"
+import LockPasswordSvg from "@/icons/outlined/lock-password.svg"
+import EyeOpenSvg from "@/icons/outlined/eye-open.svg"
+import EyeClosedSvg from "@/icons/outlined/eye-closed.svg"
 
 export default function LoginPage() {
 	const [showPassword, setShowPassword] = useState(false)
@@ -99,7 +37,7 @@ export default function LoginPage() {
 					label="Email or phone number"
 					placeholder="Enter your email or phone number"
 					type="text"
-					leftIcon={<UserIcon />}
+					leftIcon={<Icon as={UserSvg} />}
 					size="md"
 					autoComplete="email"
 				/>
@@ -108,7 +46,7 @@ export default function LoginPage() {
 					label="Password"
 					placeholder="Enter your password"
 					type={showPassword ? "text" : "password"}
-					leftIcon={<LockIcon />}
+					leftIcon={<Icon as={LockPasswordSvg} />}
 					rightIcon={
 						<button
 							type="button"
@@ -116,7 +54,7 @@ export default function LoginPage() {
 							className="text-icon-muted hover:text-icon-secondary transition-colors"
 							aria-label={showPassword ? "Hide password" : "Show password"}
 						>
-							{showPassword ? <EyeOffIcon /> : <EyeIcon />}
+							{showPassword ? <Icon as={EyeClosedSvg} /> : <Icon as={EyeOpenSvg} />}
 						</button>
 					}
 					size="md"
@@ -127,7 +65,7 @@ export default function LoginPage() {
 				<div className="flex items-center justify-between">
 					<Checkbox label="Remember me" checked={rememberMe} onChange={setRememberMe} size="sm" />
 					<Link
-						href="/auth/forgot-password"
+						href="/forgot-password"
 						className="text-sm font-medium text-text-link hover:underline"
 					>
 						Forgot password?
@@ -148,7 +86,7 @@ export default function LoginPage() {
 						/* TODO: wire OTP login */
 					}}
 				>
-					Use Instead OTP
+					Use OTP Instead
 				</Button>
 
 				{/* Divider */}
@@ -162,7 +100,7 @@ export default function LoginPage() {
 
 				<p className="text-center text-body-sm text-text-secondary mt-1">
 					New to meetday?{" "}
-					<Link href="/auth/signup" className="font-medium text-text-link hover:underline">
+					<Link href="/signup" className="font-medium text-text-link hover:underline">
 						Create an account
 					</Link>
 				</p>
