@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Poppins } from "next/font/google"
+import { Toaster } from "sonner"
 import { AuthProvider } from "@/context/AuthContext"
 import "./globals.css"
 
@@ -23,6 +24,7 @@ export default function RootLayout({
 		<html lang="en" className={`${poppins.variable} h-full antialiased`}>
 			<body className="min-h-full flex flex-col bg-surface-page text-text-primary">
 				<AuthProvider>{children}</AuthProvider>
+				<Toaster richColors position="top-right" />
 			</body>
 		</html>
 	)

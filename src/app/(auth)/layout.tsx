@@ -3,7 +3,7 @@ import Link from "next/link"
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
 	return (
-		<div className="relative h-screen flex flex-col overflow-hidden">
+		<div className="relative min-h-screen flex flex-col">
 			{/* Full-viewport background */}
 			<Image
 				src="/assets/auth_bg.svg"

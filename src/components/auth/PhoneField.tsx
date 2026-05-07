@@ -2,7 +2,7 @@
 
 import clsx from "clsx"
 import { useEffect, useRef, useState } from "react"
-import flags from "country-flag-icons/react/3x2"
+import * as flags from "country-flag-icons/react/3x2"
 import { COUNTRIES, DEFAULT_COUNTRY, type Country } from "@/lib/countries"
 
 // ─── CountrySelect ────────────────────────────────────────────────────────────
@@ -38,7 +38,7 @@ function ChevronDown({ className }: { className?: string }) {
 	)
 }
 
-function CountrySelect({ value, onChange, disabled }: CountrySelectProps) {
+export function CountrySelect({ value, onChange, disabled }: CountrySelectProps) {
 	const [open, setOpen] = useState(false)
 	const [search, setSearch] = useState("")
 	const containerRef = useRef<HTMLDivElement>(null)
@@ -67,6 +67,7 @@ function CountrySelect({ value, onChange, disabled }: CountrySelectProps) {
 	// Focus search when list opens
 	useEffect(() => {
 		if (open) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setSearch("")
 			setTimeout(() => searchRef.current?.focus(), 0)
 		}

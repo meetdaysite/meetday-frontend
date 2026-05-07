@@ -117,6 +117,7 @@ export function Dropdown({
 }: DropdownProps) {
 	const uid = useId()
 	const inputId = id ?? uid
+	const listboxId = `${uid}-listbox`
 
 	const isControlled = controlledValue !== undefined
 	const [localValue, setLocalValue] = useState(defaultValue ?? "")
@@ -144,6 +145,7 @@ export function Dropdown({
 
 	// Reset focused index when closing
 	useEffect(() => {
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		if (!open) setFocusedIndex(-1)
 	}, [open])
 
@@ -218,6 +220,7 @@ export function Dropdown({
 					id={inputId}
 					role="combobox"
 					aria-expanded={open}
+					aria-controls={listboxId}
 					aria-haspopup="listbox"
 					disabled={disabled}
 					onClick={() => !disabled && setOpen(v => !v)}
@@ -267,6 +270,7 @@ export function Dropdown({
 				{open && (
 					<ul
 						ref={listRef}
+						id={listboxId}
 						role="listbox"
 						aria-label={label}
 						className={clsx(

@@ -2,47 +2,66 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useForm, useFormContext, FormProvider, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { toast } from "sonner"
+import clsx from "clsx"
 import { useAuth } from "@/context/AuthContext"
+import { useAuthSessionStore } from "@/store/authSessionStore"
 import { registerHost } from "@/lib/api"
 import type { HostRegistrationData } from "@/lib/api"
-import type { AuthSession } from "@/context/AuthContext"
 import { Button } from "@/components/ui/Button"
 import { TextField } from "@/components/ui/TextField"
 import { PhoneField } from "@/components/auth/PhoneField"
 import { DEFAULT_COUNTRY, type Country } from "@/lib/countries"
-import clsx from "clsx"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Schema ───────────────────────────────────────────────────────────────────
 
-type FormData = Omit<HostRegistrationData, "yearsOfExperience" | "totalEventsHosted"> & {
-	yearsOfExperience: number | ""
-	totalEventsHosted: number | ""
-}
+const onboardingSchema = z.object({
+	firstName: z.string().min(1, "Required"),
+	lastName: z.string().min(1, "Required"),
+	phone: z
+		.string()
+		.min(10, "Enter a valid 10-digit phone number")
+		.max(10, "Enter a valid 10-digit phone number")
+		.regex(/^\d+$/, "Phone number must contain only digits"),
+	email: z.string().email("Enter a valid email"),
+	accountType: z.string().min(1, "Select an account type"),
+	hostType: z.string().min(1, "Select a host type"),
+	displayName: z.string().min(1, "Required"),
+	legalName: z.string().min(1, "Required"),
+	bio: z.string().min(1, "Required"),
+	tagline: z.string().min(1, "Required"),
+	pan: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Enter a valid PAN (e.g. ABCDE1234F)"),
+	categories: z.array(z.string()).min(1, "Select at least one category"),
+	languages: z.array(z.string()).min(1, "Select at least one language"),
+	yearsOfExperience: z.coerce.number().min(0, "Cannot be negative"),
+	totalEventsHosted: z.coerce.number().min(0, "Cannot be negative"),
+	operatingCities: z.array(z.string()).min(1, "Select at least one city"),
+	instagram: z.string().optional(),
+	addressLine1: z.string().min(1, "Required"),
+	addressLine2: z.string().optional(),
+	city: z.string().min(1, "Required"),
+	state: z.string().min(1, "Required"),
+	pincode: z
+		.string()
+		.length(6, "Enter a valid 6-digit pincode")
+		.regex(/^\d+$/, "Pincode must contain only digits"),
+})
 
-const INITIAL: FormData = {
-	firstName: "",
-	lastName: "",
-	phone: "",
-	email: "",
-	accountType: "",
-	hostType: "",
-	displayName: "",
-	legalName: "",
-	bio: "",
-	tagline: "",
-	pan: "",
-	categories: [],
-	languages: [],
-	yearsOfExperience: "",
-	totalEventsHosted: "",
-	operatingCities: [],
-	instagram: "",
-	addressLine1: "",
-	addressLine2: "",
-	city: "",
-	state: "",
-	pincode: "",
-}
+type OnboardingValues = z.infer<typeof onboardingSchema>
+
+const STEP_FIELDS: (keyof OnboardingValues)[][] = [
+	["firstName", "lastName", "phone", "email"],
+	["accountType", "hostType"],
+	["displayName", "legalName", "bio", "tagline", "pan"],
+	["categories", "languages"],
+	["yearsOfExperience", "totalEventsHosted"],
+	["operatingCities"],
+	["instagram"],
+	["addressLine1", "city", "state", "pincode"],
+]
 
 const STEPS = [
 	"Personal details",
@@ -57,57 +76,59 @@ const STEPS = [
 
 // ─── Step components ──────────────────────────────────────────────────────────
 
-function StepPersonal({
-	data,
-	onChange,
-	country,
-	onCountryChange,
-}: {
-	data: FormData
-	onChange: (patch: Partial<FormData>) => void
-	country: Country
-	onCountryChange: (c: Country) => void
-}) {
+function StepPersonal({ country, onCountryChange }: { country: Country; onCountryChange: (c: Country) => void }) {
+	const { register, control, formState: { errors } } = useFormContext<OnboardingValues>()
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex gap-3">
 				<TextField
 					label="First name"
 					placeholder="Jane"
-					value={data.firstName}
-					onChange={e => onChange({ firstName: e.target.value })}
+					{...register("firstName")}
+					error={!!errors.firstName}
+					helperText={errors.firstName?.message}
 					size="md"
 					className="flex-1"
 				/>
 				<TextField
 					label="Last name"
 					placeholder="Doe"
-					value={data.lastName}
-					onChange={e => onChange({ lastName: e.target.value })}
+					{...register("lastName")}
+					error={!!errors.lastName}
+					helperText={errors.lastName?.message}
 					size="md"
 					className="flex-1"
 				/>
 			</div>
-			<PhoneField
-				label="Phone number"
-				value={data.phone}
-				onChange={v => onChange({ phone: v })}
-				country={country}
-				onCountryChange={onCountryChange}
+			<Controller
+				control={control}
+				name="phone"
+				render={({ field }) => (
+					<PhoneField
+						label="Phone number"
+						value={field.value}
+						onChange={field.onChange}
+						country={country}
+						onCountryChange={onCountryChange}
+						error={errors.phone?.message}
+					/>
+				)}
 			/>
 			<TextField
 				label="Email"
 				placeholder="jane@example.com"
 				type="email"
-				value={data.email}
-				onChange={e => onChange({ email: e.target.value })}
+				{...register("email")}
+				error={!!errors.email}
+				helperText={errors.email?.message}
 				size="md"
 			/>
 		</div>
 	)
 }
 
-function StepAccount({ data, onChange }: { data: FormData; onChange: (patch: Partial<FormData>) => void }) {
+function StepAccount() {
+	const { control, formState: { errors } } = useFormContext<OnboardingValues>()
 	const accountTypes = ["Individual", "Business", "Organization"]
 	const hostTypes = ["Event Host", "Venue Host", "Experience Host"]
 
@@ -115,91 +136,116 @@ function StepAccount({ data, onChange }: { data: FormData; onChange: (patch: Par
 		<div className="flex flex-col gap-5">
 			<div>
 				<p className="text-label-md text-text-primary mb-2">Account type</p>
-				<div className="flex flex-wrap gap-2">
-					{accountTypes.map(t => (
-						<button
-							key={t}
-							type="button"
-							onClick={() => onChange({ accountType: t })}
-							className={clsx(
-								"px-4 py-2 rounded-full text-body-sm border transition-colors duration-(--duration-120)",
-								data.accountType === t
-									? "bg-action-primary text-white border-action-primary"
-									: "border-border-default text-text-secondary hover:border-border-strong",
-							)}
-						>
-							{t}
-						</button>
-					))}
-				</div>
+				<Controller
+					control={control}
+					name="accountType"
+					render={({ field }) => (
+						<div className="flex flex-wrap gap-2">
+							{accountTypes.map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => field.onChange(t)}
+									className={clsx(
+										"px-4 py-2 rounded-full text-body-sm border transition-colors duration-(--duration-120)",
+										field.value === t
+											? "bg-action-primary text-white border-action-primary"
+											: "border-border-default text-text-secondary hover:border-border-strong",
+									)}
+								>
+									{t}
+								</button>
+							))}
+						</div>
+					)}
+				/>
+				{errors.accountType && (
+					<p className="text-caption text-text-danger mt-1">{errors.accountType.message}</p>
+				)}
 			</div>
+
 			<div>
 				<p className="text-label-md text-text-primary mb-2">Host type</p>
-				<div className="flex flex-wrap gap-2">
-					{hostTypes.map(t => (
-						<button
-							key={t}
-							type="button"
-							onClick={() => onChange({ hostType: t })}
-							className={clsx(
-								"px-4 py-2 rounded-full text-body-sm border transition-colors duration-(--duration-120)",
-								data.hostType === t
-									? "bg-action-primary text-white border-action-primary"
-									: "border-border-default text-text-secondary hover:border-border-strong",
-							)}
-						>
-							{t}
-						</button>
-					))}
-				</div>
+				<Controller
+					control={control}
+					name="hostType"
+					render={({ field }) => (
+						<div className="flex flex-wrap gap-2">
+							{hostTypes.map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => field.onChange(t)}
+									className={clsx(
+										"px-4 py-2 rounded-full text-body-sm border transition-colors duration-(--duration-120)",
+										field.value === t
+											? "bg-action-primary text-white border-action-primary"
+											: "border-border-default text-text-secondary hover:border-border-strong",
+									)}
+								>
+									{t}
+								</button>
+							))}
+						</div>
+					)}
+				/>
+				{errors.hostType && (
+					<p className="text-caption text-text-danger mt-1">{errors.hostType.message}</p>
+				)}
 			</div>
 		</div>
 	)
 }
 
-function StepHostProfile({ data, onChange }: { data: FormData; onChange: (patch: Partial<FormData>) => void }) {
+function StepHostProfile() {
+	const { register, formState: { errors } } = useFormContext<OnboardingValues>()
 	return (
 		<div className="flex flex-col gap-4">
 			<TextField
 				label="Display name"
 				placeholder="The name guests will see"
-				value={data.displayName}
-				onChange={e => onChange({ displayName: e.target.value })}
+				{...register("displayName")}
+				error={!!errors.displayName}
+				helperText={errors.displayName?.message}
 				size="md"
 			/>
 			<TextField
 				label="Legal name"
 				placeholder="Your legal or business name"
-				value={data.legalName}
-				onChange={e => onChange({ legalName: e.target.value })}
+				{...register("legalName")}
+				error={!!errors.legalName}
+				helperText={errors.legalName?.message}
 				size="md"
 			/>
 			<div className="flex flex-col gap-1.5">
 				<label className="text-label-md text-text-primary">Host bio</label>
 				<textarea
 					placeholder="Tell guests about yourself and what makes your events special"
-					value={data.bio}
-					onChange={e => onChange({ bio: e.target.value })}
+					{...register("bio")}
 					rows={4}
 					className={clsx(
-						"w-full rounded-input border border-border-default bg-surface-canvas px-4 py-3",
+						"w-full rounded-input border bg-surface-canvas px-4 py-3",
 						"text-sm text-text-primary placeholder:text-text-muted outline-none resize-none",
 						"hover:border-border-strong focus:border-border-focused transition-colors duration-(--duration-120)",
+						errors.bio ? "border-border-brand" : "border-border-default",
 					)}
 				/>
+				{errors.bio && <p className="text-caption text-text-danger">{errors.bio.message}</p>}
 			</div>
 			<TextField
 				label="Tagline"
 				placeholder="A short catchy line about your hosting style"
-				value={data.tagline}
-				onChange={e => onChange({ tagline: e.target.value })}
+				{...register("tagline")}
+				error={!!errors.tagline}
+				helperText={errors.tagline?.message}
 				size="md"
 			/>
 			<TextField
 				label="PAN"
 				placeholder="ABCDE1234F"
-				value={data.pan}
-				onChange={e => onChange({ pan: e.target.value.toUpperCase() })}
+				{...register("pan", { setValueAs: (v: string) => v.toUpperCase() })}
+				error={!!errors.pan}
+				helperText={errors.pan?.message}
 				size="md"
 				hint="Required for payouts"
 			/>
@@ -209,39 +255,54 @@ function StepHostProfile({ data, onChange }: { data: FormData; onChange: (patch:
 
 function ChipSelect({
 	label,
+	name,
 	options,
-	value,
-	onChange,
 }: {
 	label: string
+	name: "categories" | "languages" | "operatingCities"
 	options: string[]
-	value: string[]
-	onChange: (v: string[]) => void
 }) {
-	function toggle(opt: string) {
-		onChange(value.includes(opt) ? value.filter(v => v !== opt) : [...value, opt])
-	}
-
+	const { control, formState: { errors } } = useFormContext<OnboardingValues>()
 	return (
 		<div>
 			<p className="text-label-md text-text-primary mb-2">{label}</p>
-			<div className="flex flex-wrap gap-2">
-				{options.map(opt => (
-					<button
-						key={opt}
-						type="button"
-						onClick={() => toggle(opt)}
-						className={clsx(
-							"px-4 py-2 rounded-full text-body-sm border transition-colors duration-(--duration-120)",
-							value.includes(opt)
-								? "bg-action-primary text-white border-action-primary"
-								: "border-border-default text-text-secondary hover:border-border-strong",
-						)}
-					>
-						{opt}
-					</button>
-				))}
-			</div>
+			<Controller
+				control={control}
+				name={name}
+				render={({ field }) => (
+					<div className="flex flex-wrap gap-2">
+						{options.map((opt) => {
+							const selected = (field.value as string[]).includes(opt)
+							return (
+								<button
+									key={opt}
+									type="button"
+									onClick={() =>
+										field.onChange(
+											selected
+												? (field.value as string[]).filter((v) => v !== opt)
+												: [...(field.value as string[]), opt],
+										)
+									}
+									className={clsx(
+										"px-4 py-2 rounded-full text-body-sm border transition-colors duration-(--duration-120)",
+										selected
+											? "bg-action-primary text-white border-action-primary"
+											: "border-border-default text-text-secondary hover:border-border-strong",
+									)}
+								>
+									{opt}
+								</button>
+							)
+						})}
+					</div>
+				)}
+			/>
+			{errors[name] && (
+				<p className="text-caption text-text-danger mt-1">
+					{errors[name]?.message as string}
+				</p>
+			)}
 		</div>
 	)
 }
@@ -249,42 +310,35 @@ function ChipSelect({
 const CATEGORY_OPTIONS = ["Music", "Art", "Food & Drink", "Sports", "Tech", "Wellness", "Networking", "Comedy", "Film", "Education"]
 const LANGUAGE_OPTIONS = ["English", "Hindi", "Bengali", "Marathi", "Tamil", "Telugu", "Kannada", "Malayalam", "Gujarati", "Punjabi"]
 
-function StepCategoriesLanguages({ data, onChange }: { data: FormData; onChange: (patch: Partial<FormData>) => void }) {
+function StepCategoriesLanguages() {
 	return (
 		<div className="flex flex-col gap-5">
-			<ChipSelect
-				label="Categories"
-				options={CATEGORY_OPTIONS}
-				value={data.categories}
-				onChange={v => onChange({ categories: v })}
-			/>
-			<ChipSelect
-				label="Languages"
-				options={LANGUAGE_OPTIONS}
-				value={data.languages}
-				onChange={v => onChange({ languages: v })}
-			/>
+			<ChipSelect label="Categories" name="categories" options={CATEGORY_OPTIONS} />
+			<ChipSelect label="Languages" name="languages" options={LANGUAGE_OPTIONS} />
 		</div>
 	)
 }
 
-function StepExperience({ data, onChange }: { data: FormData; onChange: (patch: Partial<FormData>) => void }) {
+function StepExperience() {
+	const { register, formState: { errors } } = useFormContext<OnboardingValues>()
 	return (
 		<div className="flex flex-col gap-4">
 			<TextField
 				label="Years of experience"
 				placeholder="e.g. 3"
 				type="number"
-				value={data.yearsOfExperience === "" ? "" : String(data.yearsOfExperience)}
-				onChange={e => onChange({ yearsOfExperience: e.target.value === "" ? "" : Number(e.target.value) })}
+				{...register("yearsOfExperience")}
+				error={!!errors.yearsOfExperience}
+				helperText={errors.yearsOfExperience?.message}
 				size="md"
 			/>
 			<TextField
 				label="Total events hosted previously"
 				placeholder="e.g. 20"
 				type="number"
-				value={data.totalEventsHosted === "" ? "" : String(data.totalEventsHosted)}
-				onChange={e => onChange({ totalEventsHosted: e.target.value === "" ? "" : Number(e.target.value) })}
+				{...register("totalEventsHosted")}
+				error={!!errors.totalEventsHosted}
+				helperText={errors.totalEventsHosted?.message}
 				size="md"
 			/>
 		</div>
@@ -293,61 +347,59 @@ function StepExperience({ data, onChange }: { data: FormData; onChange: (patch: 
 
 const CITY_OPTIONS = ["Mumbai", "Delhi", "Bengaluru", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad", "Jaipur", "Surat"]
 
-function StepOperatingCities({ data, onChange }: { data: FormData; onChange: (patch: Partial<FormData>) => void }) {
-	return (
-		<ChipSelect
-			label="Cities where you host events"
-			options={CITY_OPTIONS}
-			value={data.operatingCities}
-			onChange={v => onChange({ operatingCities: v })}
-		/>
-	)
+function StepOperatingCities() {
+	return <ChipSelect label="Cities where you host events" name="operatingCities" options={CITY_OPTIONS} />
 }
 
-function StepSocialLinks({ data, onChange }: { data: FormData; onChange: (patch: Partial<FormData>) => void }) {
+function StepSocialLinks() {
+	const { register, formState: { errors } } = useFormContext<OnboardingValues>()
 	return (
 		<TextField
 			label="Instagram"
 			placeholder="@yourhandle"
-			value={data.instagram}
-			onChange={e => onChange({ instagram: e.target.value })}
+			{...register("instagram")}
+			error={!!errors.instagram}
+			helperText={errors.instagram?.message}
 			size="md"
 			hint="Optional"
 		/>
 	)
 }
 
-function StepAddress({ data, onChange }: { data: FormData; onChange: (patch: Partial<FormData>) => void }) {
+function StepAddress() {
+	const { register, formState: { errors } } = useFormContext<OnboardingValues>()
 	return (
 		<div className="flex flex-col gap-4">
 			<TextField
 				label="Address line 1"
 				placeholder="Building, street"
-				value={data.addressLine1}
-				onChange={e => onChange({ addressLine1: e.target.value })}
+				{...register("addressLine1")}
+				error={!!errors.addressLine1}
+				helperText={errors.addressLine1?.message}
 				size="md"
 			/>
 			<TextField
 				label="Address line 2"
 				placeholder="Area, landmark (optional)"
-				value={data.addressLine2}
-				onChange={e => onChange({ addressLine2: e.target.value })}
+				{...register("addressLine2")}
 				size="md"
 			/>
 			<div className="flex gap-3">
 				<TextField
 					label="City"
 					placeholder="Mumbai"
-					value={data.city}
-					onChange={e => onChange({ city: e.target.value })}
+					{...register("city")}
+					error={!!errors.city}
+					helperText={errors.city?.message}
 					size="md"
 					className="flex-1"
 				/>
 				<TextField
 					label="State"
 					placeholder="Maharashtra"
-					value={data.state}
-					onChange={e => onChange({ state: e.target.value })}
+					{...register("state")}
+					error={!!errors.state}
+					helperText={errors.state?.message}
 					size="md"
 					className="flex-1"
 				/>
@@ -355,8 +407,9 @@ function StepAddress({ data, onChange }: { data: FormData; onChange: (patch: Par
 			<TextField
 				label="Pincode"
 				placeholder="400001"
-				value={data.pincode}
-				onChange={e => onChange({ pincode: e.target.value.replace(/\D/g, "").slice(0, 6) })}
+				{...register("pincode", { setValueAs: (v: string) => v.replace(/\D/g, "").slice(0, 6) })}
+				error={!!errors.pincode}
+				helperText={errors.pincode?.message}
 				size="md"
 			/>
 		</div>
@@ -367,61 +420,84 @@ function StepAddress({ data, onChange }: { data: FormData; onChange: (patch: Par
 
 export default function OnboardingPage() {
 	const [step, setStep] = useState(0)
-	const [formData, setFormData] = useState<FormData>(INITIAL)
 	const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY)
-	const [submitError, setSubmitError] = useState("")
 	const [submitting, setSubmitting] = useState(false)
 	const { user } = useAuth()
+	const { phone, email, clearSession } = useAuthSessionStore()
 	const router = useRouter()
 
-	// Pre-fill phone/email from session
+	const methods = useForm<OnboardingValues>({
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		resolver: zodResolver(onboardingSchema) as any,
+		defaultValues: {
+			firstName: "",
+			lastName: "",
+			phone: "",
+			email: "",
+			accountType: "",
+			hostType: "",
+			displayName: "",
+			legalName: "",
+			bio: "",
+			tagline: "",
+			pan: "",
+			categories: [],
+			languages: [],
+			yearsOfExperience: 0,
+			totalEventsHosted: 0,
+			operatingCities: [],
+			instagram: "",
+			addressLine1: "",
+			addressLine2: "",
+			city: "",
+			state: "",
+			pincode: "",
+		},
+	})
+
+	const { handleSubmit, trigger, setValue } = methods
+
 	useEffect(() => {
-		const raw = sessionStorage.getItem("authSession")
-		if (!raw) return
-		const session = JSON.parse(raw) as AuthSession
-		setFormData(prev => ({
-			...prev,
-			phone: session.phone ? session.phone.replace(/^\+91/, "") : prev.phone,
-			email: session.email ?? prev.email,
-		}))
-	}, [])
-
-	function patch(p: Partial<FormData>) {
-		setFormData(prev => ({ ...prev, ...p }))
-	}
-
-	const stepComponents = [
-		<StepPersonal key={0} data={formData} onChange={patch} country={country} onCountryChange={setCountry} />,
-		<StepAccount key={1} data={formData} onChange={patch} />,
-		<StepHostProfile key={2} data={formData} onChange={patch} />,
-		<StepCategoriesLanguages key={3} data={formData} onChange={patch} />,
-		<StepExperience key={4} data={formData} onChange={patch} />,
-		<StepOperatingCities key={5} data={formData} onChange={patch} />,
-		<StepSocialLinks key={6} data={formData} onChange={patch} />,
-		<StepAddress key={7} data={formData} onChange={patch} />,
-	]
+		if (phone) setValue("phone", phone.replace(/^\+91/, ""))
+		if (email) setValue("email", email)
+	}, [phone, email, setValue])
 
 	const isLastStep = step === STEPS.length - 1
 
+	const stepComponents = [
+		<StepPersonal key={0} country={country} onCountryChange={setCountry} />,
+		<StepAccount key={1} />,
+		<StepHostProfile key={2} />,
+		<StepCategoriesLanguages key={3} />,
+		<StepExperience key={4} />,
+		<StepOperatingCities key={5} />,
+		<StepSocialLinks key={6} />,
+		<StepAddress key={7} />,
+	]
+
 	async function handleNext() {
-		if (!isLastStep) { setStep(s => s + 1); return }
+		const valid = await trigger(STEP_FIELDS[step] as (keyof OnboardingValues)[])
+		if (!valid) return
+		if (!isLastStep) { setStep((s) => s + 1); return }
 
 		if (!user) { router.replace("/login"); return }
-		setSubmitError("")
 		setSubmitting(true)
 		try {
-			const idToken = await user.getIdToken()
+			const values = methods.getValues()
 			const payload: HostRegistrationData = {
-				...formData,
-				phone: `${country.dialCode}${formData.phone}`,
-				yearsOfExperience: Number(formData.yearsOfExperience) || 0,
-				totalEventsHosted: Number(formData.totalEventsHosted) || 0,
+				...values,
+				phone: `${country.dialCode}${values.phone}`,
+				yearsOfExperience: Number(values.yearsOfExperience),
+				totalEventsHosted: Number(values.totalEventsHosted),
+				instagram: values.instagram ?? "",
+				addressLine2: values.addressLine2 ?? "",
 			}
-			await registerHost(idToken, payload)
-			sessionStorage.removeItem("authSession")
+			await registerHost(payload)
+			clearSession()
+			toast.success("Profile submitted successfully!")
 			router.push("/dashboard")
 		} catch {
-			setSubmitError("Registration failed. Please try again.")
+			toast.error("Registration failed. Please try again.")
 		} finally {
 			setSubmitting(false)
 		}
@@ -429,7 +505,6 @@ export default function OnboardingPage() {
 
 	return (
 		<div className="w-full max-w-lg bg-surface-card rounded-modal shadow-modal px-6 py-8 lg:px-8 lg:py-10">
-			{/* Step header */}
 			<div className="mb-6">
 				<p className="text-caption text-text-muted mb-1">
 					Step {step + 1} of {STEPS.length}
@@ -437,7 +512,6 @@ export default function OnboardingPage() {
 				<h1 className="text-heading-sm text-text-primary">{STEPS[step]}</h1>
 			</div>
 
-			{/* Progress bar */}
 			<div className="w-full h-1 bg-border-subtle rounded-full mb-8">
 				<div
 					className="h-full bg-action-primary rounded-full transition-all duration-300"
@@ -445,14 +519,12 @@ export default function OnboardingPage() {
 				/>
 			</div>
 
-			{/* Step content */}
-			{stepComponents[step]}
+			<FormProvider {...methods}>
+				<form onSubmit={handleSubmit(() => {})}>
+					{stepComponents[step]}
+				</form>
+			</FormProvider>
 
-			{submitError && (
-				<p className="text-caption text-text-danger mt-4">{submitError}</p>
-			)}
-
-			{/* Navigation */}
 			<div className="flex gap-3 mt-8">
 				{step > 0 && (
 					<Button
@@ -461,7 +533,7 @@ export default function OnboardingPage() {
 						size="md"
 						radius="pill"
 						className="flex-1"
-						onClick={() => setStep(s => s - 1)}
+						onClick={() => setStep((s) => s - 1)}
 						disabled={submitting}
 					>
 						Back

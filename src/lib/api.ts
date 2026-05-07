@@ -1,4 +1,5 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL
+import { isAxiosError } from "axios"
+import apiClient from "./axios"
 
 export class UserNotFoundError extends Error {
 	constructor() {
@@ -16,31 +17,23 @@ export type UserDetails = {
 }
 
 export type HostRegistrationData = {
-	// Personal
 	firstName: string
 	lastName: string
 	phone: string
 	email: string
-	// Account
 	accountType: string
 	hostType: string
-	// Host profile
 	displayName: string
 	legalName: string
 	bio: string
 	tagline: string
 	pan: string
-	// Categories & languages
 	categories: string[]
 	languages: string[]
-	// Experience
 	yearsOfExperience: number
 	totalEventsHosted: number
-	// Operating cities
 	operatingCities: string[]
-	// Social
 	instagram: string
-	// Address
 	addressLine1: string
 	addressLine2: string
 	city: string
@@ -48,30 +41,17 @@ export type HostRegistrationData = {
 	pincode: string
 }
 
-async function authedFetch(path: string, idToken: string, init?: RequestInit) {
-	const res = await fetch(`${API_BASE}${path}`, {
-		...init,
-		headers: {
-			Authorization: `Bearer ${idToken}`,
-			"Content-Type": "application/json",
-			...init?.headers,
-		},
-	})
-	return res
+export async function fetchUserDetails(): Promise<UserDetails> {
+	try {
+		const { data } = await apiClient.get<UserDetails>("/users/me")
+		return data
+	} catch (e) {
+		if (isAxiosError(e) && e.response?.status === 404) throw new UserNotFoundError()
+		throw e
+	}
 }
 
-export async function fetchUserDetails(idToken: string): Promise<UserDetails> {
-	const res = await authedFetch("/users/me", idToken)
-	if (res.status === 404) throw new UserNotFoundError()
-	if (!res.ok) throw new Error("Failed to fetch user details")
-	return res.json()
-}
-
-export async function registerHost(idToken: string, data: HostRegistrationData): Promise<UserDetails> {
-	const res = await authedFetch("/hosts/register", idToken, {
-		method: "POST",
-		body: JSON.stringify(data),
-	})
-	if (!res.ok) throw new Error("Registration failed")
-	return res.json()
+export async function registerHost(data: HostRegistrationData): Promise<UserDetails> {
+	const { data: result } = await apiClient.post<UserDetails>("/hosts/register", data)
+	return result
 }

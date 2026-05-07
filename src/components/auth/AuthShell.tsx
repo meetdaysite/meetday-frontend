@@ -10,7 +10,7 @@ export function AuthShell({ children, phoneImage, pointsImage }: AuthShellProps)
 	return (
 		<div className="flex flex-1">
 			{/* ── Left — form panel ── */}
-			<div className="flex flex-1 items-center justify-center overflow-y-auto px-4 py-8 lg:pl-8 lg:pr-3 xl:pl-12 xl:pr-4">
+			<div className="flex flex-1 items-center justify-center px-4 py-8 lg:pl-8 lg:pr-3 xl:pl-12 xl:pr-4">
 				<div
 					className={[
 						"w-full bg-surface-card rounded-modal shadow-modal",
@@ -64,6 +64,7 @@ export function AuthShell({ children, phoneImage, pointsImage }: AuthShellProps)
 						src={pointsImage}
 						alt=""
 						fill
+						loading="eager"
 						className="object-contain object-center"
 						aria-hidden
 					/>

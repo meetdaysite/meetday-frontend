@@ -3,14 +3,31 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { toast } from "sonner"
 import { AuthShell } from "@/components/auth/AuthShell"
 import { OtpInput } from "@/components/auth/OtpInput"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import LockKeyholeSvg from "@/icons/outlined/lock-keyhole.svg"
 import { useAuth } from "@/context/AuthContext"
+import { useAuthSessionStore } from "@/store/authSessionStore"
 import { fetchUserDetails, UserNotFoundError } from "@/lib/api"
-import type { AuthSession } from "@/context/AuthContext"
+import { CountrySelect } from "@/components/auth/PhoneField"
+import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/countries"
+
+const schema = z.object({
+	otp: z
+		.string()
+		.length(6, "Enter the 6-digit OTP")
+		.regex(/^\d+$/, "OTP must contain only digits"),
+})
+
+type FormValues = z.infer<typeof schema>
+
+const RESEND_SECONDS = 42
 
 function ShieldCheckIcon() {
 	return (
@@ -52,27 +69,31 @@ function ArrowLeftIcon() {
 	)
 }
 
-const RESEND_SECONDS = 42
-
 export default function VerifyPage() {
-	const [otp, setOtp] = useState("")
 	const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS)
-	const [error, setError] = useState("")
 	const [loading, setLoading] = useState(false)
-	const [session, setSession] = useState<AuthSession | null>(null)
 	const { confirmOtp, sendOtp } = useAuth()
+	const { intent, phone, clearSession } = useAuthSessionStore()
 	const router = useRouter()
 	const canResend = secondsLeft === 0
 
+	const {
+		control,
+		handleSubmit,
+		setValue,
+		formState: { errors },
+	} = useForm<FormValues>({
+		resolver: zodResolver(schema),
+		defaultValues: { otp: "" },
+	})
+
 	useEffect(() => {
-		const raw = sessionStorage.getItem("authSession")
-		if (!raw) { router.replace("/login"); return }
-		setSession(JSON.parse(raw) as AuthSession)
-	}, [router])
+		if (!intent) router.replace("/login")
+	}, [intent, router])
 
 	useEffect(() => {
 		if (secondsLeft === 0) return
-		const t = setTimeout(() => setSecondsLeft(s => s - 1), 1000)
+		const t = setTimeout(() => setSecondsLeft((s) => s - 1), 1000)
 		return () => clearTimeout(t)
 	}, [secondsLeft])
 
@@ -80,57 +101,57 @@ export default function VerifyPage() {
 		`${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`
 
 	async function handleResend() {
-		if (!canResend || !session?.phone) return
-		setError("")
+		if (!canResend || !phone) return
 		try {
-			await sendOtp(session.phone, "recaptcha-container-verify")
+			await sendOtp(phone, "recaptcha-container-verify")
 			setSecondsLeft(RESEND_SECONDS)
+			toast.success("OTP resent!")
 		} catch {
-			setError("Failed to resend OTP. Please try again.")
+			toast.error("Failed to resend OTP. Please try again.")
 		}
 	}
 
-	async function handleVerify(e: React.FormEvent<HTMLFormElement>) {
-		e.preventDefault()
-		if (otp.length < 6 || !session) return
-		setError("")
+	async function onSubmit({ otp }: FormValues) {
 		setLoading(true)
 		try {
-			const idToken = await confirmOtp(otp)
+			await confirmOtp(otp)
 
 			let userExists = true
 			try {
-				await fetchUserDetails(idToken)
+				await fetchUserDetails()
 			} catch (e) {
 				if (e instanceof UserNotFoundError) userExists = false
 				else throw e
 			}
 
-			if (session.intent === "login") {
+			if (intent === "login") {
 				if (userExists) {
-					sessionStorage.removeItem("authSession")
+					clearSession()
 					router.push("/dashboard")
 				} else {
-					setError("Account not found. Please sign up.")
+					toast.error("Account not found. Please sign up.")
 				}
 			} else {
 				if (userExists) {
-					setError("Account already exists. Please log in.")
+					toast.error("Account already exists. Please log in.")
 				} else {
 					router.push("/onboarding")
 				}
 			}
 		} catch {
-			setError("Invalid OTP. Please try again.")
-			setOtp("")
+			toast.error("Invalid OTP. Please try again.")
+			setValue("otp", "")
 		} finally {
 			setLoading(false)
 		}
 	}
 
-	const backHref = session?.intent === "login" ? "/login" : "/signup"
-	const displayPhone = session?.phone
-		? session.phone.replace(/^\+91/, "").replace(/(\d{5})(\d{5})/, "$1-$2")
+	const backHref = intent === "login" ? "/login" : "/signup"
+	const inferredCountry = phone
+		? (COUNTRIES.find((c) => phone.startsWith(c.dialCode)) ?? DEFAULT_COUNTRY)
+		: DEFAULT_COUNTRY
+	const localPhone = phone
+		? phone.slice(inferredCountry.dialCode.length).replace(/(\d{5})(\d{5})/, "$1-$2")
 		: ""
 
 	return (
@@ -145,7 +166,7 @@ export default function VerifyPage() {
 				className="inline-flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors mb-8"
 			>
 				<ArrowLeftIcon />
-				{session?.intent === "login" ? "Back to Log in" : "Back to Sign up"}
+				{intent === "login" ? "Back to Log in" : "Back to Sign up"}
 			</Link>
 
 			<div className="size-14 mb-5">
@@ -162,18 +183,13 @@ export default function VerifyPage() {
 				</p>
 			</div>
 
-			<form className="flex flex-col gap-5" onSubmit={handleVerify}>
-				{/* Phone display */}
+			<form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)}>
 				<div>
 					<p className="text-label-md text-text-primary mb-1.5">Phone number</p>
-					<div className="flex items-center justify-between rounded-input border border-border-default bg-surface-canvas px-4 h-(--size-input-md)">
-						<div className="flex items-center gap-2 text-body-sm text-text-primary">
-							<span>🇮🇳</span>
-							<span>+91</span>
-							<span className="text-text-muted mx-1">·</span>
-							<span>{displayPhone}</span>
-						</div>
-						<Link href={backHref} className="text-label-md text-text-link hover:underline">
+					<div className="flex items-center rounded-input border border-border-default bg-surface-canvas h-(--size-input-md)">
+						<CountrySelect value={inferredCountry} onChange={() => {}} disabled />
+						<span className="flex-1 px-3 text-body-sm text-text-primary">{localPhone}</span>
+						<Link href={backHref} className="text-label-md text-text-link hover:underline pr-4">
 							Edit
 						</Link>
 					</div>
@@ -181,10 +197,17 @@ export default function VerifyPage() {
 
 				<div>
 					<p className="text-label-md text-text-primary mb-3">Enter 6-digit OTP</p>
-					<OtpInput value={otp} onChange={setOtp} length={6} />
+					<Controller
+						control={control}
+						name="otp"
+						render={({ field }) => (
+							<OtpInput value={field.value} onChange={field.onChange} length={6} />
+						)}
+					/>
+					{errors.otp && (
+						<p className="text-caption text-text-danger mt-2">{errors.otp.message}</p>
+					)}
 				</div>
-
-				{error && <p className="text-caption text-text-danger">{error}</p>}
 
 				<p className="text-body-sm text-text-secondary">
 					Didn&apos;t receive the code?{" "}
@@ -209,7 +232,7 @@ export default function VerifyPage() {
 					radius="pill"
 					className="w-full"
 					leftIcon={<Icon as={LockKeyholeSvg} />}
-					disabled={otp.length < 6 || loading}
+					disabled={loading}
 				>
 					{loading ? "Verifying…" : "Verify OTP"}
 				</Button>

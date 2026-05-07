@@ -3,53 +3,71 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { toast } from "sonner"
 import { AuthShell } from "@/components/auth/AuthShell"
 import { AuthTabs } from "@/components/auth/AuthTabs"
 import { SocialSignIn } from "@/components/auth/SocialSignIn"
 import { Button } from "@/components/ui/Button"
 import { PhoneField } from "@/components/auth/PhoneField"
 import { useAuth } from "@/context/AuthContext"
+import { useAuthSessionStore } from "@/store/authSessionStore"
 import { fetchUserDetails, UserNotFoundError } from "@/lib/api"
 import { DEFAULT_COUNTRY, type Country } from "@/lib/countries"
-import type { AuthSession } from "@/context/AuthContext"
+
+const schema = z.object({
+	phone: z
+		.string()
+		.min(10, "Enter a valid 10-digit phone number")
+		.max(10, "Enter a valid 10-digit phone number")
+		.regex(/^\d+$/, "Phone number must contain only digits"),
+})
+
+type FormValues = z.infer<typeof schema>
 
 export default function LoginPage() {
-	const [phone, setPhone] = useState("")
 	const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY)
-	const [error, setError] = useState("")
 	const [loading, setLoading] = useState(false)
 	const { sendOtp, signInWithGoogle } = useAuth()
+	const setSession = useAuthSessionStore((s) => s.setSession)
 	const router = useRouter()
 
-	async function handleSendOtp(e: React.FormEvent<HTMLFormElement>) {
-		e.preventDefault()
-		if (!phone || phone.length < 10) return
-		setError("")
+	const {
+		control,
+		handleSubmit,
+		formState: { errors },
+	} = useForm<FormValues>({
+		resolver: zodResolver(schema),
+		defaultValues: { phone: "" },
+	})
+
+	async function onSubmit({ phone }: FormValues) {
 		setLoading(true)
 		try {
 			await sendOtp(`${country.dialCode}${phone}`, "recaptcha-container")
-			const session: AuthSession = { intent: "login", phone: `${country.dialCode}${phone}` }
-			sessionStorage.setItem("authSession", JSON.stringify(session))
+			setSession({ intent: "login", phone: `${country.dialCode}${phone}` })
+			toast.success("OTP sent to your phone!")
 			router.push("/verify")
 		} catch {
-			setError("Failed to send OTP. Please check the number and try again.")
+			toast.error("Failed to send OTP. Please check the number and try again.")
 		} finally {
 			setLoading(false)
 		}
 	}
 
 	async function handleGoogleSignIn() {
-		setError("")
 		setLoading(true)
 		try {
-			const { idToken } = await signInWithGoogle()
-			await fetchUserDetails(idToken)
+			await signInWithGoogle()
+			await fetchUserDetails()
 			router.push("/dashboard")
 		} catch (e) {
 			if (e instanceof UserNotFoundError) {
-				setError("Account not found. Please sign up.")
+				toast.error("Account not found. Please sign up.")
 			} else {
-				setError("Google sign-in failed. Please try again.")
+				toast.error("Google sign-in failed. Please try again.")
 			}
 		} finally {
 			setLoading(false)
@@ -70,17 +88,22 @@ export default function LoginPage() {
 				</p>
 			</div>
 
-			<form className="flex flex-col gap-4" onSubmit={handleSendOtp}>
-				<PhoneField
-					label="Phone number"
-					value={phone}
-					onChange={setPhone}
-					country={country}
-					onCountryChange={setCountry}
-					disabled={loading}
+			<form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+				<Controller
+					control={control}
+					name="phone"
+					render={({ field }) => (
+						<PhoneField
+							label="Phone number"
+							value={field.value}
+							onChange={field.onChange}
+							country={country}
+							onCountryChange={setCountry}
+							disabled={loading}
+							error={errors.phone?.message}
+						/>
+					)}
 				/>
-
-				{error && <p className="text-caption text-text-danger">{error}</p>}
 
 				<Button
 					type="submit"
@@ -88,7 +111,7 @@ export default function LoginPage() {
 					size="md"
 					radius="pill"
 					className="w-full mt-1"
-					disabled={phone.length < 10 || loading}
+					disabled={loading}
 				>
 					Send OTP
 				</Button>
