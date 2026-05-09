@@ -122,7 +122,38 @@ export const STEP_PANEL_CONFIGS: StepPanelConfig[] = [
 		],
 	},
 
-	// Step 4 — Review your details
+	// Step 4 — Experience & Focus
+	{
+		headingPlain: "Let your",
+		headingHighlight: "experience speak",
+		description: "Every event you've hosted has shaped who you are. Tell us about your journey so we can match you with the right tools and community.",
+		personImage: "/onboarding/person-2.png",
+		cards: [
+			{
+				icon: "/icons/onboarding/stars.svg",
+				iconBg: "#FFFBEB",
+				title: "Expertise recognised",
+				body: "Your experience helps you stand out.",
+				position: { top: "36%", right: "2%" },
+			},
+			{
+				icon: "/icons/onboarding/users-group.svg",
+				iconBg: "#EFF6FF",
+				title: "Right community",
+				body: "Get matched with hosts at your level.",
+				position: { top: "52%", left: "4%" },
+			},
+			{
+				icon: "/icons/onboarding/chart-2.svg",
+				iconBg: "#F0FDF4",
+				title: "Better visibility",
+				body: "Your focus areas attract the right audience.",
+				position: { bottom: "8%", left: "18%" },
+			},
+		],
+	},
+
+	// Step 5 — Review your details
 	{
 		headingPlain: "Make your",
 		headingHighlight: "profile feel human",

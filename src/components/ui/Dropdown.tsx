@@ -204,7 +204,7 @@ export function Dropdown({
 					{label && (
 						<label
 							htmlFor={inputId}
-							className={clsx("text-label-md", disabled ? "text-action-disabled-text" : "text-text-primary")}
+							className={clsx("text-label-sm font-semibold", disabled ? "text-action-disabled-text" : "text-text-primary")}
 						>
 							{label}
 						</label>

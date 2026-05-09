@@ -80,6 +80,7 @@ export function OnboardingLeftPanel({ config }: Props) {
 						width={80}
 						height={40}
 						className="shrink-0"
+						style={{ height: "auto" }}
 						aria-hidden
 					/>
 					<p className="text-body-sm font-bold text-text-inverse leading-snug flex-1">

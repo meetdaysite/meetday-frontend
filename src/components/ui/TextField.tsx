@@ -46,7 +46,7 @@ export function TextField({
 						<label
 							htmlFor={inputId}
 							className={clsx(
-								"text-label-md",
+								"text-label-sm font-semibold",
 								disabled ? "text-action-disabled-text" : "text-text-primary",
 							)}
 						>
