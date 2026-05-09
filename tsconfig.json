@@ -21,7 +21,9 @@
     "paths": {
       "@/*": ["./src/*"],
       "@/icons/filled/*": ["./public/icons/filled/*"],
-      "@/icons/outlined/*": ["./public/icons/outlined/*"]
+      "@/icons/outlined/*": ["./public/icons/outlined/*"],
+      "@/icons/duotone/*": ["./public/icons/duotone/*"],
+      "@/icons/socials/*": ["./public/icons/socials/*"]
     }
   },
   "include": [

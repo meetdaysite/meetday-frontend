@@ -15,8 +15,26 @@ import clsx from "clsx"
 import { Button } from "@/components/ui/Button"
 import { TextField } from "@/components/ui/TextField"
 import { Dropdown } from "@/components/ui/Dropdown"
+import { Icon } from "@/components/ui/Icon"
 import { OnboardingLeftPanel } from "@/components/onboarding/OnboardingLeftPanel"
 import { STEP_PANEL_CONFIGS } from "./config"
+import CalendarSvg from "@/icons/filled/calendar.svg"
+import CardSvg from "@/icons/filled/card.svg"
+import CheckCircleSvg from "@/icons/filled/check-circle.svg"
+import ChartSvg from "@/icons/filled/chart-2.svg"
+import DiplomaSvg from "@/icons/filled/diploma.svg"
+import HeartsSvg from "@/icons/filled/hearts.svg"
+import CameraAddSvg from "@/icons/outlined/camera-add.svg"
+import LockKeyholeSvg from "@/icons/outlined/lock-keyhole.svg"
+import InstagramSvg from "@/icons/socials/instagram.svg"
+import LinkedinSvg from "@/icons/socials/linkedin.svg"
+import YoutubeSvg from "@/icons/socials/youtube.svg"
+import LinkSvg from "@/icons/socials/link.svg"
+import DuotoneUserSvg from "@/icons/duotone/user.svg"
+import DuotoneCalenderSvg from "@/icons/duotone/calender.svg"
+import DuotoneUserHandsSvg from "@/icons/duotone/user-hands.svg"
+import DuotoneStarsSvg from "@/icons/duotone/stars.svg"
+import DuotoneShieldCheckSvg from "@/icons/duotone/shield-check.svg"
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -262,13 +280,7 @@ function StepHostProfile() {
 					) : (
 						<>
 							<div className="border border-border-default p-2 rounded-full">
-								<Image
-									src="/icons/outlined/camera-add.svg"
-									alt=""
-									width={24}
-									height={24}
-									aria-hidden
-								/>
+								<Icon as={CameraAddSvg} size="lg" />
 							</div>
 							<span className="text-[10px] text-text-muted text-center px-1">
 								<span className="text-label-sm text-text-primary font-semibold">
@@ -357,7 +369,7 @@ function StepLinksLegal() {
 				<p className="text-label-sm font-semibold text-text-primary">Social media links</p>
 				<div className="flex justify-center items-center gap-2">
 					<div className="border border-border-default p-2 rounded-xl bg-action-secondary-hover">
-						<Image src="/icons/socials/instagram.svg" alt="" width={24} height={24} aria-hidden />
+						<Icon as={InstagramSvg} size="lg" />
 					</div>
 					<TextField
 						placeholder="instagram.com/yourhandle"
@@ -368,7 +380,7 @@ function StepLinksLegal() {
 				</div>
 				<div className="flex justify-center items-center gap-2">
 					<div className="border border-border-default p-2 rounded-xl bg-action-secondary-hover">
-						<Image src="/icons/socials/linkedin.svg" alt="" width={24} height={24} aria-hidden />
+						<Icon as={LinkedinSvg} size="lg" />
 					</div>
 					<TextField
 						placeholder="linkedin.com/in/yourprofile"
@@ -380,7 +392,7 @@ function StepLinksLegal() {
 
 				<div className="flex justify-center items-center gap-2">
 					<div className="border border-border-default p-2 rounded-xl bg-action-secondary-hover">
-						<Image src="/icons/socials/youtube.svg" alt="" width={24} height={24} aria-hidden />
+						<Icon as={YoutubeSvg} size="lg" />
 					</div>
 					<TextField
 						placeholder="youtube.com/@yourusername"
@@ -392,7 +404,7 @@ function StepLinksLegal() {
 
 				<div className="flex justify-center items-center gap-2">
 					<div className="border border-border-default p-2 rounded-xl bg-action-secondary-hover">
-						<Image src="/icons/socials/link.svg" alt="" width={24} height={24} aria-hidden />
+						<Icon as={LinkSvg} size="lg" />
 					</div>
 					<TextField
 						placeholder="yourwebsite.com"
@@ -433,14 +445,7 @@ function StepLinksLegal() {
 			/>
 
 			<p className="flex items-center gap-1.5 text-caption text-text-secondary">
-				<Image
-					src="/icons/outlined/lock-keyhole.svg"
-					alt=""
-					width={12}
-					height={12}
-					aria-hidden
-					className="opacity-80"
-				/>
+				<Icon as={LockKeyholeSvg} size="sm" className="opacity-80" />
 				Your information is encrypted and never shared quickly.
 			</p>
 		</div>
@@ -585,7 +590,7 @@ function StepReviewDetails({ onJumpTo }: { onJumpTo: (step: number) => void }) {
 	const sections = [
 		{
 			label: "Account",
-			icon: "/icons/duotone/user.svg",
+			icon: DuotoneUserSvg,
 			details: [
 				[values.firstName, values.lastName].filter(Boolean).join(" ") || "—",
 				"hello@meetday.com",
@@ -594,19 +599,19 @@ function StepReviewDetails({ onJumpTo }: { onJumpTo: (step: number) => void }) {
 		},
 		{
 			label: "Host type",
-			icon: "/icons/duotone/calender.svg",
+			icon: DuotoneCalenderSvg,
 			details: ["I host events", values.accountType ?? "In-person"],
 			jumpStep: 0,
 		},
 		{
 			label: "Profile",
-			icon: "/icons/duotone/user-hands.svg",
+			icon: DuotoneUserHandsSvg,
 			details: [values.displayName || values.firstName || "—", "Kolkata, WB"],
 			jumpStep: 1,
 		},
 		{
 			label: "Experience & Focus",
-			icon: "/icons/duotone/stars.svg",
+			icon: DuotoneStarsSvg,
 			details: [
 				values.eventsHosted || "—",
 				values.yearsExperience || "—",
@@ -616,7 +621,7 @@ function StepReviewDetails({ onJumpTo }: { onJumpTo: (step: number) => void }) {
 		},
 		{
 			label: "Link & KYC",
-			icon: "/icons/duotone/shield-check.svg",
+			icon: DuotoneShieldCheckSvg,
 			details: [
 				values.instagram ? `Instagram: @${values.instagram}` : "Instagram: —",
 				values.pan ? "ID Verified" : "ID Pending",
@@ -633,7 +638,7 @@ function StepReviewDetails({ onJumpTo }: { onJumpTo: (step: number) => void }) {
 					className="flex items-center gap-3 rounded-card border border-border-default bg-surface-canvas px-4 py-4"
 				>
 					<div className="size-11 rounded-full border border-border-default bg-surface-canvas flex items-center justify-center shrink-0">
-						<Image src={s.icon} alt="" width={24} height={24} aria-hidden />
+						<Icon as={s.icon} size="md" />
 					</div>
 
 					<div className="flex-1 min-w-0">
@@ -684,7 +689,7 @@ function StepPayoutDetails() {
 			<div className="flex items-center justify-between rounded-card border border-border-default bg-surface-canvas px-4 py-3">
 				<div className="flex items-center gap-3">
 					<div className="size-10 rounded-badge bg-surface-success-soft flex items-center justify-center shrink-0">
-						<Image src="/icons/filled/card.svg" alt="" width={24} height={24} aria-hidden />
+						<Icon as={CardSvg} size="lg" color="success" />
 					</div>
 					<div>
 						<p className="text-label-md text-text-primary font-bold">PAN Auto-detected</p>
@@ -692,7 +697,7 @@ function StepPayoutDetails() {
 					</div>
 				</div>
 				<span className="flex items-center gap-1 text-caption font-medium text-text-success bg-surface-success-soft px-2 py-1 rounded-avatar">
-					<Image src="/icons/filled/check-circle.svg" alt="" width={16} height={16} aria-hidden />
+					<Icon as={CheckCircleSvg} size="sm" color="success" />
 					Verified
 				</span>
 			</div>
@@ -735,14 +740,7 @@ function StepPayoutDetails() {
 			</div>
 
 			<p className="flex items-center gap-1.5 text-caption text-text-muted">
-				<Image
-					src="/icons/outlined/lock-keyhole.svg"
-					alt=""
-					width={12}
-					height={12}
-					aria-hidden
-					className="opacity-80"
-				/>
+				<Icon as={LockKeyholeSvg} size="sm" className="opacity-80" />
 				Your information is encrypted and secured
 			</p>
 		</div>
@@ -761,7 +759,7 @@ function StepReviewPayout() {
 			<div className="flex items-center justify-between rounded-card border border-border-default bg-surface-canvas px-4 py-3">
 				<div className="flex items-center gap-3">
 					<div className="size-10 rounded-badge bg-surface-success-soft flex items-center justify-center shrink-0">
-						<Image src="/icons/filled/card.svg" alt="" width={24} height={24} aria-hidden />
+						<Icon as={CardSvg} size="lg" color="success" />
 					</div>
 					<div>
 						<p className="text-label-md text-text-primary font-bold">PAN Auto-detected</p>
@@ -769,7 +767,7 @@ function StepReviewPayout() {
 					</div>
 				</div>
 				<span className="flex items-center gap-1 text-caption font-medium text-text-success bg-surface-success-soft px-2 py-1 rounded-avatar">
-					<Image src="/icons/filled/check-circle.svg" alt="" width={16} height={16} aria-hidden />
+					<Icon as={CheckCircleSvg} size="sm" color="success" />
 					Verified
 				</span>
 			</div>
@@ -791,14 +789,7 @@ function StepReviewPayout() {
 			</div>
 
 			<p className="flex items-center gap-1.5 text-caption text-text-muted">
-				<Image
-					src="/icons/outlined/lock-keyhole.svg"
-					alt=""
-					width={12}
-					height={12}
-					aria-hidden
-					className="opacity-80"
-				/>
+				<Icon as={LockKeyholeSvg} size="sm" className="opacity-80" />
 				Your information is encrypted and never shared quickly.
 			</p>
 		</div>
@@ -998,22 +989,25 @@ const QUICK_ACTIONS = [
 	{
 		label: "Create Event",
 		desc: "Start building an amazing experience",
-		icon: "/icons/filled/calendar.svg",
-		iconBg: "#FEE2E2",
+		icon: CalendarSvg,
+		iconBg: "#FFF1F1",
+		iconColor: "brand" as const,
 		href: "/events/create",
 	},
 	{
 		label: "View dashboard",
 		desc: "Explore your overview and insights.",
-		icon: "/icons/filled/chart-2.svg",
-		iconBg: "#DBEAFE",
+		icon: ChartSvg,
+		iconBg: "#EEF5FF",
+		iconColor: "info" as const,
 		href: "/dashboard",
 	},
 	{
 		label: "Invite your team",
 		desc: "Add team members and collaborate.",
-		icon: "/icons/filled/diploma.svg",
-		iconBg: "#CCFBF1",
+		icon: DiplomaSvg,
+		iconBg: "#ECFDF5",
+		iconColor: "success" as const,
 		href: "/team",
 	},
 ]
@@ -1068,7 +1062,7 @@ function StepSuccess({ onEnter }: { onEnter: () => void }) {
 							className="size-11 rounded-xl flex items-center justify-center shrink-0"
 							style={{ backgroundColor: a.iconBg }}
 						>
-							<Image src={a.icon} alt="" width={22} height={22} aria-hidden />
+							<Icon as={a.icon} size="lg" color={a.iconColor} />
 						</div>
 						<div className="flex-1 min-w-0">
 							<p className="text-label-sm font-bold text-text-primary">{a.label}</p>
@@ -1084,7 +1078,7 @@ function StepSuccess({ onEnter }: { onEnter: () => void }) {
 				</p>
 				<p className="text-label-sm font-bold text-text-primary mt-1 flex items-center justify-center gap-1.5">
 					Let&apos;s go!
-					<Image src="/icons/filled/hearts.svg" alt="hearts" width={18} height={18} />
+					<Icon as={HeartsSvg} size="sm" color="brand" />
 				</p>
 			</div>
 		</div>
