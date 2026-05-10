@@ -1029,7 +1029,7 @@ function StepSuccess({ onEnter }: { onEnter: () => void }) {
 					>
 						<div className="flex items-center gap-3">
 							<CheckIcon />
-							<span className="text-body-sm text-text-primary">{item}</span>
+							<span className="text-body-sm text-text-primary font-semibold">{item}</span>
 						</div>
 						{i === CHECKLIST.length - 1 && (
 							<span className="text-caption font-medium text-text-success bg-surface-success-soft border border-green-200 px-2.5 py-0.5 rounded-avatar">
@@ -1046,7 +1046,7 @@ function StepSuccess({ onEnter }: { onEnter: () => void }) {
 			</Button>
 
 			{/* Quick actions */}
-			<p className="text-body-sm text-text-secondary text-center">What would you like to do most?</p>
+			<p className="text-body-sm text-text-secondary text-center font-semibold">What would you like to do most?</p>
 
 			<div className="grid grid-cols-3 gap-3">
 				{QUICK_ACTIONS.map(a => (
@@ -1073,7 +1073,7 @@ function StepSuccess({ onEnter }: { onEnter: () => void }) {
 				))}
 			</div>
 			<div className="text-center mt-1">
-				<p className="text-caption text-text-muted">
+				<p className="text-caption text-text-muted font-semibold">
 					You are now part of a community of hosts building connection and impact.
 				</p>
 				<p className="text-label-sm font-bold text-text-primary mt-1 flex items-center justify-center gap-1.5">
