@@ -55,14 +55,16 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 			</div>
 
 			<div className="px-4 pb-5">
-				<Button variant="primary" size="md" radius="pill" className="w-full">
-					+ Create new experience
-				</Button>
+				<Link href="/dashboard/create" onClick={onClose}>
+					<Button variant="primary" size="md" radius="pill" className="w-full">
+						+ Create new experience
+					</Button>
+				</Link>
 			</div>
 
 			<nav className="flex-1 px-3 flex flex-col gap-0.5">
 				{NAV_ITEMS.map(({ label, href, outlined: Outlined, filled: Filled }) => {
-					const isActive = pathname === href
+					const isActive = href === "/dashboard" ? pathname === href : pathname.startsWith(href)
 					return (
 						<Link
 							key={href}
