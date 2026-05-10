@@ -4,6 +4,7 @@ import clsx from "clsx"
 import { useEffect, useRef, useState } from "react"
 import * as flags from "country-flag-icons/react/3x2"
 import { COUNTRIES, DEFAULT_COUNTRY, type Country } from "@/lib/countries"
+import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 
 // ─── CountrySelect ────────────────────────────────────────────────────────────
 // Inline country + dial code picker that lives inside PhoneField's border.
@@ -22,20 +23,7 @@ function Flag({ code, className }: { code: string; className?: string }) {
 }
 
 function ChevronDown({ className }: { className?: string }) {
-	return (
-		<svg
-			viewBox="0 0 16 16"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.75}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className={className}
-			aria-hidden
-		>
-			<path d="M4 6l4 4 4-4" />
-		</svg>
-	)
+	return <AltArrowDownSvg className={className} aria-hidden />
 }
 
 export function CountrySelect({ value, onChange, disabled }: CountrySelectProps) {

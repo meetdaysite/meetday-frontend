@@ -12,6 +12,7 @@ import { OtpInput } from "@/components/auth/OtpInput"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import LockKeyholeSvg from "@/icons/outlined/lock-keyhole.svg"
+import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
 import { useAuth } from "@/context/AuthContext"
 import { useAuthSessionStore } from "@/store/authSessionStore"
 import { fetchUserDetails, UserNotFoundError } from "@/lib/api"
@@ -53,21 +54,6 @@ function ShieldCheckIcon() {
 	)
 }
 
-function ArrowLeftIcon() {
-	return (
-		<svg
-			viewBox="0 0 20 20"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={1.75}
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			className="size-4"
-		>
-			<path d="M12 4L6 10l6 6" />
-		</svg>
-	)
-}
 
 export default function VerifyPage() {
 	const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS)
@@ -165,7 +151,7 @@ export default function VerifyPage() {
 				href={backHref}
 				className="inline-flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors mb-8"
 			>
-				<ArrowLeftIcon />
+				<Icon as={ArrowLeftSvg} size="sm" />
 				{intent === "login" ? "Back to Log in" : "Back to Sign up"}
 			</Link>
 

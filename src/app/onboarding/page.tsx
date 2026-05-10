@@ -35,6 +35,7 @@ import DuotoneCalenderSvg from "@/icons/duotone/calender.svg"
 import DuotoneUserHandsSvg from "@/icons/duotone/user-hands.svg"
 import DuotoneStarsSvg from "@/icons/duotone/stars.svg"
 import DuotoneShieldCheckSvg from "@/icons/duotone/shield-check.svg"
+import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -1042,7 +1043,8 @@ function StepSuccess({ onEnter }: { onEnter: () => void }) {
 
 			{/* CTA */}
 			<Button type="button" variant="primary" size="lg" radius="pill" className="w-full" onClick={onEnter}>
-				Enter Host OS →
+				Enter Host OS
+				<AltArrowRightSvg className="size-5" aria-hidden />
 			</Button>
 
 			{/* Quick actions */}
@@ -1068,7 +1070,7 @@ function StepSuccess({ onEnter }: { onEnter: () => void }) {
 							<p className="text-label-sm font-bold text-text-primary">{a.label}</p>
 							<p className="text-[11px] text-text-muted leading-tight">{a.desc}</p>
 						</div>
-						<span className="text-body-sm text-text-secondary shrink-0">→</span>
+						<AltArrowRightSvg className="size-4 text-text-secondary shrink-0" aria-hidden />
 					</div>
 				))}
 			</div>
@@ -1257,7 +1259,7 @@ export default function OnboardingPage() {
 								onClick={handleNext}
 								disabled={submitting}
 							>
-								{submitting ? "Submitting…" : `${STEP_BUTTON_LABELS[step]} →`}
+								{submitting ? "Submitting…" : <>{STEP_BUTTON_LABELS[step]} <AltArrowRightSvg className="size-4" aria-hidden /></>}
 							</Button>
 						</div>
 					)}
