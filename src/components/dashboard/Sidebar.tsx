@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/Button"
 import type { ComponentType, SVGProps } from "react"
 
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
-import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
+import ClipboardListSvg from "@/icons/outlined/clipboard-list.svg"
+import UsersGroup2Svg from "@/icons/outlined/users-group-2.svg"
+import MessageSvg from "@/icons/outlined/message.svg"
 import CashOutOutSvg from "@/icons/outlined/cash-out.svg"
 import Chart2OutSvg from "@/icons/outlined/chart-2.svg"
 import SettingsOutSvg from "@/icons/outlined/settings.svg"
@@ -25,10 +27,12 @@ import SettingsFillSvg from "@/icons/filled/settings.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
-const NAV_ITEMS: { label: string; href: string; outlined: SvgIcon; filled: SvgIcon }[] = [
+const NAV_ITEMS: { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; dot?: boolean }[] = [
 	{ label: "Dashboard", href: "/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
-	{ label: "Drafts", href: "/dashboard/drafts", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "My Events", href: "/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg },
+	{ label: "Registrations", href: "/dashboard/registrations", outlined: ClipboardListSvg, filled: ClipboardListSvg },
+	{ label: "Attendees", href: "/dashboard/attendees", outlined: UsersGroup2Svg, filled: UsersGroup2Svg },
+	{ label: "Messages", href: "/dashboard/messages", outlined: MessageSvg, filled: MessageSvg, dot: true },
 	{ label: "Payouts", href: "/dashboard/payouts", outlined: CashOutOutSvg, filled: CashOutFillSvg },
 	{ label: "Insights", href: "/dashboard/insights", outlined: Chart2OutSvg, filled: Chart2FillSvg },
 	{ label: "Settings", href: "/dashboard/settings", outlined: SettingsOutSvg, filled: SettingsFillSvg },
@@ -63,7 +67,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 			</div>
 
 			<nav className="flex-1 px-3 flex flex-col gap-0.5">
-				{NAV_ITEMS.map(({ label, href, outlined: Outlined, filled: Filled }) => {
+				{NAV_ITEMS.map(({ label, href, outlined: Outlined, filled: Filled, dot }) => {
 					const isActive = href === "/dashboard" ? pathname === href : pathname.startsWith(href)
 					return (
 						<Link
@@ -82,7 +86,8 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 								size="md"
 								color={isActive ? "brand" : "secondary"}
 							/>
-							<span className="text-label-md">{label}</span>
+							<span className="text-label-md flex-1">{label}</span>
+							{dot && <span className="size-2 rounded-full bg-red-500 shrink-0" />}
 						</Link>
 					)
 				})}
