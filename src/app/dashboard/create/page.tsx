@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type 
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import { Dropdown } from "@/components/ui/Dropdown"
+import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 
 import FileTextSvg from "@/icons/outlined/file-text.svg"
 import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
@@ -11,11 +12,9 @@ import GalleryWideSvg from "@/icons/outlined/gallery-wide.svg"
 import TicketSvg from "@/icons/outlined/ticket.svg"
 import SettingsSvg from "@/icons/outlined/settings.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
-import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 import AddCircleSvg from "@/icons/outlined/add-circle.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
-import BellSvg from "@/icons/outlined/bell.svg"
 import CameraAddSvg from "@/icons/outlined/camera-add.svg"
 
 import type { ComponentType, ReactNode, SVGProps } from "react"
@@ -42,7 +41,7 @@ const defaultFormData = {
 	// Step 4
 	ticketName: "", price: "", totalCapacity: "", maxPerPerson: "", ticketDesc: "", saleStartDate: "", saleEndDate: "",
 	// Step 5
-	visibility: "", ageRestriction: "", refundPolicy: "", instructions: "",
+	visibility: "", ageRestriction: "", refundType: "", cutoffHours: "", refundPercent: "", instructions: "",
 }
 
 type FormData = typeof defaultFormData
@@ -126,11 +125,15 @@ function validateStep4(f: Pick<FormData, "ticketName" | "price" | "totalCapacity
 	return e
 }
 
-function validateStep5(f: Pick<FormData, "visibility" | "ageRestriction" | "refundPolicy" | "instructions">): Errors {
+function validateStep5(f: Pick<FormData, "visibility" | "ageRestriction" | "refundType" | "cutoffHours" | "refundPercent" | "instructions">): Errors {
 	const e: Errors = {}
 	if (!f.visibility) e.visibility = "Please select a visibility option."
 	if (!f.ageRestriction) e.ageRestriction = "Please select an age restriction."
-	if (!f.refundPolicy) e.refundPolicy = "Please select a refund policy."
+	if (!f.refundType) e.refundType = "Please select a refund type."
+	if (!f.cutoffHours.trim()) e.cutoffHours = "Cutoff hours is required."
+	else if (isNaN(Number(f.cutoffHours)) || Number(f.cutoffHours) < 0) e.cutoffHours = "Enter a valid number of hours."
+	if (!f.refundPercent.trim()) e.refundPercent = "Refund percent is required."
+	else if (isNaN(Number(f.refundPercent)) || Number(f.refundPercent) < 0 || Number(f.refundPercent) > 100) e.refundPercent = "Enter a value between 0 and 100."
 	if (!f.instructions.trim()) e.instructions = "Special instructions are required."
 	return e
 }
@@ -890,17 +893,17 @@ function Step5SettingsReview({
 	registerValidate: (fn: () => boolean) => void
 }) {
 	const [validated, setValidated] = useState(false)
-	const { visibility, ageRestriction, refundPolicy, instructions } = formData
+	const { visibility, ageRestriction, refundType, cutoffHours, refundPercent, instructions } = formData
 
 	const errors = useMemo(
-		() => validated ? validateStep5({ visibility, ageRestriction, refundPolicy, instructions }) : {},
-		[validated, visibility, ageRestriction, refundPolicy, instructions],
+		() => validated ? validateStep5({ visibility, ageRestriction, refundType, cutoffHours, refundPercent, instructions }) : {},
+		[validated, visibility, ageRestriction, refundType, cutoffHours, refundPercent, instructions],
 	)
 
 	const validate = useCallback(() => {
 		setValidated(true)
-		return Object.keys(validateStep5({ visibility, ageRestriction, refundPolicy, instructions })).length === 0
-	}, [visibility, ageRestriction, refundPolicy, instructions])
+		return Object.keys(validateStep5({ visibility, ageRestriction, refundType, cutoffHours, refundPercent, instructions })).length === 0
+	}, [visibility, ageRestriction, refundType, cutoffHours, refundPercent, instructions])
 
 	useEffect(() => { registerValidate(validate) }, [validate, registerValidate])
 
@@ -944,18 +947,37 @@ function Step5SettingsReview({
 						</div>
 					</div>
 
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+						<div className="flex flex-col gap-1.5">
+							<FieldLabel required>Refund Type</FieldLabel>
+							<Dropdown
+								value={refundType} onChange={(v) => set("refundType", v)} error={!!errors.refundType}
+								placeholder="Partial Refund"
+								options={[
+									{ value: "no-refund", label: "No Refund" },
+									{ value: "partial-refund", label: "Partial Refund" },
+									{ value: "full-refund", label: "Full Refund" },
+								]}
+							/>
+							<ErrMsg msg={errors.refundType} />
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<FieldLabel required>Cutoff Hours</FieldLabel>
+							<div className={iconWrapCls(!!errors.cutoffHours)}>
+								<input type="number" value={cutoffHours} onChange={(e) => set("cutoffHours", e.target.value)} placeholder="24" min={0} className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none" />
+								<span className="text-sm text-text-muted shrink-0">hours</span>
+							</div>
+							<ErrMsg msg={errors.cutoffHours} />
+						</div>
+					</div>
+
 					<div className="flex flex-col gap-1.5">
-						<FieldLabel required>Refund Policy</FieldLabel>
-						<Dropdown
-							value={refundPolicy} onChange={(v) => set("refundPolicy", v)} error={!!errors.refundPolicy}
-							placeholder="Select Refund Policy"
-							options={[
-								{ value: "no-refund", label: "No Refunds" },
-								{ value: "7-day", label: "7-day Refund" },
-								{ value: "30-day", label: "30-day Refund" },
-							]}
-						/>
-						<ErrMsg msg={errors.refundPolicy} />
+						<FieldLabel required>Refund Percent</FieldLabel>
+						<div className={iconWrapCls(!!errors.refundPercent)}>
+							<input type="number" value={refundPercent} onChange={(e) => set("refundPercent", e.target.value)} placeholder="50" min={0} max={100} className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none" />
+							<span className="text-sm text-text-muted shrink-0">%</span>
+						</div>
+						<ErrMsg msg={errors.refundPercent} />
 					</div>
 
 					<div className="flex flex-col gap-1.5">
@@ -1059,25 +1081,7 @@ export default function CreateExperiencePage() {
 
 	return (
 		<div className="flex flex-col min-h-screen">
-			{/* Desktop page header */}
-			<div className="hidden lg:flex items-center justify-between px-8 py-4 bg-surface-card border-b border-border-subtle">
-				<p className="text-body-sm text-text-secondary">
-					Welcome to <span className="font-semibold text-text-primary">Meetday</span>
-				</p>
-				<div className="flex items-center gap-3">
-					<button className="relative p-2 rounded-action hover:bg-surface-card-muted transition-colors" aria-label="Notifications">
-						<Icon as={BellSvg} size="md" color="secondary" />
-						<span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-action-primary" />
-					</button>
-					<div className="flex items-center gap-2 cursor-pointer hover:bg-surface-card-muted px-2 py-1.5 rounded-action transition-colors">
-						<div className="size-8 rounded-avatar bg-surface-brand-soft flex items-center justify-center">
-							<span className="text-label-sm font-semibold text-text-brand">AM</span>
-						</div>
-						<span className="text-label-md text-text-primary">Alex Morgan</span>
-						<Icon as={AltArrowDownSvg} size="sm" color="secondary" />
-					</div>
-				</div>
-			</div>
+			<DashboardTopBar />
 
 			{/* Create action bar */}
 			<div className="flex items-center justify-between px-6 lg:px-8 py-3 bg-surface-card border-b border-border-subtle">

@@ -1,425 +1,378 @@
 "use client"
 
+import { useParams } from "next/navigation"
 import Link from "next/link"
-import { useState } from "react"
 import clsx from "clsx"
-import { Icon } from "@/components/ui/Icon"
+import { MOCK_EVENTS, type EventStatus, type MockEvent } from "@/lib/mock-events"
+import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
+import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
+import DangerTriangleSvg from "@/icons/outlined/danger-triangle.svg"
+import UsersGroupSvg from "@/icons/outlined/users-group.svg"
+import UsersGroup2Svg from "@/icons/outlined/users-group-2.svg"
+import DollarSvg from "@/icons/outlined/dollar.svg"
+import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
-import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
 import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
-import PenSquareSvg from "@/icons/outlined/pen-square.svg"
-import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
-import TrendUpSvg from "@/icons/outlined/trend-up.svg"
+import PlaneSvg from "@/icons/outlined/plane.svg"
+import PenSvg from "@/icons/outlined/pen.svg"
+import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
 
-// ─── Mock data ─────────────────────────────────────────────────────────────────
+// ─── Status config ────────────────────────────────────────────────────────────
 
-const EVENT = {
-	title: "Rooftop Social: Strangers & Sunsets",
-	category: "Social Vibes",
-	date: "9th May 2025",
-	startTime: "6:00 PM",
-	endTime: "9:00 PM",
-	venue: "The Loft, Bandra, Mumbai",
-	ticketsSold: 50,
-	totalCapacity: 80,
-	cover: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80",
+const STATUS_CONFIG: Record<EventStatus, { label: string; badge: string }> = {
+	draft:          { label: "Draft",        badge: "bg-neutral-100/95 text-neutral-700 backdrop-blur-sm shadow-sm" },
+	"under-review": { label: "Under Review", badge: "bg-blue-50/95 text-blue-700 backdrop-blur-sm shadow-sm" },
+	rejected:       { label: "Rejected",     badge: "bg-red-50/95 text-red-700 backdrop-blur-sm shadow-sm" },
+	published:      { label: "Published",    badge: "bg-green-50/95 text-green-700 backdrop-blur-sm shadow-sm" },
+	cancelled:      { label: "Cancelled",    badge: "bg-orange-50/95 text-orange-700 backdrop-blur-sm shadow-sm" },
+	completed:      { label: "Completed",    badge: "bg-neutral-900/90 text-white backdrop-blur-sm shadow-sm" },
 }
 
-const STATS = [
-	{
-		label: "Total Attendees",
-		value: "32",
-		sub: "18 unused · 30 posted",
-		dark: false,
-	},
-	{
-		label: "Total Revenue",
-		value: "₹28,480",
-		sub: "₹0.00 – ₹1,000.00 per ticket",
-		dark: false,
-	},
-	{
-		label: "Net Payout",
-		value: "₹24,208",
-		sub: "After platform fees",
-		dark: true,
-	},
-]
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const ATTENDEES = [
-	{ id: 1, name: "Abha Kapoor", initials: "AK", ticket: "Free", registered: "3 Sep, 12:14 AM", amount: "₹1,999", checkedIn: true },
-	{ id: 2, name: "Rahul Mehta", initials: "RM", ticket: "General", registered: "5 Sep, 2:19 AM", amount: "₹745", checkedIn: false },
-	{ id: 3, name: "Priya Sharma", initials: "PS", ticket: "General", registered: "6 Sep, 5:22 AM", amount: "₹745", checkedIn: false },
-	{ id: 4, name: "Karan Singh", initials: "KS", ticket: "VIP", registered: "6 Sep, 3:11 PM", amount: "₹1,499", checkedIn: true },
-	{ id: 5, name: "Neha Joshi", initials: "NJ", ticket: "Free", registered: "7 Sep, 1:40 PM", amount: "₹745", checkedIn: false },
-]
-
-const TICKET_COLORS: Record<string, string> = {
-	Free: "bg-green-100 text-green-700",
-	General: "bg-blue-100 text-blue-700",
-	VIP: "bg-purple-100 text-purple-700",
+function formatRevenue(amount: number, status: EventStatus): string {
+	if (amount === 0 || status === "draft" || status === "rejected") return "Free"
+	return "$" + amount.toLocaleString()
 }
 
-const TABS = ["Attendees", "Ticket Breakdown", "Notifications"] as const
-type Tab = typeof TABS[number]
+function formatDate(iso: string): string {
+	return iso // Already "YYYY-MM-DD"
+}
+
+function progressPct(sold: number, capacity: number): number {
+	return Math.min(Math.round((sold / capacity) * 100), 100)
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EventDetailPage() {
-	const [activeTab, setActiveTab] = useState<Tab>("Attendees")
-	const [search, setSearch] = useState("")
-	const [checkedIn, setCheckedIn] = useState<Record<number, boolean>>(
-		Object.fromEntries(ATTENDEES.map((a) => [a.id, a.checkedIn])),
-	)
+	const { id } = useParams<{ id: string }>()
+	const event = MOCK_EVENTS.find(e => e.id === id)
 
-	const filtered = ATTENDEES.filter((a) =>
-		a.name.toLowerCase().includes(search.toLowerCase()),
-	)
+	if (!event) {
+		return (
+			<div className="flex flex-col items-center justify-center min-h-screen gap-4">
+				<p className="text-heading-sm font-semibold text-text-primary">Event not found</p>
+				<Link href="/dashboard/events" className="text-label-sm text-text-brand hover:underline">
+					← Back to My Events
+				</Link>
+			</div>
+		)
+	}
+
+	const cfg = STATUS_CONFIG[event.status]
 
 	return (
 		<div className="flex flex-col min-h-screen">
-			{/* Desktop top bar */}
-			<div className="hidden lg:flex items-center justify-between px-8 py-4 bg-surface-card border-b border-border-subtle shrink-0">
-				<p className="text-body-sm text-text-secondary">
-					Welcome to <span className="font-semibold text-text-primary">Meetday</span>
-				</p>
-				<div className="flex items-center gap-3">
-					<button className="relative p-2 rounded-action hover:bg-surface-card-muted transition-colors" aria-label="Notifications">
-						<BellIcon />
-						<span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-action-primary" />
-					</button>
-					<div className="flex items-center gap-2 cursor-pointer hover:bg-surface-card-muted px-2 py-1.5 rounded-action transition-colors">
-						<div className="size-8 rounded-avatar bg-surface-brand-soft flex items-center justify-center">
-							<span className="text-label-sm font-semibold text-text-brand">AM</span>
+			<DashboardTopBar />
+
+			{/* Scrollable content */}
+			<div className="flex-1 overflow-y-auto bg-surface-page">
+				<div className="px-4 sm:px-6 lg:px-8 py-6">
+					{/* Back link */}
+					<Link
+						href="/dashboard/events"
+						className="inline-flex items-center gap-1.5 text-label-sm text-text-secondary hover:text-text-primary transition-colors mb-5"
+					>
+						<ArrowLeftIcon />
+						Back to My Events
+					</Link>
+
+					{/* Cover hero */}
+					<div className="relative w-full aspect-3/1 min-h-36 rounded-card overflow-hidden mb-5">
+						{/* eslint-disable-next-line @next/next/no-img-element */}
+						<img src={event.cover} alt={event.title} className="w-full h-full object-cover" />
+						<div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
+						<div className="absolute bottom-4 left-4 sm:bottom-5 sm:left-6 right-4">
+							<span className={clsx("inline-block text-caption font-semibold px-2.5 py-1 rounded-badge mb-2", cfg.badge)}>
+								{cfg.label}
+							</span>
+							<h1 className="text-title-md sm:text-heading-sm font-bold text-white leading-tight mb-1">{event.title}</h1>
+							<p className="text-body-sm text-white/70">{event.category} &middot; {event.format}</p>
 						</div>
-						<span className="text-label-md text-text-primary">Alex Morgan</span>
-						<Icon as={AltArrowDownSvg} size="sm" color="secondary" />
-					</div>
-				</div>
-			</div>
-
-			{/* Content */}
-			<div className="flex-1 px-6 lg:px-8 py-6 bg-surface-page overflow-y-auto">
-				{/* Back link */}
-				<Link
-					href="/dashboard/events"
-					className="inline-flex items-center gap-1.5 text-label-sm text-text-secondary hover:text-text-primary transition-colors mb-5"
-				>
-					<ArrowLeftIcon />
-					Back to my events
-				</Link>
-
-				{/* Cover image */}
-				<div className="w-full aspect-[3/1] rounded-card overflow-hidden bg-surface-card-muted mb-5">
-					{/* eslint-disable-next-line @next/next/no-img-element */}
-					<img
-						src={EVENT.cover}
-						alt={EVENT.title}
-						className="w-full h-full object-cover"
-					/>
-				</div>
-
-				{/* Event header */}
-				<div className="mb-5">
-					<span className="inline-block text-caption font-semibold px-2.5 py-0.5 rounded-badge bg-red-100 text-red-600 mb-2">
-						{EVENT.category}
-					</span>
-					<h1 className="text-heading-md font-bold text-text-primary mb-3">{EVENT.title}</h1>
-					<div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-						<span className="flex items-center gap-1.5 text-body-sm text-text-secondary">
-							<Icon as={CalendarSvg} size="sm" color="secondary" />
-							{EVENT.date}
-						</span>
-						<span className="flex items-center gap-1.5 text-body-sm text-text-secondary">
-							<Icon as={ClockCircleSvg} size="sm" color="secondary" />
-							{EVENT.startTime} – {EVENT.endTime}
-						</span>
-						<span className="flex items-center gap-1.5 text-body-sm text-text-secondary">
-							<Icon as={MapPointRotateSvg} size="sm" color="secondary" />
-							{EVENT.venue}
-						</span>
-						<span className="flex items-center gap-1.5 text-body-sm text-text-secondary">
-							<PeopleIcon />
-							{EVENT.ticketsSold} / {EVENT.totalCapacity} registered
-						</span>
-					</div>
-				</div>
-
-				{/* Action buttons */}
-				<div className="flex flex-wrap items-center gap-2 mb-6">
-					<button className="flex items-center gap-2 px-4 py-2 bg-action-primary text-white text-label-sm font-semibold rounded-action hover:opacity-90 transition-opacity">
-						<Icon as={PenSquareSvg} size="sm" color="inverse" />
-						Edit Event
-					</button>
-					<button className="flex items-center gap-2 px-4 py-2 border border-border-default text-label-sm text-text-primary rounded-action hover:bg-surface-card-muted transition-colors">
-						<ShareIcon />
-						Share Link
-					</button>
-					<button className="flex items-center gap-2 px-4 py-2 border border-border-default text-label-sm text-text-primary rounded-action hover:bg-surface-card-muted transition-colors">
-						<CancelIcon />
-						Cancel Event
-					</button>
-					<button className="flex items-center gap-2 px-4 py-2 border border-border-default text-label-sm text-text-primary rounded-action hover:bg-surface-card-muted transition-colors">
-						<CsvIcon />
-						Export CSV
-					</button>
-				</div>
-
-				{/* Stats cards */}
-				<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-					{STATS.map(({ label, value, sub, dark }) => (
-						<div
-							key={label}
-							className={clsx(
-								"rounded-card p-5 flex flex-col gap-1",
-								dark
-									? "bg-surface-inverse text-text-inverse"
-									: "bg-surface-card border border-border-subtle",
-							)}
-						>
-							<p className={clsx("text-caption font-medium", dark ? "text-white/60" : "text-text-secondary")}>
-								{label}
-							</p>
-							<p className={clsx("text-heading-md font-bold", dark ? "text-white" : "text-text-primary")}>
-								{value}
-							</p>
-							<p className={clsx("text-caption", dark ? "text-white/50" : "text-text-muted")}>
-								{sub}
-							</p>
-							{!dark && (
-								<div className="flex items-center gap-1 mt-1">
-									<Icon as={TrendUpSvg} size="sm" color="success" />
-									<span className="text-caption text-text-success font-medium">+12% this week</span>
-								</div>
-							)}
-						</div>
-					))}
-				</div>
-
-				{/* Attendees section */}
-				<div className="bg-surface-card border border-border-subtle rounded-card overflow-hidden">
-					{/* Tabs */}
-					<div className="flex items-center border-b border-border-subtle px-5 overflow-x-auto">
-						{TABS.map((tab) => {
-							const isActive = activeTab === tab
-							return (
-								<button
-									key={tab}
-									onClick={() => setActiveTab(tab)}
-									className={clsx(
-										"shrink-0 px-1 py-3.5 mr-6 text-label-sm font-medium border-b-2 transition-colors",
-										isActive
-											? "border-text-primary text-text-primary"
-											: "border-transparent text-text-muted hover:text-text-secondary",
-									)}
-								>
-									{tab}
-									{tab === "Attendees" && (
-										<span className={clsx(
-											"ml-1.5 inline-flex items-center justify-center size-5 rounded-full text-caption font-semibold",
-											isActive ? "bg-surface-inverse text-text-inverse" : "bg-surface-card-muted text-text-muted",
-										)}>
-											{ATTENDEES.length}
-										</span>
-									)}
-								</button>
-							)
-						})}
 					</div>
 
-					{activeTab === "Attendees" && (
-						<>
-							{/* Table toolbar */}
-							<div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border-subtle flex-wrap">
-								<div className="flex items-center gap-2 h-9 px-3 rounded-action border border-border-default bg-surface-canvas text-text-muted hover:border-border-strong focus-within:border-border-focused transition-colors w-56">
-									<SearchIcon />
-									<input
-										type="text"
-										value={search}
-										onChange={(e) => setSearch(e.target.value)}
-										placeholder="Search attendees..."
-										className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
-									/>
-								</div>
-								<div className="flex items-center gap-2">
-									<button className="flex items-center gap-1.5 px-3 py-1.5 border border-border-default rounded-action text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors">
-										<CsvIcon />
-										Export CSV
-									</button>
-									<button className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-inverse text-text-inverse rounded-action text-label-sm font-medium hover:opacity-90 transition-opacity">
-										<MessageIcon />
-										Message All
-									</button>
-								</div>
+					{/* Rejection / Cancellation banner */}
+					{event.status === "rejected" && event.rejectionReason && (
+						<div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-card mb-5">
+							<AlertIcon className="text-red-500 shrink-0 mt-0.5" />
+							<div>
+								<p className="text-label-sm font-semibold text-red-700 mb-0.5">Event Rejected</p>
+								<p className="text-body-sm text-red-600">{event.rejectionReason}</p>
 							</div>
+						</div>
+					)}
+					{event.status === "cancelled" && event.cancellationReason && (
+						<div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-card mb-5">
+							<AlertIcon className="text-orange-500 shrink-0 mt-0.5" />
+							<div>
+								<p className="text-label-sm font-semibold text-orange-700 mb-0.5">Cancellation Reason</p>
+								<p className="text-body-sm text-orange-600">{event.cancellationReason}</p>
+							</div>
+						</div>
+					)}
 
-							{/* Table */}
-							<div className="overflow-x-auto">
-								<table className="w-full text-left">
-									<thead>
-										<tr className="border-b border-border-subtle">
-											<th className="px-5 py-3 w-10">
-												<input type="checkbox" className="rounded" />
-											</th>
-											<th className="px-4 py-3 text-caption font-semibold text-text-tertiary">Attendee</th>
-											<th className="px-4 py-3 text-caption font-semibold text-text-tertiary">Ticket</th>
-											<th className="px-4 py-3 text-caption font-semibold text-text-tertiary">Registered</th>
-											<th className="px-4 py-3 text-caption font-semibold text-text-tertiary">Amount Paid</th>
-											<th className="px-4 py-3 text-caption font-semibold text-text-tertiary">Shown By</th>
-											<th className="px-4 py-3 text-caption font-semibold text-text-tertiary">Check-in</th>
-										</tr>
-									</thead>
-									<tbody className="divide-y divide-border-subtle">
-										{filtered.map((attendee) => (
-											<tr key={attendee.id} className="hover:bg-surface-card-muted transition-colors">
-												<td className="px-5 py-3.5">
-													<input type="checkbox" className="rounded" />
-												</td>
-												<td className="px-4 py-3.5">
-													<div className="flex items-center gap-2.5">
-														<div className="size-8 rounded-avatar bg-surface-brand-soft flex items-center justify-center shrink-0">
-															<span className="text-caption font-semibold text-text-brand">{attendee.initials}</span>
-														</div>
-														<span className="text-label-sm font-medium text-text-primary">{attendee.name}</span>
-													</div>
-												</td>
-												<td className="px-4 py-3.5">
-													<span className={clsx("text-caption font-medium px-2 py-0.5 rounded-badge", TICKET_COLORS[attendee.ticket] ?? "bg-surface-card-muted text-text-secondary")}>
-														{attendee.ticket}
+					{/* Stats row */}
+					<div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
+						<StatCard
+							icon={<PeopleStatIcon />}
+							label="Registrations"
+							value={`${event.registrations} / ${event.capacity}`}
+						/>
+						<StatCard
+							icon={<DollarIcon />}
+							label="Revenue"
+							value={formatRevenue(event.revenue, event.status)}
+						/>
+						<StatCard
+							icon={<CheckInIcon />}
+							label="Checked In"
+							value={
+								event.checkedIn !== null && event.checkedInCapacity !== null
+									? `${event.checkedIn} / ${event.checkedInCapacity}`
+									: "—"
+							}
+						/>
+					</div>
+
+					{/* Two-column layout */}
+					<div className="grid grid-cols-1 lg:grid-cols-[1fr_288px] gap-6">
+						{/* ── Left: main content ─────────────────── */}
+						<div className="flex flex-col gap-6">
+							{/* About */}
+							<Section title="About">
+								<p className="text-body-sm text-text-secondary leading-relaxed">{event.description}</p>
+							</Section>
+
+							{/* Date & Location */}
+							<Section title="Date & Location">
+								<div className="flex flex-col gap-3">
+									<div className="flex items-start gap-3">
+										<CalendarIcon className="mt-0.5 shrink-0 text-text-brand" />
+										<div>
+											<p className="text-label-sm font-medium text-text-primary">{formatDate(event.date)}</p>
+											<p className="text-caption text-text-muted">{event.time}</p>
+										</div>
+									</div>
+									<div className="flex items-start gap-3">
+										<LocationIcon className="mt-0.5 shrink-0 text-text-brand" />
+										<div>
+											<p className="text-label-sm font-medium text-text-primary">{event.venue}</p>
+											<p className="text-caption text-text-muted">{event.address}</p>
+										</div>
+									</div>
+								</div>
+							</Section>
+
+							{/* Ticket Types */}
+							<Section title="Ticket Types">
+								<div className="flex flex-col gap-4">
+									{event.ticketTypes.map(ticket => {
+										const pct = progressPct(ticket.sold, ticket.capacity)
+										const remaining = ticket.capacity - ticket.sold
+										return (
+											<div key={ticket.name}>
+												<div className="flex items-center justify-between mb-1">
+													<span className="text-label-sm font-medium text-text-primary">{ticket.name}</span>
+													<span className="text-label-sm font-semibold text-text-primary">
+														{ticket.price === 0 ? "Free" : `$${ticket.price}`}
 													</span>
-												</td>
-												<td className="px-4 py-3.5 text-body-sm text-text-secondary">{attendee.registered}</td>
-												<td className="px-4 py-3.5 text-body-sm text-text-primary font-medium">{attendee.amount}</td>
-												<td className="px-4 py-3.5">
-													<div className="size-7 rounded-avatar bg-surface-card-muted border border-border-default flex items-center justify-center">
-														<UserIcon />
-													</div>
-												</td>
-												<td className="px-4 py-3.5">
-													<button
-														type="button"
-														role="switch"
-														aria-checked={checkedIn[attendee.id]}
-														onClick={() => setCheckedIn((prev) => ({ ...prev, [attendee.id]: !prev[attendee.id] }))}
+												</div>
+												<div className="flex items-center justify-between mb-1.5">
+													<span className="text-caption text-text-muted">{ticket.sold} sold</span>
+													<span className="text-caption text-text-muted">{remaining} remaining</span>
+												</div>
+												<div className="h-1.5 bg-surface-card-muted rounded-full overflow-hidden">
+													<div
 														className={clsx(
-															"relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
-															checkedIn[attendee.id] ? "bg-action-primary" : "bg-border-default",
+															"h-full rounded-full transition-all",
+															pct >= 90 ? "bg-red-500" : "bg-action-primary",
 														)}
-													>
-														<span
-															className={clsx(
-																"pointer-events-none inline-block size-4 transform rounded-full bg-white shadow ring-0 transition duration-200",
-																checkedIn[attendee.id] ? "translate-x-4" : "translate-x-0",
-															)}
-														/>
-													</button>
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
+														style={{ width: `${pct}%` }}
+													/>
+												</div>
+											</div>
+										)
+									})}
+								</div>
+							</Section>
+						</div>
+
+						{/* ── Right: sidebar ─────────────────────── */}
+						<div className="flex flex-col gap-4">
+							{/* Actions panel */}
+							<div className="bg-surface-card border border-border-subtle rounded-card p-5">
+								<p className="text-label-sm font-semibold text-text-primary mb-4">Actions</p>
+								<EventActions event={event} />
 							</div>
 
-							<div className="px-5 py-3 border-t border-border-subtle">
-								<p className="text-caption text-text-muted">
-									{ATTENDEES.length} attendees shown · Export CSV to see the full list
-								</p>
+							{/* Details panel */}
+							<div className="bg-surface-card border border-border-subtle rounded-card p-5">
+								<p className="text-label-sm font-semibold text-text-primary mb-4">Details</p>
+								<div className="flex flex-col gap-3">
+									<DetailRow label="Visibility" value={event.visibility} />
+									<DetailRow label="Language" value={event.language} />
+									<DetailRow label="Age" value={event.age} />
+									<DetailRow label="Refund Policy" value={event.refundPolicy} />
+									<div className="flex items-start justify-between gap-3">
+										<span className="text-caption text-text-muted shrink-0">Tags</span>
+										<div className="flex flex-wrap justify-end gap-1">
+											{event.tags.map(tag => (
+												<span key={tag} className="text-caption px-2 py-0.5 bg-surface-card-muted text-text-secondary rounded-badge">
+													{tag}
+												</span>
+											))}
+										</div>
+									</div>
+								</div>
 							</div>
-						</>
-					)}
-
-					{activeTab === "Ticket Breakdown" && (
-						<div className="px-5 py-12 flex flex-col items-center justify-center text-center gap-2">
-							<p className="text-label-md font-semibold text-text-primary">Ticket Breakdown</p>
-							<p className="text-body-sm text-text-muted">Detailed ticket breakdown coming soon.</p>
 						</div>
-					)}
-
-					{activeTab === "Notifications" && (
-						<div className="px-5 py-12 flex flex-col items-center justify-center text-center gap-2">
-							<p className="text-label-md font-semibold text-text-primary">Notifications</p>
-							<p className="text-body-sm text-text-muted">No notifications yet.</p>
-						</div>
-					)}
+					</div>
 				</div>
 			</div>
 		</div>
 	)
 }
 
-// ─── Inline icon components ────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-function BellIcon() {
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
 	return (
-		<svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-			<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-		</svg>
+		<div className="bg-surface-card border border-border-subtle rounded-card p-3 sm:p-4 flex flex-col gap-1.5">
+			<div className="flex items-center gap-1.5 text-text-muted">
+				{icon}
+				<span className="text-caption text-text-secondary truncate">{label}</span>
+			</div>
+			<p className="text-label-md sm:text-title-md font-bold text-text-primary">{value}</p>
+		</div>
 	)
 }
 
-function ArrowLeftIcon() {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
-		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-			<path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-		</svg>
+		<div className="bg-surface-card border border-border-subtle rounded-card p-5">
+			<h2 className="text-label-md font-semibold text-text-primary mb-4">{title}</h2>
+			{children}
+		</div>
 	)
 }
 
-function PeopleIcon() {
+function DetailRow({ label, value }: { label: string; value: string }) {
 	return (
-		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-			<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-		</svg>
+		<div className="flex items-start justify-between gap-3">
+			<span className="text-caption text-text-muted shrink-0">{label}</span>
+			<span className="text-caption text-text-secondary text-right">{value}</span>
+		</div>
 	)
 }
 
-function ShareIcon() {
+// ─── Status-driven actions ────────────────────────────────────────────────────
+
+function EventActions({ event }: { event: MockEvent }) {
+	switch (event.status) {
+		case "draft":
+			return (
+				<div className="flex flex-col gap-2">
+					<ActionButton variant="primary" icon={<SendIcon />}>Submit for Review</ActionButton>
+					<ActionButton variant="secondary" icon={<PenIcon />}>Edit Event</ActionButton>
+				</div>
+			)
+
+		case "under-review":
+			return (
+				<p className="text-body-sm text-text-muted">
+					Your event is currently under review. We&apos;ll notify you once it&apos;s approved or if changes are needed.
+				</p>
+			)
+
+		case "rejected":
+			return (
+				<div className="flex flex-col gap-2">
+					<ActionButton variant="primary" icon={<SendIcon />}>Submit for Review</ActionButton>
+					<ActionButton variant="secondary" icon={<PenIcon />}>Edit Event</ActionButton>
+				</div>
+			)
+
+		case "published":
+			return (
+				<div className="flex flex-col gap-2">
+					<ActionButton variant="secondary" icon={<PenIcon />}>
+						Edit Event
+						<span className="text-caption text-text-muted font-normal ml-1">(triggers re-review)</span>
+					</ActionButton>
+					<Link
+						href="/dashboard/registrations"
+						className="flex items-center justify-center gap-2 h-(--size-action-md) px-4 text-label-sm font-medium border border-action-secondary-border rounded-action bg-action-secondary text-action-secondary-text hover:bg-action-secondary-hover transition-colors"
+					>
+						<PeopleActionIcon />
+						View Registrations
+					</Link>
+					<ActionButton variant="danger" icon={<CancelIcon />}>Cancel Event</ActionButton>
+				</div>
+			)
+
+		case "cancelled":
+			return (
+				<p className="text-body-sm text-text-muted">
+					This event is cancelled. No further actions available.
+				</p>
+			)
+
+		case "completed":
+			return (
+				<div className="flex flex-col gap-2">
+					<Link
+						href="/dashboard/registrations"
+						className="flex items-center justify-center gap-2 h-(--size-action-md) px-4 text-label-sm font-medium border border-action-secondary-border rounded-action bg-action-secondary text-action-secondary-text hover:bg-action-secondary-hover transition-colors"
+					>
+						<PeopleActionIcon />
+						View Registrations
+					</Link>
+					<p className="text-caption text-text-muted text-center pt-1">
+						This event is completed. No further actions available.
+					</p>
+				</div>
+			)
+	}
+}
+
+function ActionButton({
+	variant,
+	icon,
+	children,
+	onClick,
+}: {
+	variant: "primary" | "secondary" | "danger"
+	icon?: React.ReactNode
+	children: React.ReactNode
+	onClick?: () => void
+}) {
 	return (
-		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-			<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-		</svg>
+		<button
+			onClick={onClick}
+			className={clsx(
+				"flex items-center justify-center gap-2 h-(--size-action-md) px-4 text-label-sm font-semibold rounded-action transition-colors",
+				variant === "primary" && "bg-action-primary text-action-primary-text hover:bg-action-primary-hover",
+				variant === "secondary" && "border border-action-secondary-border bg-action-secondary text-action-secondary-text hover:bg-action-secondary-hover",
+				variant === "danger" && "border border-red-200 bg-red-50 text-red-600 hover:bg-red-100",
+			)}
+		>
+			{icon}
+			{children}
+		</button>
 	)
 }
 
-function CancelIcon() {
-	return (
-		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-			<circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.75" />
-			<path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-		</svg>
-	)
-}
+// ─── Icons ───────────────────────────────────────────────────────────────────
 
-function CsvIcon() {
-	return (
-		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-			<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8L14 2z" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-			<path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-		</svg>
-	)
-}
-
-function SearchIcon() {
-	return (
-		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-			<circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="1.75" />
-			<path d="m21 21-4.35-4.35" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-		</svg>
-	)
-}
-
-function MessageIcon() {
-	return (
-		<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-			<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-		</svg>
-	)
-}
-
-function UserIcon() {
-	return (
-		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-			<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-		</svg>
-	)
-}
+function ArrowLeftIcon() { return <ArrowLeftSvg className="size-4" aria-hidden /> }
+function AlertIcon({ className }: { className?: string }) { return <DangerTriangleSvg className={clsx("size-4.5", className)} aria-hidden /> }
+function PeopleStatIcon() { return <UsersGroupSvg className="size-4" aria-hidden /> }
+function DollarIcon() { return <DollarSvg className="size-4" aria-hidden /> }
+function CheckInIcon() { return <CheckCircleSvg className="size-4" aria-hidden /> }
+function CalendarIcon({ className }: { className?: string }) { return <CalendarSvg className={clsx("size-4.5", className)} aria-hidden /> }
+function LocationIcon({ className }: { className?: string }) { return <MapPointRotateSvg className={clsx("size-4.5", className)} aria-hidden /> }
+function SendIcon() { return <PlaneSvg className="size-4" aria-hidden /> }
+function PenIcon() { return <PenSvg className="size-4" aria-hidden /> }
+function PeopleActionIcon() { return <UsersGroup2Svg className="size-4" aria-hidden /> }
+function CancelIcon() { return <CloseCircleSvg className="size-4" aria-hidden /> }
