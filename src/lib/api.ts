@@ -1,5 +1,6 @@
 import { isAxiosError } from "axios"
 import apiClient from "./axios"
+import type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus } from "@/types/event"
 
 // ─── Errors ───────────────────────────────────────────────────────────────────
 
@@ -180,4 +181,79 @@ export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
 		"/hosts/subscription/plans",
 	)
 	return data.data
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+export type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus }
+
+export async function createEventDraft(payload: EventDraftPayload = {}): Promise<Event> {
+	const { data } = await apiClient.post<{ success: boolean; data: Event }>("/events", payload)
+	return data.data
+}
+
+export async function getMyEvents(params?: {
+	status?: ApiEventStatus
+	page?: number
+	limit?: number
+}): Promise<EventsListResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: EventsListResponse }>(
+		"/events/me",
+		{ params },
+	)
+	return data.data
+}
+
+export async function getMyEventDetail(id: string): Promise<Event> {
+	const { data } = await apiClient.get<{ success: boolean; data: Event }>(`/events/me/${id}`)
+	return data.data
+}
+
+export async function updateEventDraft(id: string, payload: EventDraftPayload): Promise<Event> {
+	const { data } = await apiClient.patch<{ success: boolean; data: Event }>(
+		`/events/${id}`,
+		payload,
+	)
+	return data.data
+}
+
+export async function submitEventForReview(id: string): Promise<Event> {
+	const { data } = await apiClient.patch<{ success: boolean; data: Event }>(
+		`/events/${id}/submit`,
+	)
+	return data.data
+}
+
+export async function deleteEventDraft(id: string): Promise<void> {
+	await apiClient.delete(`/events/${id}`)
+}
+
+export async function cancelEvent(id: string, cancellationReason: string): Promise<Event> {
+	const { data } = await apiClient.patch<{ success: boolean; data: Event }>(
+		`/events/${id}/cancel`,
+		{ cancellationReason },
+	)
+	return data.data
+}
+
+// ─── Storage ──────────────────────────────────────────────────────────────────
+
+export type UploadUrlPayload = {
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT"
+	contentType: string
+	resourceId?: string
+	mediaType?: string
+}
+
+export type UploadUrlResponse = {
+	url: string
+	key: string
+}
+
+export async function getUploadUrl(payload: UploadUrlPayload): Promise<UploadUrlResponse> {
+	const { data } = await apiClient.post<{ success: boolean; data: { uploadUrl: string; key: string } }>(
+		"/storage/upload-url",
+		payload,
+	)
+	return { url: data.data.uploadUrl, key: data.data.key }
 }

@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation"
 import clsx from "clsx"
 import { Button } from "@/components/ui/Button"
 import { Dropdown } from "@/components/ui/Dropdown"
-import { type EventStatus, type MockEvent, MOCK_EVENTS } from "@/lib/mock-events"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
+import { useEventStore } from "@/store/eventStore"
+import { storageUrl } from "@/lib/uploadMedia"
+import type { Event, ApiEventStatus } from "@/types/event"
 import PlusSvg from "@/icons/outlined/plus.svg"
 import SearchSvg from "@/icons/outlined/search.svg"
 import CloseSvg from "@/icons/outlined/close.svg"
@@ -17,18 +19,20 @@ import EyeOpenSvg from "@/icons/outlined/eye-open.svg"
 import PenSquareSvg from "@/icons/outlined/pen-square.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
+import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
+import { toast } from "sonner"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 6
 
-const STATUS_CONFIG: Record<EventStatus, { label: string; listPill: string; imageBadge: string }> = {
-	draft:          { label: "Draft",        listPill: "bg-neutral-100 text-neutral-700",  imageBadge: "bg-neutral-100/95 text-neutral-700 backdrop-blur-sm shadow-sm" },
-	"under-review": { label: "Under Review", listPill: "bg-blue-50 text-blue-700",         imageBadge: "bg-blue-50/95 text-blue-700 backdrop-blur-sm shadow-sm" },
-	rejected:       { label: "Rejected",     listPill: "bg-red-50 text-red-700",           imageBadge: "bg-red-50/95 text-red-700 backdrop-blur-sm shadow-sm" },
-	published:      { label: "Published",    listPill: "bg-green-50 text-green-700",       imageBadge: "bg-green-50/95 text-green-700 backdrop-blur-sm shadow-sm" },
-	cancelled:      { label: "Cancelled",    listPill: "bg-orange-50 text-orange-700",     imageBadge: "bg-orange-50/95 text-orange-700 backdrop-blur-sm shadow-sm" },
-	completed:      { label: "Completed",    listPill: "bg-neutral-900 text-white",        imageBadge: "bg-neutral-900/90 text-white backdrop-blur-sm shadow-sm" },
+const STATUS_CONFIG: Record<ApiEventStatus, { label: string; listPill: string; imageBadge: string }> = {
+	DRAFT:        { label: "Draft",        listPill: "bg-neutral-100 text-neutral-700",  imageBadge: "bg-neutral-100/95 text-neutral-700 backdrop-blur-sm shadow-sm" },
+	UNDER_REVIEW: { label: "Under Review", listPill: "bg-blue-50 text-blue-700",         imageBadge: "bg-blue-50/95 text-blue-700 backdrop-blur-sm shadow-sm" },
+	REJECTED:     { label: "Rejected",     listPill: "bg-red-50 text-red-700",           imageBadge: "bg-red-50/95 text-red-700 backdrop-blur-sm shadow-sm" },
+	PUBLISHED:    { label: "Published",    listPill: "bg-green-50 text-green-700",       imageBadge: "bg-green-50/95 text-green-700 backdrop-blur-sm shadow-sm" },
+	CANCELLED:    { label: "Cancelled",    listPill: "bg-orange-50 text-orange-700",     imageBadge: "bg-orange-50/95 text-orange-700 backdrop-blur-sm shadow-sm" },
+	COMPLETED:    { label: "Completed",    listPill: "bg-neutral-900 text-white",        imageBadge: "bg-neutral-900/90 text-white backdrop-blur-sm shadow-sm" },
 }
 
 const SORT_OPTIONS = [
@@ -36,32 +40,46 @@ const SORT_OPTIONS = [
 	{ value: "oldest", label: "Oldest First" },
 ]
 
-const STATUS_TABS: { value: "all" | EventStatus; label: string }[] = [
-	{ value: "all", label: "All" },
-	{ value: "draft", label: "Draft" },
-	{ value: "under-review", label: "Under Review" },
-	{ value: "rejected", label: "Rejected" },
-	{ value: "cancelled", label: "Cancelled" },
-	{ value: "completed", label: "Completed" },
-	{ value: "published", label: "Published" },
+const STATUS_TABS: { value: "ALL" | ApiEventStatus; label: string }[] = [
+	{ value: "ALL",          label: "All" },
+	{ value: "DRAFT",        label: "Draft" },
+	{ value: "UNDER_REVIEW", label: "Under Review" },
+	{ value: "REJECTED",     label: "Rejected" },
+	{ value: "CANCELLED",    label: "Cancelled" },
+	{ value: "COMPLETED",    label: "Completed" },
+	{ value: "PUBLISHED",    label: "Published" },
 ]
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatRevenue(amount: number): string {
-	if (amount === 0) return "Free"
-	return "$" + amount.toLocaleString()
+function formatEventDate(iso?: string): string {
+	if (!iso) return "—"
+	const d = new Date(iso)
+	if (isNaN(d.getTime())) return iso
+	return d.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" })
 }
 
-function formatDate(iso: string): string {
-	const [year, month, day] = iso.split("-")
-	return `${year}-${month}-${day}`
+function eventCoverUrl(event: Event): string {
+	const cover = event.media?.find((m) => m.type === "COVER")
+	return cover ? storageUrl(cover.key) : ""
+}
+
+function totalCapacity(event: Event): number {
+	return event.tickets?.reduce((sum, t) => sum + t.totalCapacity, 0) ?? 0
+}
+
+function lowestTicketPrice(event: Event): number | null {
+	if (event.isFree) return 0
+	const prices = event.tickets?.map((t) => t.price) ?? []
+	return prices.length > 0 ? Math.min(...prices) : null
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MyEventsPage() {
 	const router = useRouter()
+	const { events, eventsLoading, eventsError, fetchMyEvents, deleteEvent } = useEventStore()
+
 	const [viewMode, setViewMode] = useState<"list" | "grid">(() => {
 		if (typeof window !== "undefined") {
 			const saved = localStorage.getItem("events-view-mode")
@@ -69,20 +87,26 @@ export default function MyEventsPage() {
 		}
 		return "grid"
 	})
-	const [statusFilter, setStatusFilter] = useState<"all" | EventStatus>("all")
+	const [statusFilter, setStatusFilter] = useState<"ALL" | ApiEventStatus>("ALL")
 	const [searchQuery, setSearchQuery] = useState("")
 	const [sortOrder, setSortOrder] = useState("newest")
 	const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 	const [isLoadingMore, setIsLoadingMore] = useState(false)
 	const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
+	const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+	const [deletingEventId, setDeletingEventId] = useState<string | null>(null)
 	const sentinelRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		fetchMyEvents()
+	}, [fetchMyEvents])
 
 	const handleViewMode = useCallback((mode: "list" | "grid") => {
 		setViewMode(mode)
 		localStorage.setItem("events-view-mode", mode)
 	}, [])
 
-	const handleStatusFilter = useCallback((v: "all" | EventStatus) => {
+	const handleStatusFilter = useCallback((v: "ALL" | ApiEventStatus) => {
 		setStatusFilter(v)
 		setVisibleCount(PAGE_SIZE)
 	}, [])
@@ -97,26 +121,27 @@ export default function MyEventsPage() {
 		setVisibleCount(PAGE_SIZE)
 	}, [])
 
-	// Filter + sort
 	const filteredEvents = useMemo(() => {
-		let result = [...MOCK_EVENTS]
-		if (statusFilter !== "all") result = result.filter(e => e.status === statusFilter)
+		let result = [...events]
+		if (statusFilter !== "ALL") result = result.filter((e) => e.status === statusFilter)
 		if (searchQuery.trim()) {
 			const q = searchQuery.toLowerCase()
-			result = result.filter(e =>
-				e.title.toLowerCase().includes(q) ||
-				e.category.toLowerCase().includes(q) ||
-				e.venue.toLowerCase().includes(q),
+			result = result.filter(
+				(e) =>
+					(e.title ?? "").toLowerCase().includes(q) ||
+					(e.venueName ?? "").toLowerCase().includes(q),
 			)
 		}
-		if (sortOrder === "oldest") result.reverse()
+		result.sort((a, b) => {
+			const diff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+			return sortOrder === "oldest" ? -diff : diff
+		})
 		return result
-	}, [statusFilter, searchQuery, sortOrder])
+	}, [events, statusFilter, searchQuery, sortOrder])
 
 	const visibleEvents = filteredEvents.slice(0, visibleCount)
 	const hasMore = visibleCount < filteredEvents.length
 
-	// Infinite scroll
 	useEffect(() => {
 		const sentinel = sentinelRef.current
 		if (!sentinel) return
@@ -124,11 +149,10 @@ export default function MyEventsPage() {
 			(entries) => {
 				if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
 					setIsLoadingMore(true)
-					// Simulate async load
 					setTimeout(() => {
-						setVisibleCount(prev => prev + PAGE_SIZE)
+						setVisibleCount((prev) => prev + PAGE_SIZE)
 						setIsLoadingMore(false)
-					}, 400)
+					}, 300)
 				}
 			},
 			{ threshold: 0.1 },
@@ -137,13 +161,10 @@ export default function MyEventsPage() {
 		return () => observer.disconnect()
 	}, [hasMore, isLoadingMore])
 
-	// Close kebab dropdown on outside click
 	useEffect(() => {
 		if (!openDropdownId) return
 		const handler = (e: MouseEvent) => {
-			if (!(e.target as Element).closest("[data-kebab]")) {
-				setOpenDropdownId(null)
-			}
+			if (!(e.target as Element).closest("[data-kebab]")) setOpenDropdownId(null)
 		}
 		document.addEventListener("mousedown", handler)
 		return () => document.removeEventListener("mousedown", handler)
@@ -151,27 +172,43 @@ export default function MyEventsPage() {
 
 	const toggleKebab = useCallback((id: string, e: React.MouseEvent) => {
 		e.stopPropagation()
-		setOpenDropdownId(prev => prev === id ? null : id)
+		setOpenDropdownId((prev) => (prev === id ? null : id))
 	}, [])
 
-	const navigateTo = useCallback((path: string) => {
-		router.push(path)
-	}, [router])
+	const navigateTo = useCallback((path: string) => { router.push(path) }, [router])
 
-	// Tab counts
+	const handleDeleteDraft = useCallback((id: string) => {
+		setOpenDropdownId(null)
+		setConfirmDeleteId(id)
+	}, [])
+
+	const handleConfirmDelete = useCallback(async () => {
+		if (!confirmDeleteId) return
+		setDeletingEventId(confirmDeleteId)
+		try {
+			await deleteEvent(confirmDeleteId)
+			toast.success("Draft deleted")
+			setConfirmDeleteId(null)
+		} catch {
+			toast.error("Failed to delete draft")
+		} finally {
+			setDeletingEventId(null)
+		}
+	}, [confirmDeleteId, deleteEvent])
+
 	const tabCounts = useMemo(() => {
-		const counts: Partial<Record<"all" | EventStatus, number>> = { all: MOCK_EVENTS.length }
-		for (const event of MOCK_EVENTS) {
+		const counts: Partial<Record<"ALL" | ApiEventStatus, number>> = { ALL: events.length }
+		for (const event of events) {
 			counts[event.status] = (counts[event.status] ?? 0) + 1
 		}
 		return counts
-	}, [])
+	}, [events])
 
 	return (
+		<>
 		<div className="flex flex-col min-h-screen">
 			<DashboardTopBar />
 
-			{/* Main content */}
 			<div className="flex-1 px-4 sm:px-6 lg:px-8 py-6 lg:py-8 bg-surface-page">
 				{/* Header */}
 				<div className="flex items-start justify-between gap-4 mb-6">
@@ -191,13 +228,12 @@ export default function MyEventsPage() {
 
 				{/* Toolbar */}
 				<div className="flex items-center gap-3 mb-4 flex-wrap">
-					{/* Search */}
 					<div className="flex items-center gap-2 h-9 px-3 rounded-action border border-border-default bg-surface-canvas text-text-muted hover:border-border-strong focus-within:border-border-focused transition-colors flex-1 min-w-0 max-w-xs">
 						<SearchIcon />
 						<input
 							type="text"
 							value={searchQuery}
-							onChange={e => handleSearchQuery(e.target.value)}
+							onChange={(e) => handleSearchQuery(e.target.value)}
 							placeholder="Search events..."
 							className="flex-1 min-w-0 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
 						/>
@@ -209,7 +245,6 @@ export default function MyEventsPage() {
 					</div>
 
 					<div className="flex items-center gap-2 ml-auto">
-						{/* Sort */}
 						<Dropdown
 							options={SORT_OPTIONS}
 							value={sortOrder}
@@ -217,8 +252,6 @@ export default function MyEventsPage() {
 							size="sm"
 							className="w-36"
 						/>
-
-						{/* View toggle */}
 						<div className="flex items-center border border-border-default rounded-action overflow-hidden">
 							<button
 								onClick={() => handleViewMode("list")}
@@ -250,7 +283,7 @@ export default function MyEventsPage() {
 
 				{/* Status tabs */}
 				<div className="flex items-center gap-1 overflow-x-auto pb-1 mb-6 scrollbar-none border-b border-border-subtle">
-					{STATUS_TABS.map(tab => {
+					{STATUS_TABS.map((tab) => {
 						const count = tabCounts[tab.value] ?? 0
 						const isActive = statusFilter === tab.value
 						return (
@@ -276,8 +309,40 @@ export default function MyEventsPage() {
 					})}
 				</div>
 
+				{/* Error */}
+				{eventsError && (
+					<div className="flex items-center justify-between gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-card mb-6 text-body-sm text-red-700">
+						{eventsError}
+						<button
+							onClick={() => fetchMyEvents()}
+							className="text-label-sm font-semibold text-red-700 hover:underline shrink-0"
+						>
+							Retry
+						</button>
+					</div>
+				)}
+
+				{/* Loading skeleton */}
+				{eventsLoading && events.length === 0 && (
+					<div className={clsx(
+						viewMode === "grid"
+							? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5"
+							: "flex flex-col gap-3",
+					)}>
+						{Array.from({ length: 6 }).map((_, i) => (
+							<div
+								key={i}
+								className={clsx(
+									"bg-surface-card border border-border-subtle rounded-card animate-pulse",
+									viewMode === "grid" ? "h-64" : "h-28",
+								)}
+							/>
+						))}
+					</div>
+				)}
+
 				{/* Empty state */}
-				{filteredEvents.length === 0 && (
+				{!eventsLoading && filteredEvents.length === 0 && (
 					<div className="flex flex-col items-center justify-center py-20 text-center gap-3">
 						<div className="size-12 rounded-full bg-surface-card-muted flex items-center justify-center">
 							<CalendarEmptyIcon />
@@ -290,36 +355,38 @@ export default function MyEventsPage() {
 				)}
 
 				{/* Grid view */}
-				{viewMode === "grid" && filteredEvents.length > 0 && (
+				{!eventsLoading && viewMode === "grid" && filteredEvents.length > 0 && (
 					<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5">
-						{visibleEvents.map(event => (
+						{visibleEvents.map((event) => (
 							<GridCard
 								key={event.id}
 								event={event}
 								openDropdownId={openDropdownId}
 								onToggleKebab={toggleKebab}
 								onNavigate={navigateTo}
+								onDeleteDraft={handleDeleteDraft}
 							/>
 						))}
 					</div>
 				)}
 
 				{/* List view */}
-				{viewMode === "list" && filteredEvents.length > 0 && (
+				{!eventsLoading && viewMode === "list" && filteredEvents.length > 0 && (
 					<div className="flex flex-col gap-3">
-						{visibleEvents.map(event => (
+						{visibleEvents.map((event) => (
 							<ListCard
 								key={event.id}
 								event={event}
 								openDropdownId={openDropdownId}
 								onToggleKebab={toggleKebab}
 								onNavigate={navigateTo}
+								onDeleteDraft={handleDeleteDraft}
 							/>
 						))}
 					</div>
 				)}
 
-				{/* Infinite scroll sentinel + loader */}
+				{/* Infinite scroll sentinel */}
 				<div ref={sentinelRef} className="h-1" />
 				{isLoadingMore && (
 					<div className="flex justify-center py-8">
@@ -333,23 +400,55 @@ export default function MyEventsPage() {
 				)}
 			</div>
 		</div>
+
+		{/* Delete confirmation modal */}
+		{confirmDeleteId && (
+			<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+				<div className="bg-surface-card rounded-card border border-border-default shadow-floating w-full max-w-sm p-6">
+					<h2 className="text-label-lg font-semibold text-text-primary mb-2">Delete Draft?</h2>
+					<p className="text-body-sm text-text-secondary mb-6">
+						This draft will be permanently deleted and cannot be recovered.
+					</p>
+					<div className="flex gap-3 justify-end">
+						<button
+							onClick={() => setConfirmDeleteId(null)}
+							disabled={!!deletingEventId}
+							className="px-4 py-2 text-label-sm font-medium text-text-primary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors disabled:opacity-50"
+						>
+							Cancel
+						</button>
+						<button
+							onClick={handleConfirmDelete}
+							disabled={!!deletingEventId}
+							className="flex items-center gap-2 px-4 py-2 text-label-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-action transition-colors disabled:opacity-60"
+						>
+							{deletingEventId ? <LoaderSpinner /> : <TrashIcon />}
+							Delete
+						</button>
+					</div>
+				</div>
+			</div>
+		)}
+		</>
 	)
 }
 
 // ─── Grid Card ────────────────────────────────────────────────────────────────
 
 interface CardProps {
-	event: MockEvent
+	event: Event
 	openDropdownId: string | null
 	onToggleKebab: (id: string, e: React.MouseEvent) => void
 	onNavigate: (path: string) => void
+	onDeleteDraft: (id: string) => void
 }
 
-function GridCard({ event, openDropdownId, onToggleKebab, onNavigate }: CardProps) {
+function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDraft }: CardProps) {
 	const cfg = STATUS_CONFIG[event.status]
-	const soldPct = Math.round((event.registrations / event.capacity) * 100)
-	const lowestPrice = event.ticketTypes.reduce((min, t) => Math.min(min, t.price), Infinity)
-	const priceLabel = lowestPrice === 0 ? "Free" : `$${lowestPrice}`
+	const cap = totalCapacity(event)
+	const price = lowestTicketPrice(event)
+	const priceLabel = price === null ? "—" : price === 0 ? "Free" : `₹${price}`
+	const cover = eventCoverUrl(event)
 
 	return (
 		<div
@@ -357,29 +456,33 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate }: CardProp
 			className="group relative cursor-pointer bg-surface-card border border-border-subtle rounded-card hover:border-border-strong hover:shadow-card-hover transition-all"
 		>
 			{/* Image */}
-			<div className="relative aspect-16/10 overflow-hidden rounded-t-card">
-				{/* eslint-disable-next-line @next/next/no-img-element */}
-				<img
-					src={event.cover}
-					alt={event.title}
-					className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-				/>
-				{/* Status badge */}
+			<div className="relative aspect-16/10 overflow-hidden rounded-t-card bg-surface-card-muted">
+				{cover ? (
+					// eslint-disable-next-line @next/next/no-img-element
+					<img
+						src={cover}
+						alt={event.title ?? ""}
+						className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+					/>
+				) : (
+					<div className="w-full h-full bg-linear-to-br from-surface-card-muted to-border-default" />
+				)}
 				<span className={clsx("absolute top-3 left-3 text-caption font-semibold px-2.5 py-1 rounded-badge", cfg.imageBadge)}>
 					{cfg.label}
 				</span>
 			</div>
-			{/* Kebab — outside overflow-hidden image container so dropdown is not clipped */}
-			<div data-kebab className="absolute top-2.5 right-2.5 z-10" onClick={e => e.stopPropagation()}>
+
+			{/* Kebab */}
+			<div data-kebab className="absolute top-2.5 right-2.5 z-10" onClick={(e) => e.stopPropagation()}>
 				<button
-					onClick={e => onToggleKebab(event.id, e)}
+					onClick={(e) => onToggleKebab(event.id, e)}
 					className="flex items-center justify-center size-8 rounded-full bg-white/80 backdrop-blur-sm text-neutral-700 hover:bg-white transition-colors"
 					aria-label="Event options"
 				>
 					<DotsIcon />
 				</button>
 				{openDropdownId === event.id && (
-					<div className="absolute right-0 top-10 z-50 w-40 bg-surface-card border border-border-default rounded-card shadow-floating py-1">
+					<div className="absolute right-0 top-10 z-50 w-44 bg-surface-card border border-border-default rounded-card shadow-floating py-1">
 						<button
 							onClick={() => onNavigate(`/dashboard/events/${event.id}`)}
 							className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
@@ -394,6 +497,18 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate }: CardProp
 							<EditIcon />
 							Edit
 						</button>
+						{event.status === "DRAFT" && (
+							<>
+								<div className="my-1 border-t border-border-subtle" />
+								<button
+									onClick={(e) => { e.stopPropagation(); onDeleteDraft(event.id) }}
+									className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-red-600 hover:bg-red-50 transition-colors"
+								>
+									<TrashIcon />
+									Delete Draft
+								</button>
+							</>
+						)}
 					</div>
 				)}
 			</div>
@@ -401,37 +516,30 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate }: CardProp
 			{/* Card body */}
 			<div className="p-4">
 				<h3 className="text-label-md font-semibold text-text-primary mb-1 line-clamp-1 group-hover:text-text-brand transition-colors">
-					{event.title}
+					{event.title ?? "Untitled Event"}
 				</h3>
 				<p className="text-caption text-text-muted mb-3 line-clamp-1">
-					{formatDate(event.date)} &middot; {event.venue}
+					{formatEventDate(event.eventDate)} &middot; {event.venueName ?? "—"}
 				</p>
 
-				{/* Tickets sold */}
 				<div className="mb-3">
 					<div className="flex items-center justify-between mb-1.5">
-						<span className="text-caption text-text-secondary">Tickets Sold</span>
-						<span className="text-caption font-medium text-text-primary">
-							{event.registrations} / {event.capacity}
-						</span>
+						<span className="text-caption text-text-secondary">Capacity</span>
+						<span className="text-caption font-medium text-text-primary">{cap > 0 ? cap : "—"}</span>
 					</div>
 					<div className="h-1.5 bg-surface-card-muted rounded-full overflow-hidden">
-						<div
-							className="h-full bg-action-primary rounded-full transition-all"
-							style={{ width: `${Math.min(soldPct, 100)}%` }}
-						/>
+						<div className="h-full bg-action-primary rounded-full w-0" />
 					</div>
 				</div>
 
-				{/* Bottom row */}
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-1.5 text-caption text-text-secondary">
 						<PeopleIcon />
-						{event.registrations} registered
+						{cap > 0 ? `${cap} capacity` : "—"}
 					</div>
 					<span className={clsx(
 						"text-caption font-semibold",
-						lowestPrice === 0 ? "text-text-success" : "text-text-primary",
+						price === 0 ? "text-text-success" : "text-text-primary",
 					)}>
 						{priceLabel}
 					</span>
@@ -443,9 +551,12 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate }: CardProp
 
 // ─── List Card ────────────────────────────────────────────────────────────────
 
-function ListCard({ event, openDropdownId, onToggleKebab, onNavigate }: CardProps) {
+function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDraft }: CardProps) {
 	const cfg = STATUS_CONFIG[event.status]
-	const soldPct = Math.round((event.registrations / event.capacity) * 100)
+	const cap = totalCapacity(event)
+	const price = lowestTicketPrice(event)
+	const priceLabel = price === null ? "—" : price === 0 ? "Free" : `₹${price}`
+	const cover = eventCoverUrl(event)
 
 	return (
 		<div
@@ -453,9 +564,13 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate }: CardProp
 			className="group cursor-pointer flex gap-4 bg-surface-card border border-border-subtle rounded-card p-4 hover:border-border-strong hover:shadow-card-hover transition-all"
 		>
 			{/* Thumbnail */}
-			<div className="relative w-32 sm:w-40 aspect-4/3 rounded-card overflow-hidden shrink-0">
-				{/* eslint-disable-next-line @next/next/no-img-element */}
-				<img src={event.cover} alt={event.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+			<div className="relative w-32 sm:w-40 aspect-4/3 rounded-card overflow-hidden shrink-0 bg-surface-card-muted">
+				{cover ? (
+					// eslint-disable-next-line @next/next/no-img-element
+					<img src={cover} alt={event.title ?? ""} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+				) : (
+					<div className="w-full h-full bg-linear-to-br from-surface-card-muted to-border-default" />
+				)}
 				<span className={clsx("absolute top-2 left-2 text-caption font-semibold px-2 py-0.5 rounded-badge", cfg.imageBadge)}>
 					{cfg.label}
 				</span>
@@ -465,40 +580,37 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate }: CardProp
 			<div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
 				<div>
 					<h3 className="text-label-md font-semibold text-text-primary mb-1 line-clamp-1 group-hover:text-text-brand transition-colors">
-						{event.title}
+						{event.title ?? "Untitled Event"}
 					</h3>
 					<p className="text-caption text-text-muted mb-2.5 line-clamp-1">
-						{formatDate(event.date)} &middot; {event.venue}
+						{formatEventDate(event.eventDate)} &middot; {event.venueName ?? "—"}
 					</p>
 				</div>
 				<div>
 					<div className="flex items-center justify-between mb-1">
 						<span className="text-caption text-text-secondary">
 							<PeopleIcon className="inline mr-1" />
-							{event.registrations} / {event.capacity}
+							{cap > 0 ? `${cap} capacity` : "—"}
 						</span>
 					</div>
 					<div className="h-1.5 bg-surface-card-muted rounded-full overflow-hidden max-w-48">
-						<div
-							className="h-full bg-action-primary rounded-full"
-							style={{ width: `${Math.min(soldPct, 100)}%` }}
-						/>
+						<div className="h-full bg-action-primary rounded-full w-0" />
 					</div>
 				</div>
 			</div>
 
-			{/* Revenue + kebab */}
-			<div className="flex flex-col items-end justify-between shrink-0" onClick={e => e.stopPropagation()}>
+			{/* Price + kebab */}
+			<div className="flex flex-col items-end justify-between shrink-0" onClick={(e) => e.stopPropagation()}>
 				<div data-kebab className="relative">
 					<button
-						onClick={e => onToggleKebab(event.id, e)}
+						onClick={(e) => onToggleKebab(event.id, e)}
 						className="flex items-center justify-center size-8 rounded-action text-text-muted hover:bg-surface-card-muted hover:text-text-primary transition-colors"
 						aria-label="Event options"
 					>
 						<DotsIcon />
 					</button>
 					{openDropdownId === event.id && (
-						<div className="absolute right-0 top-10 z-50 w-40 bg-surface-card border border-border-default rounded-card shadow-floating py-1">
+						<div className="absolute right-0 top-10 z-50 w-44 bg-surface-card border border-border-default rounded-card shadow-floating py-1">
 							<button
 								onClick={() => onNavigate(`/dashboard/events/${event.id}`)}
 								className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
@@ -513,19 +625,31 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate }: CardProp
 								<EditIcon />
 								Edit
 							</button>
+							{event.status === "DRAFT" && (
+								<>
+									<div className="my-1 border-t border-border-subtle" />
+									<button
+										onClick={(e) => { e.stopPropagation(); onDeleteDraft(event.id) }}
+										className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-red-600 hover:bg-red-50 transition-colors"
+									>
+										<TrashIcon />
+										Delete Draft
+									</button>
+								</>
+							)}
 						</div>
 					)}
 				</div>
 				<div className="text-right hidden sm:block">
-					<p className="text-label-sm font-semibold text-text-primary">{formatRevenue(event.revenue)}</p>
-					<p className="text-caption text-text-muted">Revenue</p>
+					<p className="text-label-sm font-semibold text-text-primary">{priceLabel}</p>
+					<p className="text-caption text-text-muted">Starting from</p>
 				</div>
 			</div>
 		</div>
 	)
 }
 
-// ─── Icons ───────────────────────────────────────────────────────────────────
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 function PlusIcon() { return <PlusSvg className="size-4" aria-hidden /> }
 function SearchIcon() { return <SearchSvg className="size-4 shrink-0" aria-hidden /> }
@@ -537,6 +661,7 @@ function EyeIcon() { return <EyeOpenSvg className="size-4" aria-hidden /> }
 function EditIcon() { return <PenSquareSvg className="size-4" aria-hidden /> }
 function PeopleIcon({ className }: { className?: string }) { return <UsersGroupSvg className={clsx("size-3.5", className)} aria-hidden /> }
 function CalendarEmptyIcon() { return <CalendarSvg className="size-6" aria-hidden /> }
+function TrashIcon() { return <TrashBinSvg className="size-4" aria-hidden /> }
 
 function LoaderSpinner() {
 	return (
