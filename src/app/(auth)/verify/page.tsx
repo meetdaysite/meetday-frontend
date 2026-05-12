@@ -15,7 +15,8 @@ import LockKeyholeSvg from "@/icons/outlined/lock-keyhole.svg"
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
 import { useAuth } from "@/context/AuthContext"
 import { useAuthSessionStore } from "@/store/authSessionStore"
-import { fetchUserDetails, UserNotFoundError } from "@/lib/api"
+import { useHostStore } from "@/store/hostStore"
+import { checkPhone, getHostProfile } from "@/lib/api"
 import { CountrySelect } from "@/components/auth/PhoneField"
 import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/countries"
 
@@ -60,6 +61,7 @@ export default function VerifyPage() {
 	const [loading, setLoading] = useState(false)
 	const { confirmOtp, sendOtp } = useAuth()
 	const { intent, phone, clearSession } = useAuthSessionStore()
+	const { setProfile } = useHostStore()
 	const router = useRouter()
 	const canResend = secondsLeft === 0
 
@@ -75,7 +77,8 @@ export default function VerifyPage() {
 
 	useEffect(() => {
 		if (!intent) router.replace("/login")
-	}, [intent, router])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
 
 	useEffect(() => {
 		if (secondsLeft === 0) return
@@ -99,34 +102,43 @@ export default function VerifyPage() {
 
 	async function onSubmit({ otp }: FormValues) {
 		setLoading(true)
+
 		try {
 			await confirmOtp(otp)
+		} catch {
+			toast.error("Invalid OTP. Please try again.")
+			setValue("otp", "")
+			setLoading(false)
+			return
+		}
 
-			let userExists = true
-			try {
-				await fetchUserDetails()
-			} catch (e) {
-				if (e instanceof UserNotFoundError) userExists = false
-				else throw e
+		try {
+			if (!phone) {
+				toast.error("Session expired. Please start again.")
+				router.replace(intent === "login" ? "/login" : "/signup")
+				return
 			}
 
+			const { exists } = await checkPhone(phone)
+
 			if (intent === "login") {
-				if (userExists) {
+				if (exists) {
+					const profile = await getHostProfile()
+					setProfile(profile)
 					clearSession()
 					router.push("/dashboard")
 				} else {
-					toast.error("Account not found. Please sign up.")
+					toast.error("No account found for this number. Please sign up.")
 				}
 			} else {
-				if (userExists) {
-					toast.error("Account already exists. Please log in.")
+				if (exists) {
+					toast.error("An account already exists for this number. Please log in.")
 				} else {
 					router.push("/onboarding")
 				}
 			}
 		} catch {
-			toast.error("Invalid OTP. Please try again.")
-			setValue("otp", "")
+			toast.error("Something went wrong. Please try again.")
 		} finally {
 			setLoading(false)
 		}

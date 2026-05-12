@@ -9,12 +9,10 @@ import { z } from "zod"
 import { toast } from "sonner"
 import { AuthShell } from "@/components/auth/AuthShell"
 import { AuthTabs } from "@/components/auth/AuthTabs"
-import { SocialSignIn } from "@/components/auth/SocialSignIn"
 import { Button } from "@/components/ui/Button"
 import { PhoneField } from "@/components/auth/PhoneField"
 import { useAuth } from "@/context/AuthContext"
 import { useAuthSessionStore } from "@/store/authSessionStore"
-import { fetchUserDetails, UserNotFoundError } from "@/lib/api"
 import { DEFAULT_COUNTRY, type Country } from "@/lib/countries"
 
 const schema = z.object({
@@ -30,7 +28,7 @@ type FormValues = z.infer<typeof schema>
 export default function LoginPage() {
 	const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY)
 	const [loading, setLoading] = useState(false)
-	const { sendOtp, signInWithGoogle } = useAuth()
+	const { sendOtp } = useAuth()
 	const setSession = useAuthSessionStore((s) => s.setSession)
 	const router = useRouter()
 
@@ -52,23 +50,6 @@ export default function LoginPage() {
 			router.push("/verify")
 		} catch {
 			toast.error("Failed to send OTP. Please check the number and try again.")
-		} finally {
-			setLoading(false)
-		}
-	}
-
-	async function handleGoogleSignIn() {
-		setLoading(true)
-		try {
-			await signInWithGoogle()
-			await fetchUserDetails()
-			router.push("/dashboard")
-		} catch (e) {
-			if (e instanceof UserNotFoundError) {
-				toast.error("Account not found. Please sign up.")
-			} else {
-				toast.error("Google sign-in failed. Please try again.")
-			}
 		} finally {
 			setLoading(false)
 		}
@@ -115,14 +96,6 @@ export default function LoginPage() {
 				>
 					Send OTP
 				</Button>
-
-				<div className="flex items-center gap-3 my-1">
-					<div className="flex-1 h-px bg-border-default" />
-					<span className="text-caption text-text-muted">or</span>
-					<div className="flex-1 h-px bg-border-default" />
-				</div>
-
-				<SocialSignIn layout="stacked" onGoogleSignIn={handleGoogleSignIn} disabled={loading} />
 
 				<p className="text-center text-body-sm text-text-secondary mt-1">
 					New to meetday?{" "}

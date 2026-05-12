@@ -9,13 +9,11 @@ import { z } from "zod"
 import { toast } from "sonner"
 import { AuthShell } from "@/components/auth/AuthShell"
 import { AuthTabs } from "@/components/auth/AuthTabs"
-import { SocialSignIn } from "@/components/auth/SocialSignIn"
 import { Button } from "@/components/ui/Button"
 import { Checkbox } from "@/components/ui/Checkbox"
 import { PhoneField } from "@/components/auth/PhoneField"
 import { useAuth } from "@/context/AuthContext"
 import { useAuthSessionStore } from "@/store/authSessionStore"
-import { fetchUserDetails, UserNotFoundError } from "@/lib/api"
 import { DEFAULT_COUNTRY, type Country } from "@/lib/countries"
 
 const schema = z.object({
@@ -32,19 +30,21 @@ type FormValues = z.infer<typeof schema>
 export default function SignupPage() {
 	const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY)
 	const [loading, setLoading] = useState(false)
-	const { sendOtp, signInWithGoogle } = useAuth()
+	const { sendOtp } = useAuth()
 	const setSession = useAuthSessionStore((s) => s.setSession)
 	const router = useRouter()
 
 	const {
 		control,
 		handleSubmit,
-		trigger,
+		watch,
 		formState: { errors },
 	} = useForm<FormValues>({
 		resolver: zodResolver(schema),
 		defaultValues: { phone: "", agreed: undefined },
 	})
+
+	const agreed = watch("agreed")
 
 	async function onSubmit({ phone }: FormValues) {
 		setLoading(true)
@@ -55,33 +55,6 @@ export default function SignupPage() {
 			router.push("/verify")
 		} catch {
 			toast.error("Failed to send OTP. Please check the number and try again.")
-		} finally {
-			setLoading(false)
-		}
-	}
-
-	async function handleGoogleSignIn() {
-		const agreedValid = await trigger("agreed")
-		if (!agreedValid) return
-
-		setLoading(true)
-		try {
-			const { email, displayName } = await signInWithGoogle()
-			try {
-				await fetchUserDetails()
-				toast.error("Account already exists. Please log in.")
-			} catch (e) {
-				if (e instanceof UserNotFoundError) {
-					setSession({ intent: "signup", email: email ?? undefined, displayName: displayName ?? undefined })
-					router.push("/onboarding")
-				} else {
-					throw e
-				}
-			}
-		} catch (e) {
-			if (!(e instanceof UserNotFoundError)) {
-				toast.error("Google sign-in failed. Please try again.")
-			}
 		} finally {
 			setLoading(false)
 		}
@@ -153,18 +126,10 @@ export default function SignupPage() {
 					size="md"
 					radius="pill"
 					className="w-full mt-1"
-					disabled={loading}
+					disabled={loading || !agreed}
 				>
 					Send OTP
 				</Button>
-
-				<div className="flex items-center gap-3 my-1">
-					<div className="flex-1 h-px bg-border-default" />
-					<span className="text-caption text-text-muted">or</span>
-					<div className="flex-1 h-px bg-border-default" />
-				</div>
-
-				<SocialSignIn layout="stacked" onGoogleSignIn={handleGoogleSignIn} disabled={loading} />
 
 				<p className="text-center text-body-sm text-text-secondary mt-1">
 					Already have an account?{" "}

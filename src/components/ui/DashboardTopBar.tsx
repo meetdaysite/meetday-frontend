@@ -1,8 +1,11 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
+import { useAuthStore } from "@/store/authStore"
+import { useHostStore } from "@/store/hostStore"
 import BellSvg from "@/icons/outlined/bell.svg"
 import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
@@ -90,9 +93,18 @@ export function DashboardTopBar() {
 	const [notifOpen, setNotifOpen] = useState(false)
 	const [userOpen, setUserOpen] = useState(false)
 	const [notifications, setNotifications] = useState(NOTIFICATIONS)
+	const { signOut } = useAuthStore()
+	const { clearProfile } = useHostStore()
+	const router = useRouter()
 
 	const notifRef = useRef<HTMLDivElement>(null)
 	const userRef = useRef<HTMLDivElement>(null)
+
+	async function handleSignOut() {
+		clearProfile()
+		await signOut()
+		router.replace("/login")
+	}
 
 	useClickOutside(notifRef, () => setNotifOpen(false))
 	useClickOutside(userRef, () => setUserOpen(false))
@@ -194,7 +206,7 @@ export function DashboardTopBar() {
 					{userOpen && (
 						<div className="absolute right-0 top-full mt-2 z-50 bg-surface-card border border-border-subtle rounded-action shadow-floating py-1 min-w-36">
 							<button
-								onClick={() => setUserOpen(false)}
+								onClick={handleSignOut}
 								className="w-full text-left px-4 py-2.5 text-label-sm font-medium text-text-brand hover:bg-surface-card-muted transition-colors"
 							>
 								Sign Out

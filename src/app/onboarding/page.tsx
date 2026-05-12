@@ -1,30 +1,36 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useForm, useFormContext, FormProvider, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
+import { isAxiosError } from "axios"
 import clsx from "clsx"
-// TODO: restore when API is ready
-// import { useAuth } from "@/context/AuthContext"
-// import { useAuthSessionStore } from "@/store/authSessionStore"
-// import { registerHost } from "@/lib/api"
+import {
+	registerHost,
+	verifyPan,
+	verifyBankAccount,
+	getCategories,
+	getSubscriptionPlans,
+	getHostProfile,
+	type Category,
+	type SubscriptionPlan,
+	type BankKycResult,
+	type RegisterPayload,
+} from "@/lib/api"
+import { useHostStore } from "@/store/hostStore"
+import { useAuthSessionStore } from "@/store/authSessionStore"
 import { Button } from "@/components/ui/Button"
 import { TextField } from "@/components/ui/TextField"
 import { Dropdown } from "@/components/ui/Dropdown"
 import { Icon } from "@/components/ui/Icon"
 import { OnboardingLeftPanel } from "@/components/onboarding/OnboardingLeftPanel"
 import { STEP_PANEL_CONFIGS } from "./config"
-import CalendarSvg from "@/icons/filled/calendar.svg"
-import CardSvg from "@/icons/filled/card.svg"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
-import ChartSvg from "@/icons/filled/chart-2.svg"
-import DiplomaSvg from "@/icons/filled/diploma.svg"
-import HeartsSvg from "@/icons/filled/hearts.svg"
-import CameraAddSvg from "@/icons/outlined/camera-add.svg"
+import CardSvg from "@/icons/filled/card.svg"
 import LockKeyholeSvg from "@/icons/outlined/lock-keyhole.svg"
 import InstagramSvg from "@/icons/socials/instagram.svg"
 import LinkedinSvg from "@/icons/socials/linkedin.svg"
@@ -37,6 +43,82 @@ import DuotoneStarsSvg from "@/icons/duotone/stars.svg"
 import DuotoneShieldCheckSvg from "@/icons/duotone/shield-check.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getApiErrorMessage(error: unknown): string {
+	if (isAxiosError(error)) {
+		const status = error.response?.status
+		const body = error.response?.data
+		if (status === 409) return "An account already exists for this number. Please log in."
+		if (status === 401) return "Session expired. Please sign in again."
+		if (body?.message) return body.message as string
+		if (body?.error) return body.error as string
+	}
+	return "Something went wrong. Please try again."
+}
+
+function buildRegisterPayload(values: FormValues, phone?: string): RegisterPayload {
+	return {
+		firstName: values.firstName,
+		lastName: values.lastName,
+		email: values.email,
+		phone: phone || undefined,
+		accountType: "HOST",
+		hostType: values.accountType === "Individual" ? "INDIVIDUAL" : "BUSINESS",
+		displayName: values.displayName || undefined,
+		bio: values.bio || undefined,
+		tagline: values.tagline || undefined,
+		gender: values.gender || undefined,
+		legalName: values.legalName,
+		pan: values.pan,
+		address: values.addressLine1
+			? {
+				addressLine1: values.addressLine1,
+				addressLine2: values.addressLine2 || undefined,
+				city: values.addressCity || "",
+				state: values.addressState || "",
+				pincode: values.addressPincode || "",
+			}
+			: undefined,
+		socialLinks: {
+			instagram: values.instagram || undefined,
+			linkedin: values.linkedin || undefined,
+			youtube: values.youtube || undefined,
+			portfolio: values.portfolio || undefined,
+		},
+		categoryIds: values.categoryIds ?? [],
+		yearsOfExperience: values.yearsOfExperience ?? 0,
+		totalEventsPreviouslyHosted: values.totalEventsHosted ?? 0,
+		operatingCities: values.operatingCities ?? [],
+	}
+}
+
+// ─── Plan display metadata (marketing copy, not from API) ────────────────────
+
+const PLAN_META: Record<
+	string,
+	{ features: string[]; highlightFeature: string | null; recommended: boolean; cta: string }
+> = {
+	DISCOVER: {
+		features: ["Host up to 3 events/month", "Community up to 100 people", "Basic event tools", "Email support"],
+		highlightFeature: null,
+		recommended: false,
+		cta: "Try for free",
+	},
+	COMMUNITY: {
+		features: ["Host unlimited events", "Community up to 5,000 people", "Ticket & registrations", "Custom branding", "Priority support"],
+		highlightFeature: "All Discover features +",
+		recommended: true,
+		cta: "Choose Community",
+	},
+	SELL: {
+		features: ["No platform fees", "Advanced analytics", "Payouts & Settlements", "Dedicated support"],
+		highlightFeature: "Everything in Community +",
+		recommended: false,
+		cta: "Choose Sell",
+	},
+}
+
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const schema = z.object({
@@ -44,39 +126,46 @@ const schema = z.object({
 	firstName: z.string().min(1, "Required"),
 	lastName: z.string().min(1, "Required"),
 	accountType: z.enum(["Individual", "Business"]).refine(v => !!v, "Select an option"),
+	email: z.string().email("Enter a valid email address"),
 	// Step 2
 	displayName: z.string().optional(),
 	bio: z.string().optional(),
 	tagline: z.string().optional(),
 	gender: z.string().optional(),
-	// Step 3 — Experience & Focus
-	yearsExperience: z.string().optional(),
-	eventsHosted: z.string().optional(),
-	interests: z.array(z.string()).optional(),
-	// Step 4 (was 3)
+	// Step 3
 	instagram: z.string().optional(),
 	linkedin: z.string().optional(),
 	youtube: z.string().optional(),
 	portfolio: z.string().optional(),
 	legalName: z.string().min(1, "Required"),
 	pan: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Enter a valid PAN (e.g. ABCDE1234F)"),
-	registeredAddress: z.string().optional(),
+	addressLine1: z.string().optional(),
+	addressLine2: z.string().optional(),
+	addressCity: z.string().optional(),
+	addressState: z.string().optional(),
+	addressPincode: z.string().optional(),
 	// Step 4
-	reviewConfirmed: z.boolean().refine(v => v === true, "Please confirm to continue"),
+	yearsOfExperience: z.coerce.number().min(0).optional(),
+	totalEventsHosted: z.coerce.number().min(0).optional(),
+	categoryIds: z.array(z.string()).optional(),
+	operatingCities: z.array(z.string()).optional(),
 	// Step 5
+	reviewConfirmed: z.boolean().refine(v => v === true, "Please confirm to continue"),
+	// Step 6
 	accountHolderName: z.string().min(1, "Required"),
 	accountNumber: z.string().min(1, "Required"),
 	ifscCode: z.string().min(1, "Required"),
 	bankName: z.string().min(1, "Required"),
-	// Step 7
+	// Step 8
 	plan: z.enum(["discover", "community", "sell"]).refine(v => !!v, "Select a plan"),
+	billingCycle: z.enum(["MONTHLY", "YEARLY"]).optional(),
 	couponCode: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof schema>
 
 const STEP_FIELDS: (keyof FormValues)[][] = [
-	["firstName", "lastName", "accountType"],
+	["firstName", "lastName", "accountType", "email"],
 	[],
 	["legalName", "pan"],
 	[],
@@ -92,23 +181,23 @@ const STEP_BUTTON_LABELS = [
 	"Save & Continue",
 	"Save & Continue",
 	"Save & Continue",
+	"Submit & Continue",
+	"Confirm & Continue",
 	"Save & Continue",
-	"Confirm & review",
-	"Submit for review",
-	"Save & Continue",
-	"Enter Host OS",
+	"Continue",
+	"",
 ]
 
 const STEP_SUBTITLES = [
 	"This helps us tailor your meetday experience to fit your goals and style.",
 	"This helps us tailor your meetday experience to fit your goals and style.",
-	"Help people find you verify your identity. Your information is safe with us.",
+	"Help people find you and verify your identity. Your information is safe with us.",
 	"Tell us about your hosting journey so we can match you with the right tools and community.",
-	"Take a moment to review everything before we go live",
+	"Take a moment to review everything before we proceed.",
 	"Almost there! Please verify your account to receive payouts.",
 	"Almost there! Please verify your account to receive payouts.",
 	"Pick the plan that matches your goals. You can upgrade anytime.",
-	"Amazing work! Everything is set up and you're all good to go. Let's make your first event one to remember.",
+	"We'll review your application and notify you by email once it's approved.",
 ]
 
 function CheckIcon() {
@@ -125,7 +214,7 @@ function CheckIcon() {
 
 // ─── Step 1 — Tell us about you ───────────────────────────────────────────────
 
-function StepAboutYou() {
+function StepAboutYou({ isEmailReadOnly }: { isEmailReadOnly: boolean }) {
 	const {
 		register,
 		control,
@@ -154,6 +243,18 @@ function StepAboutYou() {
 					className="flex-1"
 				/>
 			</div>
+
+			<TextField
+				label="Email address"
+				placeholder="Enter your email address"
+				type="email"
+				{...register("email")}
+				error={!!errors.email}
+				helperText={errors.email?.message}
+				size="md"
+				disabled={isEmailReadOnly}
+				hint={isEmailReadOnly ? "From your Google account" : undefined}
+			/>
 
 			<div>
 				<p className="text-label-sm font-semibold text-text-primary mb-3">What best describes you?</p>
@@ -202,9 +303,7 @@ function StepAboutYou() {
 											aria-hidden
 										/>
 										<div className="mt-2">
-											<p className="text-label-md text-text-primary font-semibold">
-												{type}
-											</p>
+											<p className="text-label-md text-text-primary font-semibold">{type}</p>
 											<p className="text-[10px] text-text-secondary mt-0.5">
 												{type === "Individual"
 													? "I host events on my own"
@@ -247,70 +346,23 @@ function StepHostProfile() {
 		control,
 		formState: { errors },
 	} = useFormContext<FormValues>()
-	const fileRef = useRef<HTMLInputElement>(null)
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-
-	function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-		const file = e.target.files?.[0]
-		if (!file) return
-		const url = URL.createObjectURL(file)
-		setPreviewUrl(prev => {
-			if (prev) URL.revokeObjectURL(prev)
-			return url
-		})
-	}
 
 	const genderOptions = [
-		{ value: "male", label: "Male" },
-		{ value: "female", label: "Female" },
-		{ value: "non-binary", label: "Non-binary" },
-		{ value: "prefer-not-to-say", label: "Prefer not to say" },
+		{ value: "MALE", label: "Male" },
+		{ value: "FEMALE", label: "Female" },
+		{ value: "NON_BINARY", label: "Non-binary" },
+		{ value: "PREFER_NOT_TO_SAY", label: "Prefer not to say" },
 	]
 
 	return (
 		<div className="flex flex-col gap-5">
-			{/* Photo upload */}
-			<div className="flex items-start gap-4">
-				<button
-					type="button"
-					onClick={() => fileRef.current?.click()}
-					className="relative flex flex-col items-center justify-center gap-2 w-30 h-30 rounded-image border-2 border-dashed border-border-default bg-surface-canvas hover:border-border-strong transition-colors shrink-0 overflow-hidden"
-				>
-					{previewUrl ? (
-						<Image src={previewUrl} alt="Profile photo preview" fill className="object-cover" />
-					) : (
-						<>
-							<div className="border border-border-default p-2 rounded-full">
-								<Icon as={CameraAddSvg} size="lg" />
-							</div>
-							<span className="text-[10px] text-text-muted text-center px-1">
-								<span className="text-label-sm text-text-primary font-semibold">
-									Upload photo
-								</span>
-								<br />
-								JPG or PNG, max 5 mb
-							</span>
-						</>
-					)}
-				</button>
-				<input
-					ref={fileRef}
-					type="file"
-					accept="image/jpeg,image/png"
-					className="hidden"
-					onChange={handleFileChange}
-				/>
-
-				<div className="flex-1 flex flex-col gap-4">
-					<TextField
-						label="Display name"
-						hint="Optional"
-						placeholder="What should we call you?"
-						{...register("displayName")}
-						size="md"
-					/>
-				</div>
-			</div>
+			<TextField
+				label="Display name"
+				hint="Optional"
+				placeholder="What should we call you?"
+				{...register("displayName")}
+				size="md"
+			/>
 
 			<div className="flex flex-col gap-1.5">
 				<div className="flex items-center justify-between">
@@ -390,7 +442,6 @@ function StepLinksLegal() {
 						className="flex-1"
 					/>
 				</div>
-
 				<div className="flex justify-center items-center gap-2">
 					<div className="border border-border-default p-2 rounded-xl bg-action-secondary-hover">
 						<Icon as={YoutubeSvg} size="lg" />
@@ -402,7 +453,6 @@ function StepLinksLegal() {
 						className="flex-1"
 					/>
 				</div>
-
 				<div className="flex justify-center items-center gap-2">
 					<div className="border border-border-default p-2 rounded-xl bg-action-secondary-hover">
 						<Icon as={LinkSvg} size="lg" />
@@ -437,17 +487,44 @@ function StepLinksLegal() {
 				/>
 			</div>
 
-			<TextField
-				label="Registered address"
-				hint="Optional"
-				placeholder="Enter your complete address"
-				{...register("registeredAddress")}
-				size="md"
-			/>
+			<div className="flex flex-col gap-3">
+				<p className="text-label-sm font-semibold text-text-primary">
+					Registered address <span className="text-text-muted font-normal">(Optional)</span>
+				</p>
+				<TextField
+					placeholder="Address line 1 (e.g. 12, Linking Road)"
+					{...register("addressLine1")}
+					size="md"
+				/>
+				<TextField
+					placeholder="Address line 2 (e.g. Bandra West)"
+					{...register("addressLine2")}
+					size="md"
+				/>
+				<div className="flex gap-3">
+					<TextField
+						placeholder="City"
+						{...register("addressCity")}
+						size="md"
+						className="flex-1"
+					/>
+					<TextField
+						placeholder="State"
+						{...register("addressState")}
+						size="md"
+						className="flex-1"
+					/>
+				</div>
+				<TextField
+					placeholder="Pincode"
+					{...register("addressPincode")}
+					size="md"
+				/>
+			</div>
 
 			<p className="flex items-center gap-1.5 text-caption text-text-secondary">
 				<Icon as={LockKeyholeSvg} size="sm" className="opacity-80" />
-				Your information is encrypted and never shared quickly.
+				Your information is encrypted and never shared.
 			</p>
 		</div>
 	)
@@ -455,113 +532,144 @@ function StepLinksLegal() {
 
 // ─── Step 4 — Experience & Focus ─────────────────────────────────────────────
 
-const INTEREST_OPTIONS = [
-	"Community",
-	"Networking",
-	"Music & Arts",
-	"Tech & Innovation",
-	"Wellness & Mindfulness",
-	"Sports & Fitness",
-	"Education",
-	"Food & Drinks",
-	"Travel & Outdoors",
-	"Business",
-]
+function StepExperienceFocus({ categories }: { categories: Category[] }) {
+	const { control, register, getValues, setValue } = useFormContext<FormValues>()
+	const [cityInput, setCityInput] = useState("")
 
-function StepExperienceFocus() {
-	const { control } = useFormContext<FormValues>()
-
-	const yearsOptions = [
-		{ value: "less-than-1", label: "Less than 1 year" },
-		{ value: "1-2", label: "1–2 years" },
-		{ value: "3-5", label: "3–5 years" },
-		{ value: "6-10", label: "6–10 years" },
-		{ value: "10+", label: "10+ years" },
-	]
-
-	const eventsOptions = [
-		{ value: "first", label: "This will be my first" },
-		{ value: "1-5", label: "1–5 events" },
-		{ value: "6-15", label: "6–15 events" },
-		{ value: "16-50", label: "16–50 events" },
-		{ value: "50+", label: "50+ events" },
-	]
+	function addCity() {
+		const trimmed = cityInput.trim()
+		if (!trimmed) return
+		const current = getValues("operatingCities") ?? []
+		if (current.includes(trimmed)) { setCityInput(""); return }
+		setValue("operatingCities", [...current, trimmed])
+		setCityInput("")
+	}
 
 	return (
 		<div className="flex flex-col gap-6">
-			<Controller
-				control={control}
-				name="yearsExperience"
-				render={({ field }) => (
-					<Dropdown
-						label="Total years of experience"
-						hint="Optional"
-						placeholder="How long have you been hosting?"
-						options={yearsOptions}
-						value={field.value}
-						onChange={field.onChange}
-						size="md"
-					/>
-				)}
-			/>
+			<div className="flex gap-3">
+				<TextField
+					label="Years of experience"
+					hint="Optional"
+					placeholder="e.g. 3"
+					type="number"
+					min={0}
+					{...register("yearsOfExperience", { valueAsNumber: true })}
+					size="md"
+					className="flex-1"
+				/>
+				<TextField
+					label="Total events hosted"
+					hint="Optional"
+					placeholder="e.g. 15"
+					type="number"
+					min={0}
+					{...register("totalEventsHosted", { valueAsNumber: true })}
+					size="md"
+					className="flex-1"
+				/>
+			</div>
 
-			<Controller
-				control={control}
-				name="eventsHosted"
-				render={({ field }) => (
-					<Dropdown
-						label="Total events hosted till now"
-						hint="Optional"
-						placeholder="Roughly how many events have you run?"
-						options={eventsOptions}
-						value={field.value}
-						onChange={field.onChange}
+			{/* Operating cities */}
+			<div className="flex flex-col gap-2">
+				<div className="flex items-center justify-between">
+					<p className="text-label-sm font-semibold text-text-primary">Operating cities</p>
+					<span className="text-caption text-text-muted">Optional</span>
+				</div>
+				<div className="flex gap-2">
+					<TextField
+						placeholder="e.g. Mumbai"
+						value={cityInput}
+						onChange={e => setCityInput((e.target as HTMLInputElement).value)}
+						onKeyDown={(e: React.KeyboardEvent) => {
+							if (e.key === "Enter") { e.preventDefault(); addCity() }
+						}}
 						size="md"
+						className="flex-1"
 					/>
-				)}
-			/>
+					<button
+						type="button"
+						onClick={addCity}
+						className="px-4 rounded-input border border-border-default bg-surface-canvas text-label-sm font-semibold text-text-primary hover:bg-action-secondary-hover transition-colors"
+					>
+						Add
+					</button>
+				</div>
+				<Controller
+					control={control}
+					name="operatingCities"
+					render={({ field }) => {
+						const cities = field.value ?? []
+						if (!cities.length) return <></>
+						return (
+							<div className="flex flex-wrap gap-2 mt-1">
+								{cities.map(city => (
+									<span
+										key={city}
+										className="flex items-center gap-1.5 px-3 py-1 rounded-avatar border border-border-default bg-surface-canvas text-label-sm text-text-primary"
+									>
+										{city}
+										<button
+											type="button"
+											onClick={() => field.onChange(cities.filter(c => c !== city))}
+											className="text-text-muted hover:text-text-primary transition-colors leading-none"
+										>
+											×
+										</button>
+									</span>
+								))}
+							</div>
+						)
+					}}
+				/>
+			</div>
 
+			{/* Interests & focus areas */}
 			<div className="flex flex-col gap-3">
 				<div className="flex items-center justify-between">
 					<p className="text-label-sm font-semibold text-text-primary">Interests & focus areas</p>
 					<span className="text-caption text-text-muted">Optional · pick all that apply</span>
 				</div>
-				<Controller
-					control={control}
-					name="interests"
-					render={({ field }) => {
-						const selected = field.value ?? []
-						function toggle(interest: string) {
-							field.onChange(
-								selected.includes(interest)
-									? selected.filter((i: string) => i !== interest)
-									: [...selected, interest],
+				{categories.length === 0 ? (
+					<p className="text-caption text-text-muted">Loading categories…</p>
+				) : (
+					<Controller
+						control={control}
+						name="categoryIds"
+						render={({ field }) => {
+							const selected = field.value ?? []
+							function toggle(id: string) {
+								field.onChange(
+									selected.includes(id)
+										? selected.filter((i: string) => i !== id)
+										: [...selected, id],
+								)
+							}
+							return (
+								<div className="flex flex-wrap gap-2">
+									{categories.map(cat => {
+										const active = selected.includes(cat.id)
+										return (
+											<button
+												key={cat.id}
+												type="button"
+												onClick={() => toggle(cat.id)}
+												className={clsx(
+													"px-3.5 py-1.5 rounded-avatar border-2 text-label-sm transition-all duration-(--duration-120)",
+													active
+														? "border-border-focus bg-surface-brand-soft text-text-brand font-semibold"
+														: "border-border-default bg-surface-canvas text-text-secondary hover:border-border-strong",
+												)}
+											>
+												{cat.name}
+											</button>
+										)
+									})}
+								</div>
 							)
-						}
-						return (
-							<div className="flex flex-wrap gap-2">
-								{INTEREST_OPTIONS.map(interest => {
-									const active = selected.includes(interest)
-									return (
-										<button
-											key={interest}
-											type="button"
-											onClick={() => toggle(interest)}
-											className={clsx(
-												"px-3.5 py-1.5 rounded-avatar border-2 text-label-sm transition-all duration-(--duration-120)",
-												active
-													? "border-border-focus bg-surface-brand-soft text-text-brand font-semibold"
-													: "border-border-default bg-surface-canvas text-text-secondary hover:border-border-strong",
-											)}
-										>
-											{interest}
-										</button>
-									)
-								})}
-							</div>
-						)
-					}}
-				/>
+						}}
+					/>
+				)}
 			</div>
 
 			<p className="flex items-center gap-1.5 text-caption text-text-muted">
@@ -594,38 +702,38 @@ function StepReviewDetails({ onJumpTo }: { onJumpTo: (step: number) => void }) {
 			icon: DuotoneUserSvg,
 			details: [
 				[values.firstName, values.lastName].filter(Boolean).join(" ") || "—",
-				"hello@meetday.com",
+				values.email || "—",
 			],
 			jumpStep: 0,
 		},
 		{
 			label: "Host type",
 			icon: DuotoneCalenderSvg,
-			details: ["I host events", values.accountType ?? "In-person"],
+			details: ["I host events", values.accountType ?? "—"],
 			jumpStep: 0,
 		},
 		{
 			label: "Profile",
 			icon: DuotoneUserHandsSvg,
-			details: [values.displayName || values.firstName || "—", "Kolkata, WB"],
+			details: [values.displayName || values.firstName || "—", values.tagline || "—"],
 			jumpStep: 1,
 		},
 		{
 			label: "Experience & Focus",
 			icon: DuotoneStarsSvg,
 			details: [
-				values.eventsHosted || "—",
-				values.yearsExperience || "—",
-				values.interests?.length ? values.interests.join(", ") : "—",
+				values.yearsOfExperience != null ? `${values.yearsOfExperience} yrs exp` : "—",
+				values.totalEventsHosted != null ? `${values.totalEventsHosted} events` : "—",
+				values.operatingCities?.length ? values.operatingCities.join(", ") : "—",
 			],
 			jumpStep: 3,
 		},
 		{
-			label: "Link & KYC",
+			label: "Links & KYC",
 			icon: DuotoneShieldCheckSvg,
 			details: [
 				values.instagram ? `Instagram: @${values.instagram}` : "Instagram: —",
-				values.pan ? "ID Verified" : "ID Pending",
+				values.pan ? "PAN added" : "PAN pending",
 			],
 			jumpStep: 2,
 		},
@@ -641,12 +749,10 @@ function StepReviewDetails({ onJumpTo }: { onJumpTo: (step: number) => void }) {
 					<div className="size-11 rounded-full border border-border-default bg-surface-canvas flex items-center justify-center shrink-0">
 						<Icon as={s.icon} size="md" />
 					</div>
-
 					<div className="flex-1 min-w-0">
 						<p className="text-label-sm font-bold text-text-primary">{s.label}</p>
 						<p className="text-body-sm text-text-secondary truncate">{s.details.join(" • ")}</p>
 					</div>
-
 					<button
 						type="button"
 						onClick={() => onJumpTo(s.jumpStep)}
@@ -674,7 +780,7 @@ function StepReviewDetails({ onJumpTo }: { onJumpTo: (step: number) => void }) {
 	)
 }
 
-// ─── Step 5 — Verify payout details ──────────────────────────────────────────
+// ─── Step 6 — Verify payout details ──────────────────────────────────────────
 
 function StepPayoutDetails() {
 	const {
@@ -686,7 +792,6 @@ function StepPayoutDetails() {
 
 	return (
 		<div className="flex flex-col gap-5">
-			{/* PAN auto-detected card */}
 			<div className="flex items-center justify-between rounded-card border border-border-default bg-surface-canvas px-4 py-3">
 				<div className="flex items-center gap-3">
 					<div className="size-10 rounded-badge bg-surface-success-soft flex items-center justify-center shrink-0">
@@ -699,7 +804,7 @@ function StepPayoutDetails() {
 				</div>
 				<span className="flex items-center gap-1 text-caption font-medium text-text-success bg-surface-success-soft px-2 py-1 rounded-avatar">
 					<Icon as={CheckCircleSvg} size="sm" color="success" />
-					Verified
+					Submitted
 				</span>
 			</div>
 
@@ -742,43 +847,69 @@ function StepPayoutDetails() {
 
 			<p className="flex items-center gap-1.5 text-caption text-text-muted">
 				<Icon as={LockKeyholeSvg} size="sm" className="opacity-80" />
-				Your information is encrypted and secured
+				Your information is encrypted and secured. Raw account number is never stored.
 			</p>
 		</div>
 	)
 }
 
-// ─── Step 6 — Review payout details ──────────────────────────────────────────
+// ─── Step 7 — Review payout details ──────────────────────────────────────────
 
-function StepReviewPayout() {
+function StatusBadge({ status }: { status: string }) {
+	const verified = status === "VERIFIED"
+	return (
+		<span
+			className={clsx(
+				"flex items-center gap-1 text-caption font-medium px-2 py-1 rounded-avatar",
+				verified
+					? "text-text-success bg-surface-success-soft"
+					: "text-text-warning bg-surface-warning-soft",
+			)}
+		>
+			{verified ? (
+				<Icon as={CheckCircleSvg} size="sm" color="success" />
+			) : (
+				<svg viewBox="0 0 16 16" fill="currentColor" className="size-3.5 text-icon-warning">
+					<path fillRule="evenodd" d="M8 1a7 7 0 100 14A7 7 0 008 1zm.75 4a.75.75 0 00-1.5 0v4a.75.75 0 001.5 0V5zm-.75 6.5a.875.875 0 100 1.75.875.875 0 000-1.75z" clipRule="evenodd" />
+				</svg>
+			)}
+			{verified ? "Verified" : status}
+		</span>
+	)
+}
+
+function StepReviewPayout({ bankKycResult }: { bankKycResult: BankKycResult | null }) {
 	const { getValues } = useFormContext<FormValues>()
 	const v = getValues()
+	const maskedAccount = v.accountNumber
+		? `••••${v.accountNumber.slice(-4)}`
+		: "——"
 
 	return (
 		<div className="flex flex-col gap-4">
-			{/* PAN card */}
+			{/* PAN status */}
 			<div className="flex items-center justify-between rounded-card border border-border-default bg-surface-canvas px-4 py-3">
 				<div className="flex items-center gap-3">
 					<div className="size-10 rounded-badge bg-surface-success-soft flex items-center justify-center shrink-0">
 						<Icon as={CardSvg} size="lg" color="success" />
 					</div>
 					<div>
-						<p className="text-label-md text-text-primary font-bold">PAN Auto-detected</p>
-						<p className="text-body-sm font-mono text-text-primary">{v.pan || "ABCDE1234F"}</p>
+						<p className="text-label-md text-text-primary font-bold">PAN</p>
+						<p className="text-body-sm font-mono text-text-primary">{v.pan || "—"}</p>
 					</div>
 				</div>
-				<span className="flex items-center gap-1 text-caption font-medium text-text-success bg-surface-success-soft px-2 py-1 rounded-avatar">
-					<Icon as={CheckCircleSvg} size="sm" color="success" />
-					Verified
-				</span>
+				<StatusBadge status={bankKycResult?.panVerificationStatus ?? "PENDING"} />
 			</div>
 
 			{/* Bank details */}
 			<div className="rounded-card border border-border-default bg-surface-canvas px-4 py-4 flex flex-col gap-3">
-				<p className="text-label-md text-text-primary font-semibold">Bank account details</p>
+				<div className="flex items-center justify-between">
+					<p className="text-label-md text-text-primary font-semibold">Bank account details</p>
+					<StatusBadge status={bankKycResult?.bankVerificationStatus ?? "PENDING"} />
+				</div>
 				{[
 					{ label: "Account holder name", value: v.accountHolderName },
-					{ label: "Account number", value: v.accountNumber },
+					{ label: "Account number", value: maskedAccount },
 					{ label: "IFSC Code", value: v.ifscCode },
 					{ label: "Bank name", value: v.bankName },
 				].map(({ label, value }) => (
@@ -789,67 +920,19 @@ function StepReviewPayout() {
 				))}
 			</div>
 
+			{bankKycResult?.kycFailureReason && (
+				<p className="text-caption text-text-danger px-1">{bankKycResult.kycFailureReason}</p>
+			)}
+
 			<p className="flex items-center gap-1.5 text-caption text-text-muted">
 				<Icon as={LockKeyholeSvg} size="sm" className="opacity-80" />
-				Your information is encrypted and never shared quickly.
+				Your information is encrypted and never shared.
 			</p>
 		</div>
 	)
 }
 
 // ─── Step 8 — Choose your host plan ──────────────────────────────────────────
-
-const PLANS = [
-	{
-		id: "discover" as const,
-		name: "Discover",
-		subtitle: "20% Platform fee per ticket",
-		price: "Free",
-		priceNote: null as string | null,
-		highlightFeature: null as string | null,
-		features: [
-			"Host up to 3 events/month",
-			"Community upto 100 people",
-			"Basic event tools",
-			"Email support",
-		],
-		recommended: false,
-		cta: "Try for free",
-	},
-	{
-		id: "community" as const,
-		name: "Community",
-		subtitle: "15% Platform fee – billed monthly or yearly",
-		price: "₹1,250",
-		priceNote: "/month" as string | null,
-		highlightFeature: "All Discover features +" as string | null,
-		features: [
-			"Host unlimited events",
-			"Community up to 5,000 people",
-			"Ticket & registrations",
-			"Custom branding",
-			"Priority support",
-		],
-		recommended: true,
-		cta: "Choose Community",
-	},
-	{
-		id: "sell" as const,
-		name: "Sell",
-		subtitle: "15% Platform fee – yearly billing only",
-		price: "₹8,300",
-		priceNote: "/month" as string | null,
-		highlightFeature: "Everything in Community +" as string | null,
-		features: [
-			"No platform fees",
-			"Advanced analytics",
-			"Payouts & Settlements",
-			"Dedicated support",
-		],
-		recommended: false,
-		cta: "Choose Sell",
-	},
-]
 
 function FilledCheckIcon() {
 	return (
@@ -869,12 +952,23 @@ function OutlineCheckIcon() {
 	)
 }
 
-function StepChoosePlan() {
+function StepChoosePlan({ plans }: { plans: SubscriptionPlan[] }) {
 	const {
 		control,
 		register,
+		watch,
 		formState: { errors },
 	} = useFormContext<FormValues>()
+	const selectedPlan = watch("plan")
+	const billingCycle = watch("billingCycle")
+
+	if (plans.length === 0) {
+		return (
+			<div className="flex flex-col items-center gap-3 py-8 text-center">
+				<p className="text-body-sm text-text-secondary">Loading plans…</p>
+			</div>
+		)
+	}
 
 	return (
 		<div className="flex flex-col gap-5">
@@ -883,26 +977,50 @@ function StepChoosePlan() {
 				name="plan"
 				render={({ field }) => (
 					<div className="flex gap-3 py-4">
-						{PLANS.map(plan => {
-							const selected = field.value === plan.id
+						{plans.map(apiPlan => {
+							const meta = PLAN_META[apiPlan.plan]
+							if (!meta) return null
+							const planId = apiPlan.plan.toLowerCase() as "discover" | "community" | "sell"
+							const selected = field.value === planId
+
+							const isCommunitySelected = planId === "community" && selected
+							const displayPrice = (() => {
+								if (apiPlan.plan === "DISCOVER") return "Free"
+								if (apiPlan.plan === "SELL") return apiPlan.yearlyPrice ? `₹${apiPlan.yearlyPrice.toLocaleString("en-IN")}` : "—"
+								if (apiPlan.plan === "COMMUNITY") {
+									if (billingCycle === "MONTHLY" && apiPlan.monthlyPrice) return `₹${apiPlan.monthlyPrice.toLocaleString("en-IN")}`
+									if (apiPlan.yearlyPrice) return `₹${apiPlan.yearlyPrice.toLocaleString("en-IN")}`
+								}
+								return "—"
+							})()
+
+							const priceNote = (() => {
+								if (apiPlan.plan === "DISCOVER") return null
+								if (apiPlan.plan === "SELL") return "/year"
+								if (apiPlan.plan === "COMMUNITY") return billingCycle === "MONTHLY" ? "/month" : "/year"
+								return null
+							})()
+
+							const feeRate = `${(apiPlan.platformFeeRate * 100).toFixed(0)}% platform fee`
+
 							return (
 								<div
-									key={plan.id}
+									key={apiPlan.id}
 									role="button"
 									tabIndex={0}
-									onClick={() => field.onChange(plan.id)}
-									onKeyDown={e => (e.key === "Enter" || e.key === " ") && field.onChange(plan.id)}
+									onClick={() => field.onChange(planId)}
+									onKeyDown={e => (e.key === "Enter" || e.key === " ") && field.onChange(planId)}
 									className={clsx(
 										"flex flex-col rounded-card border-2 text-left flex-1 overflow-hidden cursor-pointer transition-all duration-(--duration-120)",
-										plan.recommended && "-my-4",
+										meta.recommended && "-my-4",
 										selected
 											? "border-border-focus bg-surface-brand-soft"
-											: plan.recommended
+											: meta.recommended
 												? "border-action-primary"
 												: "border-border-default hover:border-border-strong",
 									)}
 								>
-									{plan.recommended && (
+									{meta.recommended && (
 										<div className="bg-action-primary text-text-inverse text-[10px] font-bold uppercase tracking-widest py-1.5 text-center w-full shrink-0">
 											Recommended Plan
 										</div>
@@ -910,26 +1028,53 @@ function StepChoosePlan() {
 
 									<div className="flex flex-col gap-3 px-3 py-4 flex-1">
 										<div>
-											<p className="text-label-md font-bold text-text-primary">{plan.name}</p>
-											<p className="text-[10px] text-text-muted mt-0.5 leading-tight">{plan.subtitle}</p>
+											<p className="text-label-md font-bold text-text-primary capitalize">{planId}</p>
+											<p className="text-[10px] text-text-muted mt-0.5 leading-tight">{feeRate}</p>
 											<p className="text-2xl font-extrabold text-text-primary mt-2 leading-none">
-												{plan.price}
-												{plan.priceNote && (
-													<span className="text-caption font-normal text-text-muted"> {plan.priceNote}</span>
+												{displayPrice}
+												{priceNote && (
+													<span className="text-caption font-normal text-text-muted"> {priceNote}</span>
 												)}
 											</p>
 										</div>
 
+										{/* Billing cycle toggle for Community */}
+										{isCommunitySelected && (
+											<Controller
+												control={control}
+												name="billingCycle"
+												render={({ field: bf }) => (
+													<div className="flex rounded-avatar border border-border-default overflow-hidden text-[10px] font-semibold">
+														{(["MONTHLY", "YEARLY"] as const).map(cycle => (
+															<button
+																key={cycle}
+																type="button"
+																onClick={e => { e.stopPropagation(); bf.onChange(cycle) }}
+																className={clsx(
+																	"flex-1 py-1.5 text-center transition-colors",
+																	bf.value === cycle
+																		? "bg-action-primary text-text-inverse"
+																		: "bg-surface-canvas text-text-secondary hover:bg-action-secondary-hover",
+																)}
+															>
+																{cycle === "MONTHLY" ? "Monthly" : "Yearly"}
+															</button>
+														))}
+													</div>
+												)}
+											/>
+										)}
+
 										<ul className="flex flex-col gap-1.5 flex-1">
-											{plan.highlightFeature && (
+											{meta.highlightFeature && (
 												<li className="flex items-center gap-1.5">
 													<FilledCheckIcon />
 													<span className="text-[11px] font-semibold text-text-primary leading-tight">
-														{plan.highlightFeature}
+														{meta.highlightFeature}
 													</span>
 												</li>
 											)}
-											{plan.features.map(f => (
+											{meta.features.map(f => (
 												<li key={f} className="flex items-start gap-1.5">
 													<OutlineCheckIcon />
 													<span className="text-[11px] text-text-secondary leading-tight">{f}</span>
@@ -938,7 +1083,7 @@ function StepChoosePlan() {
 										</ul>
 
 										<div className="mt-2 py-2.5 rounded-avatar bg-[#0a0a0a] text-white text-label-sm font-semibold text-center">
-											{plan.cta}
+											{meta.cta}
 										</div>
 									</div>
 								</div>
@@ -948,6 +1093,7 @@ function StepChoosePlan() {
 				)}
 			/>
 			{errors.plan && <p className="text-caption text-text-danger">{errors.plan.message}</p>}
+			{errors.billingCycle && <p className="text-caption text-text-danger">{errors.billingCycle.message}</p>}
 
 			<div className="flex flex-col gap-1.5">
 				<label className="text-[10px] font-semibold uppercase tracking-widest text-text-muted">
@@ -971,118 +1117,86 @@ function StepChoosePlan() {
 					Uppercase letters, numbers, hyphens and underscores only.
 				</p>
 			</div>
+
+			{selectedPlan && selectedPlan !== "discover" && (
+				<p className="text-caption text-text-muted text-center">
+					Payment via Razorpay will be enabled shortly. Your plan selection is saved.
+				</p>
+			)}
 		</div>
 	)
 }
 
-// ─── Step 8 — You're ready to host ───────────────────────────────────────────
+// ─── Step 9 — Account under review ───────────────────────────────────────────
 
-const CHECKLIST = [
-	"Account created",
-	"Profile complete",
-	"Experience details added",
-	"KYC submitted & approved",
-	"Payout method verified",
-	"Plan active",
-]
-
-const QUICK_ACTIONS = [
-	{
-		label: "Create Event",
-		desc: "Start building an amazing experience",
-		icon: CalendarSvg,
-		iconBg: "#FFF1F1",
-		iconColor: "brand" as const,
-		href: "/events/create",
-	},
-	{
-		label: "View dashboard",
-		desc: "Explore your overview and insights.",
-		icon: ChartSvg,
-		iconBg: "#EEF5FF",
-		iconColor: "info" as const,
-		href: "/dashboard",
-	},
-	{
-		label: "Invite your team",
-		desc: "Add team members and collaborate.",
-		icon: DiplomaSvg,
-		iconBg: "#ECFDF5",
-		iconColor: "success" as const,
-		href: "/team",
-	},
-]
-
-function StepSuccess({ onEnter }: { onEnter: () => void }) {
-	const router = useRouter()
-
+function StepUnderReview({ onGoToDashboard }: { onGoToDashboard: () => void }) {
 	return (
-		<div className="flex flex-col gap-5">
-			{/* Checklist in bordered card */}
-			<div className="rounded-card border border-border-default overflow-hidden">
-				{CHECKLIST.map((item, i) => (
+		<div className="flex flex-col items-center gap-6 py-2">
+			{/* Pending icon */}
+			<div className="size-20 rounded-full bg-surface-warning-soft flex items-center justify-center">
+				<svg viewBox="0 0 48 48" fill="none" className="size-10">
+					<circle cx="24" cy="24" r="20" stroke="var(--icon-warning)" strokeWidth="2" fill="var(--surface-warning-soft)" />
+					<path d="M24 14v12l7 4" stroke="var(--icon-warning)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+				</svg>
+			</div>
+
+			<div className="text-center">
+				<h2 className="text-heading-sm text-text-primary font-bold">Account Under Review</h2>
+				<p className="text-body-sm text-text-secondary mt-2 max-w-xs mx-auto">
+					Your profile has been submitted. Our team will review your application within 2–3 business days.
+				</p>
+			</div>
+
+			{/* Checklist */}
+			<div className="w-full rounded-card border border-border-default overflow-hidden">
+				{[
+					{ label: "Profile submitted", done: true },
+					{ label: "PAN submitted for verification", done: true },
+					{ label: "Bank account verified", done: true },
+					{ label: "Plan selected", done: true },
+					{ label: "Admin approval", done: false },
+				].map((item, i, arr) => (
 					<div
-						key={item}
+						key={item.label}
 						className={clsx(
-							"flex items-center justify-between px-4 py-3",
-							i < CHECKLIST.length - 1 && "border-b border-border-default",
+							"flex items-center gap-3 px-4 py-3",
+							i < arr.length - 1 && "border-b border-border-default",
+							!item.done && "opacity-50",
 						)}
 					>
-						<div className="flex items-center gap-3">
+						{item.done ? (
 							<CheckIcon />
-							<span className="text-body-sm text-text-primary font-semibold">{item}</span>
-						</div>
-						{i === CHECKLIST.length - 1 && (
-							<span className="text-caption font-medium text-text-success bg-surface-success-soft border border-green-200 px-2.5 py-0.5 rounded-avatar">
-								Active
+						) : (
+							<svg viewBox="0 0 20 20" fill="currentColor" className="size-5 text-icon-muted shrink-0">
+								<circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="1.5" fill="none" />
+								<path d="M10 6v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+							</svg>
+						)}
+						<span className="text-body-sm text-text-primary font-semibold">{item.label}</span>
+						{!item.done && (
+							<span className="ml-auto text-caption font-medium text-text-warning bg-surface-warning-soft border border-yellow-200 px-2.5 py-0.5 rounded-avatar">
+								Pending
 							</span>
 						)}
 					</div>
 				))}
 			</div>
 
-			{/* CTA */}
-			<Button type="button" variant="primary" size="lg" radius="pill" className="w-full" onClick={onEnter}>
-				Enter Host OS
+			<p className="text-body-sm text-text-secondary text-center">
+				You&apos;ll receive an email once your account is approved. Dashboard access is restricted until then.
+			</p>
+
+			<Button
+				type="button"
+				variant="secondary"
+				size="lg"
+				radius="pill"
+				className="w-full"
+				onClick={onGoToDashboard}
+			>
+				Go to Dashboard
 				<AltArrowRightSvg className="size-5" aria-hidden />
 			</Button>
-
-			{/* Quick actions */}
-			<p className="text-body-sm text-text-secondary text-center font-semibold">What would you like to do most?</p>
-
-			<div className="grid grid-cols-3 gap-3">
-				{QUICK_ACTIONS.map(a => (
-					<div
-						key={a.label}
-						role="button"
-						tabIndex={0}
-						onClick={() => router.push(a.href)}
-						onKeyDown={e => (e.key === "Enter" || e.key === " ") && router.push(a.href)}
-						className="flex items-center gap-3 rounded-card border border-border-default bg-surface-canvas px-3 py-3 cursor-pointer hover:border-border-strong transition-colors"
-					>
-						<div
-							className="size-11 rounded-xl flex items-center justify-center shrink-0"
-							style={{ backgroundColor: a.iconBg }}
-						>
-							<Icon as={a.icon} size="lg" color={a.iconColor} />
-						</div>
-						<div className="flex-1 min-w-0">
-							<p className="text-label-sm font-bold text-text-primary">{a.label}</p>
-							<p className="text-[11px] text-text-muted leading-tight">{a.desc}</p>
-						</div>
-						<AltArrowRightSvg className="size-4 text-text-secondary shrink-0" aria-hidden />
-					</div>
-				))}
-			</div>
-			<div className="text-center mt-1">
-				<p className="text-caption text-text-muted font-semibold">
-					You are now part of a community of hosts building connection and impact.
-				</p>
-				<p className="text-label-sm font-bold text-text-primary mt-1 flex items-center justify-center gap-1.5">
-					Let&apos;s go!
-					<Icon as={HeartsSvg} size="sm" color="brand" />
-				</p>
-			</div>
 		</div>
 	)
 }
@@ -1100,18 +1214,44 @@ const STEP_HEADINGS: HeadingConfig[] = [
 	{ full: "Verify payout details" },
 	{ full: "Review payout details" },
 	{ full: "Choose your host plan" },
-	{ full: "You're ready to host 🎉" },
+	{ full: "Your account is under review" },
 ]
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function OnboardingPage() {
 	const [step, setStep] = useState(0)
-	const [submitting, setSubmitting] = useState(false)
-	// TODO: restore when API is ready
-	// const { user } = useAuth()
-	// const { phone, email, clearSession } = useAuthSessionStore()
+	const [loadingMessage, setLoadingMessage] = useState<string | null>(null)
+	const [bankKycResult, setBankKycResult] = useState<BankKycResult | null>(null)
+	const [categories, setCategories] = useState<Category[]>([])
+	const [plans, setPlans] = useState<SubscriptionPlan[]>([])
+	const { phone, email: sessionEmail, clearSession } = useAuthSessionStore()
+	const { setProfile } = useHostStore()
 	const router = useRouter()
+
+	// Guard: only reachable from signup flow
+	useEffect(() => {
+		if (!phone && !sessionEmail) {
+			router.replace("/signup")
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
+
+	// Fetch categories and plans on mount (both are public endpoints)
+	useEffect(() => {
+		let cancelled = false
+		Promise.all([getCategories(), getSubscriptionPlans()]).then(([cats, plns]) => {
+			if (!cancelled) {
+				setCategories(cats)
+				// Sort: DISCOVER first, then COMMUNITY, then SELL
+				const order = ["DISCOVER", "COMMUNITY", "SELL"]
+				setPlans(plns.sort((a, b) => order.indexOf(a.plan) - order.indexOf(b.plan)))
+			}
+		}).catch(() => {
+			if (!cancelled) toast.error("Failed to load plan data. Some fields may be unavailable.")
+		})
+		return () => { cancelled = true }
+	}, [])
 
 	const methods = useForm<FormValues>({
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1120,40 +1260,52 @@ export default function OnboardingPage() {
 			firstName: "",
 			lastName: "",
 			accountType: undefined,
+			email: sessionEmail || "",
 			displayName: "",
 			bio: "",
 			tagline: "",
 			gender: "",
-			yearsExperience: "",
-			eventsHosted: "",
-			interests: [],
+			yearsOfExperience: undefined,
+			totalEventsHosted: undefined,
+			categoryIds: [],
+			operatingCities: [],
 			instagram: "",
 			linkedin: "",
 			youtube: "",
 			portfolio: "",
 			legalName: "",
 			pan: "",
-			registeredAddress: "",
+			addressLine1: "",
+			addressLine2: "",
+			addressCity: "",
+			addressState: "",
+			addressPincode: "",
 			reviewConfirmed: false,
 			accountHolderName: "",
 			accountNumber: "",
 			ifscCode: "",
 			bankName: "",
 			plan: undefined,
+			billingCycle: undefined,
 			couponCode: "",
 		},
 	})
 
-	const { handleSubmit, trigger } = methods
+	const { handleSubmit, trigger, getValues, setError } = methods
 	const TOTAL = STEP_PANEL_CONFIGS.length
 	const isLast = step === TOTAL - 1
 	const panelConfig = STEP_PANEL_CONFIGS[step]
 	const heading = STEP_HEADINGS[step]
 
-	// TODO: pre-fill from session when auth is wired back up
-
 	async function handleNext() {
 		if (isLast) {
+			try {
+				const profile = await getHostProfile()
+				setProfile(profile)
+			} catch {
+				// profile fetch failure shouldn't block navigation
+			}
+			clearSession()
 			router.push("/dashboard")
 			return
 		}
@@ -1164,31 +1316,106 @@ export default function OnboardingPage() {
 			if (!valid) return
 		}
 
-		// TODO: replace mock with real API integration
-		if (step === TOTAL - 2) {
-			setSubmitting(true)
-			await new Promise(r => setTimeout(r, 600))
-			toast.success("Profile submitted successfully!")
-			setSubmitting(false)
+		// Step 4 (Review): register host then verify PAN — both blocking
+		if (step === 4) {
+			setLoadingMessage("Setting up your profile…")
+			try {
+				const values = getValues()
+				await registerHost(buildRegisterPayload(values, phone))
+
+				setLoadingMessage("Verifying your PAN…")
+				try {
+					await verifyPan()
+				} catch (e) {
+					// 409 = PAN already verified — treat as success
+					if (!(isAxiosError(e) && e.response?.status === 409)) throw e
+				}
+
+				setStep(s => s + 1)
+			} catch (e) {
+				toast.error(getApiErrorMessage(e))
+			} finally {
+				setLoadingMessage(null)
+			}
+			return
+		}
+
+		// Step 5 (Payout): verify bank account — blocking
+		if (step === 5) {
+			setLoadingMessage("Verifying your bank account…")
+			try {
+				const values = getValues()
+				const result = await verifyBankAccount({
+					bankAccount: {
+						accountNumber: values.accountNumber,
+						ifscCode: values.ifscCode,
+						accountHolderName: values.accountHolderName,
+						bankName: values.bankName,
+					},
+				})
+				setBankKycResult(result)
+				setStep(s => s + 1)
+			} catch (e) {
+				if (isAxiosError(e) && e.response?.status === 409) {
+					// KYC already verified
+					setBankKycResult({
+						panReferenceId: "",
+						pennyDropReference: null,
+						kycStatus: "VERIFIED",
+						panVerificationStatus: "VERIFIED",
+						bankVerificationStatus: "VERIFIED",
+						kycFailureReason: null,
+					})
+					setStep(s => s + 1)
+				} else {
+					toast.error(getApiErrorMessage(e))
+				}
+			} finally {
+				setLoadingMessage(null)
+			}
+			return
+		}
+
+		// Step 7 (Plan): require billing cycle for Community
+		if (step === 7) {
+			const values = getValues()
+			if (values.plan === "community" && !values.billingCycle) {
+				setError("billingCycle", { message: "Please select a billing cycle" })
+				return
+			}
+			setStep(s => s + 1)
+			return
 		}
 
 		setStep(s => s + 1)
 	}
 
+	const isEmailReadOnly = !!sessionEmail
+
 	const stepComponents = [
-		<StepAboutYou key={0} />,
+		<StepAboutYou key={0} isEmailReadOnly={isEmailReadOnly} />,
 		<StepHostProfile key={1} />,
 		<StepLinksLegal key={2} />,
-		<StepExperienceFocus key={3} />,
+		<StepExperienceFocus key={3} categories={categories} />,
 		<StepReviewDetails key={4} onJumpTo={setStep} />,
 		<StepPayoutDetails key={5} />,
-		<StepReviewPayout key={6} />,
-		<StepChoosePlan key={7} />,
-		<StepSuccess key={8} onEnter={handleNext} />,
+		<StepReviewPayout key={6} bankKycResult={bankKycResult} />,
+		<StepChoosePlan key={7} plans={plans} />,
+		<StepUnderReview key={8} onGoToDashboard={handleNext} />,
 	]
 
 	return (
 		<div className="flex h-screen overflow-hidden bg-surface-page">
+			{/* Loading overlay for blocking API calls */}
+			{loadingMessage && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+					<div className="bg-surface-card rounded-card px-10 py-8 flex flex-col items-center gap-4 shadow-xl">
+						<div className="size-10 border-4 border-action-primary border-t-transparent rounded-full animate-spin" />
+						<p className="text-body-sm font-semibold text-text-primary">{loadingMessage}</p>
+					</div>
+				</div>
+			)}
+
 			{/* Left panel */}
 			<div className="hidden lg:block w-[44%] max-w-200 shrink-0 relative">
 				<OnboardingLeftPanel config={panelConfig} />
@@ -1245,7 +1472,7 @@ export default function OnboardingPage() {
 									radius="pill"
 									className="flex-1"
 									onClick={() => setStep(s => s - 1)}
-									disabled={submitting}
+									disabled={!!loadingMessage}
 								>
 									Back
 								</Button>
@@ -1257,9 +1484,12 @@ export default function OnboardingPage() {
 								radius="pill"
 								className="flex-1"
 								onClick={handleNext}
-								disabled={submitting}
+								disabled={!!loadingMessage}
 							>
-								{submitting ? "Submitting…" : <>{STEP_BUTTON_LABELS[step]} <AltArrowRightSvg className="size-4" aria-hidden /></>}
+								{loadingMessage
+									? "Please wait…"
+									: <>{STEP_BUTTON_LABELS[step]} <AltArrowRightSvg className="size-4" aria-hidden /></>
+								}
 							</Button>
 						</div>
 					)}
