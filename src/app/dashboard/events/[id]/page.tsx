@@ -83,7 +83,10 @@ export default function EventDetailPage() {
 	const event = currentEvent
 	const cfg = STATUS_CONFIG[event.status]
 	const cover = event.media?.find((m) => m.type === "COVER")
-	const coverUrl = cover ? storageUrl(cover.key) : ""
+	const coverUrl = cover ? (cover.url ?? storageUrl(cover.key ?? "")) : ""
+	const galleryImages = (event.media?.filter((m) => m.type !== "COVER") ?? [])
+		.slice()
+		.sort((a, b) => a.order - b.order)
 
 	return (
 		<div className="flex flex-col min-h-screen">
@@ -104,7 +107,7 @@ export default function EventDetailPage() {
 					<div className="relative w-full aspect-3/1 min-h-36 rounded-card overflow-hidden mb-5 bg-surface-card-muted">
 						{coverUrl ? (
 							// eslint-disable-next-line @next/next/no-img-element
-							<img src={coverUrl} alt={event.title ?? ""} className="w-full h-full object-cover" />
+							<img src={coverUrl} alt={event.title ?? ""} className="w-full h-full object-cover" loading="eager" fetchPriority="high" />
 						) : (
 							<div className="w-full h-full bg-linear-to-br from-surface-card-muted to-border-default" />
 						)}
@@ -151,15 +154,45 @@ export default function EventDetailPage() {
 
 					{/* Two-column layout */}
 					<div className="grid grid-cols-1 lg:grid-cols-[1fr_288px] gap-6">
-						{/* Left */}
+						{/* Left — main content */}
 						<div className="flex flex-col gap-6">
+							{/* About */}
 							<Section title="About">
 								<p className="text-body-sm text-text-secondary leading-relaxed">
 									{event.description ?? "No description provided."}
 								</p>
 							</Section>
 
-							{/* What to expect / who should attend */}
+							{/* Gallery */}
+							{galleryImages.length > 0 && (
+								<Section title="Gallery">
+									<div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+										{galleryImages.map((item, i) => {
+											const url = item.url ?? storageUrl(item.key ?? "")
+											return item.type === "VIDEO" ? (
+												<video
+													key={item.id ?? i}
+													src={url}
+													controls
+													preload="none"
+													className="w-full aspect-video rounded-card bg-surface-card-muted"
+												/>
+											) : (
+												// eslint-disable-next-line @next/next/no-img-element
+												<img
+													key={item.id ?? i}
+													src={url}
+													alt={`Gallery ${i + 1}`}
+													className="w-full aspect-video object-cover rounded-card bg-surface-card-muted"
+													loading="lazy"
+												/>
+											)
+										})}
+									</div>
+								</Section>
+							)}
+
+							{/* Experience Details */}
 							{(event.whatToExpect?.length || event.whoShouldAttend?.length) ? (
 								<Section title="Experience Details">
 									{event.whatToExpect && event.whatToExpect.length > 0 && (
@@ -191,30 +224,6 @@ export default function EventDetailPage() {
 								</Section>
 							) : null}
 
-							{/* Date & Location */}
-							<Section title="Date & Location">
-								<div className="flex flex-col gap-3">
-									<div className="flex items-start gap-3">
-										<CalendarIcon className="mt-0.5 shrink-0 text-text-brand" />
-										<div>
-											<p className="text-label-sm font-medium text-text-primary">{formatDate(event.eventDate)}</p>
-											<p className="text-caption text-text-muted">
-												{event.startTime && event.endTime
-													? `${event.startTime} – ${event.endTime}`
-													: event.startTime ?? "—"}
-											</p>
-										</div>
-									</div>
-									<div className="flex items-start gap-3">
-										<LocationIcon className="mt-0.5 shrink-0 text-text-brand" />
-										<div>
-											<p className="text-label-sm font-medium text-text-primary">{event.venueName ?? "—"}</p>
-											<p className="text-caption text-text-muted">{event.fullAddress ?? "—"}</p>
-										</div>
-									</div>
-								</div>
-							</Section>
-
 							{/* Ticket Types */}
 							{event.tickets && event.tickets.length > 0 && (
 								<Section title="Ticket Types">
@@ -243,7 +252,7 @@ export default function EventDetailPage() {
 
 						{/* Right sidebar */}
 						<div className="flex flex-col gap-4">
-							{/* Actions panel */}
+							{/* Actions */}
 							<div className="bg-surface-card border border-border-subtle rounded-card p-5">
 								<p className="text-label-sm font-semibold text-text-primary mb-4">Actions</p>
 								<EventActions
@@ -256,22 +265,47 @@ export default function EventDetailPage() {
 											toast.error("Failed to submit. Please try again.")
 										}
 									}}
-									onEdit={() => router.push(`/dashboard/create?edit=${event.id}`)}
+									onEdit={() => router.push(`/dashboard/events/${event.id}/edit`)}
 									onCancel={cancelEvent}
 								/>
 							</div>
 
-							{/* Details panel */}
+							{/* Date & Location */}
+							<div className="bg-surface-card border border-border-subtle rounded-card p-5 flex flex-col gap-3">
+								<p className="text-label-sm font-semibold text-text-primary">Date & Location</p>
+								<div className="flex items-start gap-3">
+									<CalendarIcon className="mt-0.5 shrink-0 text-text-brand" />
+									<div>
+										<p className="text-label-sm font-medium text-text-primary">{formatDate(event.eventDate)}</p>
+										<p className="text-caption text-text-muted">
+											{event.startTime && event.endTime
+												? `${event.startTime} – ${event.endTime}`
+												: event.startTime ?? "—"}
+										</p>
+									</div>
+								</div>
+								<div className="flex items-start gap-3">
+									<LocationIcon className="mt-0.5 shrink-0 text-text-brand" />
+									<div>
+										<p className="text-label-sm font-medium text-text-primary">{event.venueName ?? "—"}</p>
+										<p className="text-caption text-text-muted">{event.fullAddress ?? "—"}</p>
+										{event.city && <p className="text-caption text-text-muted">{event.city}</p>}
+									</div>
+								</div>
+							</div>
+
+							{/* Event details */}
 							<div className="bg-surface-card border border-border-subtle rounded-card p-5">
 								<p className="text-label-sm font-semibold text-text-primary mb-4">Details</p>
 								<div className="flex flex-col gap-3">
+									{event.category?.name && (
+										<DetailRow label="Category" value={event.category.name} />
+									)}
+									<DetailRow label="Type" value={event.eventType ?? "—"} />
 									<DetailRow label="Visibility" value={event.visibility ?? "—"} />
-									<DetailRow
-										label="Languages"
-										value={event.languages?.join(", ") ?? "—"}
-									/>
 									<DetailRow label="Age" value={event.ageRestriction ?? "—"} />
-									<DetailRow label="Refund Policy" value={refundLabel(event.refundPolicy)} />
+									<DetailRow label="Languages" value={event.languages?.join(", ") ?? "—"} />
+									<DetailRow label="Refund" value={refundLabel(event.refundPolicy)} />
 									{event.tags && event.tags.length > 0 && (
 										<div className="flex items-start justify-between gap-3">
 											<span className="text-caption text-text-muted shrink-0">Tags</span>

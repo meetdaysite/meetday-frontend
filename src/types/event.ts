@@ -25,9 +25,11 @@ export interface RefundPolicy {
 }
 
 export interface EventMedia {
-	key: string
-	type: "COVER" | "GALLERY"
+	key?: string  // storage key — required when sending in payload, absent in API responses
+	url?: string  // pre-signed URL — present in API responses, absent in payload
+	type: "COVER" | "GALLERY" | "VIDEO"
 	order: number
+	id?: string
 }
 
 export interface EventDraftPayload {
@@ -62,8 +64,16 @@ export interface Event {
 	hostId: string
 	createdAt: string
 	updatedAt: string
+	submittedAt?: string
 	rejectionReason?: string
 	cancellationReason?: string
+	adminRejectionRemark?: string | null
+	// List-response computed fields
+	coverImageUrl?: string
+	totalCapacity?: number
+	startingPrice?: number
+	category?: { id: string; name: string }
+	// Draft payload fields
 	categoryId?: string
 	title?: string
 	description?: string

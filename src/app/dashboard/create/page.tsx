@@ -20,10 +20,32 @@ import {
 	updateEventDraft,
 	submitEventForReview,
 	getCategories,
+	getMyEventDetail,
 	type Category,
 } from "@/lib/api"
 import { uploadEventMedia } from "@/lib/uploadMedia"
-import type { EventDraftPayload, Ticket, RefundPolicy, EventMedia } from "@/types/event"
+import {
+	LANGUAGE_OPTIONS,
+	EVENT_TYPE_OPTIONS,
+	defaultFormData,
+	eventToFormData,
+	buildPayload,
+	validateStep1,
+	validateStep2,
+	validateStep3,
+	validateStep4,
+	validateStep5,
+	type FormData,
+} from "@/lib/eventForm"
+import {
+	inpCls,
+	iconWrapCls,
+	taCls,
+	FieldLabel,
+	ErrMsg,
+	MiniSpinner,
+	PillInput,
+} from "@/components/eventForm/shared"
 
 import FileTextSvg from "@/icons/outlined/file-text.svg"
 import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
@@ -31,12 +53,11 @@ import GalleryWideSvg from "@/icons/outlined/gallery-wide.svg"
 import TicketSvg from "@/icons/outlined/ticket.svg"
 import SettingsSvg from "@/icons/outlined/settings.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
-import AddCircleSvg from "@/icons/outlined/add-circle.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
 import CameraAddSvg from "@/icons/outlined/camera-add.svg"
 
-import type { ComponentType, ReactNode, SVGProps } from "react"
+import type { ComponentType, SVGProps } from "react"
 
 // ─── Step definitions ──────────────────────────────────────────────────────────
 
@@ -48,316 +69,15 @@ const STEPS = [
 	{ id: 5, title: "Setting & Review", subtitle: "Finalize and submit for review",  icon: SettingsSvg       as ComponentType<SVGProps<SVGSVGElement>> },
 ]
 
-const LANGUAGE_OPTIONS = [
-	{ value: "English", label: "English" },
-	{ value: "Hindi",   label: "Hindi" },
-	{ value: "Bengali", label: "Bengali" },
-	{ value: "Tamil",   label: "Tamil" },
-	{ value: "Telugu",  label: "Telugu" },
-	{ value: "Marathi", label: "Marathi" },
-]
-
-const EVENT_TYPE_OPTIONS = [
-	{ value: "In-Person", label: "In-Person" },
-	{ value: "Online",    label: "Online" },
-	{ value: "Hybrid",    label: "Hybrid" },
-]
-
 // ─── Centralised form data ─────────────────────────────────────────────────────
 
-const defaultFormData = {
-	// Step 1
-	title: "", desc: "", category: "", eventType: "",
-	languages: [] as string[], tags: [] as string[],
-	whatToExpect: [] as string[], whoShouldAttend: [] as string[],
-	// Step 2
-	eventDate: "", startTime: "", endTime: "",
-	venueName: "", fullAddress: "", city: "",
-	// Step 3
-	coverUrl: "", coverKey: "",
-	gallerySlots: Array(6).fill("") as string[],
-	galleryKeys:  Array(6).fill("") as string[],
-	// Step 4
-	ticketName: "", price: "", totalCapacity: "", maxPerPerson: "",
-	ticketDesc: "", saleStartDate: "", saleEndDate: "",
-	// Step 5
-	visibility: "", ageRestriction: "", refundType: "",
-	cutoffHours: "", refundPercent: "", instructions: "",
-}
-
-type FormData = typeof defaultFormData
-
 const DRAFT_KEY = "meetday_create_draft"
+const DRAFT_ID_KEY = "meetday_create_draft_id"
 
-// ─── Payload builder ──────────────────────────────────────────────────────────
-
-function to12Hour(time24: string): string {
-	if (!time24) return ""
-	const [hStr, mStr] = time24.split(":")
-	const h = parseInt(hStr, 10)
-	const suffix = h >= 12 ? "PM" : "AM"
-	const hour12 = h % 12 || 12
-	return `${hour12.toString().padStart(2, "0")}:${mStr} ${suffix}`
-}
-
-function toISODate(dateStr: string): string {
-	if (!dateStr) return ""
-	return new Date(`${dateStr}T00:00:00`).toISOString()
-}
-
-function buildPayload(f: FormData): EventDraftPayload {
-	const isFree = Number(f.price) === 0
-
-	const ticket: Ticket | undefined = f.ticketName
-		? {
-			name: f.ticketName,
-			price: Number(f.price) || 0,
-			totalCapacity: Number(f.totalCapacity) || 1,
-			maxPerPerson: Number(f.maxPerPerson) || 1,
-			description: f.ticketDesc || undefined,
-			saleStartDate: f.saleStartDate ? toISODate(f.saleStartDate) : undefined,
-			saleEndDate: f.saleEndDate ? toISODate(f.saleEndDate) : undefined,
-		  }
-		: undefined
-
-	const refundPolicy: RefundPolicy | undefined = f.refundType
-		? {
-			type: f.refundType as "FULL" | "PARTIAL" | "NO_REFUND",
-			cutoffHours: f.cutoffHours ? Number(f.cutoffHours) : undefined,
-			refundPercent: f.refundPercent ? Number(f.refundPercent) : undefined,
-			refundTo: "ORIGINAL_PAYMENT",
-		  }
-		: undefined
-
-	const media: EventMedia[] = []
-	if (f.coverKey) media.push({ key: f.coverKey, type: "COVER", order: 0 })
-	f.galleryKeys.forEach((key, i) => {
-		if (key) media.push({ key, type: "GALLERY", order: i + 1 })
-	})
-
-	return {
-		categoryId:          f.category || undefined,
-		title:               f.title || undefined,
-		description:         f.desc || undefined,
-		eventType:           f.eventType || undefined,
-		languages:           f.languages.length > 0 ? f.languages : undefined,
-		tags:                f.tags.length > 0 ? f.tags : undefined,
-		eventDate:           f.eventDate ? toISODate(f.eventDate) : undefined,
-		startTime:           f.startTime ? to12Hour(f.startTime) : undefined,
-		endTime:             f.endTime ? to12Hour(f.endTime) : undefined,
-		venueName:           f.venueName || undefined,
-		fullAddress:         f.fullAddress || undefined,
-		city:                f.city || undefined,
-		whatToExpect:        f.whatToExpect.length > 0 ? f.whatToExpect : undefined,
-		whoShouldAttend:     f.whoShouldAttend.length > 0 ? f.whoShouldAttend : undefined,
-		visibility:          (f.visibility as "PUBLIC" | "PRIVATE") || undefined,
-		ageRestriction:      f.ageRestriction || undefined,
-		specialInstructions: f.instructions || undefined,
-		isFree,
-		tickets:             ticket ? [ticket] : undefined,
-		refundPolicy,
-		media:               media.length > 0 ? media : undefined,
-	}
-}
-
-// ─── Validation helpers ────────────────────────────────────────────────────────
-
-type Errors = Record<string, string>
-
-function isFutureOrToday(val: string) {
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
-	return new Date(val) >= today
-}
-
-function timeToMinutes(val: string) {
-	const [h, m] = val.split(":").map(Number)
-	return h * 60 + m
-}
-
-function validateStep1(f: Pick<FormData, "title" | "desc" | "category" | "eventType">): Errors {
-	const e: Errors = {}
-	if (!f.title.trim()) e.title = "Event title is required."
-	else if (f.title.trim().length < 3) e.title = "Title must be at least 3 characters."
-	if (!f.desc.trim()) e.desc = "Description is required."
-	else if (f.desc.trim().length < 20) e.desc = "Description must be at least 20 characters."
-	if (!f.category) e.category = "Please select a category."
-	if (!f.eventType) e.eventType = "Please select an event type."
-	return e
-}
-
-function validateStep2(f: Pick<FormData, "eventDate" | "startTime" | "endTime" | "venueName" | "fullAddress">): Errors {
-	const e: Errors = {}
-	if (!f.eventDate) e.eventDate = "Event date is required."
-	else if (!isFutureOrToday(f.eventDate)) e.eventDate = "Date must be today or in the future."
-	if (!f.startTime) e.startTime = "Start time is required."
-	if (!f.endTime) e.endTime = "End time is required."
-	else if (f.startTime && timeToMinutes(f.endTime) <= timeToMinutes(f.startTime))
-		e.endTime = "End time must be after start time."
-	if (!f.venueName.trim()) e.venueName = "Venue name is required."
-	if (!f.fullAddress.trim()) e.fullAddress = "Full address is required."
-	return e
-}
-
-function validateStep3(f: { coverKey: string; hasGallery: boolean }): Errors {
-	const e: Errors = {}
-	if (!f.coverKey) e.coverUrl = "Cover image is required — please upload a file."
-	if (!f.hasGallery) e.gallery = "Add at least one gallery image."
-	return e
-}
-
-function validateStep4(f: Pick<FormData, "ticketName" | "price" | "totalCapacity" | "maxPerPerson" | "saleStartDate" | "saleEndDate">): Errors {
-	const e: Errors = {}
-	if (!f.ticketName.trim()) e.ticketName = "Ticket name is required."
-	if (f.price === "") e.price = "Price is required."
-	else if (isNaN(Number(f.price)) || Number(f.price) < 0) e.price = "Enter a valid price (0 or above)."
-	const cap = Number(f.totalCapacity)
-	if (!f.totalCapacity.trim()) e.totalCapacity = "Total capacity is required."
-	else if (isNaN(cap) || cap < 1 || !Number.isInteger(cap)) e.totalCapacity = "Enter a whole number of at least 1."
-	const maxP = Number(f.maxPerPerson)
-	if (!f.maxPerPerson.trim()) e.maxPerPerson = "Max per person is required."
-	else if (isNaN(maxP) || maxP < 1 || !Number.isInteger(maxP)) e.maxPerPerson = "Enter a whole number of at least 1."
-	else if (!isNaN(cap) && maxP > cap) e.maxPerPerson = "Cannot exceed total capacity."
-	if (f.saleEndDate && f.saleStartDate && new Date(f.saleEndDate) < new Date(f.saleStartDate))
-		e.saleEndDate = "Sale end date must be on or after start date."
-	return e
-}
-
-function validateStep5(f: Pick<FormData, "visibility" | "ageRestriction" | "refundType" | "cutoffHours" | "refundPercent" | "instructions">): Errors {
-	const e: Errors = {}
-	if (!f.visibility) e.visibility = "Please select a visibility option."
-	if (!f.ageRestriction) e.ageRestriction = "Please select an age restriction."
-	if (!f.refundType) e.refundType = "Please select a refund type."
-	if (f.refundType === "PARTIAL") {
-		if (!f.cutoffHours.trim()) e.cutoffHours = "Cutoff hours is required."
-		else if (isNaN(Number(f.cutoffHours)) || Number(f.cutoffHours) < 0) e.cutoffHours = "Enter a valid number of hours."
-		if (!f.refundPercent.trim()) e.refundPercent = "Refund percent is required."
-		else if (isNaN(Number(f.refundPercent)) || Number(f.refundPercent) < 0 || Number(f.refundPercent) > 100)
-			e.refundPercent = "Enter a value between 0 and 100."
-	}
-	if (!f.instructions.trim()) e.instructions = "Special instructions are required."
-	return e
-}
-
-// ─── Shared style helpers ──────────────────────────────────────────────────────
-
-function inpCls(err: boolean) {
-	return clsx(
-		"h-[var(--size-input-md)] w-full px-4 rounded-input border text-text-primary placeholder:text-text-muted text-sm transition-colors duration-(--duration-120) focus:outline-none",
-		err
-			? "border-border-brand bg-surface-brand-soft hover:border-border-focus focus:border-border-focus"
-			: "border-border-default bg-surface-canvas hover:border-border-strong focus:border-border-focused",
-	)
-}
-
-function iconWrapCls(err: boolean) {
-	return clsx(
-		"flex items-center gap-2 h-[var(--size-input-md)] px-4 rounded-input border transition-colors duration-(--duration-120)",
-		err
-			? "border-border-brand bg-surface-brand-soft hover:border-border-focus focus-within:border-border-focus"
-			: "border-border-default bg-surface-canvas hover:border-border-strong focus-within:border-border-focused",
-	)
-}
-
-function taCls(err: boolean) {
-	return clsx(
-		"w-full px-4 py-3 rounded-input border text-text-primary placeholder:text-text-muted text-sm transition-colors duration-(--duration-120) focus:outline-none resize-none",
-		err
-			? "border-border-brand bg-surface-brand-soft hover:border-border-focus focus:border-border-focus"
-			: "border-border-default bg-surface-canvas hover:border-border-strong focus:border-border-focused",
-	)
-}
+// ─── Create-specific style constants ──────────────────────────────────────────
 
 const saveContinueCls = "flex items-center gap-2 px-6 py-3 bg-surface-inverse text-text-inverse rounded-action text-label-md font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
 const backBtnCls = "px-5 py-2.5 text-label-md text-text-secondary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors"
-
-// ─── Small shared UI pieces ────────────────────────────────────────────────────
-
-function FieldLabel({ children, required, hint }: { children: ReactNode; required?: boolean; hint?: string }) {
-	return (
-		<div className="flex items-center justify-between gap-2">
-			<label className="text-label-sm font-semibold text-text-primary">
-				{children}
-				{required && <span className="text-text-brand ml-0.5">*</span>}
-			</label>
-			{hint && <span className="text-caption text-text-muted">{hint}</span>}
-		</div>
-	)
-}
-
-function ErrMsg({ msg }: { msg?: string }) {
-	if (!msg) return null
-	return <p className="text-caption text-text-danger">{msg}</p>
-}
-
-function MiniSpinner() {
-	return (
-		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden className="animate-spin shrink-0">
-			<circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
-			<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-		</svg>
-	)
-}
-
-// ─── PillInput — reusable tag/list pill input ──────────────────────────────────
-
-function PillInput({
-	values,
-	onChange,
-	placeholder,
-}: {
-	values: string[]
-	onChange: (v: string[]) => void
-	placeholder: string
-}) {
-	const [input, setInput] = useState("")
-
-	function add() {
-		const t = input.trim()
-		if (t && !values.includes(t)) onChange([...values, t])
-		setInput("")
-	}
-
-	return (
-		<>
-			<div className="flex gap-2">
-				<input
-					type="text"
-					value={input}
-					onChange={(e) => setInput(e.target.value)}
-					onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add() } }}
-					placeholder={placeholder}
-					className="flex-1 h-(--size-input-md) px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary placeholder:text-text-muted text-sm hover:border-border-strong focus:border-border-focused focus:outline-none transition-colors"
-				/>
-				<button
-					type="button"
-					onClick={add}
-					className="flex items-center gap-1.5 px-4 h-(--size-input-md) bg-surface-inverse text-text-inverse rounded-action text-label-sm font-medium hover:opacity-90 transition-opacity shrink-0"
-				>
-					<Icon as={AddCircleSvg} size="sm" color="inverse" />
-					Add
-				</button>
-			</div>
-			{values.length > 0 && (
-				<div className="flex flex-wrap gap-1.5 mt-1">
-					{values.map((v) => (
-						<span key={v} className="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-card-muted rounded-badge text-caption text-text-primary">
-							{v}
-							<button
-								type="button"
-								onClick={() => onChange(values.filter((x) => x !== v))}
-								className="text-text-tertiary hover:text-text-primary leading-none"
-								aria-label={`Remove ${v}`}
-							>
-								×
-							</button>
-						</span>
-					))}
-				</div>
-			)}
-		</>
-	)
-}
 
 // ─── Step circle indicator ─────────────────────────────────────────────────────
 
@@ -413,14 +133,14 @@ function Step1BasicInfo({
 	const { title, desc, category, eventType, languages, tags, whatToExpect, whoShouldAttend } = formData
 
 	const errors = useMemo(
-		() => validated ? validateStep1({ title, desc, category, eventType }) : {},
-		[validated, title, desc, category, eventType],
+		() => validated ? validateStep1({ title, desc, category, eventType, whatToExpect, whoShouldAttend }) : {},
+		[validated, title, desc, category, eventType, whatToExpect, whoShouldAttend],
 	)
 
 	const validate = useCallback(() => {
 		setValidated(true)
-		return Object.keys(validateStep1({ title, desc, category, eventType })).length === 0
-	}, [title, desc, category, eventType])
+		return Object.keys(validateStep1({ title, desc, category, eventType, whatToExpect, whoShouldAttend })).length === 0
+	}, [title, desc, category, eventType, whatToExpect, whoShouldAttend])
 
 	useEffect(() => { registerValidate(validate) }, [validate, registerValidate])
 
@@ -524,14 +244,16 @@ function Step1BasicInfo({
 
 			{/* What to Expect */}
 			<div className="flex flex-col gap-1.5">
-				<FieldLabel>What to Expect</FieldLabel>
+				<FieldLabel required>What to Expect</FieldLabel>
 				<PillInput values={whatToExpect} onChange={(v) => set("whatToExpect", v)} placeholder="e.g. Guided walk" />
+				<ErrMsg msg={errors.whatToExpect} />
 			</div>
 
 			{/* Who Should Attend */}
 			<div className="flex flex-col gap-1.5">
-				<FieldLabel>Who Should Attend</FieldLabel>
+				<FieldLabel required>Who Should Attend</FieldLabel>
 				<PillInput values={whoShouldAttend} onChange={(v) => set("whoShouldAttend", v)} placeholder="e.g. Photography enthusiasts" />
+				<ErrMsg msg={errors.whoShouldAttend} />
 			</div>
 
 			<div className="flex justify-end pt-4">
@@ -668,7 +390,7 @@ function Step3MediaUpload({
 	const galleryFileRef = useRef<HTMLInputElement>(null)
 	const targetSlotRef = useRef<number>(0)
 
-	const { coverUrl, coverKey, gallerySlots, galleryKeys } = formData
+	const { coverUrl, coverKey, gallerySlots, galleryKeys, galleryTypes } = formData
 	const hasGallery = galleryKeys.some((k) => k !== "")
 
 	const errors = useMemo(
@@ -707,7 +429,8 @@ function Step3MediaUpload({
 	}
 
 	async function handleGalleryFile(file: File, slotIndex: number) {
-		if (!file.type.startsWith("image/")) return
+		const isVideo = file.type.startsWith("video/")
+		if (!isVideo && !file.type.startsWith("image/")) return
 		// Show preview
 		const next = [...gallerySlots]
 		if (next[slotIndex].startsWith("blob:")) URL.revokeObjectURL(next[slotIndex])
@@ -716,6 +439,9 @@ function Step3MediaUpload({
 		const nextKeys = [...galleryKeys]
 		nextKeys[slotIndex] = ""
 		set("galleryKeys", nextKeys)
+		const nextTypes = [...galleryTypes]
+		nextTypes[slotIndex] = isVideo ? "VIDEO" : "GALLERY"
+		set("galleryTypes", nextTypes)
 		setGalleryUploading((prev) => { const n = [...prev]; n[slotIndex] = true; return n })
 		try {
 			const key = await uploadEventMedia(file, "GALLERY")
@@ -725,11 +451,13 @@ function Step3MediaUpload({
 				return { ...prev, galleryKeys: keys }
 			})
 		} catch {
-			toast.error(`Gallery image ${slotIndex + 1} upload failed.`)
+			toast.error(`Gallery slot ${slotIndex + 1} upload failed.`)
 			setFormData((prev) => {
 				const slots = [...prev.gallerySlots]
 				slots[slotIndex] = ""
-				return { ...prev, gallerySlots: slots }
+				const types = [...prev.galleryTypes]
+				types[slotIndex] = ""
+				return { ...prev, gallerySlots: slots, galleryTypes: types }
 			})
 		} finally {
 			setGalleryUploading((prev) => { const n = [...prev]; n[slotIndex] = false; return n })
@@ -750,6 +478,9 @@ function Step3MediaUpload({
 		const keys = [...galleryKeys]
 		keys[i] = ""
 		set("galleryKeys", keys)
+		const types = [...galleryTypes]
+		types[i] = ""
+		set("galleryTypes", types)
 	}
 
 	return (
@@ -783,7 +514,7 @@ function Step3MediaUpload({
 					{coverUrl ? (
 						<div className="relative w-full h-full">
 							{/* eslint-disable-next-line @next/next/no-img-element */}
-							<img src={coverUrl} alt="Cover preview" className="w-full h-full object-cover" />
+							<img src={coverUrl} alt="Cover preview" className="w-full h-full object-cover" loading="lazy" />
 							{coverUploading && (
 								<div className="absolute inset-0 bg-black/40 flex items-center justify-center">
 									<MiniSpinner />
@@ -811,12 +542,12 @@ function Step3MediaUpload({
 				<ErrMsg msg={errors.coverUrl} />
 			</div>
 
-			{/* Gallery Images */}
+			{/* Gallery Images & Videos */}
 			<div className="flex flex-col gap-3">
-				<FieldLabel required>Gallery Images</FieldLabel>
-				<p className="text-caption text-text-muted -mt-1">Click any slot to pick an image from your device.</p>
+				<FieldLabel required>Gallery Images & Videos</FieldLabel>
+				<p className="text-caption text-text-muted -mt-1">Click any slot to pick an image or video from your device.</p>
 				<input
-					ref={galleryFileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+					ref={galleryFileRef} type="file" accept="image/jpeg,image/png,image/webp,video/*" className="hidden"
 					onChange={(e) => { const f = e.target.files?.[0]; if (f) handleGalleryFile(f, targetSlotRef.current); e.target.value = "" }}
 				/>
 				<ErrMsg msg={errors.gallery} />
@@ -832,8 +563,17 @@ function Step3MediaUpload({
 						>
 							{img ? (
 								<>
-									{/* eslint-disable-next-line @next/next/no-img-element */}
-									<img src={img} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover" />
+									{galleryTypes[i] === "VIDEO" ? (
+										<video
+											src={img}
+											preload="none"
+											className="w-full h-full object-cover"
+											onClick={(e) => e.stopPropagation()}
+										/>
+									) : (
+										// eslint-disable-next-line @next/next/no-img-element
+										<img src={img} alt={`Gallery ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+									)}
 									{galleryUploading[i] && (
 										<div className="absolute inset-0 bg-black/40 flex items-center justify-center">
 											<MiniSpinner />
@@ -844,7 +584,7 @@ function Step3MediaUpload({
 											type="button"
 											onClick={(e) => { e.stopPropagation(); removeGallerySlot(i) }}
 											className="absolute top-1 right-1 size-5 rounded-full bg-black/50 text-white flex items-center justify-center text-xs hover:bg-black/70"
-											aria-label={`Remove gallery image ${i + 1}`}
+											aria-label={`Remove gallery item ${i + 1}`}
 										>×</button>
 									)}
 								</>
@@ -1102,7 +842,7 @@ function Step5SettingsReview({
 					<div className="w-full aspect-video rounded-card bg-surface-card-muted overflow-hidden">
 						{formData.coverUrl && (
 							// eslint-disable-next-line @next/next/no-img-element
-							<img src={formData.coverUrl} alt="Cover" className="w-full h-full object-cover" />
+							<img src={formData.coverUrl} alt="Cover" className="w-full h-full object-cover" loading="lazy" />
 						)}
 					</div>
 					<div className="flex flex-col divide-y divide-border-subtle">
@@ -1166,19 +906,35 @@ export default function CreateExperiencePage() {
 	const [draftId, setDraftId] = useState<string | null>(null)
 	const [draftSaved, setDraftSaved] = useState(false)
 	const [submitting, setSubmitting] = useState(false)
+	const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
+	const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
 	const [categories, setCategories] = useState<Category[]>([])
 	const [categoriesLoading, setCategoriesLoading] = useState(true)
 	const stepValidateRef = useRef<() => boolean>(() => true)
 
-	// Create a backend draft on mount and fetch categories
+	// On mount: load existing saved draft only — never create one automatically
 	useEffect(() => {
-		createEventDraft({})
-			.then((e) => setDraftId(e.id))
-			.catch(() => { /* non-fatal; media upload will warn if draftId is null */ })
+		const savedId = localStorage.getItem(DRAFT_ID_KEY)
+		if (savedId) {
+			getMyEventDetail(savedId)
+				.then((event) => {
+					if (event.status !== "DRAFT") {
+						localStorage.removeItem(DRAFT_ID_KEY)
+						localStorage.removeItem(DRAFT_KEY)
+						setFormData(defaultFormData)
+						return
+					}
+					setDraftId(event.id)
+					setFormData(eventToFormData(event))
+				})
+				.catch(() => {
+					localStorage.removeItem(DRAFT_ID_KEY)
+				})
+		}
 
 		getCategories()
 			.then((cats) => setCategories(cats))
-			.catch(() => { /* non-fatal; user can still type */ })
+			.catch(() => {})
 			.finally(() => setCategoriesLoading(false))
 	}, [])
 
@@ -1201,7 +957,13 @@ export default function CreateExperiencePage() {
 	async function saveDraft() {
 		try {
 			localStorage.setItem(DRAFT_KEY, JSON.stringify(formData))
-			if (draftId) await updateEventDraft(draftId, buildPayload(formData))
+			if (draftId) {
+				await updateEventDraft(draftId, buildPayload(formData))
+			} else {
+				const event = await createEventDraft(buildPayload(formData))
+				setDraftId(event.id)
+				localStorage.setItem(DRAFT_ID_KEY, event.id)
+			}
 			setDraftSaved(true)
 			setTimeout(() => setDraftSaved(false), 2000)
 		} catch {
@@ -1210,12 +972,20 @@ export default function CreateExperiencePage() {
 	}
 
 	async function handleSubmit() {
-		if (!draftId) { toast.error("Draft not initialised. Please refresh."); return }
 		setSubmitting(true)
 		try {
-			await updateEventDraft(draftId, buildPayload(formData))
-			await submitEventForReview(draftId)
+			let id = draftId
+			if (!id) {
+				const event = await createEventDraft(buildPayload(formData))
+				id = event.id
+				setDraftId(id)
+				localStorage.setItem(DRAFT_ID_KEY, id)
+			} else {
+				await updateEventDraft(id, buildPayload(formData))
+			}
+			await submitEventForReview(id)
 			localStorage.removeItem(DRAFT_KEY)
+			localStorage.removeItem(DRAFT_ID_KEY)
 			toast.success("Event submitted for review!")
 			router.push("/dashboard/events")
 		} catch {
@@ -1224,10 +994,27 @@ export default function CreateExperiencePage() {
 		}
 	}
 
+	function requestSubmit() { setShowSubmitConfirm(true) }
+
+	function handleLeave() {
+		const hasData = !!(formData.title || formData.desc || formData.venueName || formData.coverKey || formData.ticketName)
+		if (hasData && !draftId) {
+			setShowLeaveConfirm(true)
+		} else {
+			router.push("/dashboard/events")
+		}
+	}
+
+	async function handleSaveAndLeave() {
+		await saveDraft()
+		router.push("/dashboard/events")
+	}
+
 	const isLastStep = currentStep === 5
 	const sharedProps = { formData, setFormData }
 
 	return (
+		<>
 		<div className="flex flex-col min-h-screen">
 			<DashboardTopBar />
 
@@ -1236,7 +1023,7 @@ export default function CreateExperiencePage() {
 				<div className="flex items-center gap-3">
 					<button
 						type="button"
-						onClick={() => router.push("/dashboard/events")}
+						onClick={handleLeave}
 						className="p-1.5 rounded-action hover:bg-surface-card-muted transition-colors text-text-secondary hover:text-text-primary"
 						aria-label="Close"
 					>
@@ -1322,7 +1109,7 @@ export default function CreateExperiencePage() {
 									{...sharedProps}
 									onBack={goBack}
 									registerValidate={registerValidate}
-									onSubmit={handleSubmit}
+									onSubmit={requestSubmit}
 									submitting={submitting}
 								/>
 							)}
@@ -1331,5 +1118,67 @@ export default function CreateExperiencePage() {
 				</div>
 			</div>
 		</div>
+
+		{/* Submit confirmation modal */}
+		{showSubmitConfirm && (
+			<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+				<div className="bg-surface-card rounded-card border border-border-default shadow-floating w-full max-w-sm p-6">
+					<h2 className="text-label-lg font-semibold text-text-primary mb-2">Submit for Review?</h2>
+					<p className="text-body-sm text-text-secondary mb-6">
+						Once submitted, your event will be sent to the team for review. You won&apos;t be able to edit it until a decision is made.
+					</p>
+					<div className="flex gap-3 justify-end">
+						<button
+							onClick={() => setShowSubmitConfirm(false)}
+							disabled={submitting}
+							className="px-4 py-2 text-label-sm font-medium text-text-primary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors disabled:opacity-50"
+						>
+							Cancel
+						</button>
+						<button
+							onClick={() => { setShowSubmitConfirm(false); handleSubmit() }}
+							disabled={submitting}
+							className="flex items-center gap-2 px-4 py-2 text-label-sm font-semibold text-white bg-action-primary hover:opacity-90 rounded-action transition-opacity disabled:opacity-60"
+						>
+							{submitting && <MiniSpinner />}
+							Submit
+						</button>
+					</div>
+				</div>
+			</div>
+		)}
+
+		{/* Leave confirmation modal */}
+		{showLeaveConfirm && (
+			<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+				<div className="bg-surface-card rounded-card border border-border-default shadow-floating w-full max-w-sm p-6">
+					<h2 className="text-label-lg font-semibold text-text-primary mb-2">Leave without saving?</h2>
+					<p className="text-body-sm text-text-secondary mb-6">
+						Your progress is only saved locally. Save as a draft to keep it on the server before you leave.
+					</p>
+					<div className="flex gap-3 justify-end">
+						<button
+							onClick={() => setShowLeaveConfirm(false)}
+							className="px-4 py-2 text-label-sm font-medium text-text-primary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors"
+						>
+							Cancel
+						</button>
+						<button
+							onClick={() => router.push("/dashboard/events")}
+							className="px-4 py-2 text-label-sm font-medium text-text-secondary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors"
+						>
+							Leave Anyway
+						</button>
+						<button
+							onClick={handleSaveAndLeave}
+							className="px-4 py-2 text-label-sm font-semibold text-white bg-surface-inverse hover:opacity-90 rounded-action transition-opacity"
+						>
+							Save Draft & Leave
+						</button>
+					</div>
+				</div>
+			</div>
+		)}
+		</>
 	)
 }
