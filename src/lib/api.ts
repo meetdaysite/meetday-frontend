@@ -34,12 +34,22 @@ export async function checkPhone(phone: string): Promise<{ exists: boolean }> {
 // Kept for Google sign-in paths (login/signup pages)
 export async function fetchUserDetails(): Promise<UserDetails> {
 	try {
-		const { data } = await apiClient.get<UserDetails>("/users/me")
-		return data
+		const { data } = await apiClient.get<{ success: boolean; data: UserDetails }>("/users/me")
+		return data.data
 	} catch (e) {
 		if (isAxiosError(e) && e.response?.status === 404) throw new UserNotFoundError()
 		throw e
 	}
+}
+
+export type UpdateUserPayload = {
+	firstName?: string
+	lastName?: string
+}
+
+export async function updateUserDetails(payload: UpdateUserPayload): Promise<UserDetails> {
+	const { data } = await apiClient.patch<{ success: boolean; data: UserDetails }>("/users/me", payload)
+	return data.data
 }
 
 // ─── Host profile ─────────────────────────────────────────────────────────────
@@ -50,14 +60,74 @@ export type HostProfile = {
 	hostType: "INDIVIDUAL" | "BUSINESS"
 	displayName?: string
 	legalName?: string
+	avatarUrl?: string | null
+	gender?: string
+	gstin?: string | null
+	hostBio?: string | null
+	tagline?: string
+	languages?: string[]
+	socialLinks?: {
+		youtube?: string
+		instagram?: string
+		linkedin?: string
+		portfolio?: string
+	}
+	portfolioLinks?: string[]
+	pan?: string
 	kycStatus: "PENDING" | "VERIFIED" | "FAILED"
+	kycVerifiedAt?: string | null
+	kycFailureReason?: string | null
 	panVerificationStatus: "PENDING" | "VERIFIED" | "FAILED"
+	panVerificationReference?: string
 	bankVerificationStatus: "PENDING" | "VERIFIED" | "FAILED"
 	approvalStatus: "PENDING" | "APPROVED" | "REJECTED"
+	approvedAt?: string | null
+	approvedBy?: string | null
+	rejectionReason?: string | null
 	currentPlan?: "DISCOVER" | "COMMUNITY" | "SELL"
+	totalEventsHosted?: number
+	averageRating?: number | null
+	totalReviews?: number
 	yearsOfExperience?: number
 	totalEventsPreviouslyHosted?: number
 	operatingCities?: string[]
+	categories?: Array<{
+		hostProfileId: string
+		categoryId: string
+		category: {
+			id: string
+			name: string
+			description: string
+			isActive: boolean
+		}
+	}>
+	address?: {
+		id?: string
+		addressLine1: string
+		addressLine2?: string
+		city: string
+		state: string
+		pincode: string
+		country?: string
+	}
+}
+
+export type UpdateHostProfilePayload = {
+	avatarUrl?: string
+	displayName?: string
+	hostBio?: string
+	tagline?: string
+	gender?: string
+	yearsOfExperience?: number
+	totalEventsPreviouslyHosted?: number
+	operatingCities?: string[]
+	categoryIds?: string[]
+	socialLinks?: {
+		youtube?: string
+		instagram?: string
+		linkedin?: string
+		portfolio?: string
+	}
 	address?: {
 		addressLine1: string
 		addressLine2?: string
@@ -70,6 +140,11 @@ export type HostProfile = {
 
 export async function getHostProfile(): Promise<HostProfile> {
 	const { data } = await apiClient.get<{ success: boolean; data: HostProfile }>("/hosts/me")
+	return data.data
+}
+
+export async function updateHostProfile(payload: UpdateHostProfilePayload): Promise<HostProfile> {
+	const { data } = await apiClient.patch<{ success: boolean; data: HostProfile }>("/hosts/profile", payload)
 	return data.data
 }
 

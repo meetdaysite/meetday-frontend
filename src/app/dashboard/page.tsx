@@ -1,101 +1,48 @@
+"use client"
 
+import { useEffect } from "react"
+import Link from "next/link"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
+import { useEventStore } from "@/store/eventStore"
+import { useHostStore } from "@/store/hostStore"
+import type { ApiEventStatus } from "@/types/event"
 
 import FileTextSvg from "@/icons/outlined/file-text.svg"
 import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
-import StarSvg from "@/icons/outlined/star.svg"
-import TrendUpSvg from "@/icons/outlined/trend-up.svg"
-import TrendDownSvg from "@/icons/outlined/trend-down.svg"
+import PlaneSvg from "@/icons/outlined/plane.svg"
+import Checklist2Svg from "@/icons/outlined/checklist-2.svg"
+import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
 import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
 import GalleryWideSvg from "@/icons/outlined/gallery-wide.svg"
 import TicketSvg from "@/icons/outlined/ticket.svg"
-import Checklist2Svg from "@/icons/outlined/checklist-2.svg"
-import UserSvg from "@/icons/outlined/user.svg"
+import SettingsSvg from "@/icons/outlined/settings.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group.svg"
 import DollarSvg from "@/icons/outlined/dollar.svg"
-import CheckCircleFillSvg from "@/icons/filled/check-circle.svg"
-import PlaneSvg from "@/icons/outlined/plane.svg"
-import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
-import SettingsSvg from "@/icons/outlined/settings.svg"
-import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
+import StarSvg from "@/icons/outlined/star.svg"
+import TrendUpSvg from "@/icons/outlined/trend-up.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
+import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ─── Status config ────────────────────────────────────────────────────────────
 
-const SUMMARY_STATS = [
-	{ count: 12, label: "Draft", subtitle: "Continue creating", arrow: true, icon: FileTextSvg, iconColor: "inherit" as const, bg: "bg-neutral-100" },
-	{ count: 5, label: "Under Review", subtitle: "Awaiting approval", arrow: true, icon: ClockCircleSvg, iconColor: "info" as const, bg: "bg-blue-100" },
-	{ count: 23, label: "Published", subtitle: "Live and online", arrow: true, icon: PlaneSvg, iconColor: "success" as const, bg: "bg-status-success-bg" },
-	{ count: 18, label: "Completed", subtitle: "Events finished", arrow: true, icon: Checklist2Svg, iconColor: "inverse" as const, bg: "bg-neutral-800" },
-	{ count: 3, label: "Cancelled", subtitle: "Not active", arrow: false, icon: CloseCircleSvg, iconColor: "brand" as const, bg: "bg-red-100" },
-]
+const STATUS_CONFIG: Record<ApiEventStatus, { label: string; className: string }> = {
+	DRAFT: { label: "Draft", className: "bg-surface-card-muted text-text-secondary" },
+	UNDER_REVIEW: { label: "Under Review", className: "bg-status-trending-bg text-status-trending-text" },
+	PUBLISHED: { label: "Published", className: "bg-status-success-bg text-status-success-text" },
+	COMPLETED: { label: "Completed", className: "bg-surface-inverse text-text-inverse" },
+	CANCELLED: { label: "Cancelled", className: "bg-status-error-bg text-status-error-text" },
+	REJECTED: { label: "Rejected", className: "bg-status-error-bg text-status-error-text" },
+}
 
-const EVENTS = [
-	{
-		id: 1,
-		name: "Summer Music Festival",
-		location: "Austin, TX",
-		date: "Jun 21–23, 2025",
-		dateNote: "3 days",
-		status: "Published" as const,
-		registrations: 1248,
-		revenue: 24580,
-		color: "bg-[#F97316]",
-	},
-	{
-		id: 2,
-		name: "Tech Innovators Summit",
-		location: "Chicago, IL",
-		date: "Jul 15, 2025",
-		dateNote: "1 day",
-		status: "Under Review" as const,
-		registrations: 312,
-		revenue: 8040,
-		color: "bg-[#6366F1]",
-	},
-	{
-		id: 3,
-		name: "Wellness Retreat",
-		location: "Sedona, AZ",
-		date: "Aug 8–10, 2025",
-		dateNote: "3 days",
-		status: "Draft" as const,
-		registrations: null,
-		revenue: 0,
-		color: "bg-[#10B981]",
-	},
-	{
-		id: 4,
-		name: "Night Market Experience",
-		location: "Brooklyn, NY",
-		date: "Sep 2–4, 2025",
-		dateNote: "3 days",
-		status: "Completed" as const,
-		registrations: 2349,
-		revenue: 18100,
-		color: "bg-[#8B5CF6]",
-	},
-	{
-		id: 5,
-		name: "Food & Culture Fest",
-		location: "Atlanta, GA",
-		date: "Sep 13–16, 2025",
-		dateNote: "4 days",
-		status: "Cancelled" as const,
-		registrations: null,
-		revenue: 0,
-		color: "bg-[#EC4899]",
-	},
-]
-
-const OVERVIEW_STATS = [
-	{ label: "Total Events", value: "33", trend: "+12%", up: true, icon: CalendarOutSvg, iconColor: "inherit" as const, bg: "bg-red-100", textColor: "text-red-500", note: "vs last month" },
-	{ label: "Live Registrations", value: "3,905", trend: "+18%", up: true, icon: UsersGroupSvg, iconColor: "info" as const, bg: "bg-blue-100", textColor: "", note: "vs last 3 days" },
-	{ label: "Revenue (USD)", value: "$51,620", trend: "+24%", up: true, icon: DollarSvg, iconColor: "success" as const, bg: "bg-green-100", textColor: "", note: "vs last month" },
-	{ label: "Attendee Satisfaction", value: "4.7 / 5", trend: "+0.3", up: true, icon: StarSvg, iconColor: "inherit" as const, bg: "bg-yellow-100", textColor: "text-yellow-500", note: "vs last month" },
+const SUMMARY_CONFIG = [
+	{ status: "DRAFT" as ApiEventStatus, label: "Draft", subtitle: "Continue creating", icon: FileTextSvg, iconColor: "inherit" as const, bg: "bg-neutral-100" },
+	{ status: "UNDER_REVIEW" as ApiEventStatus, label: "Under Review", subtitle: "Awaiting approval", icon: ClockCircleSvg, iconColor: "info" as const, bg: "bg-blue-100" },
+	{ status: "PUBLISHED" as ApiEventStatus, label: "Published", subtitle: "Live and online", icon: PlaneSvg, iconColor: "success" as const, bg: "bg-status-success-bg" },
+	{ status: "COMPLETED" as ApiEventStatus, label: "Completed", subtitle: "Events finished", icon: Checklist2Svg, iconColor: "inverse" as const, bg: "bg-neutral-800" },
+	{ status: "CANCELLED" as ApiEventStatus, label: "Cancelled", subtitle: "Not active", icon: CloseCircleSvg, iconColor: "brand" as const, bg: "bg-red-100" },
 ]
 
 const CREATE_STEPS = [
@@ -106,36 +53,48 @@ const CREATE_STEPS = [
 	{ step: 5, title: "Setting & Review", subtitle: "Review and publish", icon: SettingsSvg, iconColor: "success" as const, bg: "bg-green-100", numColor: "text-green-600" },
 ]
 
-const NOTIFICATIONS = [
-	{ text: "Summer Music Festival was approved and is now live.", time: "7m ago", icon: CheckCircleFillSvg, color: "success" as const },
-	{ text: "Tech Innovators Summit is under review.", time: "45m ago", icon: ClockCircleSvg, color: "info" as const },
-	{ text: "Food & Culture Fest was rejected.", time: "1hr ago", icon: CloseCircleSvg, color: "warning" as const },
-	{ text: "New registration for Summer Music Festival.", time: "3hr ago", icon: UserSvg, color: "secondary" as const },
-	{ text: "Payout of $4,320 was sent to your account.", time: "5hr ago", icon: DollarSvg, color: "success" as const },
-]
+const EVENT_COLORS = ["bg-[#F97316]", "bg-[#6366F1]", "bg-[#10B981]", "bg-[#8B5CF6]", "bg-[#EC4899]", "bg-[#3B82F6]", "bg-[#F59E0B]"]
 
-// ─── Status badge ──────────────────────────────────────────────────────────────
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 
-const STATUS_STYLES = {
-	Published: "bg-status-success-bg text-status-success-text",
-	"Under Review": "bg-status-trending-bg text-status-trending-text",
-	Draft: "bg-surface-card-muted text-text-secondary",
-	Completed: "bg-surface-inverse text-text-inverse",
-	Cancelled: "bg-status-error-bg text-status-error-text",
-} as const
-
-type EventStatus = keyof typeof STATUS_STYLES
+function StatSkeleton() {
+	return (
+		<div className="flex gap-4 items-center p-4 rounded-card border border-border-subtle bg-surface-card shadow-card animate-pulse">
+			<div className="size-10 rounded-badge bg-neutral-200 shrink-0" />
+			<div className="flex flex-col gap-2 flex-1">
+				<div className="h-5 w-8 bg-neutral-200 rounded" />
+				<div className="h-3 w-20 bg-neutral-100 rounded" />
+				<div className="h-3 w-24 bg-neutral-100 rounded" />
+			</div>
+		</div>
+	)
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+	const { events, eventsTotal, eventsLoading, fetchMyEvents } = useEventStore()
+	const { profile } = useHostStore()
+
+	useEffect(() => {
+		fetchMyEvents({ limit: 100 })
+	}, [fetchMyEvents])
+
+	const displayName = profile?.displayName || "Host"
+
+	const statusCounts = SUMMARY_CONFIG.reduce<Record<string, number>>((acc, { status }) => {
+		acc[status] = events.filter(e => e.status === status).length
+		return acc
+	}, {})
+
+	const recentEvents = events.slice(0, 5)
+
 	return (
 		<div className="flex flex-col">
 			<DashboardTopBar />
 
 			{/* Hero */}
 			<div className="relative px-6 lg:px-8 pt-8 pb-6 overflow-hidden">
-				{/* Decorative dot grid */}
 				<div
 					className="absolute top-0 right-0 w-48 h-48 opacity-30 pointer-events-none"
 					style={{
@@ -146,33 +105,36 @@ export default function DashboardPage() {
 				/>
 
 				<h1 className="text-heading-sm lg:text-heading-md font-semibold text-text-primary max-w-xl leading-tight">
-					Create and manage experiences{" "}
-					<span className="text-text-brand">that people remember.</span>
+					Welcome back, <span className="text-text-brand">{displayName}.</span>
 				</h1>
 				<p className="text-body-sm text-text-secondary mt-2 mb-6">
 					Everything you need to build, publish and grow unforgettable events.
 				</p>
 
-				{/* Summary stats row */}
+				{/* Summary stats */}
 				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-					{SUMMARY_STATS.map(({ count, label, subtitle, arrow, icon, iconColor, bg }) => (
-						<button
-							key={label}
-							className={`flex gap-4 items-center p-4 rounded-card border border-border-subtle bg-surface-card shadow-card hover:shadow-card-hover transition-shadow text-left`}
-						>
-							<div className={`size-10 rounded-badge flex items-center justify-center ${bg}`}>
-								<Icon as={icon} size="lg" color={iconColor} />
-							</div>
-							<div>
-								<p className="text-title-md font-semibold text-text-primary">{count}</p>
-								<p className="text-label-sm text-text-primary font-medium">{label}</p>
-								<p className="text-caption text-text-tertiary mt-0.5 flex items-center gap-0.5">
+					{eventsLoading
+						? Array.from({ length: 5 }).map((_, i) => <StatSkeleton key={i} />)
+						: SUMMARY_CONFIG.map(({ status, label, subtitle, icon, iconColor, bg }) => (
+							<Link
+								key={status}
+								href={`/dashboard/events?status=${status}`}
+								className="flex gap-4 items-center p-4 rounded-card border border-border-subtle bg-surface-card shadow-card hover:shadow-card-hover transition-shadow text-left"
+							>
+								<div className={`size-10 rounded-badge flex items-center justify-center ${bg}`}>
+									<Icon as={icon} size="lg" color={iconColor} />
+								</div>
+								<div>
+									<p className="text-title-md font-semibold text-text-primary">{statusCounts[status] ?? 0}</p>
+									<p className="text-label-sm text-text-primary font-medium">{label}</p>
+									<p className="text-caption text-text-tertiary mt-0.5 flex items-center gap-0.5">
 										{subtitle}
-										{arrow && <AltArrowRightSvg className="size-3" aria-hidden />}
+										<AltArrowRightSvg className="size-3" aria-hidden />
 									</p>
-							</div>
-						</button>
-					))}
+								</div>
+							</Link>
+						))
+					}
 				</div>
 			</div>
 
@@ -180,73 +142,103 @@ export default function DashboardPage() {
 			<div className="px-6 lg:px-8 pb-10 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
 				{/* Left column */}
 				<div className="flex flex-col gap-6 min-w-0">
-					{/* My Events */}
+					{/* My Events table */}
 					<div className="bg-surface-card rounded-card border border-border-subtle shadow-card overflow-hidden">
 						<div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
 							<h2 className="text-label-md font-semibold text-text-primary">My Events</h2>
-							<a href="/dashboard/events" className="text-label-sm text-text-brand hover:underline inline-flex items-center gap-1">
+							<Link href="/dashboard/events" className="text-label-sm text-text-brand hover:underline inline-flex items-center gap-1">
 								View All Events
 								<AltArrowRightSvg className="size-3.5" aria-hidden />
-							</a>
+							</Link>
 						</div>
 
-						<div className="overflow-x-auto">
-							<table className="w-full min-w-160">
-								<thead>
-									<tr className="border-b border-border-subtle">
-										<th className="text-left text-caption text-text-tertiary font-medium px-5 py-3">EVENT NAME</th>
-										<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">DATE</th>
-										<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">STATUS</th>
-										<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">REGISTRATIONS</th>
-										<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">REVENUE</th>
-										<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">ACTIONS</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-border-subtle">
-									{EVENTS.map((event) => (
-										<tr key={event.id} className="hover:bg-surface-card-muted transition-colors">
-											<td className="px-5 py-3.5">
-												<div className="flex items-center gap-3">
-													<div className={`size-10 rounded-image shrink-0 ${event.color}`} />
-													<div>
-														<p className="text-label-sm font-medium text-text-primary leading-tight">{event.name}</p>
-														<p className="text-caption text-text-tertiary">{event.location}</p>
-													</div>
-												</div>
-											</td>
-											<td className="px-4 py-3.5">
-												<p className="text-label-sm text-text-primary">{event.date}</p>
-												<p className="text-caption text-text-tertiary">{event.dateNote}</p>
-											</td>
-											<td className="px-4 py-3.5">
-												<span className={`inline-flex items-center px-2.5 py-1 rounded-badge text-caption font-medium ${STATUS_STYLES[event.status as EventStatus]}`}>
-													{event.status}
-												</span>
-											</td>
-											<td className="px-4 py-3.5">
-												<p className="text-label-sm text-text-primary">
-													{event.registrations != null ? event.registrations.toLocaleString() : "—"}
-												</p>
-											</td>
-											<td className="px-4 py-3.5">
-												<p className="text-label-sm text-text-primary">
-													{event.revenue > 0 ? `$${event.revenue.toLocaleString()}` : "—"}
-												</p>
-											</td>
-											<td className="px-4 py-3.5">
-												<button className="text-text-tertiary hover:text-text-primary p-1 rounded transition-colors" aria-label={`Actions for ${event.name}`}>
-													<svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden>
-														<circle cx="9" cy="4" r="1.5" />
-														<circle cx="9" cy="9" r="1.5" />
-														<circle cx="9" cy="14" r="1.5" />
-													</svg>
-												</button>
-											</td>
+						{eventsLoading ? (
+							<div className="flex flex-col divide-y divide-border-subtle">
+								{Array.from({ length: 3 }).map((_, i) => (
+									<div key={i} className="flex items-center gap-4 px-5 py-4 animate-pulse">
+										<div className="size-10 rounded-image bg-neutral-200 shrink-0" />
+										<div className="flex-1 flex flex-col gap-2">
+											<div className="h-3.5 w-48 bg-neutral-200 rounded" />
+											<div className="h-3 w-32 bg-neutral-100 rounded" />
+										</div>
+										<div className="h-6 w-20 bg-neutral-100 rounded-badge" />
+									</div>
+								))}
+							</div>
+						) : recentEvents.length === 0 ? (
+							<div className="flex flex-col items-center justify-center py-16 gap-3">
+								<Icon as={CalendarOutSvg} size="lg" color="muted" />
+								<p className="text-body-sm text-text-secondary">No events yet.</p>
+								<Link href="/dashboard/create">
+									<Button variant="primary" size="sm" radius="pill">Create your first event</Button>
+								</Link>
+							</div>
+						) : (
+							<div className="overflow-x-auto">
+								<table className="w-full min-w-160">
+									<thead>
+										<tr className="border-b border-border-subtle">
+											<th className="text-left text-caption text-text-tertiary font-medium px-5 py-3">EVENT NAME</th>
+											<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">DATE</th>
+											<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">STATUS</th>
+											<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">TICKET PRICE</th>
+											<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">ACTIONS</th>
 										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
+									</thead>
+									<tbody className="divide-y divide-border-subtle">
+										{recentEvents.map((event, idx) => {
+											const statusCfg = STATUS_CONFIG[event.status] ?? STATUS_CONFIG.DRAFT
+											const ticketPrice = event.isFree
+												? "Free"
+												: event.startingPrice != null
+													? `₹${event.startingPrice.toLocaleString()}`
+													: event.tickets?.[0]?.price != null
+														? `₹${event.tickets[0].price.toLocaleString()}`
+														: "—"
+											const location = event.city || event.venueName || "—"
+											const dateStr = event.eventDate
+												? new Date(event.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+												: "—"
+											return (
+												<tr key={event.id} className="hover:bg-surface-card-muted transition-colors">
+													<td className="px-5 py-3.5">
+														<div className="flex items-center gap-3">
+															{event.coverImageUrl
+																? <img src={event.coverImageUrl} alt="" className="size-10 rounded-image object-cover shrink-0" />
+																: <div className={`size-10 rounded-image shrink-0 ${EVENT_COLORS[idx % EVENT_COLORS.length]}`} />
+															}
+															<div>
+																<p className="text-label-sm font-medium text-text-primary leading-tight">{event.title || "Untitled"}</p>
+																<p className="text-caption text-text-tertiary">{location}</p>
+															</div>
+														</div>
+													</td>
+													<td className="px-4 py-3.5">
+														<p className="text-label-sm text-text-primary">{dateStr}</p>
+													</td>
+													<td className="px-4 py-3.5">
+														<span className={`inline-flex items-center px-2.5 py-1 rounded-badge text-caption font-medium ${statusCfg.className}`}>
+															{statusCfg.label}
+														</span>
+													</td>
+													<td className="px-4 py-3.5">
+														<p className="text-label-sm text-text-primary">{ticketPrice}</p>
+													</td>
+													<td className="px-4 py-3.5">
+														<Link
+															href={`/dashboard/events/${event.id}`}
+															className="text-label-sm text-text-brand hover:underline"
+														>
+															View
+														</Link>
+													</td>
+												</tr>
+											)
+										})}
+									</tbody>
+								</table>
+							</div>
+						)}
 					</div>
 
 					{/* Overview */}
@@ -254,28 +246,58 @@ export default function DashboardPage() {
 						<div className="flex items-center justify-between mb-4">
 							<h2 className="text-label-md font-semibold text-text-primary">Overview</h2>
 							<button className="flex items-center gap-1.5 text-label-sm text-text-secondary border border-border-default rounded-action px-3 py-1.5 hover:bg-surface-card-muted transition-colors">
-								This Month
+								All Time
 								<AltArrowDownSvg className="size-3.5" aria-hidden />
 							</button>
 						</div>
 
 						<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-							{OVERVIEW_STATS.map(({ label, value, trend, up, icon, iconColor, bg, textColor, note }) => (
-								<div key={label} className="flex items-start gap-3">
-									<div className={`size-10 rounded-xl ${bg} ${textColor} flex items-center justify-center shrink-0 mt-0.5`}>
-										<Icon as={icon} size="md" color={iconColor} />
-									</div>
-									<div className="flex flex-col gap-0.5 min-w-0">
-										<p className="text-caption text-text-tertiary">{label}</p>
-										<p className="text-title-md font-semibold text-text-primary">{value}</p>
-										<div className="flex items-center gap-1 flex-wrap">
-											<Icon as={up ? TrendUpSvg : TrendDownSvg} size="sm" color={up ? "success" : "brand"} />
-											<span className={`text-caption font-medium ${up ? "text-text-success" : "text-text-danger"}`}>{trend}</span>
-											<span className="text-caption text-text-muted">{note}</span>
-										</div>
+							<div className="flex items-start gap-3">
+								<div className="size-10 rounded-xl bg-red-100 text-red-500 flex items-center justify-center shrink-0 mt-0.5">
+									<Icon as={CalendarOutSvg} size="md" color="inherit" />
+								</div>
+								<div className="flex flex-col gap-0.5 min-w-0">
+									<p className="text-caption text-text-tertiary">Total Events</p>
+									<p className="text-title-md font-semibold text-text-primary">{eventsLoading ? "—" : eventsTotal}</p>
+									<div className="flex items-center gap-1">
+										<Icon as={TrendUpSvg} size="sm" color="success" />
+										<span className="text-caption font-medium text-text-success">All statuses</span>
 									</div>
 								</div>
-							))}
+							</div>
+
+							<div className="flex items-start gap-3">
+								<div className="size-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+									<Icon as={UsersGroupSvg} size="md" color="info" />
+								</div>
+								<div className="flex flex-col gap-0.5 min-w-0">
+									<p className="text-caption text-text-tertiary">Registrations</p>
+									<p className="text-title-md font-semibold text-text-primary">—</p>
+									<span className="text-caption text-text-muted">Coming soon</span>
+								</div>
+							</div>
+
+							<div className="flex items-start gap-3">
+								<div className="size-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
+									<Icon as={DollarSvg} size="md" color="success" />
+								</div>
+								<div className="flex flex-col gap-0.5 min-w-0">
+									<p className="text-caption text-text-tertiary">Revenue</p>
+									<p className="text-title-md font-semibold text-text-primary">—</p>
+									<span className="text-caption text-text-muted">Coming soon</span>
+								</div>
+							</div>
+
+							<div className="flex items-start gap-3">
+								<div className="size-10 rounded-xl bg-yellow-100 flex items-center justify-center shrink-0 mt-0.5">
+									<Icon as={StarSvg} size="md" color="inherit" />
+								</div>
+								<div className="flex flex-col gap-0.5 min-w-0">
+									<p className="text-caption text-text-tertiary">Satisfaction</p>
+									<p className="text-title-md font-semibold text-text-primary">—</p>
+									<span className="text-caption text-text-muted">Coming soon</span>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -304,34 +326,11 @@ export default function DashboardPage() {
 						</div>
 
 						<div className="mt-5">
-							<Button variant="primary" size="md" radius="pill" className="w-full">
-								Create new experience
-							</Button>
-						</div>
-					</div>
-
-					{/* Recent Notifications */}
-					<div className="bg-surface-card rounded-card border border-border-subtle shadow-card p-5">
-						<div className="flex items-center justify-between mb-4">
-							<h2 className="text-label-md font-semibold text-text-primary">Recent Notifications</h2>
-							<a href="/dashboard/notifications" className="text-label-sm text-text-brand hover:underline inline-flex items-center gap-1">
-								View All
-								<AltArrowRightSvg className="size-3.5" aria-hidden />
-							</a>
-						</div>
-
-						<div className="flex flex-col gap-3">
-							{NOTIFICATIONS.map(({ text, time, icon, color }, i) => (
-								<div key={i} className="flex items-start gap-3">
-									<div className="size-8 rounded-badge bg-surface-card-muted flex items-center justify-center shrink-0 mt-0.5">
-										<Icon as={icon} size="sm" color={color} />
-									</div>
-									<div className="flex-1 min-w-0">
-										<p className="text-caption text-text-primary leading-snug">{text}</p>
-										<p className="text-caption text-text-muted mt-0.5">{time}</p>
-									</div>
-								</div>
-							))}
+							<Link href="/dashboard/create">
+								<Button variant="primary" size="md" radius="pill" className="w-full">
+									Create new experience
+								</Button>
+							</Link>
 						</div>
 					</div>
 				</div>

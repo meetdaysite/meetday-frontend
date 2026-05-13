@@ -158,7 +158,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		// Page refresh — profile not in memory, fetch it
 		let cancelled = false
 		getHostProfile()
-			.then((p) => { if (!cancelled) setProfile(p) })
+			.then((p) => {
+				if (cancelled) return
+				setProfile(p)
+			})
 			.catch((e) => {
 				if (!cancelled) {
 					if (isAxiosError(e) && e.response?.status === 404) {

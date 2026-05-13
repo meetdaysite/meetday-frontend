@@ -6,8 +6,10 @@ import { usePathname } from "next/navigation"
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
+import { useHostStore } from "@/store/hostStore"
 import type { ComponentType, SVGProps } from "react"
 
+import UserSvg from "@/icons/outlined/user.svg"
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
 import ClipboardListSvg from "@/icons/outlined/clipboard-list.svg"
@@ -15,7 +17,6 @@ import UsersGroup2Svg from "@/icons/outlined/users-group-2.svg"
 import MessageSvg from "@/icons/outlined/message.svg"
 import CashOutOutSvg from "@/icons/outlined/cash-out.svg"
 import Chart2OutSvg from "@/icons/outlined/chart-2.svg"
-import SettingsOutSvg from "@/icons/outlined/settings.svg"
 import GiftSvg from "@/icons/outlined/gift.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
 
@@ -23,7 +24,6 @@ import WidgetSvg from "@/icons/filled/widget.svg"
 import CalendarFillSvg from "@/icons/filled/calendar.svg"
 import CashOutFillSvg from "@/icons/filled/cash-out.svg"
 import Chart2FillSvg from "@/icons/filled/chart-2.svg"
-import SettingsFillSvg from "@/icons/filled/settings.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -35,8 +35,14 @@ const NAV_ITEMS: { label: string; href: string; outlined: SvgIcon; filled: SvgIc
 	{ label: "Messages", href: "/dashboard/messages", outlined: MessageSvg, filled: MessageSvg, dot: true },
 	{ label: "Payouts", href: "/dashboard/payouts", outlined: CashOutOutSvg, filled: CashOutFillSvg },
 	{ label: "Insights", href: "/dashboard/insights", outlined: Chart2OutSvg, filled: Chart2FillSvg },
-	{ label: "Settings", href: "/dashboard/settings", outlined: SettingsOutSvg, filled: SettingsFillSvg },
+	{ label: "Profile", href: "/dashboard/profile", outlined: UserSvg, filled: UserSvg },
 ]
+
+const PLAN_LABELS: Record<string, string> = {
+	DISCOVER: "Discover Plan",
+	COMMUNITY: "Community Plan",
+	SELL: "Sell Plan",
+}
 
 interface SidebarProps {
 	isOpen: boolean
@@ -45,6 +51,8 @@ interface SidebarProps {
 
 function SidebarContent({ onClose }: { onClose: () => void }) {
 	const pathname = usePathname()
+	const { profile } = useHostStore()
+	const planLabel = profile?.currentPlan ? PLAN_LABELS[profile.currentPlan] ?? "Host Plan" : "Host Plan"
 
 	return (
 		<div className="flex flex-col h-full">
@@ -97,9 +105,9 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 				<div className="bg-surface-brand-soft border border-border-brand rounded-card p-4">
 					<p className="text-label-sm font-semibold text-text-brand flex items-center gap-1.5">
 						<span className="size-2 rounded-full bg-red-500 shrink-0" />
-						Host Pro Plan
+						{planLabel}
 					</p>
-					<p className="text-caption text-text-secondary mt-0.5 mb-2">18 of 50 events created</p>
+					<p className="text-caption text-text-secondary mt-0.5 mb-2">Active subscription</p>
 					<div className="h-1.5 w-full rounded-full bg-border-brand overflow-hidden mb-3">
 						<div className="h-full w-[36%] rounded-full bg-action-primary" />
 					</div>

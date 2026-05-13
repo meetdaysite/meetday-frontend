@@ -94,8 +94,11 @@ export function DashboardTopBar() {
 	const [userOpen, setUserOpen] = useState(false)
 	const [notifications, setNotifications] = useState(NOTIFICATIONS)
 	const { signOut } = useAuthStore()
-	const { clearProfile } = useHostStore()
+	const { profile, clearProfile } = useHostStore()
 	const router = useRouter()
+
+	const displayName = profile?.displayName || "Host"
+	const initials = displayName.split(" ").filter(Boolean).map(n => n[0]).join("").slice(0, 2).toUpperCase() || "H"
 
 	const notifRef = useRef<HTMLDivElement>(null)
 	const userRef = useRef<HTMLDivElement>(null)
@@ -191,9 +194,9 @@ export function DashboardTopBar() {
 						className="flex items-center gap-2 cursor-pointer hover:bg-surface-card-muted px-2 py-1.5 rounded-action transition-colors"
 					>
 						<div className="size-8 rounded-avatar bg-surface-brand-soft flex items-center justify-center">
-							<span className="text-label-sm font-semibold text-text-brand">AM</span>
+							<span className="text-label-sm font-semibold text-text-brand">{initials}</span>
 						</div>
-						<span className="text-label-md text-text-primary">Alex Morgan</span>
+						<span className="text-label-md text-text-primary">{displayName}</span>
 						<Icon
 							as={AltArrowDownSvg}
 							size="sm"
