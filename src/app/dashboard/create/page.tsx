@@ -46,6 +46,7 @@ import {
 	MiniSpinner,
 	PillInput,
 } from "@/components/eventForm/shared"
+import { AddressAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
 
 import FileTextSvg from "@/icons/outlined/file-text.svg"
 import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
@@ -280,6 +281,24 @@ function Step2DateTime({
 	const [validated, setValidated] = useState(false)
 	const { eventDate, startTime, endTime, venueName, fullAddress, city } = formData
 
+	async function handleAddressBlur() {
+		if (!formData.fullAddress.trim() || formData.latitude !== null) return
+		try {
+			const res = await fetch(`/api/geocode?address=${encodeURIComponent(formData.fullAddress)}`)
+			const data = await res.json()
+			if (data.lat) {
+				setFormData((prev) => ({
+					...prev,
+					latitude: data.lat,
+					longitude: data.lng,
+					city: data.city || prev.city,
+				}))
+			}
+		} catch {
+			// geocoding is best-effort, silently ignore errors
+		}
+	}
+
 	const errors = useMemo(
 		() => validated ? validateStep2({ eventDate, startTime, endTime, venueName, fullAddress }) : {},
 		[validated, eventDate, startTime, endTime, venueName, fullAddress],
@@ -346,10 +365,23 @@ function Step2DateTime({
 
 				<div className="flex flex-col gap-1.5">
 					<FieldLabel required>Full Address</FieldLabel>
-					<div className={iconWrapCls(!!errors.fullAddress)}>
-						<Icon as={MapPointRotateSvg} size="md" color="secondary" />
-						<input type="text" value={fullAddress} onChange={(e) => set("fullAddress", e.target.value)} placeholder="123 Main St, Bandra West, Mumbai" className="flex-1 bg-transparent text-sm placeholder:text-text-muted text-text-primary outline-none" />
-					</div>
+					<AddressAutocompleteInput
+						value={fullAddress}
+						currentVenueName={venueName}
+						error={!!errors.fullAddress}
+						onChange={(v) => set("fullAddress", v)}
+						onBlur={handleAddressBlur}
+						onPlaceSelect={(fields) =>
+							setFormData((prev) => ({
+								...prev,
+								fullAddress: fields.fullAddress,
+								city: fields.city || prev.city,
+								venueName: prev.venueName.trim() ? prev.venueName : fields.venueName,
+								latitude: fields.latitude,
+								longitude: fields.longitude,
+							}))
+						}
+					/>
 					<ErrMsg msg={errors.fullAddress} />
 				</div>
 
