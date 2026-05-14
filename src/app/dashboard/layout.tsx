@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { isAxiosError } from "axios"
 import clsx from "clsx"
 import { Sidebar } from "@/components/dashboard/Sidebar"
+import { LogoutConfirmDialog } from "@/components/ui/LogoutConfirmDialog"
 import { useAuthStore } from "@/store/authStore"
 import { useHostStore } from "@/store/hostStore"
 import { getHostProfile } from "@/lib/api"
@@ -134,6 +135,7 @@ function LoadingScreen() {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
 	const [sidebarOpen, setSidebarOpen] = useState(false)
+	const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 	const { user, authLoading, signOut } = useAuthStore()
 	const { profile, setProfile, clearProfile } = useHostStore()
 	const router = useRouter()
@@ -180,7 +182,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 	const approvalStatus = profile?.approvalStatus
 	if (approvalStatus === "PENDING" || approvalStatus === "REJECTED") {
-		return <UnderReviewScreen status={approvalStatus === "PENDING" ? "pending" : "rejected"} onSignOut={handleSignOut} />
+		return (
+			<>
+				<UnderReviewScreen
+					status={approvalStatus === "PENDING" ? "pending" : "rejected"}
+					onSignOut={() => setShowLogoutConfirm(true)}
+				/>
+				<LogoutConfirmDialog
+					open={showLogoutConfirm}
+					onClose={() => setShowLogoutConfirm(false)}
+					onConfirm={handleSignOut}
+				/>
+			</>
+		)
 	}
 
 	return (
