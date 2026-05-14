@@ -94,7 +94,6 @@ export default function AttendeesPage() {
 		const q = search.toLowerCase()
 		return ALL_ATTENDEES.filter(a =>
 			a.name.toLowerCase().includes(q) ||
-			a.email.toLowerCase().includes(q) ||
 			a.eventTitle.toLowerCase().includes(q),
 		)
 	}, [search])
@@ -223,7 +222,6 @@ function AttendeeCard({ attendee }: { attendee: Attendee }) {
 			{/* Info */}
 			<div className="flex-1 min-w-0">
 				<p className="text-label-sm font-medium text-text-primary truncate">{attendee.name}</p>
-				<p className="text-caption text-text-muted truncate">{attendee.email}</p>
 				<div className="flex items-center gap-1 mt-1 min-w-0">
 					<CalendarIcon />
 					<span className="text-caption text-text-muted truncate">{attendee.eventTitle}</span>

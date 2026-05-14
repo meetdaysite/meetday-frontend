@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+// import { useState } from "react"
 import Link from "next/link"
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
@@ -13,7 +13,7 @@ import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
 import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
 import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
 import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
-import BellSvg from "@/icons/outlined/bell.svg"
+// import BellSvg from "@/icons/outlined/bell.svg"
 import CardSvg from "@/icons/filled/card.svg"
 import Chart2OutSvg from "@/icons/outlined/chart-2.svg"
 
@@ -78,33 +78,33 @@ function SectionCard({ icon, title, children, className, action }: {
 
 // ─── Toggle ───────────────────────────────────────────────────────────────────
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-	return (
-		<button
-			role="switch"
-			aria-checked={checked}
-			onClick={() => onChange(!checked)}
-			className={clsx(
-				"relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2",
-				checked ? "bg-action-primary" : "bg-neutral-200",
-			)}
-		>
-			<span className={clsx(
-				"pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200",
-				checked ? "translate-x-5" : "translate-x-0",
-			)} />
-		</button>
-	)
-}
+// function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+// 	return (
+// 		<button
+// 			role="switch"
+// 			aria-checked={checked}
+// 			onClick={() => onChange(!checked)}
+// 			className={clsx(
+// 				"relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2",
+// 				checked ? "bg-action-primary" : "bg-neutral-200",
+// 			)}
+// 		>
+// 			<span className={clsx(
+// 				"pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200",
+// 				checked ? "translate-x-5" : "translate-x-0",
+// 			)} />
+// 		</button>
+// 	)
+// }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
-const NOTIFICATION_PREFS = [
-	{ id: "new-registration", label: "New Registration", description: "When someone registers for your event", defaultOn: true },
-	{ id: "review-updates", label: "Review Updates", description: "Event approved, rejected, or under review", defaultOn: true },
-	{ id: "payout-notifications", label: "Payout Notifications", description: "When earnings are sent to your account", defaultOn: true },
-	{ id: "attendee-messages", label: "Attendee Messages", description: "Direct messages from attendees", defaultOn: false },
-]
+// const NOTIFICATION_PREFS = [
+// 	{ id: "new-registration", label: "New Registration", description: "When someone registers for your event", defaultOn: true },
+// 	{ id: "review-updates", label: "Review Updates", description: "Event approved, rejected, or under review", defaultOn: true },
+// 	{ id: "payout-notifications", label: "Payout Notifications", description: "When earnings are sent to your account", defaultOn: true },
+// 	{ id: "attendee-messages", label: "Attendee Messages", description: "Direct messages from attendees", defaultOn: false },
+// ]
 
 const PLAN_LABELS: Record<string, string> = {
 	DISCOVER: "Discover Plan",
@@ -124,9 +124,9 @@ const GENDER_LABELS: Record<string, string> = {
 export default function ProfilePage() {
 	const { profile } = useHostStore()
 
-	const [notifs, setNotifs] = useState<Record<string, boolean>>(
-		Object.fromEntries(NOTIFICATION_PREFS.map(n => [n.id, n.defaultOn])),
-	)
+	// const [notifs, setNotifs] = useState<Record<string, boolean>>(
+	// 	Object.fromEntries(NOTIFICATION_PREFS.map(n => [n.id, n.defaultOn])),
+	// )
 
 	const displayName = profile?.displayName || "Host"
 	const initials = displayName.split(" ").filter(Boolean).map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "H"
@@ -179,6 +179,7 @@ export default function ProfilePage() {
 							<div className="flex items-center gap-4 mb-6 pb-6 border-b border-border-subtle">
 								<div className="size-20 rounded-full shrink-0 overflow-hidden bg-red-100 flex items-center justify-center text-red-700 text-heading-sm font-bold select-none">
 									{profile?.avatarUrl
+										// eslint-disable-next-line @next/next/no-img-element
 										? <img src={profile.avatarUrl} alt={displayName} className="size-full object-cover" />
 										: initials
 									}
@@ -373,7 +374,7 @@ export default function ProfilePage() {
 						)}
 
 						{/* Notification Preferences */}
-						<SectionCard icon={<Icon as={BellSvg} size="md" color="brand" />} title="Notifications">
+						{/* <SectionCard icon={<Icon as={BellSvg} size="md" color="brand" />} title="Notifications">
 							<div className="flex flex-col divide-y divide-border-subtle -my-1">
 								{NOTIFICATION_PREFS.map((notif, i) => (
 									<div
@@ -395,7 +396,7 @@ export default function ProfilePage() {
 									</div>
 								))}
 							</div>
-						</SectionCard>
+						</SectionCard> */}
 
 					</div>
 				</div>

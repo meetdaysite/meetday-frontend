@@ -61,7 +61,6 @@ export default function RegistrationsPage() {
 		const q = search.toLowerCase()
 		return MOCK_REGISTRATIONS.filter(r =>
 			r.attendeeName.toLowerCase().includes(q) ||
-			r.attendeeEmail.toLowerCase().includes(q) ||
 			r.eventTitle.toLowerCase().includes(q),
 		)
 	}, [search])
@@ -214,7 +213,6 @@ function RegistrationRow({ reg, isLast }: { reg: MockRegistration; isLast: boole
 					</div>
 					<div className="min-w-0">
 						<p className="text-label-sm font-medium text-text-primary truncate">{reg.attendeeName}</p>
-						<p className="text-caption text-text-muted truncate">{reg.attendeeEmail}</p>
 					</div>
 				</div>
 			</td>

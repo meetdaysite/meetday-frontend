@@ -46,7 +46,7 @@ import {
 	MiniSpinner,
 	PillInput,
 } from "@/components/eventForm/shared"
-import { AddressAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
+import { AddressAutocompleteInput, VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
 
 import FileTextSvg from "@/icons/outlined/file-text.svg"
 import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
@@ -359,7 +359,21 @@ function Step2DateTime({
 
 				<div className="flex flex-col gap-1.5">
 					<FieldLabel required>Venue Name</FieldLabel>
-					<input type="text" value={venueName} onChange={(e) => set("venueName", e.target.value)} placeholder="e.g. Zilker Park" className={inpCls(!!errors.venueName)} />
+					<VenueAutocompleteInput
+						value={venueName}
+						error={!!errors.venueName}
+						onChange={(v) => set("venueName", v)}
+						onPlaceSelect={(fields) =>
+							setFormData((prev) => ({
+								...prev,
+								venueName: fields.venueName || prev.venueName,
+								fullAddress: fields.fullAddress || prev.fullAddress,
+								city: fields.city || prev.city,
+								latitude: fields.latitude,
+								longitude: fields.longitude,
+							}))
+						}
+					/>
 					<ErrMsg msg={errors.venueName} />
 				</div>
 

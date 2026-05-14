@@ -233,6 +233,7 @@ export default function EditProfilePage() {
 	// Pre-populate from store
 	useEffect(() => {
 		if (!profile) return
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setDisplayName(profile.displayName ?? "")
 		setTagline(profile.tagline ?? "")
 		setHostBio(profile.hostBio ?? "")
@@ -296,7 +297,7 @@ export default function EditProfilePage() {
 	async function handleSave() {
 		setSaving(true)
 		try {
-			const updated = await updateHostProfile({
+			await updateHostProfile({
 				avatarUrl: avatarKey ?? undefined,
 				displayName: displayName.trim() || undefined,
 				tagline: tagline.trim() || undefined,
@@ -363,6 +364,7 @@ export default function EditProfilePage() {
 							<div className="relative shrink-0">
 								<div className="size-20 rounded-full overflow-hidden bg-red-100 flex items-center justify-center text-red-700 text-heading-sm font-bold select-none">
 									{avatarPreview || profile?.avatarUrl
+										// eslint-disable-next-line @next/next/no-img-element
 										? <img src={avatarPreview ?? profile!.avatarUrl!} alt="Avatar" className="size-full object-cover" />
 										: (profile?.displayName || "H").split(" ").filter(Boolean).map(n => n[0]).join("").slice(0, 2).toUpperCase()
 									}

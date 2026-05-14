@@ -352,7 +352,6 @@ function EventActions({
 
 	switch (event.status) {
 		case "DRAFT":
-		case "REJECTED":
 			return (
 				<div className="flex flex-col gap-2">
 					<ActionButton
@@ -369,6 +368,13 @@ function EventActions({
 				</div>
 			)
 
+		case "REJECTED":
+			return (
+				<p className="text-body-sm text-text-muted">
+					This event was rejected and can no longer be edited.
+				</p>
+			)
+
 		case "UNDER_REVIEW":
 			return (
 				<p className="text-body-sm text-text-muted">
@@ -380,10 +386,6 @@ function EventActions({
 			return (
 				<>
 					<div className="flex flex-col gap-2">
-						<ActionButton variant="secondary" icon={<PenIcon />} onClick={onEdit}>
-							Edit Event
-							<span className="text-caption text-text-muted font-normal ml-1">(triggers re-review)</span>
-						</ActionButton>
 						<Link
 							href="/dashboard/registrations"
 							className="flex items-center justify-center gap-2 h-(--size-action-md) px-4 text-label-sm font-medium border border-action-secondary-border rounded-action bg-action-secondary text-action-secondary-text hover:bg-action-secondary-hover transition-colors"

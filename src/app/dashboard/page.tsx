@@ -204,6 +204,7 @@ export default function DashboardPage() {
 													<td className="px-5 py-3.5">
 														<div className="flex items-center gap-3">
 															{event.coverImageUrl
+																// eslint-disable-next-line @next/next/no-img-element
 																? <img src={event.coverImageUrl} alt="" className="size-10 rounded-image object-cover shrink-0" />
 																: <div className={`size-10 rounded-image shrink-0 ${EVENT_COLORS[idx % EVENT_COLORS.length]}`} />
 															}

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useForm, Controller } from "react-hook-form"
+import { useForm, Controller, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
@@ -37,14 +37,13 @@ export default function SignupPage() {
 	const {
 		control,
 		handleSubmit,
-		watch,
 		formState: { errors },
 	} = useForm<FormValues>({
 		resolver: zodResolver(schema),
 		defaultValues: { phone: "", agreed: undefined },
 	})
 
-	const agreed = watch("agreed")
+	const agreed = useWatch({ control, name: "agreed" })
 
 	async function onSubmit({ phone }: FormValues) {
 		setLoading(true)
