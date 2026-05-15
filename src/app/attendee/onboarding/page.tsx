@@ -27,16 +27,16 @@ export const ATTENDEE_ABOUT_KEY = "attendee_about"
 //               substep 2-3 → white LEFT / dark RIGHT
 
 const Q1_OPTIONS = [
-	{ id: "party", label: "Life of the party", image: "/onboarding/person-1.png" },
-	{ id: "chill", label: "Chill and observing", image: "/onboarding/person-2.png" },
-	{ id: "connect", label: "Here to connect", image: "/onboarding/person-3.png" },
-	{ id: "open", label: "Open to whatever comes", image: "/onboarding/person-4.png" },
+	{ id: "party", label: "Life of the party", image: "/assets/attendee/life-of-the-party.svg" },
+	{ id: "chill", label: "Chill and observing", image: "/assets/attendee/chill-and-observing.svg" },
+	{ id: "connect", label: "Here to connect", image: "/assets/attendee/here-to-connect.svg" },
+	{ id: "open", label: "Open to whatever comes", image: "/assets/attendee/open-to-whatever-comes.svg" },
 ]
 
 const Q2_OPTIONS = [
-	{ id: "solo", label: "Solo Explorer", image: "/onboarding/person-1.png" },
-	{ id: "open", label: "Open to meeting people", image: "/onboarding/person-2.png" },
-	{ id: "gang", label: "Bringing my gang", image: "/onboarding/person-3.png" },
+	{ id: "solo", label: "Solo Explorer", image: "/assets/attendee/solo-explorer.svg" },
+	{ id: "open", label: "Open to meeting people", image: "/assets/attendee/open-to-meeting-people.svg" },
+	{ id: "gang", label: "Bringing my gang", image: "/assets/attendee/bringing-my-gang.svg" },
 ]
 
 // ---------------------------------------------------------------------------
@@ -180,73 +180,15 @@ function DarkPanel({ group }: DarkPanelProps) {
 				</div>
 
 				{/* Inline phone mockup */}
-				<div className="flex justify-center mt-6">
-					<div
-						className="relative"
-						style={{ width: "180px", height: "320px", borderRadius: "2rem" }}
-					>
-						{/* Outer shell */}
-						<div
-							className="relative overflow-hidden w-full h-full"
-							style={{
-								borderRadius: "2rem",
-								background: "#0f172a",
-								padding: "4px",
-								boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)",
-							}}
-						>
-							<div
-								className="relative w-full h-full overflow-hidden flex flex-col justify-between px-4 pt-10 pb-6"
-								style={{
-									borderRadius: "1.75rem",
-									background:
-										"linear-gradient(160deg, #c41818 0%, #8b0f0f 35%, #3d0606 65%, #110202 100%)",
-								}}
-							>
-								{/* Dynamic island */}
-								<div
-									className="absolute top-2 left-1/2 -translate-x-1/2"
-									style={{
-										width: "60px",
-										height: "18px",
-										background: "#0f172a",
-										borderRadius: "99px",
-									}}
-								/>
-								{/* Screen text */}
-								<div />
-								<div>
-									<p className="text-white text-sm font-semibold leading-snug">
-										{isAbout ? (
-											<>
-												be yourself,
-												<br />
-												we have got your{" "}
-												<span style={{ color: "#ff6b6b" }}>people</span>
-											</>
-										) : (
-											<>
-												The more you swipe,
-												<br />
-												the better we get!
-											</>
-										)}
-									</p>
-									{/* Home indicator */}
-									<div
-										className="mt-4 mx-auto"
-										style={{
-											width: "60px",
-											height: "3px",
-											background: "rgba(255,255,255,0.25)",
-											borderRadius: "99px",
-										}}
-									/>
-								</div>
-							</div>
-						</div>
+				{isAbout ? (
+					<div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
+						<Image src="/assets/attendee/phone-1.png" alt="Phone mockup" width={350} height={420} />
 					</div>
-				</div>
+				) : (
+					<div className="absolute bottom-20 right-0">
+						<Image src="/assets/attendee/phone-2.png" alt="Phone mockup" width={350} height={420} />
+					</div>
+				)}
 			</div>
 		</div>
 	)
@@ -297,7 +239,7 @@ function OptionCard({ label, image, selected, onSelect }: OptionCardProps) {
 				<Image src={image} alt="" fill className="object-cover object-top" aria-hidden />
 			</div>
 			{/* Label */}
-			<p className="text-label-md text-text-primary text-center leading-snug">{label}</p>
+				<p className="text-body-lg text-text-secondary text-center leading-snug mt-2">{label}</p>
 		</button>
 	)
 }
