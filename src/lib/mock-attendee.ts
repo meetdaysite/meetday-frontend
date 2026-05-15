@@ -57,6 +57,7 @@ export const MOCK_ATTENDEE_EVENTS: AttendeeEventCard[] = [
 		capacity: 60,
 		isTrending: true,
 		tags: ["music", "rooftop", "nightlife"],
+		genre: "Electronic • House",
 	},
 	{
 		id: "creator-sessions-1",

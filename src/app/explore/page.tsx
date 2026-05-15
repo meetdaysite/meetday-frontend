@@ -177,7 +177,7 @@ export default function ExploreEventsPage() {
 						<FilterChips active={activeFilter} onChange={setActiveFilter} />
 
 						{/* Events grid */}
-						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mt-6">
+						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mt-6">
 							{MOCK_ATTENDEE_EVENTS.map(event => (
 								<EventCard key={event.id} event={event} />
 							))}

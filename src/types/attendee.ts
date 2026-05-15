@@ -22,4 +22,5 @@ export interface AttendeeEventCard {
 	isTrending?: boolean
 	isNew?: boolean
 	tags?: string[]
+	genre?: string
 }
