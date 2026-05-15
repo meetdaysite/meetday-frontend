@@ -313,7 +313,7 @@ export async function cancelEvent(id: string, cancellationReason: string): Promi
 
 // ─── Public events ────────────────────────────────────────────────────────────
 
-import type { ExploreEventsResponse } from "@/types/attendee"
+import type { ExploreEventsResponse, PublicEventDetails } from "@/types/attendee"
 
 export type PublicEventsParams = {
 	city?: string
@@ -327,6 +327,20 @@ export type PublicEventsParams = {
 	sortOrder?: "asc" | "desc"
 	page?: number
 	limit?: number
+}
+
+export async function getPublicEventDetails(id: string): Promise<PublicEventDetails | null> {
+	try {
+		const res = await fetch(
+			`${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${id}/public`,
+			{ next: { revalidate: 60 } },
+		)
+		if (!res.ok) return null
+		const json = await res.json()
+		return (json.data as PublicEventDetails) ?? null
+	} catch {
+		return null
+	}
 }
 
 export async function getPublicEvents(params?: PublicEventsParams): Promise<ExploreEventsResponse> {

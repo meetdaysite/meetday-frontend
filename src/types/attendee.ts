@@ -25,6 +25,81 @@ export interface ExploreEventsResponse {
 	limit: number
 }
 
+// ─── Public event details (GET /events/:id/public) ───────────────────────────
+
+export interface PublicHostProfile {
+	id: string
+	displayName: string
+	tagline: string
+	averageRating: number | null
+	totalReviews: number
+	totalEventsHosted: number
+}
+
+export interface PublicTicket {
+	id: string
+	name: string
+	price: string
+	totalCapacity: number
+	maxPerPerson: number
+	description?: string
+	saleStartDate?: string
+	saleEndDate?: string
+}
+
+export interface PublicRefundPolicy {
+	id: string
+	eventId: string
+	type: "FULL" | "PARTIAL" | "NO_REFUND"
+	cutoffHours?: number
+	refundPercent?: number
+	refundTo?: "ORIGINAL_PAYMENT" | "CREDITS"
+}
+
+export interface PublicEventMedia {
+	id: string
+	eventId: string
+	url: string
+	type: "COVER" | "GALLERY" | "VIDEO"
+	order: number
+	createdAt: string
+}
+
+export interface PublicEventDetails {
+	id: string
+	title: string
+	description: string
+	eventType: string
+	languages: string[]
+	tags: string[]
+	eventDate: string
+	startTime: string
+	endTime: string
+	venueName: string
+	fullAddress: string
+	city: string
+	latitude: number | null
+	longitude: number | null
+	whatToExpect: string[]
+	whoShouldAttend: string[]
+	vibeSummary: string | null
+	crowdPulse: unknown | null
+	isFree: boolean
+	ageRestriction: string
+	specialInstructions: string | null
+	category: { id: string; name: string }
+	hostProfile: PublicHostProfile
+	tickets: PublicTicket[]
+	refundPolicy: PublicRefundPolicy | null
+	media: PublicEventMedia[]
+	startingPrice: number
+	reviewSummary: {
+		averageRating: number | null
+		reviewCount: number
+		recentReviews: unknown[]
+	}
+}
+
 export interface AttendeeEventCard {
 	id: string
 	title: string

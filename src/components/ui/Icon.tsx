@@ -15,7 +15,7 @@ const colorClasses = {
 	brand: "text-icon-brand",
 	info: "text-icon-info",
 	vibe: "text-icon-vibe",
-	warning: "text-icon-warning",
+	warning: "text-text-warning",
 	success: "text-icon-success",
 	inherit: "",
 } as const;
