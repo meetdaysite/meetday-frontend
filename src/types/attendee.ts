@@ -5,6 +5,26 @@ export interface VibeCategory {
 	gradient: string
 }
 
+export interface ExploreEvent {
+	id: string
+	title: string
+	eventType: string
+	eventDate: string
+	startTime: string
+	venueName: string
+	tags: string[]
+	category: { id: string; name: string }
+	coverImageUrl: string
+	startingPrice: number
+}
+
+export interface ExploreEventsResponse {
+	events: ExploreEvent[]
+	total: number
+	page: number
+	limit: number
+}
+
 export interface AttendeeEventCard {
 	id: string
 	title: string

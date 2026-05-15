@@ -1,10 +1,10 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useState, useEffect } from "react"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import clsx from "clsx"
-import { MOCK_ATTENDEE_EVENTS } from "@/lib/mock-attendee"
+import { getInterests, type Interest } from "@/lib/api"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
@@ -13,7 +13,6 @@ import StarSvg from "@/icons/filled/star.svg"
 import LikeSvg from "@/icons/filled/like.svg"
 import DislikeSvg from "@/icons/filled/dislike.svg"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
-import UsersGroupSvg from "@/icons/outlined/users-group.svg"
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -314,51 +313,79 @@ function AboutYouContent({ substep, q1Value, q2Value, onQ1Change, onQ2Change, on
 // Set Your Vibe — swipe step (Step 2)
 // ---------------------------------------------------------------------------
 
+type Affinity = "LIKED" | "OPEN_TO" | "DISLIKED"
+type InterestAffinity = { interestId: string; affinity: Affinity }
+
 interface SwipeStepProps {
 	onDone: () => void
 }
 
 function SwipeStepContent({ onDone }: SwipeStepProps) {
-	const events = MOCK_ATTENDEE_EVENTS
+	const [interests, setInterests] = useState<Interest[]>([])
+	const [loading, setLoading] = useState(true)
 	const [currentIdx, setCurrentIdx] = useState(0)
-	const [liked, setLiked] = useState<string[]>([])
+	const [affinities, setAffinities] = useState<InterestAffinity[]>([])
 
-	function handleAction(_action: "like" | "dislike" | "open") {
-		const event = events[currentIdx]
-		if (_action === "like" || _action === "open") {
-			setLiked(prev => [...prev, event.id])
-		}
-		if (currentIdx + 1 >= events.length) {
-			// save and move to done
+	useEffect(() => {
+		getInterests()
+			.then(setInterests)
+			.finally(() => setLoading(false))
+	}, [])
+
+	function handleAction(action: "like" | "dislike" | "open") {
+		const interest = interests[currentIdx]
+		const affinity: Affinity = action === "like" ? "LIKED" : action === "open" ? "OPEN_TO" : "DISLIKED"
+		const updated = [...affinities, { interestId: interest.id, affinity }]
+
+		if (currentIdx + 1 >= interests.length) {
 			try {
-				localStorage.setItem(ATTENDEE_VIBES_KEY, JSON.stringify(liked))
+				localStorage.setItem(ATTENDEE_VIBES_KEY, JSON.stringify(updated))
 			} catch {
 				/* storage unavailable */
 			}
 			onDone()
 		} else {
+			setAffinities(updated)
 			setCurrentIdx(i => i + 1)
 		}
 	}
 
-	const event = events[currentIdx]
-	const prevEvent = currentIdx > 0 ? events[currentIdx - 1] : null
-	const nextEvent = currentIdx + 1 < events.length ? events[currentIdx + 1] : null
+	if (loading) {
+		return (
+			<div className="flex items-center justify-center h-full">
+				<div className="w-8 h-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
+			</div>
+		)
+	}
+
+	if (!interests.length) {
+		return (
+			<div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
+				<p className="text-body-md text-text-secondary">Couldn&apos;t load interests. Please try again.</p>
+				<Button variant="primary" size="sm" radius="pill" onClick={() => { setLoading(true); getInterests().then(setInterests).finally(() => setLoading(false)) }}>
+					Retry
+				</Button>
+			</div>
+		)
+	}
+
+	const interest = interests[currentIdx]
+	const prevInterest = currentIdx > 0 ? interests[currentIdx - 1] : null
+	const nextInterest = currentIdx + 1 < interests.length ? interests[currentIdx + 1] : null
 
 	return (
 		<div className="relative flex flex-col items-center justify-center h-full px-6 py-8 gap-6">
-			{/* Background — z-0; card stack / dots / buttons are z-10 so they paint above it */}
 			<div
 				className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
 				style={{ backgroundImage: "url('/assets/main_bg.svg')" }}
 			/>
-			{/* Card stack — z-10 creates stacking context; prev/next=z1, main=z2 order within it */}
+			{/* Card stack */}
 			<div
 				className="relative z-10 flex items-center justify-center w-full"
 				style={{ height: "450px" }}
 			>
 				{/* Background card — next */}
-				{nextEvent && (
+				{nextInterest && (
 					<div
 						className="absolute rounded-card overflow-hidden shadow-card"
 						style={{
@@ -369,13 +396,13 @@ function SwipeStepContent({ onDone }: SwipeStepProps) {
 							zIndex: 1,
 						}}
 					>
-						<Image src={nextEvent.cover} alt="" fill className="object-cover" aria-hidden />
+						<Image src={nextInterest.image} alt="" fill sizes="220px" className="object-cover" aria-hidden />
 						<div className="absolute inset-0 bg-white/40 rounded-card" />
 					</div>
 				)}
 
 				{/* Background card — prev */}
-				{prevEvent && (
+				{prevInterest && (
 					<div
 						className="absolute rounded-card overflow-hidden shadow-card"
 						style={{
@@ -386,7 +413,7 @@ function SwipeStepContent({ onDone }: SwipeStepProps) {
 							zIndex: 1,
 						}}
 					>
-						<Image src={prevEvent.cover} alt="" fill className="object-cover" aria-hidden />
+						<Image src={prevInterest.image} alt="" fill sizes="220px" className="object-cover" aria-hidden />
 						<div className="absolute inset-0 bg-white/40 rounded-card" />
 					</div>
 				)}
@@ -396,22 +423,17 @@ function SwipeStepContent({ onDone }: SwipeStepProps) {
 					className="relative rounded-card overflow-hidden shadow-modal"
 					style={{ width: "250px", height: "445px", zIndex: 2 }}
 				>
-					<Image src={event.cover} alt={event.title} fill className="object-cover" />
-					{/* Bottom info */}
+					<Image src={interest.image} alt={interest.name} fill sizes="250px" className="object-cover" priority />
 					<div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/40 to-transparent p-4">
-						<p className="text-label-md font-bold text-white leading-tight">{event.title}</p>
-						<p className="text-caption text-white/70 mt-0.5 line-clamp-2">{event.category}</p>
-						<p className="text-caption text-white/60 mt-1.5 flex items-center gap-1">
-							<Icon as={UsersGroupSvg} size="sm" className="shrink-0" />
-							{event.attendeeCount.toLocaleString()} people are attending
-						</p>
+						<p className="text-label-md font-bold text-white leading-tight">{interest.name}</p>
+						<p className="text-caption text-white/70 mt-0.5 line-clamp-2">{interest.description}</p>
 					</div>
 				</div>
 			</div>
 
-			{/* Progress dots — capped to card width */}
+			{/* Progress dots */}
 			<div className="relative z-10 w-62.5 flex items-center justify-center gap-1.5">
-				{events.map((_, i) => (
+				{interests.map((_: Interest, i: number) => (
 					<div
 						key={i}
 						className={clsx(
@@ -426,7 +448,7 @@ function SwipeStepContent({ onDone }: SwipeStepProps) {
 				))}
 			</div>
 
-			{/* Action buttons — spread across card width */}
+			{/* Action buttons */}
 			<div className="relative z-10 w-62.5 flex items-center justify-between">
 				<button
 					type="button"
@@ -434,11 +456,7 @@ function SwipeStepContent({ onDone }: SwipeStepProps) {
 					className="w-14 h-14 rounded-full bg-neutral-900 shadow-card flex items-center justify-center hover:bg-neutral-800 active:bg-black transition-colors"
 					aria-label="Dislike"
 				>
-					<Icon
-						as={DislikeSvg}
-						size="md"
-						className="text-red-500 **:fill-current **:stroke-current"
-					/>
+					<Icon as={DislikeSvg} size="md" className="text-red-500 **:fill-current **:stroke-current" />
 				</button>
 				<button
 					type="button"
@@ -446,11 +464,7 @@ function SwipeStepContent({ onDone }: SwipeStepProps) {
 					className="w-14 h-14 rounded-full bg-neutral-900 shadow-card flex items-center justify-center hover:bg-neutral-800 active:bg-black transition-colors"
 					aria-label="Open to it"
 				>
-					<Icon
-						as={StarSvg}
-						size="md"
-						className="text-amber-400 **:fill-current **:stroke-current"
-					/>
+					<Icon as={StarSvg} size="md" className="text-amber-400 **:fill-current **:stroke-current" />
 				</button>
 				<button
 					type="button"
@@ -458,11 +472,7 @@ function SwipeStepContent({ onDone }: SwipeStepProps) {
 					className="w-14 h-14 rounded-full bg-neutral-900 shadow-card flex items-center justify-center hover:bg-neutral-800 active:bg-black transition-colors"
 					aria-label="Like"
 				>
-					<Icon
-						as={LikeSvg}
-						size="md"
-						className="text-green-500 **:fill-current **:stroke-current"
-					/>
+					<Icon as={LikeSvg} size="md" className="text-green-500 **:fill-current **:stroke-current" />
 				</button>
 			</div>
 		</div>

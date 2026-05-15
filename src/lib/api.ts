@@ -311,6 +311,48 @@ export async function cancelEvent(id: string, cancellationReason: string): Promi
 	return data.data
 }
 
+// ─── Public events ────────────────────────────────────────────────────────────
+
+import type { ExploreEventsResponse } from "@/types/attendee"
+
+export type PublicEventsParams = {
+	city?: string
+	categoryId?: string
+	interestSlugs?: string[]
+	isFree?: boolean
+	dateFrom?: string
+	dateTo?: string
+	search?: string
+	sortBy?: "date" | "price"
+	sortOrder?: "asc" | "desc"
+	page?: number
+	limit?: number
+}
+
+export async function getPublicEvents(params?: PublicEventsParams): Promise<ExploreEventsResponse> {
+	const { interestSlugs, ...rest } = params ?? {}
+	const { data } = await apiClient.get<{ success: boolean; data: ExploreEventsResponse }>("/events", {
+		params: { ...rest, ...(interestSlugs?.length ? { interestSlugs } : {}) },
+		paramsSerializer: { indexes: null },
+	})
+	return data.data
+}
+
+// ─── Interests ────────────────────────────────────────────────────────────────
+
+export type Interest = {
+	id: string
+	name: string
+	slug: string
+	description: string
+	image: string
+}
+
+export async function getInterests(): Promise<Interest[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: Interest[] }>("/interests")
+	return data.data
+}
+
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
