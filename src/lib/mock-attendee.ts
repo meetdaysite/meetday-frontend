@@ -137,4 +137,125 @@ export const MOCK_ATTENDEE_EVENTS: AttendeeEventCard[] = [
 		isTrending: true,
 		tags: ["rooftop", "social", "networking"],
 	},
+	{
+		id: "art-after-dark-1",
+		title: "Art After Dark",
+		category: "Arts & Culture",
+		date: "2025-06-06",
+		time: "19:00",
+		venue: "Birla Academy",
+		city: "Kolkata, West Bengal",
+		cover: "https://images.unsplash.com/photo-1547826039-bfc35e0f1ea8?w=600&q=80",
+		price: 399,
+		hostName: "ArtSpace KOL",
+		attendeeCount: 56,
+		capacity: 80,
+		isNew: true,
+		tags: ["art", "culture", "evening"],
+	},
+	{
+		id: "run-club-kol",
+		title: "Run Club KOL",
+		category: "Fitness & Outdoor",
+		date: "2025-06-07",
+		time: "06:00",
+		venue: "Maidan Grounds",
+		city: "Kolkata, West Bengal",
+		cover: "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=600&q=80",
+		price: null,
+		hostName: "Run Kolkata",
+		attendeeCount: 89,
+		capacity: 120,
+		tags: ["running", "fitness", "morning"],
+	},
+	{
+		id: "tech-talks-kol",
+		title: "Tech Talks KOL",
+		category: "Career & Learning",
+		date: "2025-06-08",
+		time: "10:00",
+		venue: "ITC Sonar Convention Hall",
+		city: "Kolkata, West Bengal",
+		cover: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=600&q=80",
+		price: 299,
+		hostName: "TechHub Kolkata",
+		attendeeCount: 134,
+		capacity: 200,
+		isTrending: true,
+		tags: ["tech", "startup", "networking"],
+	},
+	{
+		id: "brunch-and-beats",
+		title: "Brunch & Beats",
+		category: "Social & Hangout",
+		date: "2025-06-09",
+		time: "11:00",
+		venue: "The Urban Table",
+		city: "Kolkata, West Bengal",
+		cover: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=600&q=80",
+		price: 699,
+		hostName: "Weekend Collective",
+		attendeeCount: 41,
+		capacity: 60,
+		isNew: true,
+		tags: ["brunch", "music", "social"],
+	},
+]
+
+// ---------------------------------------------------------------------------
+// Trending sidebar — Kolkata events with distance for the explore page panel
+// ---------------------------------------------------------------------------
+
+export interface TrendingEvent {
+	id: string
+	title: string
+	time: string
+	venue: string
+	distance: string
+	cover: string
+	rating: number
+	reviewCount: number
+}
+
+export const MOCK_TRENDING_EVENTS: TrendingEvent[] = [
+	{
+		id: "night-rituals-1",
+		title: "Night Rituals",
+		time: "20:00",
+		venue: "Skyline Rooftop",
+		distance: "2.5km away",
+		cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=120&q=80",
+		rating: 4.9,
+		reviewCount: 200,
+	},
+	{
+		id: "creator-sessions-1",
+		title: "Creator Sessions",
+		time: "18:00",
+		venue: "The Co-Lab",
+		distance: "1.8km away",
+		cover: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=120&q=80",
+		rating: 4.7,
+		reviewCount: 85,
+	},
+	{
+		id: "sunset-sessions-1",
+		title: "Sunset Sessions",
+		time: "17:00",
+		venue: "Victoria Memorial",
+		distance: "3.2km away",
+		cover: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=120&q=80",
+		rating: 4.8,
+		reviewCount: 312,
+	},
+	{
+		id: "after-hours-social",
+		title: "After Hours Social",
+		time: "21:00",
+		venue: "The Social Lab",
+		distance: "4.1km away",
+		cover: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=120&q=80",
+		rating: 4.6,
+		reviewCount: 67,
+	},
 ]

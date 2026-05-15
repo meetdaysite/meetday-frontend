@@ -3,8 +3,9 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import clsx from "clsx"
+import { Button } from "../ui/Button"
 
 interface NavLink {
 	label: string
@@ -13,27 +14,26 @@ interface NavLink {
 }
 
 const NAV_LINKS: NavLink[] = [
-	{ label: "Find Events", href: "/explore" },
-	{ label: "People", href: "#", deferred: true },
-	{ label: "Groups", href: "#", deferred: true },
-	{ label: "Rewards", href: "#", deferred: true },
-	{ label: "About", href: "#" },
+	{ label: "Browse", href: "/explore" },
+	{ label: "My Events", href: "/attendee/my-events", deferred: true },
 ]
 
 export function AttendeeHeader() {
 	const [mobileOpen, setMobileOpen] = useState(false)
 	const pathname = usePathname()
 
+	const router = useRouter()
+
 	return (
 		<header className="sticky top-0 z-40 w-full bg-surface-canvas/95 backdrop-blur-md border-b border-border-subtle">
-			<div className="flex h-16 items-center max-w-7xl mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
+			<div className="relative flex h-16 items-center max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
 				{/* Logo */}
 				<Link href="/attendee" className="inline-flex items-center shrink-0 mr-6 lg:mr-10">
 					<Image src="/assets/brand_logo.svg" alt="Meetday" width={110} height={30} priority />
 				</Link>
 
 				{/* Desktop nav */}
-				<nav className="hidden lg:flex items-center gap-0.5 flex-1" aria-label="Main navigation">
+				<nav className="hidden lg:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2" aria-label="Main navigation">
 					{NAV_LINKS.map((link) => {
 						const isActive = pathname === link.href
 						return (
@@ -61,37 +61,45 @@ export function AttendeeHeader() {
 
 				{/* Desktop right actions */}
 				<div className="hidden lg:flex items-center gap-2 ml-auto">
-					<button
+					{/* <button
 						className="p-2 rounded-action text-text-secondary hover:text-text-primary hover:bg-surface-card-muted transition-colors"
 						aria-label="Events calendar"
 					>
 						<CalendarIcon />
-					</button>
+					</button> */}
 
-					<Link
-						href="/attendee/login"
-						className="px-3 py-2 text-label-md text-text-secondary hover:text-text-primary transition-colors rounded-action hover:bg-surface-card-muted"
+					<Button
+						variant="secondary"
+						size="sm"
+						radius="pill"
+						className="w-20"
+						onClick={() => router.push("/attendee/login")}
 					>
 						Login
-					</Link>
+					</Button>
 
-					<Link
-						href="/attendee/signup"
-						className="inline-flex items-center justify-center h-(--size-action-sm) px-4 text-label-sm font-medium bg-action-primary text-action-primary-text rounded-action hover:bg-action-primary-hover active:bg-action-primary-pressed transition-colors"
+					<Button
+						variant="primary"
+						size="sm"
+						radius="pill"
+						className="w-20"
+						onClick={() => router.push("/attendee/signup")}
 					>
 						Sign up
-					</Link>
+					</Button>
 				</div>
 
 				{/* Mobile hamburger */}
-				<button
-					className="lg:hidden ml-auto p-2 rounded-action text-text-primary hover:bg-surface-card-muted transition-colors"
+				<Button
+					variant="secondary"
+					size="sm"
+					className="lg:hidden ml-auto border-transparent bg-transparent text-text-primary hover:bg-surface-card-muted hover:border-transparent"
 					onClick={() => setMobileOpen((v) => !v)}
 					aria-label={mobileOpen ? "Close menu" : "Open menu"}
 					aria-expanded={mobileOpen}
 				>
 					{mobileOpen ? <CloseIcon /> : <HamburgerIcon />}
-				</button>
+				</Button>
 			</div>
 
 			{/* Mobile drawer */}
@@ -115,20 +123,22 @@ export function AttendeeHeader() {
 					))}
 
 					<div className="flex gap-3 mt-3 pt-3 border-t border-border-subtle">
-						<Link
-							href="/attendee/login"
-							className="flex-1 text-center py-2.5 text-label-md text-text-secondary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors"
-							onClick={() => setMobileOpen(false)}
+						<Button
+							variant="secondary"
+							size="sm"
+							className="flex-1"
+							onClick={() => { setMobileOpen(false); router.push("/attendee/login") }}
 						>
 							Login
-						</Link>
-						<Link
-							href="/attendee/signup"
-							className="flex-1 text-center py-2.5 text-label-md bg-action-primary text-action-primary-text rounded-action hover:bg-action-primary-hover transition-colors"
-							onClick={() => setMobileOpen(false)}
+						</Button>
+						<Button
+							variant="primary"
+							size="sm"
+							className="flex-1"
+							onClick={() => { setMobileOpen(false); router.push("/attendee/signup") }}
 						>
 							Sign up
-						</Link>
+						</Button>
 					</div>
 				</div>
 			)}
@@ -139,16 +149,6 @@ export function AttendeeHeader() {
 // ---------------------------------------------------------------------------
 // Icon helpers
 // ---------------------------------------------------------------------------
-
-function CalendarIcon() {
-	return (
-		<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-			<rect x="2.5" y="3.5" width="15" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
-			<path d="M2.5 8h15" stroke="currentColor" strokeWidth="1.5" />
-			<path d="M6.5 1.5v3M13.5 1.5v3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-		</svg>
-	)
-}
 
 function HamburgerIcon() {
 	return (
