@@ -1,12 +1,19 @@
+"use client"
+
+import { useRouter } from "next/navigation"
 import { Icon } from "@/components/ui/Icon"
 import StarCircleSvg from "@/icons/filled/star-circle.svg"
 import PulseSvg from "@/icons/filled/pulse.svg"
 import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
 import type { PublicEventDetails, PublicRefundPolicy } from "@/types/attendee"
+import { useAuthStore } from "@/store/authStore"
 
 // ─── Vibe Match ───────────────────────────────────────────────────────────────
 
 function VibeMatchCard({ vibeSummary }: { vibeSummary: string | null }) {
+	const router = useRouter()
+	const user = useAuthStore((s) => s.user)
+
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-subtle">
 			<div className="flex items-center gap-2 mb-4">
@@ -16,7 +23,8 @@ function VibeMatchCard({ vibeSummary }: { vibeSummary: string | null }) {
 
 			{vibeSummary ? (
 				<p className="text-body-sm text-text-secondary leading-relaxed">{vibeSummary}</p>
-			) : (
+			) : user ? (
+				// Authenticated but no vibe data yet
 				<div className="flex flex-col gap-3">
 					<div className="flex items-baseline gap-2">
 						<span className="text-3xl font-extrabold text-text-muted">—</span>
@@ -27,9 +35,29 @@ function VibeMatchCard({ vibeSummary }: { vibeSummary: string | null }) {
 					</div>
 					<div className="p-3 rounded-badge bg-surface-vibe-soft">
 						<p className="text-body-sm text-text-vibe text-center leading-snug">
-							Sign in to see how well this event matches your vibe
+							Your vibe match is being calculated
 						</p>
 					</div>
+				</div>
+			) : (
+				// Unauthenticated
+				<div className="flex flex-col gap-3">
+					<div className="flex items-baseline gap-2">
+						<span className="text-3xl font-extrabold text-text-muted">—</span>
+						<span className="text-label-sm text-text-muted">match score</span>
+					</div>
+					<div className="h-2 rounded-full bg-neutral-100 overflow-hidden">
+						<div className="h-full w-0 rounded-full bg-text-vibe" />
+					</div>
+					<button
+						type="button"
+						onClick={() => router.push(`/attendee/login?redirect=${encodeURIComponent(window.location.pathname)}`)}
+						className="p-3 rounded-badge bg-surface-vibe-soft w-full hover:bg-violet-100 transition-colors"
+					>
+						<p className="text-body-sm text-text-vibe text-center leading-snug">
+							Sign in to see how well this event matches your vibe
+						</p>
+					</button>
 				</div>
 			)}
 		</div>
@@ -49,7 +77,6 @@ function CrowdPulseCard({ crowdPulse }: { crowdPulse: unknown }) {
 			</div>
 
 			{crowdPulse ? (
-				// Placeholder for when real data arrives
 				<p className="text-body-sm text-text-secondary">Data available.</p>
 			) : (
 				<div className="flex flex-col gap-3.5">

@@ -4,7 +4,9 @@ import { Suspense, useState, useEffect } from "react"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import clsx from "clsx"
-import { getInterests, type Interest } from "@/lib/api"
+import { getInterests, registerAttendee, type Interest, type AttendeeVibeType, type AttendeeSocialStyle } from "@/lib/api"
+import { useAttendeeSessionStore } from "@/store/attendeeSessionStore"
+import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
@@ -13,6 +15,7 @@ import StarSvg from "@/icons/filled/star.svg"
 import LikeSvg from "@/icons/filled/like.svg"
 import DislikeSvg from "@/icons/filled/dislike.svg"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
+import { toast } from "sonner"
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -26,16 +29,16 @@ export const ATTENDEE_ABOUT_KEY = "attendee_about"
 //               substep 2-3 → white LEFT / dark RIGHT
 
 const Q1_OPTIONS = [
-	{ id: "party", label: "Life of the party", image: "/assets/attendee/life-of-the-party.svg" },
-	{ id: "chill", label: "Chill and observing", image: "/assets/attendee/chill-and-observing.svg" },
-	{ id: "connect", label: "Here to connect", image: "/assets/attendee/here-to-connect.svg" },
-	{ id: "open", label: "Open to whatever comes", image: "/assets/attendee/open-to-whatever-comes.svg" },
+	{ id: "LIFE_OF_PARTY", label: "Life of the party", image: "/assets/attendee/life-of-the-party.svg" },
+	{ id: "CHILL_OBSERVING", label: "Chill and observing", image: "/assets/attendee/chill-and-observing.svg" },
+	{ id: "HERE_TO_CONNECT", label: "Here to connect", image: "/assets/attendee/here-to-connect.svg" },
+	{ id: "OPEN_TO_WHATEVER", label: "Open to whatever comes", image: "/assets/attendee/open-to-whatever-comes.svg" },
 ]
 
 const Q2_OPTIONS = [
-	{ id: "solo", label: "Solo Explorer", image: "/assets/attendee/solo-explorer.svg" },
-	{ id: "open", label: "Open to meeting people", image: "/assets/attendee/open-to-meeting-people.svg" },
-	{ id: "gang", label: "Bringing my gang", image: "/assets/attendee/bringing-my-gang.svg" },
+	{ id: "SOLO_EXPLORER", label: "Solo Explorer", image: "/assets/attendee/solo-explorer.svg" },
+	{ id: "OPEN_TO_MEETING", label: "Open to meeting people", image: "/assets/attendee/open-to-meeting-people.svg" },
+	{ id: "BRINGING_GANG", label: "Bringing my gang", image: "/assets/attendee/bringing-my-gang.svg" },
 ]
 
 // ---------------------------------------------------------------------------
@@ -527,6 +530,9 @@ function OnboardingInner() {
 	const searchParams = useSearchParams()
 	const isRequired = searchParams.get("required") === "true"
 
+	const { firstName, lastName, phone, clearSession } = useAttendeeSessionStore()
+	const setShowWelcomeModal = useAttendeeProfileStore((s) => s.setShowWelcomeModal)
+
 	const [substep, setSubstep] = useState<0 | 1 | 2 | 3>(0)
 	const [q1, setQ1] = useState<string | null>(null)
 	const [q2, setQ2] = useState<string | null>(null)
@@ -548,12 +554,39 @@ function OnboardingInner() {
 		setSubstep(3)
 	}
 
-	function handleExplore() {
+	async function handleExplore() {
 		try {
 			localStorage.setItem(ATTENDEE_ABOUT_KEY, JSON.stringify({ vibeStyle: q1, socialStyle: q2 }))
 		} catch {
 			/* storage unavailable */
 		}
+
+		if (isRequired) {
+			let affinities: { interestId: string; affinity: "LIKED" | "OPEN_TO" | "DISLIKED" }[] = []
+			try {
+				const raw = localStorage.getItem(ATTENDEE_VIBES_KEY)
+				if (raw) affinities = JSON.parse(raw)
+			} catch {
+				/* storage unavailable */
+			}
+
+			try {
+				await registerAttendee({
+					firstName: firstName ?? "",
+					lastName: lastName ?? "",
+					phone: phone ?? undefined,
+					vibeType: q1 as AttendeeVibeType ?? undefined,
+					socialStyle: q2 as AttendeeSocialStyle ?? undefined,
+					interests: affinities,
+				})
+				clearSession()
+				setShowWelcomeModal(true)
+			} catch {
+				toast.error("Registration failed. Please try again.")
+				return
+			}
+		}
+
 		router.push("/explore")
 	}
 

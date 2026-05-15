@@ -23,23 +23,31 @@ export type UserDetails = {
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
+export type AuthMeData = {
+	id: string
+	email: string | null
+	firstName: string | null
+	lastName: string | null
+	phone: string | null
+	avatarUrl: string | null
+	isActive: boolean
+	role: { name: string }
+	attendeeProfile: unknown | null
+	createdAt: string
+	updatedAt: string
+}
+
+export async function getAuthMe(): Promise<AuthMeData> {
+	const { data } = await apiClient.get<{ success: boolean; data: AuthMeData }>("/auth/me")
+	return data.data
+}
+
 export async function checkPhone(phone: string): Promise<{ exists: boolean }> {
 	const { data } = await apiClient.get<{ success: boolean; data: { exists: boolean } }>(
 		"/auth/check-phone",
 		{ params: { phone } },
 	)
 	return data.data
-}
-
-// Kept for Google sign-in paths (login/signup pages)
-export async function fetchUserDetails(): Promise<UserDetails> {
-	try {
-		const { data } = await apiClient.get<{ success: boolean; data: UserDetails }>("/users/me")
-		return data.data
-	} catch (e) {
-		if (isAxiosError(e) && e.response?.status === 404) throw new UserNotFoundError()
-		throw e
-	}
 }
 
 export type UpdateUserPayload = {
@@ -184,6 +192,29 @@ export type RegisterPayload = {
 
 export async function registerHost(payload: RegisterPayload): Promise<void> {
 	await apiClient.post("/auth/register", payload)
+}
+
+// ─── Attendee registration ────────────────────────────────────────────────────
+
+export type AttendeeInterest = {
+	interestId: string
+	affinity: "LIKED" | "OPEN_TO" | "DISLIKED"
+}
+
+export type AttendeeVibeType = "LIFE_OF_PARTY" | "CHILL_OBSERVING" | "HERE_TO_CONNECT" | "OPEN_TO_WHATEVER"
+export type AttendeeSocialStyle = "SOLO_EXPLORER" | "OPEN_TO_MEETING" | "BRINGING_GANG"
+
+export type AttendeeRegisterPayload = {
+	firstName: string
+	lastName: string
+	phone?: string
+	vibeType?: AttendeeVibeType
+	socialStyle?: AttendeeSocialStyle
+	interests?: AttendeeInterest[]
+}
+
+export async function registerAttendee(payload: AttendeeRegisterPayload): Promise<void> {
+	await apiClient.post("/auth/register", { ...payload, accountType: "USER" })
 }
 
 // ─── KYC ──────────────────────────────────────────────────────────────────────
@@ -349,6 +380,15 @@ export async function getPublicEvents(params?: PublicEventsParams): Promise<Expl
 		params: { ...rest, ...(interestSlugs?.length ? { interestSlugs } : {}) },
 		paramsSerializer: { indexes: null },
 	})
+	return data.data
+}
+
+// ─── Attendee profile ─────────────────────────────────────────────────────────
+
+import type { AttendeeProfile } from "@/types/attendee"
+
+export async function getAttendeeProfile(): Promise<AttendeeProfile> {
+	const { data } = await apiClient.get<{ success: boolean; data: AttendeeProfile }>("/attendee/profile/me")
 	return data.data
 }
 

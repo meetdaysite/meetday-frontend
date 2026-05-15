@@ -28,6 +28,7 @@ export function EventHero({ event }: { event: PublicEventDetails }) {
 					sizes="(max-width: 768px) 100vw, (max-width: 1280px) 70vw, 900px"
 					className="object-cover"
 					priority
+					loading="eager"
 				/>
 			)}
 

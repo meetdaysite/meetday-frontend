@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { AttendeeHeader } from "@/components/attendee/AttendeeHeader"
+import { WelcomeModalController } from "@/components/attendee/WelcomeModalController"
 
 export const metadata: Metadata = {
 	title: "Event Details — Meetday",
@@ -14,6 +15,7 @@ export default function EventDetailsLayout({ children }: { children: React.React
 		>
 			<AttendeeHeader />
 			<div className="flex flex-col flex-1">{children}</div>
+			<WelcomeModalController />
 		</div>
 	)
 }

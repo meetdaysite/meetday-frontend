@@ -100,6 +100,22 @@ export interface PublicEventDetails {
 	}
 }
 
+export interface AttendeeProfile {
+	id: string
+	userId: string
+	username: string | null
+	bio: string | null
+	city: string | null
+	ageRange: string | null
+	profession: string | null
+	vibeType: string | null
+	socialStyle: string | null
+	privacy: string
+	createdAt: string
+	updatedAt: string
+	avatarUrl: string | null
+}
+
 export interface AttendeeEventCard {
 	id: string
 	title: string

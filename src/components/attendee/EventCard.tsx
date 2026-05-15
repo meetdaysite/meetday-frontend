@@ -94,7 +94,7 @@ export function EventCard({ event, className }: EventCardProps) {
 				<div className="flex flex-col gap-3">
 					<TruncatedTitle
 						text={event.title}
-						className="text-white font-black text-2xl uppercase leading-tight tracking-tight line-clamp-2 drop-shadow-md max-w-3/4 wrap"
+						className="text-white font-black text-2xl uppercase leading-tight tracking-tight line-clamp-2 drop-shadow-md"
 					/>
 
 					<div className="flex flex-col gap-2">

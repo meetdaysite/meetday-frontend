@@ -1,16 +1,29 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import ShareSvg from "@/icons/outlined/share.svg"
+import { useAuthStore } from "@/store/authStore"
 
 export function StickyFooter() {
+	const router = useRouter()
+	const user = useAuthStore((s) => s.user)
+
 	function handleShare() {
 		if (navigator.share) {
 			navigator.share({ title: document.title, url: window.location.href }).catch(() => {})
 		} else {
 			navigator.clipboard.writeText(window.location.href).catch(() => {})
 		}
+	}
+
+	function handleJoin() {
+		if (!user) {
+			router.push(`/attendee/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+			return
+		}
+		// TODO: open ticket selection / booking flow
 	}
 
 	return (
@@ -24,8 +37,8 @@ export function StickyFooter() {
 				<Button variant="secondary" size="md" leftIcon={<Icon as={ShareSvg} size="sm" color="inherit" />} onClick={handleShare}>
 					Share
 				</Button>
-				<Button variant="primary" size="md">
-					Sign up to join this vibe
+				<Button variant="primary" size="md" onClick={handleJoin}>
+					{user ? "Join this event" : "Sign in to join"}
 				</Button>
 			</div>
 		</div>
