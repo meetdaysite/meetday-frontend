@@ -159,16 +159,12 @@ body {
 	display: none;
 }
 
-/* Horizontal marquee — move → pause → move rhythm */
+/* Horizontal marquee — left-to-right continuous scroll */
 @keyframes marquee {
-	0%       { transform: translateX(0); }
-	42%      { transform: translateX(-50%); }  /* finish first scroll */
-	57%      { transform: translateX(-50%); }  /* hold / pause */
-	57.001%  { transform: translateX(0); }     /* seamless reset (groups are identical) */
-	99%      { transform: translateX(-50%); }  /* finish second scroll */
-	100%     { transform: translateX(-50%); }  /* brief hold before loop restart */
+	from { transform: translateX(-50%); }
+	to   { transform: translateX(0%); }
 }
 .animate-marquee {
-	animation: marquee 18s linear infinite;
+	animation: marquee 60s linear infinite;
 	will-change: transform;
 }

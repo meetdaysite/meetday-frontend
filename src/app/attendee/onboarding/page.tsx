@@ -7,6 +7,7 @@ import clsx from "clsx"
 import { getInterests, registerAttendee, type Interest, type AttendeeVibeType, type AttendeeSocialStyle } from "@/lib/api"
 import { useAttendeeSessionStore } from "@/store/attendeeSessionStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
+import { useAuthStore } from "@/store/authStore"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
@@ -530,6 +531,17 @@ function OnboardingInner() {
 	const searchParams = useSearchParams()
 	const isRequired = searchParams.get("required") === "true"
 
+	const { user, authLoading } = useAuthStore()
+
+	useEffect(() => {
+		if (authLoading) return
+		if (user) {
+			const hasVibes = localStorage.getItem(ATTENDEE_VIBES_KEY)
+			const hasAbout = localStorage.getItem(ATTENDEE_ABOUT_KEY)
+			if (hasVibes && hasAbout) router.replace("/explore")
+		}
+	}, [user, authLoading, router])
+
 	const { firstName, lastName, phone, clearSession } = useAttendeeSessionStore()
 	const setShowWelcomeModal = useAttendeeProfileStore((s) => s.setShowWelcomeModal)
 
@@ -625,6 +637,8 @@ function OnboardingInner() {
 			{substep === 3 && <DoneContent onExplore={handleExplore} />}
 		</div>
 	)
+
+	if (authLoading) return null
 
 	return (
 		<div className="flex h-screen overflow-hidden">
