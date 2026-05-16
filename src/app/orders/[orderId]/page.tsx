@@ -10,8 +10,10 @@ import RocketSvg from "@/icons/filled/rocket.svg"
 import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
 import StarCircleSvg from "@/icons/filled/star-circle.svg"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
+import SmileCircleSvg from "@/icons/filled/smile-circle.svg"
 import ArrowDownSvg from "@/icons/outlined/arrow-down.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
+
 import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
 import CopySvg from "@/icons/outlined/copy.svg"
 import GiftSvg from "@/icons/outlined/gift.svg"
@@ -300,7 +302,7 @@ function TicketPageContent({
 						</div>
 
 						{/* Action buttons */}
-						<div className="rounded-card border border-border-subtle bg-surface-card p-5 flex items-center justify-center gap-3">
+						<div className="rounded-card border border-border-subtle bg-surface-card p-5 flex items-center justify-center flex-wrap gap-3">
 							<Button
 								variant="secondary"
 								size="md"
@@ -318,6 +320,18 @@ function TicketPageContent({
 							>
 								Add to Calendar
 							</Button>
+							{order.status === "CONFIRMED" && new Date(order.event.eventDate) < new Date() && (
+								<Link href={`/events/${order.eventId}/review?orderId=${order.id}`}>
+									<Button
+										variant="secondary"
+										size="md"
+										radius="md"
+										leftIcon={<Icon as={SmileCircleSvg} size="sm" color="inherit" />}
+									>
+										Leave a Review
+									</Button>
+								</Link>
+							)}
 						</div>
 
 						{/* Trust footer */}

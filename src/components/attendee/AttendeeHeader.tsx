@@ -17,7 +17,7 @@ interface NavLink {
 
 const NAV_LINKS: NavLink[] = [
 	{ label: "Browse", href: "/explore" },
-	{ label: "My Events", href: "/attendee/my-events", deferred: true },
+	{ label: "My Events", href: "/attendee/my-events" },
 ]
 
 export function AttendeeHeader() {

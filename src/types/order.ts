@@ -38,6 +38,43 @@ export interface OrderDetail {
 	amountPaid?: number
 }
 
+// ─── My orders list (GET /api/v1/orders/me) ───────────────────────────────
+
+export interface MyOrderListItem {
+	id: string
+	status: OrderStatus
+	subtotal: string
+	platformFee: string
+	taxAmount: string
+	discountAmount: string
+	totalAmount: string
+	confirmedAt: string | null
+	cancelledAt: string | null
+	createdAt: string
+	event: {
+		id: string
+		title: string
+		eventDate: string
+		startTime: string
+		venueName: string
+		city: string
+	}
+	items: Array<{
+		id: string
+		quantity: number
+		unitPrice: string
+		ticket: { id: string; name: string }
+		_count: { attendees: number }
+	}>
+}
+
+export interface MyOrdersResponse {
+	orders: MyOrderListItem[]
+	total: number
+	page: number
+	limit: number
+}
+
 // ─── Full order detail (GET /api/v1/orders/:id) ────────────────────────────
 
 export interface OrderAttendee {

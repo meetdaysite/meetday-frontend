@@ -410,7 +410,7 @@ export async function getInterests(): Promise<Interest[]> {
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
-	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT"
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO"
 	contentType: string
 	resourceId?: string
 	mediaType?: string

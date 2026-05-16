@@ -1,5 +1,5 @@
 import apiClient from "./axios"
-import type { CreateOrderPayload, FullOrderDetail, OrderDetail } from "@/types/order"
+import type { CreateOrderPayload, FullOrderDetail, MyOrderListItem, MyOrdersResponse, OrderDetail } from "@/types/order"
 
 export async function createOrder(payload: CreateOrderPayload): Promise<OrderDetail> {
 	const { data } = await apiClient.post<{ success: boolean; data: OrderDetail }>("/orders", payload)
@@ -22,4 +22,9 @@ export async function cancelOrder(orderId: string): Promise<void> {
 export async function getFullOrderDetail(orderId: string): Promise<FullOrderDetail> {
 	const { data } = await apiClient.get<{ success: boolean; data: FullOrderDetail }>(`/orders/${orderId}`)
 	return data.data
+}
+
+export async function getMyOrders(): Promise<MyOrderListItem[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: MyOrdersResponse }>("/orders/me")
+	return data.data.orders ?? []
 }
