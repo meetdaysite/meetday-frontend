@@ -37,3 +37,62 @@ export interface OrderDetail {
 	paymentMethod?: string
 	amountPaid?: number
 }
+
+// ─── Full order detail (GET /api/v1/orders/:id) ────────────────────────────
+
+export interface OrderAttendee {
+	id: string
+	orderItemId: string
+	fullName: string
+	email: string
+	isLead: boolean
+	ticketCode: string
+	checkedInAt: string | null
+}
+
+export interface OrderItemFull {
+	id: string
+	orderId: string
+	ticketId: string
+	quantity: number
+	unitPrice: string
+	ticket: {
+		id: string
+		name: string
+		description?: string
+	}
+	attendees: OrderAttendee[]
+}
+
+export interface OrderEventSummary {
+	id: string
+	title: string
+	eventDate: string
+	startTime: string
+	endTime: string
+	venueName: string
+	fullAddress: string
+	city: string
+}
+
+export interface FullOrderDetail {
+	id: string
+	bookingId: string
+	userId: string
+	eventId: string
+	status: OrderStatus
+	subtotal: string
+	platformFee: string
+	taxAmount: string
+	totalAmount: string
+	couponId: string | null
+	discountAmount: string
+	confirmedAt: string | null
+	cancelledAt: string | null
+	cancellationReason: string | null
+	createdAt: string
+	updatedAt: string
+	event: OrderEventSummary
+	coupon: null
+	items: OrderItemFull[]
+}

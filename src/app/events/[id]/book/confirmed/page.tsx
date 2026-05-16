@@ -19,6 +19,7 @@ import HeadphonesSvg from "@/icons/filled/headphones.svg"
 import { getPublicEventDetails } from "@/lib/api"
 import { getOrderDetail } from "@/lib/ordersApi"
 import { useBookingStore } from "@/store/bookingStore"
+import { useAuthStore } from "@/store/authStore"
 import { generateICSContent, downloadICS } from "@/lib/icsUtils"
 import type { PublicEventDetails } from "@/types/attendee"
 import type { OrderDetail } from "@/types/order"
@@ -241,6 +242,7 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 
 							{/* Action buttons */}
 							<div className="flex flex-wrap justify-center gap-3">
+								<Link href={`/orders/${order.id}`}>
 								<Button
 									variant="primary"
 									size="md"
@@ -249,6 +251,7 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 								>
 									View my ticket
 								</Button>
+							</Link>
 								<Button
 									variant="secondary"
 									size="md"
@@ -312,12 +315,15 @@ function ConfirmedPageInner({ id }: { id: string }) {
 	const searchParams = useSearchParams()
 	const orderId = searchParams.get("orderId")
 	const { confirmedOrder, setConfirmedOrder } = useBookingStore()
+	const { authLoading } = useAuthStore()
 
 	const [event, setEvent] = useState<PublicEventDetails | null>(null)
 	const [order, setOrder] = useState<OrderDetail | null>(confirmedOrder)
 	const [loading, setLoading] = useState(true)
 
 	useEffect(() => {
+		if (authLoading) return
+
 		const fetches: Promise<unknown>[] = [
 			getPublicEventDetails(id).then(e => {
 				if (e) setEvent(e)
@@ -334,7 +340,7 @@ function ConfirmedPageInner({ id }: { id: string }) {
 		}
 
 		Promise.all(fetches).finally(() => setLoading(false))
-	}, [id, orderId, confirmedOrder, setConfirmedOrder])
+	}, [id, orderId, confirmedOrder, setConfirmedOrder, authLoading])
 
 	if (loading || !event || !order) {
 		return (
