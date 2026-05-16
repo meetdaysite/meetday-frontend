@@ -7,12 +7,14 @@ import clsx from "clsx"
 import { toast } from "sonner"
 import { useEventStore } from "@/store/eventStore"
 import { storageUrl } from "@/lib/uploadMedia"
+import { createScannerSession } from "@/lib/api"
 import type { Event, ApiEventStatus } from "@/types/event"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
 import DangerTriangleSvg from "@/icons/outlined/danger-triangle.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group.svg"
 import UsersGroup2Svg from "@/icons/outlined/users-group-2.svg"
+import UserCheckSvg from "@/icons/outlined/user-check.svg"
 import DollarSvg from "@/icons/outlined/dollar.svg"
 import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
@@ -343,6 +345,7 @@ function EventActions({
 }) {
 	const [submitting, setSubmitting] = useState(false)
 	const [showCancelModal, setShowCancelModal] = useState(false)
+	const [showAddStaffModal, setShowAddStaffModal] = useState(false)
 
 	async function handleSubmit() {
 		setSubmitting(true)
@@ -394,6 +397,13 @@ function EventActions({
 							View Registrations
 						</Link>
 						<ActionButton
+							variant="secondary"
+							icon={<ScannerStaffIcon />}
+							onClick={() => setShowAddStaffModal(true)}
+						>
+							Add Support Staff
+						</ActionButton>
+						<ActionButton
 							variant="danger"
 							icon={<CancelIcon />}
 							onClick={() => setShowCancelModal(true)}
@@ -401,6 +411,12 @@ function EventActions({
 							Cancel Event
 						</ActionButton>
 					</div>
+					{showAddStaffModal && (
+						<AddStaffModal
+							eventId={event.id}
+							onClose={() => setShowAddStaffModal(false)}
+						/>
+					)}
 					{showCancelModal && (
 						<CancelModal
 							eventId={event.id}
@@ -505,6 +521,124 @@ function CancelModal({
 					>
 						{loading && <MiniSpinner />}
 						Confirm Cancel
+					</button>
+				</div>
+			</div>
+		</div>
+	)
+}
+
+// ─── Add staff modal ──────────────────────────────────────────────────────────
+
+function AddStaffModal({
+	eventId,
+	onClose,
+}: {
+	eventId: string
+	onClose: () => void
+}) {
+	const [name, setName] = useState("")
+	const [email, setEmail] = useState("")
+	const [phone, setPhone] = useState("")
+	const [label, setLabel] = useState("")
+	const [loading, setLoading] = useState(false)
+	const nameRef = useRef<HTMLInputElement>(null)
+
+	useEffect(() => {
+		nameRef.current?.focus()
+	}, [])
+
+	async function handleConfirm() {
+		if (!name.trim() || !email.trim()) return
+		setLoading(true)
+		try {
+			await createScannerSession(eventId, {
+				name: name.trim(),
+				email: email.trim(),
+				...(phone.trim() ? { phone: phone.trim() } : {}),
+				...(label.trim() ? { label: label.trim() } : {}),
+			})
+			toast.success("Support staff added. An invite email has been sent.")
+			onClose()
+		} catch {
+			toast.error("Failed to add support staff. Please try again.")
+			setLoading(false)
+		}
+	}
+
+	const isValid = name.trim().length > 0 && email.trim().length > 0
+
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+			<div className="w-full max-w-md bg-surface-card rounded-card shadow-modal p-6 flex flex-col gap-4">
+				<div>
+					<p className="text-label-md font-semibold text-text-primary mb-1">Add Support Staff</p>
+					<p className="text-body-sm text-text-secondary">
+						A time-limited scanner link will be emailed to the staff member. No login required.
+					</p>
+				</div>
+				<div className="flex flex-col gap-3">
+					<div className="flex flex-col gap-1.5">
+						<label className="text-label-sm font-semibold text-text-primary">
+							Name <span className="text-text-brand">*</span>
+						</label>
+						<input
+							ref={nameRef}
+							type="text"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="e.g. Rahul Sharma"
+							className="w-full px-4 py-3 rounded-input border border-border-default bg-surface-canvas text-text-primary placeholder:text-text-muted text-sm focus:outline-none focus:border-border-focused transition-colors"
+						/>
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<label className="text-label-sm font-semibold text-text-primary">
+							Email <span className="text-text-brand">*</span>
+						</label>
+						<input
+							type="email"
+							value={email}
+							onChange={(e) => setEmail(e.target.value)}
+							placeholder="e.g. rahul@example.com"
+							className="w-full px-4 py-3 rounded-input border border-border-default bg-surface-canvas text-text-primary placeholder:text-text-muted text-sm focus:outline-none focus:border-border-focused transition-colors"
+						/>
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<label className="text-label-sm font-semibold text-text-primary">Phone</label>
+						<input
+							type="tel"
+							value={phone}
+							onChange={(e) => setPhone(e.target.value)}
+							placeholder="e.g. +919876543210"
+							className="w-full px-4 py-3 rounded-input border border-border-default bg-surface-canvas text-text-primary placeholder:text-text-muted text-sm focus:outline-none focus:border-border-focused transition-colors"
+						/>
+					</div>
+					<div className="flex flex-col gap-1.5">
+						<label className="text-label-sm font-semibold text-text-primary">Label</label>
+						<input
+							type="text"
+							value={label}
+							onChange={(e) => setLabel(e.target.value)}
+							placeholder="e.g. Gate A"
+							className="w-full px-4 py-3 rounded-input border border-border-default bg-surface-canvas text-text-primary placeholder:text-text-muted text-sm focus:outline-none focus:border-border-focused transition-colors"
+						/>
+					</div>
+				</div>
+				<div className="flex items-center justify-end gap-3 pt-1">
+					<button
+						onClick={onClose}
+						disabled={loading}
+						className="px-4 py-2.5 text-label-sm text-text-secondary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors disabled:opacity-50"
+					>
+						Cancel
+					</button>
+					<button
+						onClick={handleConfirm}
+						disabled={!isValid || loading}
+						className="flex items-center gap-2 px-4 py-2.5 text-label-sm font-semibold bg-action-primary text-action-primary-text rounded-action hover:bg-action-primary-hover transition-colors disabled:opacity-50"
+					>
+						{loading && <MiniSpinner />}
+						Send Invite
 					</button>
 				</div>
 			</div>
@@ -617,6 +751,7 @@ function SendIcon() { return <PlaneSvg className="size-4" aria-hidden /> }
 function PenIcon() { return <PenSvg className="size-4" aria-hidden /> }
 function PeopleActionIcon() { return <UsersGroup2Svg className="size-4" aria-hidden /> }
 function CancelIcon() { return <CloseCircleSvg className="size-4" aria-hidden /> }
+function ScannerStaffIcon() { return <UserCheckSvg className="size-4" aria-hidden /> }
 
 function MiniSpinner() {
 	return (

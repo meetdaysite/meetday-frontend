@@ -342,6 +342,39 @@ export async function cancelEvent(id: string, cancellationReason: string): Promi
 	return data.data
 }
 
+// ─── Scanner sessions ─────────────────────────────────────────────────────────
+
+export type CreateScannerSessionPayload = {
+	name: string
+	email: string
+	phone?: string
+	label?: string
+}
+
+export type ScannerSession = {
+	id: string
+	eventId: string
+	staffName: string
+	staffEmail: string
+	staffPhone?: string
+	label?: string
+	isActive: boolean
+	expiresAt: string
+	createdAt: string
+	scannerUrl: string
+}
+
+export async function createScannerSession(
+	eventId: string,
+	payload: CreateScannerSessionPayload,
+): Promise<ScannerSession> {
+	const { data } = await apiClient.post<{ success: boolean; data: ScannerSession }>(
+		`/events/${eventId}/scanner-sessions`,
+		payload,
+	)
+	return data.data
+}
+
 // ─── Public events ────────────────────────────────────────────────────────────
 
 import type { ExploreEventsResponse, PublicEventDetails } from "@/types/attendee"
