@@ -136,6 +136,7 @@ function LoadingScreen() {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
 	const [sidebarOpen, setSidebarOpen] = useState(false)
 	const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+	const [profileError, setProfileError] = useState(false)
 	const { user, authLoading, signOut } = useAuthStore()
 	const { profile, setProfile, clearProfile } = useHostStore()
 	const router = useRouter()
@@ -159,6 +160,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 		// Page refresh — profile not in memory, fetch it
 		let cancelled = false
+		setProfileError(false)
 		getHostProfile()
 			.then((p) => {
 				if (cancelled) return
@@ -169,7 +171,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 					if (isAxiosError(e) && e.response?.status === 404) {
 						router.replace("/onboarding")
 					} else {
-						router.replace("/login")
+						// Don't redirect to /login — the user is still authenticated in Firebase,
+						// which would cause an immediate bounce back to /dashboard and an infinite loop.
+						setProfileError(true)
 					}
 				}
 			})
@@ -178,7 +182,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 	}, [user, authLoading])
 
 	// Show loading while Firebase resolves auth or while profile is being fetched
-	if (authLoading || (!profile && !!user)) return <LoadingScreen />
+	if (authLoading || (!profile && !!user && !profileError)) return <LoadingScreen />
+
+	if (profileError) {
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-surface-page px-4">
+				<div className="flex flex-col items-center gap-4 text-center">
+					<p className="text-body-sm text-text-secondary">Failed to load your profile. Please try again.</p>
+					<button
+						onClick={() => { setProfileError(false) }}
+						className="text-label-sm font-medium text-text-link hover:underline"
+					>
+						Retry
+					</button>
+					<button
+						onClick={handleSignOut}
+						className="text-label-sm font-medium text-text-secondary hover:text-text-primary transition-colors underline underline-offset-2"
+					>
+						Sign out
+					</button>
+				</div>
+			</div>
+		)
+	}
 
 	const approvalStatus = profile?.approvalStatus
 	if (approvalStatus === "PENDING" || approvalStatus === "REJECTED") {
