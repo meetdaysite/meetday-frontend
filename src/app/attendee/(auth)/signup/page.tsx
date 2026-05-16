@@ -21,6 +21,7 @@ import { DEFAULT_COUNTRY, type Country } from "@/lib/countries"
 const schema = z.object({
 	firstName: z.string().min(1, "First name is required").max(50),
 	lastName: z.string().min(1, "Last name is required").max(50),
+	email: z.string().min(1, "Email is required").email("Enter a valid email address"),
 	phone: z
 		.string()
 		.min(10, "Enter a valid 10-digit phone number")
@@ -45,12 +46,12 @@ export default function AttendeeSignupPage() {
 		formState: { errors },
 	} = useForm<FormValues>({
 		resolver: zodResolver(schema),
-		defaultValues: { firstName: "", lastName: "", phone: "", agreed: undefined },
+		defaultValues: { firstName: "", lastName: "", email: "", phone: "", agreed: undefined },
 	})
 
 	const agreed = useWatch({ control, name: "agreed" })
 
-	async function onSubmit({ phone, firstName, lastName }: FormValues) {
+	async function onSubmit({ phone, firstName, lastName, email }: FormValues) {
 		setPhoneExistsError(null)
 		setLoading(true)
 
@@ -65,7 +66,7 @@ export default function AttendeeSignupPage() {
 			}
 
 			await sendOtp(fullPhone, "recaptcha-container")
-			setSession({ intent: "signup", phone: fullPhone, firstName, lastName })
+			setSession({ intent: "signup", phone: fullPhone, firstName, lastName, email })
 			toast.success("OTP sent to your phone!")
 			router.push("/attendee/verify")
 		} catch {
@@ -126,6 +127,23 @@ export default function AttendeeSignupPage() {
 						)}
 					/>
 				</div>
+
+				<Controller
+					control={control}
+					name="email"
+					render={({ field }) => (
+						<TextField
+							label="Email address"
+							placeholder="rahul@example.com"
+							type="email"
+							size="md"
+							disabled={loading}
+							error={!!errors.email}
+							helperText={errors.email?.message}
+							{...field}
+						/>
+					)}
+				/>
 
 				<Controller
 					control={control}

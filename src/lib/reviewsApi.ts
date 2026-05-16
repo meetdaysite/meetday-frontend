@@ -1,10 +1,10 @@
 import apiClient from "./axios"
 import { getUploadUrl } from "./api"
-import type { ReviewPayload } from "@/types/review"
+import type { ReviewHighlight, ReviewPayload } from "@/types/review"
 
-export async function getReviewHighlights(eventId: string): Promise<string[]> {
+export async function getReviewHighlights(eventId: string): Promise<ReviewHighlight[]> {
 	try {
-		const { data } = await apiClient.get<{ success: boolean; data: string[] }>(
+		const { data } = await apiClient.get<{ success: boolean; data: ReviewHighlight[] }>(
 			`/reviews/highlights?eventId=${eventId}`,
 		)
 		return Array.isArray(data.data) && data.data.length > 0 ? data.data : []

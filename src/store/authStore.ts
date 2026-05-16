@@ -11,6 +11,11 @@ import {
 	signOut as firebaseSignOut,
 } from "firebase/auth"
 import { auth } from "@/lib/firebase"
+import { useBookingStore } from "./bookingStore"
+import { useAttendeeProfileStore } from "./attendeeProfileStore"
+import { useAttendeeSessionStore } from "./attendeeSessionStore"
+import { useAuthSessionStore } from "./authSessionStore"
+import { useHostStore } from "./hostStore"
 
 let _confirmation: ConfirmationResult | null = null
 let _recaptcha: RecaptchaVerifier | null = null
@@ -56,5 +61,12 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
 	signOut: async () => {
 		await firebaseSignOut(auth)
+		useBookingStore.getState().reset()
+		useAttendeeProfileStore.getState().clearProfile()
+		useAttendeeSessionStore.getState().clearSession()
+		useAuthSessionStore.getState().clearSession()
+		useHostStore.getState().clearProfile()
+		try { localStorage.clear() } catch { /* ignore */ }
+		try { sessionStorage.clear() } catch { /* ignore */ }
 	},
 }))

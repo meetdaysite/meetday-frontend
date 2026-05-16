@@ -6,6 +6,7 @@ type AttendeeSession = {
 	phone?: string
 	firstName?: string
 	lastName?: string
+	email?: string
 }
 
 type AttendeeSessionStore = AttendeeSession & {
@@ -20,9 +21,10 @@ export const useAttendeeSessionStore = create<AttendeeSessionStore>()(
 			phone: undefined,
 			firstName: undefined,
 			lastName: undefined,
+			email: undefined,
 			setSession: (session) => set(session),
 			clearSession: () =>
-				set({ intent: null, phone: undefined, firstName: undefined, lastName: undefined }),
+				set({ intent: null, phone: undefined, firstName: undefined, lastName: undefined, email: undefined }),
 		}),
 		{
 			name: "attendee-session",

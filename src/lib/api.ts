@@ -207,6 +207,7 @@ export type AttendeeSocialStyle = "SOLO_EXPLORER" | "OPEN_TO_MEETING" | "BRINGIN
 export type AttendeeRegisterPayload = {
 	firstName: string
 	lastName: string
+	email: string
 	phone?: string
 	vibeType?: AttendeeVibeType
 	socialStyle?: AttendeeSocialStyle

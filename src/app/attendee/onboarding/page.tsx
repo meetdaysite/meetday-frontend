@@ -542,7 +542,7 @@ function OnboardingInner() {
 		}
 	}, [user, authLoading, router])
 
-	const { firstName, lastName, phone, clearSession } = useAttendeeSessionStore()
+	const { firstName, lastName, phone, email, clearSession } = useAttendeeSessionStore()
 	const setShowWelcomeModal = useAttendeeProfileStore((s) => s.setShowWelcomeModal)
 
 	const [substep, setSubstep] = useState<0 | 1 | 2 | 3>(0)
@@ -586,6 +586,7 @@ function OnboardingInner() {
 				await registerAttendee({
 					firstName: firstName ?? "",
 					lastName: lastName ?? "",
+					email: email ?? "",
 					phone: phone ?? undefined,
 					vibeType: q1 as AttendeeVibeType ?? undefined,
 					socialStyle: q2 as AttendeeSocialStyle ?? undefined,

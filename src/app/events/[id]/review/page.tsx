@@ -28,7 +28,7 @@ import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { getPublicEventDetails } from "@/lib/api"
 import { getReviewHighlights, submitReview, uploadReviewPhoto } from "@/lib/reviewsApi"
 import { useAuthStore } from "@/store/authStore"
-import { REVIEW_HIGHLIGHTS } from "@/types/review"
+import type { ReviewHighlight } from "@/types/review"
 import type { PublicEventDetails } from "@/types/attendee"
 
 interface PageProps {
@@ -47,12 +47,17 @@ function formatEventDate(isoDate: string): string {
 // ─── Highlight chip icon map ──────────────────────────────────────────────────
 
 const HIGHLIGHT_ICONS: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
-	"Great Music": HeadphonesSvg,
-	"Good Crowd": UsersGroupSvg,
-	"Nice Venue": StarCircleSvg,
-	"Helpful Host": UserCheckSvg,
-	"Smooth Entry": CheckCircleSvg,
-	"Felt Safe": ShieldCheckSvg,
+	GREAT_MUSIC: HeadphonesSvg,
+	GOOD_CROWD: UsersGroupSvg,
+	NICE_VENUE: StarCircleSvg,
+	HELPFUL_HOST: UserCheckSvg,
+	SMOOTH_ENTRY: CheckCircleSvg,
+	FELT_SAFE: ShieldCheckSvg,
+	GREAT_ART: StarCircleSvg,
+	DIVERSE_EXHIBITS: BoltCircleSvg,
+	GREAT_VIBE: SmileCircleSvg,
+	WELL_ORGANIZED: CheckCircleSvg,
+	GREAT_ENERGY: UsersGroupSvg,
 }
 
 // ─── Star rating ──────────────────────────────────────────────────────────────
@@ -305,7 +310,7 @@ function ReviewFormContent({
 	eventId: string
 	orderId: string
 	event: PublicEventDetails
-	highlightOptions: string[]
+	highlightOptions: ReviewHighlight[]
 }) {
 	const router = useRouter()
 	const [rating, setRating] = useState(0)
@@ -320,8 +325,8 @@ function ReviewFormContent({
 	const hostInitial = event.hostProfile?.displayName?.charAt(0).toUpperCase() ?? "H"
 	const isEventPast = new Date(event.eventDate) < new Date()
 
-	const toggleHighlight = (h: string) => {
-		setHighlights((prev) => prev.includes(h) ? prev.filter((x) => x !== h) : [...prev, h])
+	const toggleHighlight = (key: string) => {
+		setHighlights((prev) => prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key])
 	}
 
 	const handleAddPhotos = (files: File[]) => {
@@ -480,14 +485,14 @@ function ReviewFormContent({
 							<div className="p-5 flex flex-col gap-4">
 								<SectionHeader icon={BoltCircleSvg} label="What stood out to you?" sub="Select all that apply" />
 								<div className="pl-11 flex flex-wrap gap-2">
-									{highlightOptions.map((h) => {
-										const HIcon = HIGHLIGHT_ICONS[h]
-										const isSelected = highlights.includes(h)
+									{highlightOptions.map(({ key, label }) => {
+										const HIcon = HIGHLIGHT_ICONS[key]
+										const isSelected = highlights.includes(key)
 										return (
 											<button
-												key={h}
+												key={key}
 												type="button"
-												onClick={() => toggleHighlight(h)}
+												onClick={() => toggleHighlight(key)}
 												className={clsx(
 													"inline-flex items-center gap-1.5 px-3 py-1.5 rounded-badge text-label-sm font-medium border transition-all",
 													isSelected
@@ -503,7 +508,7 @@ function ReviewFormContent({
 														className={isSelected ? "text-white" : "text-icon-brand"}
 													/>
 												)}
-												{h}
+												{label}
 											</button>
 										)
 									})}
@@ -708,7 +713,7 @@ function ReviewPageInner({ id }: { id: string }) {
 	const { authLoading } = useAuthStore()
 
 	const [event, setEvent] = useState<PublicEventDetails | null>(null)
-	const [highlightOptions, setHighlightOptions] = useState<string[]>([...REVIEW_HIGHLIGHTS])
+	const [highlightOptions, setHighlightOptions] = useState<ReviewHighlight[]>([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 

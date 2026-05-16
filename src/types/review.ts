@@ -1,13 +1,4 @@
-export const REVIEW_HIGHLIGHTS = [
-	"Great Music",
-	"Good Crowd",
-	"Nice Venue",
-	"Helpful Host",
-	"Smooth Entry",
-	"Felt Safe",
-] as const
-
-export type ReviewHighlight = (typeof REVIEW_HIGHLIGHTS)[number]
+export type ReviewHighlight = { key: string; label: string }
 
 export interface ReviewPayload {
 	eventId: string

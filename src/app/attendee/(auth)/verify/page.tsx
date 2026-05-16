@@ -97,7 +97,7 @@ export default function AttendeeVerifyPage() {
 	const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS)
 	const [loading, setLoading] = useState(false)
 	const { confirmOtp, sendOtp } = useAuth()
-	const { intent, phone, firstName, lastName, clearSession } = useAttendeeSessionStore()
+	const { intent, phone, firstName, lastName, email, clearSession } = useAttendeeSessionStore()
 	const setShowWelcomeModal = useAttendeeProfileStore((s) => s.setShowWelcomeModal)
 	const router = useRouter()
 	const canResend = secondsLeft === 0
@@ -193,6 +193,7 @@ export default function AttendeeVerifyPage() {
 				await registerAttendee({
 					firstName: firstName ?? "",
 					lastName: lastName ?? "",
+					email: email ?? "",
 					phone,
 					vibeType,
 					socialStyle,

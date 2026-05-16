@@ -41,23 +41,21 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 	const selectedTickets = event.tickets.filter((t) => (quantities[t.id] ?? 0) > 0)
 	const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0)
 
-	// Build flat list of all attendee slots for rendering
-	const allSlots: { ticketId: string; ticketName: string; slotIndex: number; isPrimary: boolean }[] = []
+	// Build flat list of all attendee slots; slot at globalIndex 0 is the primary (logged-in user)
+	const allSlots: { ticketId: string; ticketName: string; slotIndex: number; globalIndex: number }[] = []
 	let globalIndex = 0
 	selectedTickets.forEach((ticket) => {
 		const qty = quantities[ticket.id] ?? 0
 		for (let i = 0; i < qty; i++) {
-			allSlots.push({
-				ticketId: ticket.id,
-				ticketName: ticket.name,
-				slotIndex: i,
-				isPrimary: globalIndex === 0,
-			})
+			allSlots.push({ ticketId: ticket.id, ticketName: ticket.name, slotIndex: i, globalIndex })
 			globalIndex++
 		}
 	})
 
-	const isFormValid = allSlots.every(({ ticketId, slotIndex }) => {
+	// Only additional attendees (not the primary) need details
+	const additionalSlots = allSlots.filter((s) => s.globalIndex > 0)
+
+	const isFormValid = additionalSlots.every(({ ticketId, slotIndex }) => {
 		const slot = attendeesByTicket[ticketId]?.[slotIndex]
 		return slot?.fullName?.trim() && slot?.email?.trim()
 	})
@@ -125,28 +123,24 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 						<div>
 							<h1 className="text-heading-md font-extrabold text-text-primary">Attendee details</h1>
 							<p className="text-body-sm text-text-secondary mt-1">
-								Fill details about the people joining this vibe.
+								{additionalSlots.length > 0
+									? "Enter details for the additional people joining this event."
+									: "You're the only attendee — no extra details needed."}
 							</p>
 						</div>
 
 						<BookingStepBadge totalTickets={totalTickets} />
 						<EventPreviewBar event={event} />
 
-						{/* Attendee forms */}
-						{allSlots.map(({ ticketId, ticketName, slotIndex, isPrimary }) => (
+						{/* Additional attendee forms (primary slot belongs to the logged-in user) */}
+						{additionalSlots.map(({ ticketId, ticketName, slotIndex, globalIndex: gIdx }) => (
 							<AttendeeForm
 								key={`${ticketId}-${slotIndex}`}
 								slot={attendeesByTicket[ticketId]?.[slotIndex] ?? { fullName: "", email: "" }}
-								slotIndex={isPrimary ? 0 : allSlots.findIndex(
-									(s) => s.ticketId === ticketId && s.slotIndex === slotIndex,
-								)}
+								displayNumber={gIdx + 1}
 								ticketName={ticketName}
-								isPrimary={isPrimary}
 								onChange={(data) => {
-									const current = attendeesByTicket[ticketId]?.[slotIndex] ?? {
-										fullName: "",
-										email: "",
-									}
+									const current = attendeesByTicket[ticketId]?.[slotIndex] ?? { fullName: "", email: "" }
 									setAttendeeSlot(ticketId, slotIndex, { ...current, ...data })
 								}}
 							/>
