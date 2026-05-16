@@ -45,6 +45,8 @@ export interface PublicTicket {
 	description?: string
 	saleStartDate?: string
 	saleEndDate?: string
+	originalPrice?: string
+	availableCount?: number
 }
 
 export interface PublicRefundPolicy {

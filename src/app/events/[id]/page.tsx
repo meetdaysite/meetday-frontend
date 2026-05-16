@@ -38,7 +38,7 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ i
 								<GoodToKnow instructions={event.specialInstructions} />
 							)}
 							<EventGallery media={event.media} />
-							<StickyFooter />
+							<StickyFooter eventId={event.id} />
 						</div>
 
 						{/* Right: side panel (desktop only) */}

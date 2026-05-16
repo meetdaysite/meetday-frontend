@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button"
 import ShareSvg from "@/icons/outlined/share.svg"
 import { useAuthStore } from "@/store/authStore"
 
-export function StickyFooter() {
+export function StickyFooter({ eventId }: { eventId: string }) {
 	const router = useRouter()
 	const user = useAuthStore((s) => s.user)
 
@@ -23,7 +23,7 @@ export function StickyFooter() {
 			router.push(`/attendee/login?redirect=${encodeURIComponent(window.location.pathname)}`)
 			return
 		}
-		// TODO: open ticket selection / booking flow
+		router.push(`/events/${eventId}/book`)
 	}
 
 	return (
