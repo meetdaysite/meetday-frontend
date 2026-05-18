@@ -29,6 +29,7 @@ import {
 	PillInput,
 } from "@/components/eventForm/shared"
 import { AddressAutocompleteInput, VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
+import { TicketListEditor } from "@/components/eventForm/TicketListEditor"
 import type { ApiEventStatus } from "@/types/event"
 
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
@@ -720,103 +721,11 @@ export default function EditEventPage() {
 
 					{/* ── 4. Ticket Types ── */}
 					<SectionCard title="Ticket Types" subtitle="Pricing and capacity for your event">
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel required>Ticket Name</FieldLabel>
-								<input
-									id="ticketName"
-									type="text"
-									value={formData.ticketName}
-									onChange={(e) => set("ticketName", e.target.value)}
-									placeholder="General Admission"
-									className={inpCls(!!errors.ticketName)}
-								/>
-								<ErrMsg msg={errors.ticketName} />
-							</div>
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel required>Price (INR)</FieldLabel>
-								<input
-									id="price"
-									type="number"
-									value={formData.price}
-									onChange={(e) => set("price", e.target.value)}
-									placeholder="₹ 0"
-									min={0}
-									className={inpCls(!!errors.price)}
-								/>
-								<ErrMsg msg={errors.price} />
-							</div>
-						</div>
-
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel required>Total Capacity</FieldLabel>
-								<input
-									id="totalCapacity"
-									type="number"
-									value={formData.totalCapacity}
-									onChange={(e) => set("totalCapacity", e.target.value)}
-									placeholder="100"
-									min={1}
-									className={inpCls(!!errors.totalCapacity)}
-								/>
-								<ErrMsg msg={errors.totalCapacity} />
-							</div>
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel required>Max Per Person</FieldLabel>
-								<input
-									id="maxPerPerson"
-									type="number"
-									value={formData.maxPerPerson}
-									onChange={(e) => set("maxPerPerson", e.target.value)}
-									placeholder="1"
-									min={1}
-									className={inpCls(!!errors.maxPerPerson)}
-								/>
-								<ErrMsg msg={errors.maxPerPerson} />
-							</div>
-						</div>
-
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel hint="Optional">Ticket Description</FieldLabel>
-							<textarea
-								rows={3}
-								value={formData.ticketDesc}
-								onChange={(e) => set("ticketDesc", e.target.value)}
-								placeholder="What's included in this tier?"
-								className={taCls(false)}
-							/>
-						</div>
-
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel>Sale Start Date</FieldLabel>
-								<div className={iconWrapCls(!!errors.saleStartDate)}>
-									<Icon as={CalendarSvg} size="sm" color="secondary" />
-									<input
-										type="date"
-										value={formData.saleStartDate}
-										onChange={(e) => set("saleStartDate", e.target.value)}
-										className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute"
-									/>
-								</div>
-								<ErrMsg msg={errors.saleStartDate} />
-							</div>
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel>Sale End Date</FieldLabel>
-								<div className={iconWrapCls(!!errors.saleEndDate)}>
-									<Icon as={CalendarSvg} size="sm" color="secondary" />
-									<input
-										type="date"
-										value={formData.saleEndDate}
-										min={formData.saleStartDate || undefined}
-										onChange={(e) => set("saleEndDate", e.target.value)}
-										className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute"
-									/>
-								</div>
-								<ErrMsg msg={errors.saleEndDate} />
-							</div>
-						</div>
+						<TicketListEditor
+							tickets={formData.tickets}
+							onChange={(updated) => set("tickets", updated)}
+							listError={errors.tickets}
+						/>
 					</SectionCard>
 
 					{/* ── 5. Settings ── */}

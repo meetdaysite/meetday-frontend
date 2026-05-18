@@ -47,6 +47,7 @@ import {
 	PillInput,
 } from "@/components/eventForm/shared"
 import { AddressAutocompleteInput, VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
+import { TicketListEditor } from "@/components/eventForm/TicketListEditor"
 
 import FileTextSvg from "@/icons/outlined/file-text.svg"
 import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
@@ -666,23 +667,19 @@ function Step4TicketTypes({
 	registerValidate: (fn: () => boolean) => void
 }) {
 	const [validated, setValidated] = useState(false)
-	const { ticketName, price, totalCapacity, maxPerPerson, ticketDesc, saleStartDate, saleEndDate } = formData
+	const { tickets } = formData
 
 	const errors = useMemo(
-		() => validated ? validateStep4({ ticketName, price, totalCapacity, maxPerPerson, saleStartDate, saleEndDate }) : {},
-		[validated, ticketName, price, totalCapacity, maxPerPerson, saleStartDate, saleEndDate],
+		() => validated ? validateStep4({ tickets }) : {},
+		[validated, tickets],
 	)
 
 	const validate = useCallback(() => {
 		setValidated(true)
-		return Object.keys(validateStep4({ ticketName, price, totalCapacity, maxPerPerson, saleStartDate, saleEndDate })).length === 0
-	}, [ticketName, price, totalCapacity, maxPerPerson, saleStartDate, saleEndDate])
+		return Object.keys(validateStep4({ tickets })).length === 0
+	}, [tickets])
 
 	useEffect(() => { registerValidate(validate) }, [validate, registerValidate])
-
-	function set<K extends keyof FormData>(key: K, value: FormData[K]) {
-		setFormData((prev) => ({ ...prev, [key]: value }))
-	}
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -693,64 +690,11 @@ function Step4TicketTypes({
 				</div>
 			</div>
 
-			<div className="border border-border-subtle rounded-card bg-surface-card overflow-hidden">
-				<div className="flex items-center gap-3 px-5 py-4 border-b border-border-subtle">
-					<div className="size-8 rounded-full bg-surface-inverse text-text-inverse flex items-center justify-center text-label-sm font-bold shrink-0">01</div>
-					<p className="text-label-md font-semibold text-text-primary">Ticket Tier Details</p>
-				</div>
-
-				<div className="p-5 flex flex-col gap-4">
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel required>Ticket Name</FieldLabel>
-							<input type="text" value={ticketName} onChange={(e) => set("ticketName", e.target.value)} placeholder="General Admission" className={inpCls(!!errors.ticketName)} />
-							<ErrMsg msg={errors.ticketName} />
-						</div>
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel required>Price (INR)</FieldLabel>
-							<input type="number" value={price} onChange={(e) => set("price", e.target.value)} placeholder="₹ 0" min={0} className={inpCls(!!errors.price)} />
-							<ErrMsg msg={errors.price} />
-						</div>
-					</div>
-
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel required>Total Capacity</FieldLabel>
-							<input type="number" value={totalCapacity} onChange={(e) => set("totalCapacity", e.target.value)} placeholder="100" min={1} className={inpCls(!!errors.totalCapacity)} />
-							<ErrMsg msg={errors.totalCapacity} />
-						</div>
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel required>Max Per Person</FieldLabel>
-							<input type="number" value={maxPerPerson} onChange={(e) => set("maxPerPerson", e.target.value)} placeholder="01" min={1} className={inpCls(!!errors.maxPerPerson)} />
-							<ErrMsg msg={errors.maxPerPerson} />
-						</div>
-					</div>
-
-					<div className="flex flex-col gap-1.5">
-						<FieldLabel hint="Optional">Description</FieldLabel>
-						<textarea rows={3} value={ticketDesc} onChange={(e) => set("ticketDesc", e.target.value)} placeholder="What&apos;s included in this tier?" className={taCls(false)} />
-					</div>
-
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel>Sale Start Date</FieldLabel>
-							<div className={iconWrapCls(!!errors.saleStartDate)}>
-								<Icon as={CalendarSvg} size="sm" color="secondary" />
-								<input type="date" value={saleStartDate} onChange={(e) => set("saleStartDate", e.target.value)} className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute" />
-							</div>
-							<ErrMsg msg={errors.saleStartDate} />
-						</div>
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel>Sale End Date</FieldLabel>
-							<div className={iconWrapCls(!!errors.saleEndDate)}>
-								<Icon as={CalendarSvg} size="sm" color="secondary" />
-								<input type="date" value={saleEndDate} min={saleStartDate || undefined} onChange={(e) => set("saleEndDate", e.target.value)} className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute" />
-							</div>
-							<ErrMsg msg={errors.saleEndDate} />
-						</div>
-					</div>
-				</div>
-			</div>
+			<TicketListEditor
+				tickets={tickets}
+				onChange={(updated) => setFormData((prev) => ({ ...prev, tickets: updated }))}
+				listError={errors.tickets}
+			/>
 
 			<div className="flex items-center justify-between pt-4">
 				<button type="button" onClick={onBack} className={backBtnCls}>Back</button>
@@ -905,14 +849,16 @@ function Step5SettingsReview({
 					</div>
 					<div className="border-t border-border-subtle pt-3 flex flex-col gap-2.5">
 						<div className="flex items-start justify-between gap-3">
-							<span className="text-caption text-text-tertiary shrink-0">Total Capacity</span>
-							<span className="text-caption font-semibold text-text-primary">{formData.totalCapacity || "—"}</span>
+							<span className="text-caption text-text-tertiary shrink-0">Ticket Types</span>
+							<span className="text-caption font-semibold text-text-primary">
+								{formData.tickets.length > 0 ? `${formData.tickets.length} type${formData.tickets.length > 1 ? "s" : ""}` : "—"}
+							</span>
 						</div>
 						<div className="flex items-start justify-between gap-3">
-							<span className="text-caption text-text-tertiary shrink-0">Potential Revenue</span>
-							<span className="text-caption font-semibold text-text-success">
-								{formData.price && formData.totalCapacity
-									? `₹${(Number(formData.price) * Number(formData.totalCapacity)).toLocaleString("en-IN")}`
+							<span className="text-caption text-text-tertiary shrink-0">Total Capacity</span>
+							<span className="text-caption font-semibold text-text-primary">
+								{formData.tickets.length > 0
+									? formData.tickets.reduce((s, t) => s + t.totalCapacity, 0).toLocaleString("en-IN")
 									: "—"}
 							</span>
 						</div>
@@ -1043,7 +989,7 @@ export default function CreateExperiencePage() {
 	function requestSubmit() { setShowSubmitConfirm(true) }
 
 	function handleLeave() {
-		const hasData = !!(formData.title || formData.desc || formData.venueName || formData.coverKey || formData.ticketName)
+		const hasData = !!(formData.title || formData.desc || formData.venueName || formData.coverKey || formData.tickets.length > 0)
 		if (hasData && !draftId) {
 			setShowLeaveConfirm(true)
 		} else {
@@ -1210,7 +1156,11 @@ export default function CreateExperiencePage() {
 							Cancel
 						</button>
 						<button
-							onClick={() => router.push("/dashboard/events")}
+							onClick={() => {
+								localStorage.removeItem(DRAFT_KEY)
+								localStorage.removeItem(DRAFT_ID_KEY)
+								router.push("/dashboard/events")
+							}}
 							className="px-4 py-2 text-label-sm font-medium text-text-secondary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors"
 						>
 							Leave Anyway

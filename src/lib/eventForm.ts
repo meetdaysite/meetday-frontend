@@ -1,6 +1,62 @@
 import { storageUrl } from "@/lib/uploadMedia"
 import type { Event, EventDraftPayload, Ticket, RefundPolicy, EventMedia } from "@/types/event"
 
+export type DraftTicket = {
+	name: string
+	price: string
+	totalCapacity: string
+	maxPerPerson: string
+	description: string
+	saleStartDate: string
+	saleEndDate: string
+}
+
+export const emptyDraftTicket: DraftTicket = {
+	name: "", price: "", totalCapacity: "", maxPerPerson: "",
+	description: "", saleStartDate: "", saleEndDate: "",
+}
+
+export function validateDraftTicket(d: DraftTicket): Record<string, string> {
+	const e: Record<string, string> = {}
+	if (!d.name.trim()) e.name = "Ticket name is required."
+	if (d.price === "") e.price = "Price is required."
+	else if (isNaN(Number(d.price)) || Number(d.price) < 0) e.price = "Enter a valid price (0 or above)."
+	const cap = Number(d.totalCapacity)
+	if (!d.totalCapacity.trim()) e.totalCapacity = "Total capacity is required."
+	else if (isNaN(cap) || cap < 1 || !Number.isInteger(cap)) e.totalCapacity = "Enter a whole number of at least 1."
+	const maxP = Number(d.maxPerPerson)
+	if (!d.maxPerPerson.trim()) e.maxPerPerson = "Max per person is required."
+	else if (isNaN(maxP) || maxP < 1 || !Number.isInteger(maxP)) e.maxPerPerson = "Enter a whole number of at least 1."
+	else if (!isNaN(cap) && maxP > cap) e.maxPerPerson = "Cannot exceed total capacity."
+	if (d.saleEndDate && d.saleStartDate && new Date(d.saleEndDate) < new Date(d.saleStartDate))
+		e.saleEndDate = "Sale end date must be on or after start date."
+	return e
+}
+
+export function draftTicketToTicket(d: DraftTicket): Ticket {
+	return {
+		name: d.name.trim(),
+		price: Number(d.price) || 0,
+		totalCapacity: Number(d.totalCapacity),
+		maxPerPerson: Number(d.maxPerPerson),
+		description: d.description.trim() || undefined,
+		saleStartDate: d.saleStartDate ? toISODate(d.saleStartDate) : undefined,
+		saleEndDate: d.saleEndDate ? toISODate(d.saleEndDate) : undefined,
+	}
+}
+
+export function ticketToDraft(t: Ticket): DraftTicket {
+	return {
+		name: t.name,
+		price: String(t.price),
+		totalCapacity: String(t.totalCapacity),
+		maxPerPerson: String(t.maxPerPerson),
+		description: t.description ?? "",
+		saleStartDate: toDateInput(t.saleStartDate),
+		saleEndDate: toDateInput(t.saleEndDate),
+	}
+}
+
 export const LANGUAGE_OPTIONS = [
 	{ value: "English", label: "English" },
 	{ value: "Hindi",   label: "Hindi" },
@@ -27,8 +83,7 @@ export const defaultFormData = {
 	gallerySlots: Array(6).fill("") as string[],
 	galleryKeys:  Array(6).fill("") as string[],
 	galleryTypes: Array(6).fill("") as string[],
-	ticketName: "", price: "", totalCapacity: "", maxPerPerson: "",
-	ticketDesc: "", saleStartDate: "", saleEndDate: "",
+	tickets: [] as Ticket[],
 	visibility: "", ageRestriction: "", refundType: "",
 	cutoffHours: "", refundPercent: "", instructions: "",
 }
@@ -89,7 +144,6 @@ function displayUrlFromMediaItem(m: { key?: string; url?: string }): string {
 }
 
 export function eventToFormData(event: Event): FormData {
-	const ticket = event.tickets?.[0]
 	const coverMedia = event.media?.find((m) => m.type === "COVER")
 	const galleryMedia = (event.media?.filter((m) => m.type !== "COVER") ?? [])
 		.slice()
@@ -124,13 +178,16 @@ export function eventToFormData(event: Event): FormData {
 		gallerySlots,
 		galleryKeys,
 		galleryTypes,
-		ticketName: ticket?.name ?? "",
-		price: ticket != null ? String(ticket.price) : "",
-		totalCapacity: ticket ? String(ticket.totalCapacity) : "",
-		maxPerPerson: ticket ? String(ticket.maxPerPerson) : "",
-		ticketDesc: ticket?.description ?? "",
-		saleStartDate: toDateInput(ticket?.saleStartDate),
-		saleEndDate: toDateInput(ticket?.saleEndDate),
+		tickets: (event.tickets ?? []).map((t) => ({
+			id: t.id,
+			name: t.name,
+			price: t.price,
+			totalCapacity: t.totalCapacity,
+			maxPerPerson: t.maxPerPerson,
+			description: t.description,
+			saleStartDate: t.saleStartDate,
+			saleEndDate: t.saleEndDate,
+		})),
 		visibility: event.visibility ?? "",
 		ageRestriction: event.ageRestriction ?? "",
 		refundType: event.refundPolicy?.type ?? "",
@@ -141,19 +198,7 @@ export function eventToFormData(event: Event): FormData {
 }
 
 export function buildPayload(f: FormData): EventDraftPayload {
-	const isFree = Number(f.price) === 0
-
-	const ticket: Ticket | undefined = f.ticketName
-		? {
-			name: f.ticketName,
-			price: Number(f.price) || 0,
-			totalCapacity: Number(f.totalCapacity) || 1,
-			maxPerPerson: Number(f.maxPerPerson) || 1,
-			description: f.ticketDesc || undefined,
-			saleStartDate: f.saleStartDate ? toISODate(f.saleStartDate) : undefined,
-			saleEndDate: f.saleEndDate ? toISODate(f.saleEndDate) : undefined,
-		  }
-		: undefined
+	const isFree = f.tickets.length === 0 || f.tickets.every((t) => t.price === 0)
 
 	const refundPolicy: RefundPolicy | undefined = f.refundType
 		? {
@@ -191,7 +236,7 @@ export function buildPayload(f: FormData): EventDraftPayload {
 		ageRestriction:      f.ageRestriction || undefined,
 		specialInstructions: f.instructions || undefined,
 		isFree,
-		tickets:             ticket ? [ticket] : undefined,
+		tickets:             f.tickets.length > 0 ? f.tickets : undefined,
 		refundPolicy,
 		media:               media.length > 0 ? media : undefined,
 	}
@@ -246,20 +291,9 @@ export function validateStep3(f: { coverKey: string; hasGallery: boolean }): Err
 	return e
 }
 
-export function validateStep4(f: Pick<FormData, "ticketName" | "price" | "totalCapacity" | "maxPerPerson" | "saleStartDate" | "saleEndDate">): Errors {
+export function validateStep4(f: Pick<FormData, "tickets">): Errors {
 	const e: Errors = {}
-	if (!f.ticketName.trim()) e.ticketName = "Ticket name is required."
-	if (f.price === "") e.price = "Price is required."
-	else if (isNaN(Number(f.price)) || Number(f.price) < 0) e.price = "Enter a valid price (0 or above)."
-	const cap = Number(f.totalCapacity)
-	if (!f.totalCapacity.trim()) e.totalCapacity = "Total capacity is required."
-	else if (isNaN(cap) || cap < 1 || !Number.isInteger(cap)) e.totalCapacity = "Enter a whole number of at least 1."
-	const maxP = Number(f.maxPerPerson)
-	if (!f.maxPerPerson.trim()) e.maxPerPerson = "Max per person is required."
-	else if (isNaN(maxP) || maxP < 1 || !Number.isInteger(maxP)) e.maxPerPerson = "Enter a whole number of at least 1."
-	else if (!isNaN(cap) && maxP > cap) e.maxPerPerson = "Cannot exceed total capacity."
-	if (f.saleEndDate && f.saleStartDate && new Date(f.saleEndDate) < new Date(f.saleStartDate))
-		e.saleEndDate = "Sale end date must be on or after start date."
+	if (f.tickets.length === 0) e.tickets = "Add at least one ticket type."
 	return e
 }
 
@@ -284,7 +318,7 @@ export function validateAll(f: FormData, allowPastDate = false): Errors {
 		...validateStep1(f),
 		...validateStep2(f, allowPastDate),
 		...validateStep3({ coverKey: f.coverKey, hasGallery: f.galleryKeys.some((k) => k !== "") }),
-		...validateStep4(f),
+		...validateStep4({ tickets: f.tickets }),
 		...validateStep5(f),
 	}
 }
