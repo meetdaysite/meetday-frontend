@@ -5,9 +5,10 @@ import Link from "next/link"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
-import { useEventStore } from "@/store/eventStore"
+import { useDashboardStore } from "@/store/dashboardStore"
 import { useHostStore } from "@/store/hostStore"
 import type { ApiEventStatus } from "@/types/event"
+import type { DashboardPeriod } from "@/types/dashboard"
 
 import FileTextSvg from "@/icons/outlined/file-text.svg"
 import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
@@ -25,6 +26,7 @@ import StarSvg from "@/icons/outlined/star.svg"
 import TrendUpSvg from "@/icons/outlined/trend-up.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
 import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
+import DangerCircleSvg from "@/icons/outlined/danger-circle.svg"
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
@@ -38,12 +40,19 @@ const STATUS_CONFIG: Record<ApiEventStatus, { label: string; className: string }
 }
 
 const SUMMARY_CONFIG = [
-	{ status: "DRAFT" as ApiEventStatus, label: "Draft", subtitle: "Continue creating", icon: FileTextSvg, iconColor: "inherit" as const, bg: "bg-neutral-100" },
-	{ status: "UNDER_REVIEW" as ApiEventStatus, label: "Under Review", subtitle: "Awaiting approval", icon: ClockCircleSvg, iconColor: "info" as const, bg: "bg-blue-100" },
-	{ status: "PUBLISHED" as ApiEventStatus, label: "Published", subtitle: "Live and online", icon: PlaneSvg, iconColor: "success" as const, bg: "bg-status-success-bg" },
-	{ status: "COMPLETED" as ApiEventStatus, label: "Completed", subtitle: "Events finished", icon: Checklist2Svg, iconColor: "inverse" as const, bg: "bg-neutral-800" },
-	{ status: "CANCELLED" as ApiEventStatus, label: "Cancelled", subtitle: "Not active", icon: CloseCircleSvg, iconColor: "brand" as const, bg: "bg-red-100" },
+	{ status: "DRAFT" as ApiEventStatus, countKey: "draft" as const, label: "Draft", subtitle: "Continue creating", icon: FileTextSvg, iconColor: "inherit" as const, bg: "bg-neutral-100" },
+	{ status: "UNDER_REVIEW" as ApiEventStatus, countKey: "underReview" as const, label: "Under Review", subtitle: "Awaiting approval", icon: ClockCircleSvg, iconColor: "info" as const, bg: "bg-blue-100" },
+	{ status: "PUBLISHED" as ApiEventStatus, countKey: "published" as const, label: "Published", subtitle: "Live and online", icon: PlaneSvg, iconColor: "success" as const, bg: "bg-status-success-bg" },
+	{ status: "COMPLETED" as ApiEventStatus, countKey: "completed" as const, label: "Completed", subtitle: "Events finished", icon: Checklist2Svg, iconColor: "inverse" as const, bg: "bg-neutral-800" },
+	{ status: "CANCELLED" as ApiEventStatus, countKey: "cancelled" as const, label: "Cancelled", subtitle: "Not active", icon: CloseCircleSvg, iconColor: "brand" as const, bg: "bg-red-100" },
 ]
+
+const PERIOD_LABELS: Record<DashboardPeriod, string> = {
+	THIS_MONTH: "This Month",
+	LAST_30_DAYS: "Last 30 Days",
+	THIS_YEAR: "This Year",
+	ALL_TIME: "All Time",
+}
 
 const CREATE_STEPS = [
 	{ step: 1, title: "Basic Info", subtitle: "Tell us about your event", icon: FileTextSvg, iconColor: "inherit" as const, bg: "bg-orange-100", numColor: "text-orange-500" },
@@ -55,7 +64,7 @@ const CREATE_STEPS = [
 
 const EVENT_COLORS = ["bg-[#F97316]", "bg-[#6366F1]", "bg-[#10B981]", "bg-[#8B5CF6]", "bg-[#EC4899]", "bg-[#3B82F6]", "bg-[#F59E0B]"]
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function StatSkeleton() {
 	return (
@@ -70,24 +79,47 @@ function StatSkeleton() {
 	)
 }
 
+function OverviewSkeleton() {
+	return (
+		<div className="flex items-start gap-3 animate-pulse">
+			<div className="size-10 rounded-xl bg-neutral-200 shrink-0 mt-0.5" />
+			<div className="flex flex-col gap-2 flex-1">
+				<div className="h-3 w-20 bg-neutral-100 rounded" />
+				<div className="h-5 w-12 bg-neutral-200 rounded" />
+				<div className="h-3 w-16 bg-neutral-100 rounded" />
+			</div>
+		</div>
+	)
+}
+
+function DeltaBadge({ delta }: { delta: number | null }) {
+	if (delta === null) return <span className="text-caption text-text-muted">—</span>
+	const isPositive = delta >= 0
+	return (
+		<div className="flex items-center gap-1">
+			<TrendUpSvg
+				className={`size-3 ${isPositive ? "text-status-success-text" : "text-status-error-text rotate-180"}`}
+				aria-hidden
+			/>
+			<span className={`text-caption font-medium ${isPositive ? "text-text-success" : "text-status-error-text"}`}>
+				{isPositive ? "+" : ""}{delta}%
+			</span>
+		</div>
+	)
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-	const { events, eventsTotal, eventsLoading, fetchMyEvents } = useEventStore()
+	const { data, isLoading, error, period, fetchDashboard, setPeriod } = useDashboardStore()
 	const { profile } = useHostStore()
 
 	useEffect(() => {
-		fetchMyEvents({ limit: 100 })
-	}, [fetchMyEvents])
+		fetchDashboard()
+	}, [fetchDashboard])
 
 	const displayName = profile?.displayName || "Host"
-
-	const statusCounts = SUMMARY_CONFIG.reduce<Record<string, number>>((acc, { status }) => {
-		acc[status] = events.filter(e => e.status === status).length
-		return acc
-	}, {})
-
-	const recentEvents = events.slice(0, 5)
+	const recentEvents = data?.recentEvents ?? []
 
 	return (
 		<div className="flex flex-col">
@@ -113,9 +145,9 @@ export default function DashboardPage() {
 
 				{/* Summary stats */}
 				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-					{eventsLoading
+					{isLoading && !data
 						? Array.from({ length: 5 }).map((_, i) => <StatSkeleton key={i} />)
-						: SUMMARY_CONFIG.map(({ status, label, subtitle, icon, iconColor, bg }) => (
+						: SUMMARY_CONFIG.map(({ status, countKey, label, subtitle, icon, iconColor, bg }) => (
 							<Link
 								key={status}
 								href={`/dashboard/events?status=${status}`}
@@ -125,7 +157,9 @@ export default function DashboardPage() {
 									<Icon as={icon} size="lg" color={iconColor} />
 								</div>
 								<div>
-									<p className="text-title-md font-semibold text-text-primary">{statusCounts[status] ?? 0}</p>
+									<p className="text-title-md font-semibold text-text-primary">
+										{data?.eventCounts[countKey] ?? 0}
+									</p>
 									<p className="text-label-sm text-text-primary font-medium">{label}</p>
 									<p className="text-caption text-text-tertiary mt-0.5 flex items-center gap-0.5">
 										{subtitle}
@@ -142,6 +176,23 @@ export default function DashboardPage() {
 			<div className="px-6 lg:px-8 pb-10 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
 				{/* Left column */}
 				<div className="flex flex-col gap-6 min-w-0">
+
+					{/* Error banner */}
+					{error && (
+						<div className="flex items-center justify-between gap-3 px-4 py-3 rounded-card bg-status-error-bg border border-status-error-text/20">
+							<div className="flex items-center gap-2">
+								<DangerCircleSvg className="size-4 text-status-error-text shrink-0" aria-hidden />
+								<p className="text-label-sm text-status-error-text">{error}</p>
+							</div>
+							<button
+								onClick={() => fetchDashboard()}
+								className="text-label-sm font-medium text-status-error-text underline hover:no-underline shrink-0"
+							>
+								Retry
+							</button>
+						</div>
+					)}
+
 					{/* My Events table */}
 					<div className="bg-surface-card rounded-card border border-border-subtle shadow-card overflow-hidden">
 						<div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
@@ -152,7 +203,7 @@ export default function DashboardPage() {
 							</Link>
 						</div>
 
-						{eventsLoading ? (
+						{isLoading && !data ? (
 							<div className="flex flex-col divide-y divide-border-subtle">
 								{Array.from({ length: 3 }).map((_, i) => (
 									<div key={i} className="flex items-center gap-4 px-5 py-4 animate-pulse">
@@ -181,21 +232,14 @@ export default function DashboardPage() {
 											<th className="text-left text-caption text-text-tertiary font-medium px-5 py-3">EVENT NAME</th>
 											<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">DATE</th>
 											<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">STATUS</th>
-											<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">TICKET PRICE</th>
+											<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">REGISTRATIONS</th>
+											<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">REVENUE</th>
 											<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">ACTIONS</th>
 										</tr>
 									</thead>
 									<tbody className="divide-y divide-border-subtle">
 										{recentEvents.map((event, idx) => {
-											const statusCfg = STATUS_CONFIG[event.status] ?? STATUS_CONFIG.DRAFT
-											const ticketPrice = event.isFree
-												? "Free"
-												: event.startingPrice != null
-													? `₹${event.startingPrice.toLocaleString()}`
-													: event.tickets?.[0]?.price != null
-														? `₹${event.tickets[0].price.toLocaleString()}`
-														: "—"
-											const location = event.city || event.venueName || "—"
+											const statusCfg = STATUS_CONFIG[event.status as ApiEventStatus] ?? STATUS_CONFIG.DRAFT
 											const dateStr = event.eventDate
 												? new Date(event.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
 												: "—"
@@ -210,7 +254,7 @@ export default function DashboardPage() {
 															}
 															<div>
 																<p className="text-label-sm font-medium text-text-primary leading-tight">{event.title || "Untitled"}</p>
-																<p className="text-caption text-text-tertiary">{location}</p>
+																<p className="text-caption text-text-tertiary">{event.city || "—"}</p>
 															</div>
 														</div>
 													</td>
@@ -223,7 +267,12 @@ export default function DashboardPage() {
 														</span>
 													</td>
 													<td className="px-4 py-3.5">
-														<p className="text-label-sm text-text-primary">{ticketPrice}</p>
+														<p className="text-label-sm text-text-primary">{event.registrations.toLocaleString()}</p>
+													</td>
+													<td className="px-4 py-3.5">
+														<p className="text-label-sm text-text-primary">
+															{event.revenue > 0 ? `₹${event.revenue.toLocaleString()}` : "—"}
+														</p>
 													</td>
 													<td className="px-4 py-3.5">
 														<Link
@@ -246,59 +295,78 @@ export default function DashboardPage() {
 					<div className="bg-surface-card rounded-card border border-border-subtle shadow-card p-5">
 						<div className="flex items-center justify-between mb-4">
 							<h2 className="text-label-md font-semibold text-text-primary">Overview</h2>
-							<button className="flex items-center gap-1.5 text-label-sm text-text-secondary border border-border-default rounded-action px-3 py-1.5 hover:bg-surface-card-muted transition-colors">
-								All Time
-								<AltArrowDownSvg className="size-3.5" aria-hidden />
-							</button>
+							<div className="relative">
+								<select
+									value={period}
+									onChange={e => setPeriod(e.target.value as DashboardPeriod)}
+									className="appearance-none text-label-sm text-text-secondary border border-border-default rounded-action pl-3 pr-8 py-1.5 hover:bg-surface-card-muted transition-colors bg-transparent cursor-pointer"
+								>
+									{(Object.keys(PERIOD_LABELS) as DashboardPeriod[]).map(p => (
+										<option key={p} value={p}>{PERIOD_LABELS[p]}</option>
+									))}
+								</select>
+								<AltArrowDownSvg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-text-secondary" aria-hidden />
+							</div>
 						</div>
 
 						<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-							<div className="flex items-start gap-3">
-								<div className="size-10 rounded-xl bg-red-100 text-red-500 flex items-center justify-center shrink-0 mt-0.5">
-									<Icon as={CalendarOutSvg} size="md" color="inherit" />
-								</div>
-								<div className="flex flex-col gap-0.5 min-w-0">
-									<p className="text-caption text-text-tertiary">Total Events</p>
-									<p className="text-title-md font-semibold text-text-primary">{eventsLoading ? "—" : eventsTotal}</p>
-									<div className="flex items-center gap-1">
-										<Icon as={TrendUpSvg} size="sm" color="success" />
-										<span className="text-caption font-medium text-text-success">All statuses</span>
+							{isLoading && !data ? (
+								Array.from({ length: 4 }).map((_, i) => <OverviewSkeleton key={i} />)
+							) : (
+								<>
+									<div className="flex items-start gap-3">
+										<div className="size-10 rounded-xl bg-red-100 text-red-500 flex items-center justify-center shrink-0 mt-0.5">
+											<Icon as={CalendarOutSvg} size="md" color="inherit" />
+										</div>
+										<div className="flex flex-col gap-0.5 min-w-0">
+											<p className="text-caption text-text-tertiary">Total Events</p>
+											<p className="text-title-md font-semibold text-text-primary">
+												{data?.overview.totalEvents ?? "—"}
+											</p>
+											<DeltaBadge delta={data?.overview.totalEventsDelta ?? null} />
+										</div>
 									</div>
-								</div>
-							</div>
 
-							<div className="flex items-start gap-3">
-								<div className="size-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-									<Icon as={UsersGroupSvg} size="md" color="info" />
-								</div>
-								<div className="flex flex-col gap-0.5 min-w-0">
-									<p className="text-caption text-text-tertiary">Registrations</p>
-									<p className="text-title-md font-semibold text-text-primary">—</p>
-									<span className="text-caption text-text-muted">Coming soon</span>
-								</div>
-							</div>
+									<div className="flex items-start gap-3">
+										<div className="size-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+											<Icon as={UsersGroupSvg} size="md" color="info" />
+										</div>
+										<div className="flex flex-col gap-0.5 min-w-0">
+											<p className="text-caption text-text-tertiary">Registrations</p>
+											<p className="text-title-md font-semibold text-text-primary">
+												{data?.overview.liveRegistrations.toLocaleString() ?? "—"}
+											</p>
+											<DeltaBadge delta={data?.overview.liveRegistrationsDelta ?? null} />
+										</div>
+									</div>
 
-							<div className="flex items-start gap-3">
-								<div className="size-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
-									<Icon as={DollarSvg} size="md" color="success" />
-								</div>
-								<div className="flex flex-col gap-0.5 min-w-0">
-									<p className="text-caption text-text-tertiary">Revenue</p>
-									<p className="text-title-md font-semibold text-text-primary">—</p>
-									<span className="text-caption text-text-muted">Coming soon</span>
-								</div>
-							</div>
+									<div className="flex items-start gap-3">
+										<div className="size-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
+											<Icon as={DollarSvg} size="md" color="success" />
+										</div>
+										<div className="flex flex-col gap-0.5 min-w-0">
+											<p className="text-caption text-text-tertiary">Revenue</p>
+											<p className="text-title-md font-semibold text-text-primary">
+												{data ? `₹${data.overview.revenue.toLocaleString()}` : "—"}
+											</p>
+											<DeltaBadge delta={data?.overview.revenueDelta ?? null} />
+										</div>
+									</div>
 
-							<div className="flex items-start gap-3">
-								<div className="size-10 rounded-xl bg-yellow-100 flex items-center justify-center shrink-0 mt-0.5">
-									<Icon as={StarSvg} size="md" color="inherit" />
-								</div>
-								<div className="flex flex-col gap-0.5 min-w-0">
-									<p className="text-caption text-text-tertiary">Satisfaction</p>
-									<p className="text-title-md font-semibold text-text-primary">—</p>
-									<span className="text-caption text-text-muted">Coming soon</span>
-								</div>
-							</div>
+									<div className="flex items-start gap-3">
+										<div className="size-10 rounded-xl bg-yellow-100 flex items-center justify-center shrink-0 mt-0.5">
+											<Icon as={StarSvg} size="md" color="inherit" />
+										</div>
+										<div className="flex flex-col gap-0.5 min-w-0">
+											<p className="text-caption text-text-tertiary">Satisfaction</p>
+											<p className="text-title-md font-semibold text-text-primary">
+												{data?.overview.avgSatisfaction ?? "—"}
+											</p>
+											<DeltaBadge delta={data?.overview.avgSatisfactionDelta ?? null} />
+										</div>
+									</div>
+								</>
+							)}
 						</div>
 					</div>
 				</div>

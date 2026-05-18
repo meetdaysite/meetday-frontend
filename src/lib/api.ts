@@ -440,6 +440,47 @@ export async function getInterests(): Promise<Interest[]> {
 	return data.data
 }
 
+// ─── Host dashboard ───────────────────────────────────────────────────────────
+
+import type { DashboardData, DashboardPeriod } from "@/types/dashboard"
+
+export async function getHostDashboard(period?: DashboardPeriod): Promise<DashboardData> {
+	const { data } = await apiClient.get<{ success: boolean; data: DashboardData }>(
+		"/hosts/me/dashboard",
+		{ params: period ? { period } : undefined },
+	)
+	return data.data
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+import type { Notification, NotificationsResponse, NotificationsParams } from "@/types/notification"
+
+export async function getNotifications(params?: NotificationsParams): Promise<NotificationsResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: NotificationsResponse }>(
+		"/notifications",
+		{ params },
+	)
+	return data.data
+}
+
+export async function getUnreadCount(): Promise<number> {
+	const { data } = await apiClient.get<{ success: boolean; data: { unreadCount: number } }>(
+		"/notifications/unread-count",
+	)
+	return data.data.unreadCount
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+	await apiClient.patch(`/notifications/${id}/read`)
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+	await apiClient.patch("/notifications/read-all")
+}
+
+export type { Notification, NotificationsResponse }
+
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {

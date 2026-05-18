@@ -16,6 +16,8 @@ import { useAttendeeProfileStore } from "./attendeeProfileStore"
 import { useAttendeeSessionStore } from "./attendeeSessionStore"
 import { useAuthSessionStore } from "./authSessionStore"
 import { useHostStore } from "./hostStore"
+import { useDashboardStore } from "./dashboardStore"
+import { useNotificationStore } from "./notificationStore"
 
 let _confirmation: ConfirmationResult | null = null
 let _recaptcha: RecaptchaVerifier | null = null
@@ -66,6 +68,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
 		useAttendeeSessionStore.getState().clearSession()
 		useAuthSessionStore.getState().clearSession()
 		useHostStore.getState().clearProfile()
+		useDashboardStore.getState().reset()
+		useNotificationStore.getState().reset()
 		try { localStorage.clear() } catch { /* ignore */ }
 		try { sessionStorage.clear() } catch { /* ignore */ }
 	},

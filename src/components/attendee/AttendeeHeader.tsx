@@ -6,8 +6,10 @@ import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import clsx from "clsx"
 import { Button } from "../ui/Button"
+import { NotificationBell } from "../ui/NotificationBell"
 import { useAuthStore } from "@/store/authStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
+import { useNotificationStore } from "@/store/notificationStore"
 
 interface NavLink {
 	label: string
@@ -30,6 +32,12 @@ export function AttendeeHeader() {
 	const user = useAuthStore((s) => s.user)
 	const signOut = useAuthStore((s) => s.signOut)
 	const profile = useAttendeeProfileStore((s) => s.profile)
+	const initNotifications = useNotificationStore((s) => s.init)
+
+	useEffect(() => {
+		if (user) initNotifications()
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [user?.uid])
 
 	// Close dropdown on outside click
 	useEffect(() => {
@@ -92,6 +100,8 @@ export function AttendeeHeader() {
 				{/* Desktop right actions */}
 				<div className="hidden lg:flex items-center gap-2 ml-auto">
 					{user ? (
+						<>
+						<NotificationBell />
 						<div className="relative" ref={dropdownRef}>
 							<button
 								onClick={() => setDropdownOpen((v) => !v)}
@@ -138,6 +148,7 @@ export function AttendeeHeader() {
 								</div>
 							)}
 						</div>
+						</>
 					) : (
 						<>
 							<Button

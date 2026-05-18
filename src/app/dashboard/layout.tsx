@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar"
 import { LogoutConfirmDialog } from "@/components/ui/LogoutConfirmDialog"
 import { useAuthStore } from "@/store/authStore"
 import { useHostStore } from "@/store/hostStore"
+import { useNotificationStore } from "@/store/notificationStore"
 import { getHostProfile } from "@/lib/api"
 
 function HamburgerIcon() {
@@ -139,6 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 	const [profileError, setProfileError] = useState(false)
 	const { user, authLoading, signOut } = useAuthStore()
 	const { profile, setProfile, clearProfile } = useHostStore()
+	const initNotifications = useNotificationStore((s) => s.init)
 	const router = useRouter()
 
 	async function handleSignOut() {
@@ -181,6 +183,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		return () => { cancelled = true }
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user, authLoading])
+
+	// Init notifications once the host profile is confirmed APPROVED
+	useEffect(() => {
+		if (profile?.approvalStatus === "APPROVED") {
+			initNotifications()
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [profile?.approvalStatus])
 
 	// Show loading while Firebase resolves auth or while profile is being fetched
 	if (authLoading || (!profile && !!user && !profileError)) return <LoadingScreen />
