@@ -17,7 +17,7 @@ const WHAT_HAPPENS = [
 	},
 ]
 
-function AvatarStack({ count = 4, color = "brand" }: { count?: number; color?: "brand" | "warning" }) {
+function AvatarStack({ count = 4, color: _color = "brand" }: { count?: number; color?: "brand" | "warning" }) {
 	const gradients = [
 		"from-purple-400 to-pink-400",
 		"from-blue-400 to-cyan-400",

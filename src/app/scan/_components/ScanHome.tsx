@@ -31,6 +31,7 @@ export function ScanHome({ sessionData, token, onStartScanning, onManualCheckIn 
 	}
 
 	useEffect(() => {
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		fetchStats()
 		intervalRef.current = setInterval(fetchStats, 10_000)
 		return () => {

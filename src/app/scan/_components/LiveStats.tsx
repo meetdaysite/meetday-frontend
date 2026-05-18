@@ -7,7 +7,7 @@ type Props = {
 	lastSynced?: string
 }
 
-export function LiveStats({ stats, syncStatus, showSync = false, lastSynced }: Props) {
+export function LiveStats({ stats, syncStatus, showSync = false }: Props) {
 	return (
 		<div className="flex items-center justify-between gap-2">
 			<StatItem
@@ -53,7 +53,7 @@ export function LiveStats({ stats, syncStatus, showSync = false, lastSynced }: P
 
 function StatItem({
 	icon,
-	label,
+	label: _label,
 	value,
 	sub,
 	color,

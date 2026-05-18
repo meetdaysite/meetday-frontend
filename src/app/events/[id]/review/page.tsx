@@ -281,7 +281,7 @@ function SectionHeader({
 
 // ─── Avatar stack (host + attendees) ─────────────────────────────────────────
 
-function AvatarStack({ hostInitial }: { hostInitial: string }) {
+function AvatarStack({ hostInitial: _hostInitial }: { hostInitial: string }) {
 	const gradients = ["from-purple-400 to-pink-400", "from-blue-400 to-cyan-400", "from-green-400 to-teal-400", "from-orange-400 to-red-400"]
 	return (
 		<div className="flex items-center gap-2">

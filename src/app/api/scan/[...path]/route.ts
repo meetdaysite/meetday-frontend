@@ -23,7 +23,7 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
 			headers: { "Content-Type": "application/json" },
 			...(body ? { body } : {}),
 		})
-	} catch (err) {
+	} catch {
 		// console.error("[scan-proxy] fetch to backend FAILED →", err)
 		return NextResponse.json({ success: false, message: "Backend unreachable" }, { status: 502 })
 	}

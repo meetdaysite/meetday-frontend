@@ -1,4 +1,3 @@
-import { isAxiosError } from "axios"
 import apiClient from "./axios"
 import type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus } from "@/types/event"
 

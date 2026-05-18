@@ -79,7 +79,7 @@ export function OrderSummary({
 			unitPrice: parseFloat(t.price),
 		}))
 
-	const { subtotal, discounted, tax, total } = computeTotals(lineItems, promoDiscount)
+	const { subtotal, discounted: _discounted, tax, total } = computeTotals(lineItems, promoDiscount)
 	const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0)
 
 	return (

@@ -25,7 +25,9 @@ type AppState =
 	| { screen: "TICKET_INVALID"; message?: string }
 
 export default function ScanPage() {
-	const [token, setToken] = useState("")
+	const [token] = useState(() =>
+		typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("token") ?? "") : ""
+	)
 	const [sessionData, setSessionData] = useState<VerifySessionResponse | null>(null)
 	const [state, setState] = useState<AppState>({ screen: "VALIDATING" })
 	const [debugLines, setDebugLines] = useState<string[]>([])
@@ -37,19 +39,16 @@ export default function ScanPage() {
 	}
 
 	useEffect(() => {
-		const params = new URLSearchParams(window.location.search)
-		const t = params.get("token") ?? ""
-		setToken(t)
-
-		dbg(`token="${t || "(empty)"}"`)
-		if (!t) {
+		// eslint-disable-next-line react-hooks/set-state-in-effect
+		dbg(`token="${token || "(empty)"}"`)
+		if (!token) {
 			dbg("ERROR: no token → INVALID")
 			setState({ screen: "INVALID" })
 			return
 		}
 
 		dbg(`fetch → /api/scan/verify-session`)
-		verifySession(t)
+		verifySession(token)
 			.then((data) => {
 				dbg(`SUCCESS: session for "${data.session?.staffName}"`)
 				setSessionData(data)
@@ -62,7 +61,7 @@ export default function ScanPage() {
 				const message = status === 401 || status === 403 ? "expired" : undefined
 				setState({ screen: "INVALID", message })
 			})
-	}, [])
+	}, [token])
 
 	// if (isDesktop) return <ScanDesktopGate />
 

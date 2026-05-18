@@ -160,6 +160,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 		// Page refresh — profile not in memory, fetch it
 		let cancelled = false
+		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setProfileError(false)
 		getHostProfile()
 			.then((p) => {

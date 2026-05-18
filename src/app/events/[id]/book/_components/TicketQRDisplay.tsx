@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import QRCode from "qrcode"
 
 interface TicketQRDisplayProps {
@@ -33,12 +34,13 @@ export function TicketQRDisplay({ qrDataUrl, value, size = 160 }: TicketQRDispla
 	}
 
 	return (
-		<img
+		<Image
 			src={src}
 			alt="Ticket QR code"
 			width={size}
 			height={size}
 			className="rounded-image block"
+			unoptimized
 		/>
 	)
 }
