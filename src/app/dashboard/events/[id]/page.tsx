@@ -7,7 +7,8 @@ import clsx from "clsx"
 import { toast } from "sonner"
 import { useEventStore } from "@/store/eventStore"
 import { storageUrl } from "@/lib/uploadMedia"
-import { createScannerSession } from "@/lib/api"
+import { createScannerSession, getCheckInStats } from "@/lib/api"
+import type { CheckInStats } from "@/lib/api"
 import type { Event, ApiEventStatus } from "@/types/event"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
@@ -59,10 +60,17 @@ export default function EventDetailPage() {
 	const router = useRouter()
 	const { currentEvent, currentEventLoading, currentEventError, fetchMyEventDetail, submitForReview, cancelEvent } =
 		useEventStore()
+	const [checkInStats, setCheckInStats] = useState<CheckInStats | null>(null)
 
 	useEffect(() => {
 		fetchMyEventDetail(id)
 	}, [id, fetchMyEventDetail])
+
+	useEffect(() => {
+		if (!currentEvent) return
+		if (currentEvent.status !== "PUBLISHED" && currentEvent.status !== "COMPLETED") return
+		getCheckInStats(id).then(setCheckInStats).catch(() => {})
+	}, [id, currentEvent])
 
 	if (currentEventLoading) return <DetailSkeleton />
 
@@ -149,9 +157,17 @@ export default function EventDetailPage() {
 
 					{/* Stats row */}
 					<div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
-						<StatCard icon={<PeopleStatIcon />} label="Registrations" value="—" />
+						<StatCard
+							icon={<PeopleStatIcon />}
+							label="Registrations"
+							value={checkInStats ? String(checkInStats.totalAttendees) : "—"}
+						/>
 						<StatCard icon={<DollarIcon />} label="Revenue" value="—" />
-						<StatCard icon={<CheckInIcon />} label="Checked In" value="—" />
+						<StatCard
+							icon={<CheckInIcon />}
+							label="Checked In"
+							value={checkInStats ? `${checkInStats.checkedIn}/${checkInStats.totalAttendees}` : "—"}
+						/>
 					</div>
 
 					{/* Two-column layout */}

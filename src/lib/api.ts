@@ -375,6 +375,31 @@ export async function createScannerSession(
 	return data.data
 }
 
+export async function getScannerSessions(eventId: string): Promise<ScannerSession[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: ScannerSession[] }>(
+		`/events/${eventId}/scanner-sessions`,
+	)
+	return data.data
+}
+
+export async function deactivateScannerSession(eventId: string, sessionId: string): Promise<void> {
+	await apiClient.patch(`/events/${eventId}/scanner-sessions/${sessionId}/deactivate`)
+}
+
+export type CheckInStats = {
+	totalAttendees: number
+	checkedIn: number
+	remaining: number
+	bySession: Array<{ sessionId: string; label: string | null; checkedIn: number }>
+}
+
+export async function getCheckInStats(eventId: string): Promise<CheckInStats> {
+	const { data } = await apiClient.get<{ success: boolean; data: CheckInStats }>(
+		`/events/${eventId}/check-in-stats`,
+	)
+	return data.data
+}
+
 // ─── Public events ────────────────────────────────────────────────────────────
 
 import type { ExploreEventsResponse, PublicEventDetails } from "@/types/attendee"

@@ -10,14 +10,13 @@ async function get<T>(path: string, params: Record<string, string>): Promise<T> 
 	const res = await fetch(url.toString())
 	if (!res.ok) {
 		const body = await res.json().catch(() => ({}))
-		// console.error("[scannerApi] GET error →", res.status, res.statusText, body)
 		throw Object.assign(new Error(body?.message ?? res.statusText), { status: res.status })
 	}
 	const json = await res.json()
 	return json.data as T
 }
 
-async function post<T>(path: string, body: Record<string, string>): Promise<T> {
+async function post(path: string, body: Record<string, string>): Promise<void> {
 	const segment = path.replace(/^\/check-in\//, "")
 	const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
 	const url = new URL(`${PROXY}/${segment}`, origin)
@@ -28,11 +27,8 @@ async function post<T>(path: string, body: Record<string, string>): Promise<T> {
 	})
 	if (!res.ok) {
 		const b = await res.json().catch(() => ({}))
-		// console.error("[scannerApi] POST error →", res.status, res.statusText, b)
 		throw Object.assign(new Error(b?.message ?? res.statusText), { status: res.status })
 	}
-	const json = await res.json()
-	return json.data as T
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -42,7 +38,7 @@ export type ScannerSession = {
 	eventId: string
 	staffName: string
 	staffEmail: string
-	label?: string
+	label?: string | null
 	isActive: boolean
 	expiresAt: string
 }
@@ -63,12 +59,11 @@ export type VerifySessionResponse = {
 	event: ScannerEvent
 }
 
+// API returns { checkedInThisGate, totalRemaining } — normalized on read
 export type LiveStatsResponse = {
 	checkedIn: number
 	remaining: number
 	noShows: number
-	total: number
-	lastUpdated: string
 }
 
 export type ScanResultStatus = "APPROVED" | "GROUP_PARTIAL" | "DUPLICATE" | "INVALID"
@@ -112,107 +107,88 @@ export type ScanResult =
 	  }
 	| { status: "INVALID"; message?: string }
 
-export type LookupAttendee = {
-	attendeeId: string
-	status: "NOT_CHECKED_IN" | "CHECKED_IN" | "CANCELLED"
-}
-
+// Matches GET /check-in/lookup response shape
 export type LookupResult = {
 	bookingId: string
+	ticketCode: string
+	name: string
+	eventTitle: string
 	ticketType: string
-	quantity: number
-	status: "NOT_CHECKED_IN" | "CHECKED_IN" | "CANCELLED"
-	attendees: LookupAttendee[]
-}
-
-export type LookupResponse = {
-	results: LookupResult[]
+	remainingSeats: number
+	checkedInCount: number
 }
 
 // ─── API functions ────────────────────────────────────────────────────────────
 
 export async function verifySession(token: string): Promise<VerifySessionResponse> {
-	const raw = await get<Record<string, unknown>>("/check-in/verify-session", { token })
-	// If API returns { session, event } already, use as-is
-	if (raw && typeof raw.session === "object" && raw.session !== null) {
-		return raw as unknown as VerifySessionResponse
-	}
-	// Otherwise API returns flat: session fields at top level, event nested
-	const { event, ...sessionFields } = raw
+	// API returns flat: { sessionId, staffName, label, event: {...} }
+	const raw = await get<{
+		sessionId: string
+		staffName: string
+		label: string | null
+		event: ScannerEvent
+	}>("/check-in/verify-session", { token })
+
 	return {
-		session: sessionFields as unknown as ScannerSession,
-		event: event as ScannerEvent,
+		session: {
+			id: raw.sessionId,
+			eventId: raw.event.id,
+			staffName: raw.staffName,
+			staffEmail: "",
+			label: raw.label,
+			isActive: true,
+			expiresAt: "",
+		},
+		event: raw.event,
 	}
 }
 
 export async function getLiveStats(token: string): Promise<LiveStatsResponse> {
-	return get<LiveStatsResponse>("/check-in/live-stats", { token })
+	// API returns { checkedInThisGate, totalRemaining } — map to component field names
+	const raw = await get<{ checkedInThisGate: number; totalRemaining: number }>(
+		"/check-in/live-stats",
+		{ token },
+	)
+	return {
+		checkedIn: raw.checkedInThisGate,
+		remaining: raw.totalRemaining,
+		noShows: 0,
+	}
 }
 
 export async function scanTicket(ticketCode: string, scannerToken: string): Promise<ScanResult> {
-	const raw = await post<Record<string, unknown>>("/check-in/scan", { ticketCode, scannerToken })
-	return normalizeScanResult(raw)
-}
-
-type RawOrder = {
-	bookingCode: string
-	ticketType: string
-	totalEntries: number
-	checkedInCount: number
-	entries: Array<{ position: number; isCheckedIn: boolean }>
-}
-
-function normalizeScanResult(raw: Record<string, unknown>): ScanResult {
-	// Already checked in → DUPLICATE
-	if (raw.alreadyCheckedIn === true) {
-		return {
-			status: "DUPLICATE",
-			ticketCodeSuffix: "",
-			gate: "",
-			firstScannedAt: (raw.checkedInAt as string) ?? "",
-			eventName: "",
-			auditLog: [],
-		}
-	}
-
-	const order = raw.order as RawOrder | undefined
-
-	// Group booking with remaining entries → GROUP_PARTIAL
-	if (order && order.totalEntries > 1 && order.checkedInCount < order.totalEntries) {
-		return {
-			status: "GROUP_PARTIAL",
-			ticketType: order.ticketType,
-			bookingCode: order.bookingCode,
-			totalEntries: order.totalEntries,
-			checkedIn: order.checkedInCount,
-			remaining: order.totalEntries - order.checkedInCount,
-			entries: order.entries.map((e) => ({
-				index: e.position,
-				status: e.isCheckedIn ? "CHECKED_IN" : "WAITING",
-			})),
-		}
-	}
-
-	// Default → APPROVED
+	// API returns { success, message } — no data payload. 404 = ticket not found.
+	await post("/check-in/scan", { ticketCode, scannerToken })
 	return {
 		status: "APPROVED",
-		ticketTier: order?.ticketType ?? "",
-		ticketCodeSuffix: "",
+		ticketTier: "",
+		ticketCodeSuffix: ticketCode.slice(-8).toUpperCase(),
 		gate: "",
-		checkedInAt: (raw.checkedInAt as string) ?? "",
-		entriesAdmitted: order?.checkedInCount ?? 1,
+		checkedInAt: new Date().toISOString(),
+		entriesAdmitted: 1,
 	}
 }
 
 export async function lookupBooking(
 	token: string,
 	query: { bookingId: string } | { ticketCode: string },
-): Promise<LookupResponse> {
-	return get<LookupResponse>("/check-in/lookup", { token, ...query })
+): Promise<LookupResult[]> {
+	// API returns a single booking object, not an array
+	const raw = await get<LookupResult>("/check-in/lookup", { token, ...query })
+	return [raw]
 }
 
-export async function manualCheckIn(attendeeId: string, scannerToken: string): Promise<ScanResult> {
-	return post<ScanResult>("/check-in/manual-check-in", { attendeeId, scannerToken })
+export async function manualCheckIn(ticketCode: string, scannerToken: string): Promise<ScanResult> {
+	// API returns { success, message } — no data payload
+	await post("/check-in/manual-check-in", { ticketCode, scannerToken })
+	return {
+		status: "APPROVED",
+		ticketTier: "",
+		ticketCodeSuffix: ticketCode.slice(-8).toUpperCase(),
+		gate: "",
+		checkedInAt: new Date().toISOString(),
+		entriesAdmitted: 1,
+	}
 }
 
 // ─── QR content parser ────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { lookupBooking, manualCheckIn } from "@/lib/scannerApi"
+import { lookupBooking, scanTicket } from "@/lib/scannerApi"
 import type { LookupResult, ScanResult, VerifySessionResponse } from "@/lib/scannerApi"
 
 type Props = {
@@ -13,25 +13,14 @@ type Props = {
 
 type TabType = "bookingId" | "ticketCode"
 
-const STATUS_CONFIG: Record<
-	LookupResult["status"],
-	{ label: string; className: string; icon: React.ReactNode }
-> = {
-	NOT_CHECKED_IN: {
-		label: "Not checked in",
-		className: "bg-orange-50 text-orange-600 border-orange-200",
-		icon: <ClockBadgeIcon className="text-orange-500" />,
-	},
-	CHECKED_IN: {
-		label: "Already checked in",
-		className: "bg-green-50 text-green-700 border-green-200",
-		icon: <CheckBadgeIcon className="text-green-600" />,
-	},
-	CANCELLED: {
-		label: "Cancelled",
-		className: "bg-red-50 text-red-600 border-red-200",
-		icon: <XBadgeIcon className="text-red-500" />,
-	},
+function derivedStatus(r: LookupResult): { label: string; className: string; icon: React.ReactNode } {
+	if (r.remainingSeats === 0) {
+		return { label: "Fully checked in", className: "bg-green-50 text-green-700 border-green-200", icon: <CheckBadgeIcon className="text-green-600" /> }
+	}
+	if (r.checkedInCount > 0) {
+		return { label: "Partially checked in", className: "bg-blue-50 text-blue-700 border-blue-200", icon: <ClockBadgeIcon className="text-blue-500" /> }
+	}
+	return { label: "Not checked in", className: "bg-orange-50 text-orange-600 border-orange-200", icon: <ClockBadgeIcon className="text-orange-500" /> }
 }
 
 export function ScanManual({ sessionData, token, onResult, onBack }: Props) {
@@ -41,32 +30,44 @@ export function ScanManual({ sessionData, token, onResult, onBack }: Props) {
 	const [results, setResults] = useState<LookupResult[] | null>(null)
 	const [searching, setSearching] = useState(false)
 	const [searchError, setSearchError] = useState("")
-	const [expandedBooking, setExpandedBooking] = useState<string | null>(null)
 	const [checkingIn, setCheckingIn] = useState<string | null>(null)
+	const [approveError, setApproveError] = useState<string | null>(null)
 
 	async function handleSearch() {
 		if (!query.trim()) return
 		setSearching(true)
 		setSearchError("")
 		setResults(null)
-		setExpandedBooking(null)
+		setApproveError(null)
 		try {
 			const payload = tab === "bookingId" ? { bookingId: query.trim() } : { ticketCode: query.trim() }
 			const res = await lookupBooking(token, payload)
-			setResults(res.results)
-		} catch {
-			setSearchError("No results found. Check the ID and try again.")
+			setResults(res)
+		} catch (err) {
+			const status = (err as { status?: number }).status
+			setSearchError(
+				status === 404
+					? "No booking found with that ID."
+					: "Connection problem — check your signal and try again.",
+			)
 		} finally {
 			setSearching(false)
 		}
 	}
 
-	async function handleApprove(attendeeId: string) {
-		setCheckingIn(attendeeId)
+	async function handleApprove(ticketCode: string) {
+		setCheckingIn(ticketCode)
+		setApproveError(null)
 		try {
-			const result = await manualCheckIn(attendeeId, token)
+			const result = await scanTicket(ticketCode, token)
 			onResult(result)
-		} catch {
+		} catch (err) {
+			const status = (err as { status?: number }).status
+			setApproveError(
+				status === 404
+					? "Ticket not found."
+					: "Check-in failed — check your connection and try again.",
+			)
 			setCheckingIn(null)
 		}
 	}
@@ -150,75 +151,50 @@ export function ScanManual({ sessionData, token, onResult, onBack }: Props) {
 				{/* Results */}
 				{results !== null && (
 					<div className="flex flex-col gap-3">
-						<div className="flex items-center justify-between">
-							<p className="text-[13px] font-semibold text-neutral-800">Search results</p>
-							<div className="flex items-center gap-1">
-								<span className="size-1.5 rounded-full bg-green-500" />
-								<span className="text-[11px] text-neutral-400">Auto-updates</span>
-							</div>
-						</div>
+						<p className="text-[13px] font-semibold text-neutral-800">Search results</p>
 
 						{results.length === 0 ? (
 							<p className="text-[13px] text-neutral-400 text-center py-4">No bookings found.</p>
 						) : (
 							<div className="flex flex-col gap-2">
 								{results.map((booking) => {
-									const cfg = STATUS_CONFIG[booking.status]
-									const isExpanded = expandedBooking === booking.bookingId
+									const cfg = derivedStatus(booking)
+									const canCheckIn = booking.remainingSeats > 0
 									return (
 										<div key={booking.bookingId} className="border border-neutral-200 rounded-xl overflow-hidden">
-											<button
-												onClick={() => setExpandedBooking(isExpanded ? null : booking.bookingId)}
-												className="w-full flex items-center justify-between px-4 py-3 active:bg-neutral-50 transition-colors"
-											>
+											<div className="flex items-center justify-between px-4 py-3">
 												<div className="flex items-center gap-3">
 													<div className="size-9 rounded-lg bg-neutral-100 flex items-center justify-center">
 														<PeopleIcon />
 													</div>
 													<div className="text-left">
-														<p className="text-[13px] font-semibold text-neutral-900">
-															{maskBookingId(booking.bookingId)}
-														</p>
+														<p className="text-[13px] font-semibold text-neutral-900">{booking.name}</p>
 														<p className="text-[11px] text-neutral-500">
-															{booking.ticketType} · Qty {booking.quantity}
+															{booking.ticketType} · {booking.checkedInCount}/{booking.checkedInCount + booking.remainingSeats} checked in
 														</p>
 													</div>
 												</div>
-												<div className="flex items-center gap-2">
-													<span className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cfg.className}`}>
-														{cfg.icon}
-														{cfg.label}
-													</span>
-													<ChevronIcon rotated={isExpanded} />
-												</div>
-											</button>
+												<span className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cfg.className}`}>
+													{cfg.icon}
+													{cfg.label}
+												</span>
+											</div>
 
-											{isExpanded && booking.status === "NOT_CHECKED_IN" && (
+											{canCheckIn && (
 												<div className="border-t border-neutral-100 px-4 py-3 bg-neutral-50 flex flex-col gap-2">
-													{booking.attendees.map((attendee, i) => (
-														<div key={attendee.attendeeId} className="flex items-center justify-between">
-															<div className="flex items-center gap-2">
-																<div className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-																	attendee.status === "CHECKED_IN" ? "bg-green-100 text-green-700" : "bg-neutral-200 text-neutral-600"
-																}`}>
-																	{i + 1}
-																</div>
-																<span className="text-[12px] text-neutral-600">
-																	{attendee.status === "CHECKED_IN" ? "Already checked in" : `Entry slot ${i + 1}`}
-																</span>
-															</div>
-															{attendee.status === "NOT_CHECKED_IN" && (
-																<button
-																	onClick={() => handleApprove(attendee.attendeeId)}
-																	disabled={checkingIn === attendee.attendeeId}
-																	className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-[12px] font-semibold rounded-lg active:bg-red-700 disabled:opacity-50 transition-colors"
-																>
-																	{checkingIn === attendee.attendeeId ? <MiniSpinner /> : null}
-																	Approve entry
-																</button>
-															)}
-														</div>
-													))}
+													{approveError && (
+														<p className="text-[11px] text-red-500 text-right">{approveError}</p>
+													)}
+													<div className="flex justify-end">
+														<button
+															onClick={() => handleApprove(booking.ticketCode)}
+															disabled={checkingIn === booking.ticketCode}
+															className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-[12px] font-semibold rounded-lg active:bg-red-700 disabled:opacity-50 transition-colors"
+														>
+															{checkingIn === booking.ticketCode ? <MiniSpinner /> : null}
+															Approve entry
+														</button>
+													</div>
 												</div>
 											)}
 										</div>
@@ -288,13 +264,6 @@ function GateSmIcon() {
 		<svg width="10" height="10" viewBox="0 0 24 24" fill="none" className="text-red-400" aria-hidden>
 			<rect x="2" y="7" width="8" height="14" rx="1" stroke="currentColor" strokeWidth="2" />
 			<rect x="14" y="7" width="8" height="14" rx="1" stroke="currentColor" strokeWidth="2" />
-		</svg>
-	)
-}
-function ChevronIcon({ rotated }: { rotated: boolean }) {
-	return (
-		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" className={`text-neutral-400 transition-transform ${rotated ? "rotate-180" : ""}`} aria-hidden>
-			<path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
 		</svg>
 	)
 }

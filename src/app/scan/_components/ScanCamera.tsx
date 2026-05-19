@@ -11,9 +11,10 @@ type Props = {
 	onResult: (result: ScanResult) => void
 	onPause: () => void
 	onManualCheckIn: () => void
+	onSessionExpired: () => void
 }
 
-export function ScanCamera({ sessionData, token, onResult, onPause, onManualCheckIn }: Props) {
+export function ScanCamera({ sessionData, token, onResult, onPause, onManualCheckIn, onSessionExpired }: Props) {
 	const { session, event } = sessionData
 	const videoRef = useRef<HTMLVideoElement>(null)
 	const scannerRef = useRef<import("qr-scanner").default | null>(null)
@@ -26,6 +27,7 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 	const [syncStatus, setSyncStatus] = useState<"live" | "offline">("live")
 	const [showTips, setShowTips] = useState(false)
 	const [scanning, setScanning] = useState(true)
+	const [cameraError, setCameraError] = useState<"permission" | "unavailable" | null>(null)
 	const statsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
 	useEffect(() => {
@@ -34,7 +36,9 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 				const s = await getLiveStats(token)
 				setStats(s)
 				setSyncStatus("live")
-			} catch {
+			} catch (err) {
+				const status = (err as { status?: number }).status
+				if (status === 401 || status === 403) { onSessionExpired(); return }
 				setSyncStatus("offline")
 			}
 		}
@@ -44,7 +48,7 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 		return () => {
 			if (statsIntervalRef.current) clearInterval(statsIntervalRef.current)
 		}
-	}, [token])
+	}, [token, onSessionExpired])
 
 	const handleDecode = useCallback(
 		async (result: { data: string }) => {
@@ -59,6 +63,7 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 				onResult(scanResult)
 			} catch (err) {
 				const status = (err as { status?: number }).status
+				if (status === 401 || status === 403) { onSessionExpired(); return }
 				const msg = status === 404 ? "Ticket not found" : "Scan failed — try again"
 				onResult({ status: "INVALID", message: msg })
 				processingRef.current = false
@@ -72,7 +77,13 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 		let QrScanner: typeof import("qr-scanner").default
 
 		async function initScanner() {
-			const mod = await import("qr-scanner")
+			let mod: typeof import("qr-scanner")
+			try {
+				mod = await import("qr-scanner")
+			} catch {
+				if (!cancelled) setCameraError("unavailable")
+				return
+			}
 			if (cancelled) return
 			QrScanner = mod.default
 
@@ -87,9 +98,14 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 			try {
 				await scanner.start()
 			} catch (err) {
-				// AbortError is harmless — happens when the effect re-runs (strict mode / facingMode change)
 				if ((err as Error)?.name === "AbortError") return
-				throw err
+				if (!cancelled) {
+					scanner.destroy()
+					scannerRef.current = null
+					const isPermission = (err as Error)?.name === "NotAllowedError"
+					setCameraError(isPermission ? "permission" : "unavailable")
+				}
+				return
 			}
 			if (cancelled) { scanner.stop(); scanner.destroy(); return }
 			const hasFlash = await QrScanner.hasCamera()
@@ -180,6 +196,34 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 						<span className="text-[11px] text-white/80">Align the attendee QR inside the frame</span>
 					</div>
 				</div>
+
+				{/* Camera error overlay */}
+				{cameraError && (
+					<div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/80 px-6 text-center z-10">
+						<div className="size-16 rounded-full bg-white/10 flex items-center justify-center">
+							{cameraError === "permission"
+								? <NoCameraIcon />
+								: <AlertIcon />
+							}
+						</div>
+						<div>
+							<p className="text-white font-bold text-[16px] mb-1">
+								{cameraError === "permission" ? "Camera access denied" : "Camera unavailable"}
+							</p>
+							<p className="text-white/70 text-[12px] leading-snug">
+								{cameraError === "permission"
+									? "Allow camera access in your browser settings, then reload the page."
+									: "Could not start the camera. Use manual check-in instead."}
+							</p>
+						</div>
+						<button
+							onClick={onManualCheckIn}
+							className="flex items-center gap-2 px-5 py-2.5 bg-white text-neutral-900 text-[13px] font-semibold rounded-xl"
+						>
+							Switch to manual check-in
+						</button>
+					</div>
+				)}
 
 				{/* Camera controls */}
 				{torchAvailable && (
@@ -351,6 +395,22 @@ function PeopleSmIcon() {
 		<svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
 			<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
 			<circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+		</svg>
+	)
+}
+function NoCameraIcon() {
+	return (
+		<svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-white/80" aria-hidden>
+			<path d="M1 1l22 22M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h2a2 2 0 0 1 2 2v9.34" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+			<circle cx="12" cy="13" r="3" stroke="currentColor" strokeWidth="2" />
+		</svg>
+	)
+}
+function AlertIcon() {
+	return (
+		<svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-white/80" aria-hidden>
+			<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+			<path d="M12 9v4M12 17h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
 		</svg>
 	)
 }

@@ -11,9 +11,10 @@ type Props = {
 	token: string
 	onStartScanning: () => void
 	onManualCheckIn: () => void
+	onSessionExpired: () => void
 }
 
-export function ScanHome({ sessionData, token, onStartScanning, onManualCheckIn }: Props) {
+export function ScanHome({ sessionData, token, onStartScanning, onManualCheckIn, onSessionExpired }: Props) {
 	const { session, event } = sessionData
 	const [stats, setStats] = useState<LiveStatsResponse | null>(null)
 	const [lastSynced, setLastSynced] = useState<Date | null>(null)
@@ -25,8 +26,10 @@ export function ScanHome({ sessionData, token, onStartScanning, onManualCheckIn 
 			const s = await getLiveStats(token)
 			setStats(s)
 			setLastSynced(new Date())
-		} catch {
-			// keep stale data
+		} catch (err) {
+			const status = (err as { status?: number }).status
+			if (status === 401 || status === 403) onSessionExpired()
+			// otherwise keep stale data
 		}
 	}
 

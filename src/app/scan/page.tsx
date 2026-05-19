@@ -16,6 +16,7 @@ import { ScanResultInvalid } from "./_components/ScanResultInvalid"
 type AppState =
 	| { screen: "VALIDATING" }
 	| { screen: "INVALID"; message?: string }
+	| { screen: "LOAD_ERROR" }
 	| { screen: "HOME" }
 	| { screen: "SCANNING" }
 	| { screen: "MANUAL" }
@@ -25,9 +26,11 @@ type AppState =
 	| { screen: "TICKET_INVALID"; message?: string }
 
 export default function ScanPage() {
-	const [token] = useState(() =>
-		typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("token") ?? "") : ""
-	)
+	const [token, setToken] = useState("")
+
+	useEffect(() => {
+		setToken(new URLSearchParams(window.location.search).get("token") ?? "")
+	}, [])
 	const [sessionData, setSessionData] = useState<VerifySessionResponse | null>(null)
 	const [state, setState] = useState<AppState>({ screen: "VALIDATING" })
 	const [debugLines, setDebugLines] = useState<string[]>([])
@@ -58,8 +61,12 @@ export default function ScanPage() {
 				const status = (err as { status?: number }).status
 				const msg = (err as Error).message
 				dbg(`FAILED: status=${status} msg="${msg}"`)
-				const message = status === 401 || status === 403 ? "expired" : undefined
-				setState({ screen: "INVALID", message })
+				if (status === 401 || status === 403) {
+					setState({ screen: "INVALID", message: "expired" })
+				} else {
+					// Network/server error — allow retry
+					setState({ screen: "LOAD_ERROR" })
+				}
 			})
 	}, [token])
 
@@ -69,7 +76,22 @@ export default function ScanPage() {
 
 	if (state.screen === "INVALID") return <ScanInvalidToken message={state.message} />
 
+	if (state.screen === "LOAD_ERROR") return <LoadErrorScreen onRetry={() => {
+		setState({ screen: "VALIDATING" })
+		verifySession(token)
+			.then((data) => { setSessionData(data); setState({ screen: "HOME" }) })
+			.catch((err: unknown) => {
+				const status = (err as { status?: number }).status
+				if (status === 401 || status === 403) setState({ screen: "INVALID", message: "expired" })
+				else setState({ screen: "LOAD_ERROR" })
+			})
+	}} />
+
 	if (!sessionData) return <ValidatingScreen />
+
+	function handleSessionExpired() {
+		setState({ screen: "INVALID", message: "expired" })
+	}
 
 	function handleScanResult(result: ScanResult) {
 		if (result.status === "APPROVED") {
@@ -91,6 +113,7 @@ export default function ScanPage() {
 					token={token}
 					onStartScanning={() => setState({ screen: "SCANNING" })}
 					onManualCheckIn={() => setState({ screen: "MANUAL" })}
+					onSessionExpired={handleSessionExpired}
 				/>
 			)
 		case "SCANNING":
@@ -101,6 +124,7 @@ export default function ScanPage() {
 					onResult={handleScanResult}
 					onPause={() => setState({ screen: "HOME" })}
 					onManualCheckIn={() => setState({ screen: "MANUAL" })}
+					onSessionExpired={handleSessionExpired}
 				/>
 			)
 		case "APPROVED":
@@ -144,6 +168,31 @@ export default function ScanPage() {
 				/>
 			)
 	}
+}
+
+function LoadErrorScreen({ onRetry }: { onRetry: () => void }) {
+	return (
+		<div className="min-h-screen flex flex-col items-center justify-center p-8 bg-white gap-6">
+			<div className="size-20 rounded-full bg-orange-50 flex items-center justify-center">
+				<svg width="36" height="36" viewBox="0 0 24 24" fill="none" className="text-orange-400" aria-hidden>
+					<path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+					<path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+				</svg>
+			</div>
+			<div className="text-center max-w-xs">
+				<h1 className="text-xl font-bold text-neutral-900 mb-2">Connection problem</h1>
+				<p className="text-sm text-neutral-500 leading-relaxed">
+					Could not reach the server. Check your connection and try again.
+				</p>
+			</div>
+			<button
+				onClick={onRetry}
+				className="flex items-center justify-center gap-2 h-12 px-8 bg-red-600 text-white text-[14px] font-semibold rounded-2xl active:bg-red-700 transition-colors"
+			>
+				Try again
+			</button>
+		</div>
+	)
 }
 
 function ValidatingScreen({ debugLines, token }: { debugLines?: string[]; token?: string }) {
