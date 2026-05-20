@@ -83,7 +83,7 @@ export function OrderSummary({
 	const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0)
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-subtle p-5 flex flex-col gap-5">
+		<div className="rounded-action bg-surface-card border border-border-subtle p-5 flex flex-col gap-5">
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<span className="text-title-md font-bold text-text-primary">Order Summary</span>

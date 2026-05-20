@@ -60,7 +60,7 @@ export function TicketCard({ ticket, tierIndex, quantity, onQuantityChange }: Ti
 	const isSelected = quantity > 0
 	const maxQty = ticket.maxPerPerson ?? 10
 
-	const decrement = () => onQuantityChange(Math.max(0, quantity - 1))
+	const decrement = () => onQuantityChange(Math.max(1, quantity - 1))
 	const increment = () => onQuantityChange(Math.min(maxQty, quantity + 1))
 
 	return (
@@ -135,11 +135,11 @@ export function TicketCard({ ticket, tierIndex, quantity, onQuantityChange }: Ti
 					<button
 						type="button"
 						onClick={decrement}
-						disabled={quantity === 0}
+						disabled={quantity <= 1}
 						aria-label="Decrease quantity"
 						className={clsx(
 							"size-7 rounded-full border flex items-center justify-center text-lg font-medium transition-colors duration-(--duration-120)",
-							quantity === 0
+							quantity <= 1
 								? "border-border-subtle text-text-muted cursor-not-allowed"
 								: "border-border-default text-text-primary hover:border-border-strong hover:bg-surface-canvas",
 						)}

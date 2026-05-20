@@ -177,7 +177,7 @@ export default function ExploreEventsPage() {
 							<div className="flex items-center gap-2 flex-wrap">
 								<Button
 									size="sm"
-									radius="pill"
+									radius="md"
 									variant="secondary"
 									onClick={handleClearAll}
 									className={!isFiltered ? "bg-neutral-900! text-white! border-neutral-900!" : ""}

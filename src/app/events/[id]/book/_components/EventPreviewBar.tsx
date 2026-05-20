@@ -23,7 +23,7 @@ export function EventPreviewBar({ event }: { event: PublicEventDetails }) {
 	return (
 		<div className="rounded-action bg-surface-card border border-border-subtle p-4 flex gap-5">
 			{/* Thumbnail */}
-			<div className="relative shrink-0 w-40 rounded-image overflow-hidden bg-neutral-200 self-stretch min-h-25">
+			<div className="relative shrink-0 w-40 rounded-action overflow-hidden bg-neutral-200 self-stretch min-h-25">
 				{cover?.url && (
 					<Image src={cover.url} alt={event.title} fill sizes="160px" className="object-cover" />
 				)}

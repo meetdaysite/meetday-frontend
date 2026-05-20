@@ -51,7 +51,7 @@ export function TicketSelector({
 						key={ticket.id}
 						ticket={ticket}
 						tierIndex={index}
-						quantity={quantities[ticket.id] ?? 0}
+						quantity={quantities[ticket.id] ?? 1}
 						onQuantityChange={(qty) => onQuantityChange(ticket.id, qty)}
 					/>
 				))}

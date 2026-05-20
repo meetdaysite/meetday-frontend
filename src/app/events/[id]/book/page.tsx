@@ -34,13 +34,14 @@ function SelectTicketContent({ event }: { event: PublicEventDetails }) {
 
 	useEffect(() => {
 		setEventId(event.id)
-	}, [event.id, setEventId])
+		event.tickets.forEach((t) => setQuantity(t.id, 1))
+	}, [event.id, setEventId]) // eslint-disable-line react-hooks/exhaustive-deps
 
 	const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0)
 
 	const handleContinue = () => {
 		event.tickets.forEach((t) => {
-			const qty = quantities[t.id] ?? 0
+			const qty = quantities[t.id] ?? 1
 			if (qty > 0) initAttendeeSlots(t.id, qty)
 		})
 		router.push(`/events/${event.id}/book/attendee`)
