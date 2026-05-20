@@ -351,7 +351,7 @@ export default function MyEventsPage() {
 
 					{/* Error */}
 					{eventsError && (
-						<div className="flex items-center justify-between gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-card mb-6 text-body-sm text-red-700">
+						<div className="flex items-center justify-between gap-3 px-4 py-3 bg-red-50 border border-red-200 rounded-action mb-6 text-body-sm text-red-700">
 							{eventsError}
 							<button
 								onClick={() => fetchMyEvents()}
@@ -375,7 +375,7 @@ export default function MyEventsPage() {
 								<div
 									key={i}
 									className={clsx(
-										"bg-surface-card border border-border-subtle rounded-card animate-pulse",
+										"bg-surface-card border border-border-subtle rounded-action animate-pulse",
 										viewMode === "grid" ? "h-64" : "h-28",
 									)}
 								/>
@@ -448,7 +448,7 @@ export default function MyEventsPage() {
 			{/* Delete confirmation modal */}
 			{confirmDeleteId && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-					<div className="bg-surface-card rounded-card border border-border-default shadow-floating w-full max-w-sm p-6">
+					<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-sm p-6">
 						<h2 className="text-label-lg font-semibold text-text-primary mb-2">Delete Draft?</h2>
 						<p className="text-body-sm text-text-secondary mb-6">
 							This draft will be permanently deleted and cannot be recovered.
@@ -497,10 +497,10 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 	return (
 		<div
 			onClick={() => onNavigate(`/dashboard/events/${event.id}`)}
-			className="group relative cursor-pointer bg-surface-card border border-border-subtle rounded-card hover:border-border-strong hover:shadow-card-hover transition-all"
+			className="group relative cursor-pointer bg-surface-card border border-border-subtle rounded-action hover:border-border-strong hover:shadow-card-hover transition-all"
 		>
 			{/* Image */}
-			<div className="relative aspect-16/10 overflow-hidden rounded-t-card bg-surface-card-muted">
+			<div className="relative aspect-16/10 overflow-hidden rounded-t-action bg-surface-card-muted">
 				{cover ? (
 					// eslint-disable-next-line @next/next/no-img-element
 					<img
@@ -532,7 +532,7 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 					<DotsIcon />
 				</button>
 				{openDropdownId === event.id && (
-					<div className="absolute right-0 top-10 z-50 w-44 bg-surface-card border border-border-default rounded-card shadow-floating py-1">
+					<div className="absolute right-0 top-10 z-50 w-44 bg-surface-card border border-border-default rounded-action shadow-floating py-1">
 						<button
 							onClick={() => onNavigate(`/dashboard/events/${event.id}`)}
 							className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
@@ -620,10 +620,10 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 	return (
 		<div
 			onClick={() => onNavigate(`/dashboard/events/${event.id}`)}
-			className="group cursor-pointer flex gap-4 bg-surface-card border border-border-subtle rounded-card p-4 hover:border-border-strong hover:shadow-card-hover transition-all"
+			className="group cursor-pointer flex gap-4 bg-surface-card border border-border-subtle rounded-action p-4 hover:border-border-strong hover:shadow-card-hover transition-all"
 		>
 			{/* Thumbnail */}
-			<div className="relative w-32 sm:w-40 aspect-4/3 rounded-card overflow-hidden shrink-0 bg-surface-card-muted">
+			<div className="relative w-32 sm:w-40 aspect-4/3 rounded-action overflow-hidden shrink-0 bg-surface-card-muted">
 				{cover ? (
 					// eslint-disable-next-line @next/next/no-img-element
 					<img
@@ -687,7 +687,7 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 						<DotsIcon />
 					</button>
 					{openDropdownId === event.id && (
-						<div className="absolute right-0 top-10 z-50 w-44 bg-surface-card border border-border-default rounded-card shadow-floating py-1">
+						<div className="absolute right-0 top-10 z-50 w-44 bg-surface-card border border-border-default rounded-action shadow-floating py-1">
 							<button
 								onClick={() => onNavigate(`/dashboard/events/${event.id}`)}
 								className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"

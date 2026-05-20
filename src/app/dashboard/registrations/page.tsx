@@ -104,7 +104,7 @@ export default function RegistrationsPage() {
 				</div>
 
 				{/* Table card */}
-				<div className="bg-surface-card border border-border-subtle rounded-card overflow-hidden">
+				<div className="bg-surface-card border border-border-subtle rounded-action overflow-hidden">
 					<div className="overflow-x-auto">
 						<table className="w-full text-left border-collapse">
 							<thead>

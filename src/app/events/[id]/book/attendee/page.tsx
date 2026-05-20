@@ -147,7 +147,7 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 						))}
 
 						{/* Going with friends */}
-						<div className="rounded-card border border-border-subtle bg-surface-card p-4 flex items-center gap-3">
+						<div className="rounded-action border border-border-subtle bg-surface-card p-4 flex items-center gap-3">
 							<div className="size-9 rounded-action bg-surface-vibe-soft flex items-center justify-center shrink-0">
 								<Icon as={UsersGroupSvg} size="md" color="vibe" />
 							</div>

@@ -27,7 +27,7 @@ export function StickyFooter({ eventId }: { eventId: string }) {
 	}
 
 	return (
-		<div className="rounded-card bg-surface-card border border-border-subtle p-5 flex items-center justify-between gap-4">
+		<div className="rounded-action bg-surface-card border border-border-subtle p-5 flex items-center justify-between gap-4">
 			<div className="flex flex-col gap-0.5">
 				<p className="text-label-md font-semibold text-text-primary">Secure your spot.</p>
 				<p className="text-body-sm text-text-muted">Limited tickets available.</p>

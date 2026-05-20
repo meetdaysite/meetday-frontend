@@ -13,7 +13,7 @@ type Props = {
 export function OnboardingCalloutCard({ icon, title, body, style, iconStyle }: Props) {
 	return (
 		<div
-			className="absolute flex items-center gap-2.5 bg-surface-card rounded-card shadow-floating px-3 py-2.5 max-w-55 z-20"
+			className="absolute flex items-center gap-2.5 bg-surface-card rounded-action shadow-floating px-3 py-2.5 max-w-55 z-20"
 			style={style}
 		>
 			<Image src={icon} alt="" width={48} height={48} style={{ height: "auto", ...iconStyle }} aria-hidden />

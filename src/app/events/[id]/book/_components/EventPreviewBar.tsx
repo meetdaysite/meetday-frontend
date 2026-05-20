@@ -21,7 +21,7 @@ export function EventPreviewBar({ event }: { event: PublicEventDetails }) {
 	const categoryLabel = event.category.name.toUpperCase()
 
 	return (
-		<div className="rounded-card bg-surface-card border border-border-subtle p-4 flex gap-5">
+		<div className="rounded-action bg-surface-card border border-border-subtle p-4 flex gap-5">
 			{/* Thumbnail */}
 			<div className="relative shrink-0 w-40 rounded-image overflow-hidden bg-neutral-200 self-stretch min-h-25">
 				{cover?.url && (
@@ -86,7 +86,7 @@ export function EventPreviewBar({ event }: { event: PublicEventDetails }) {
 			</div>
 
 			{/* Vibe match */}
-			<div className="hidden md:flex flex-col items-center justify-center gap-1.5 shrink-0 w-30 rounded-card bg-blue-50 border border-blue-100 p-3 text-center">
+			<div className="hidden md:flex flex-col items-center justify-center gap-1.5 shrink-0 w-30 rounded-action bg-blue-50 border border-blue-100 p-3 text-center">
 				<div className="flex gap-2 items-center justify-center">
 					<Icon as={StarCircleSvg} size="lg" color="vibe" />
 					<p className="text-heading-sm font-extrabold text-text-vibe leading-none">95%</p>

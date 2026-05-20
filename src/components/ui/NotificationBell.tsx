@@ -129,7 +129,7 @@ export function NotificationBell() {
 
 			{/* Panel */}
 			{open && (
-				<div className="absolute right-0 top-full mt-2 z-50 w-80 bg-surface-card border border-border-subtle rounded-card shadow-floating overflow-hidden">
+				<div className="absolute right-0 top-full mt-2 z-50 w-80 bg-surface-card border border-border-subtle rounded-action shadow-floating overflow-hidden">
 					{/* Header */}
 					<div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
 						<h3 className="text-label-md font-semibold text-text-primary">

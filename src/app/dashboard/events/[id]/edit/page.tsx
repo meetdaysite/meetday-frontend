@@ -69,7 +69,7 @@ function SectionCard({
 	children: React.ReactNode
 }) {
 	return (
-		<div className="border border-border-subtle rounded-card bg-surface-card overflow-hidden">
+		<div className="border border-border-subtle rounded-action bg-surface-card overflow-hidden">
 			<div className="px-6 py-4 border-b border-border-subtle">
 				<h2 className="text-label-md font-semibold text-text-primary">{title}</h2>
 				{subtitle && <p className="text-caption text-text-tertiary mt-0.5">{subtitle}</p>}
@@ -279,7 +279,7 @@ export default function EditEventPage() {
 				<div className="flex-1 px-6 lg:px-10 py-8 bg-surface-page">
 					<div className="max-w-4xl mx-auto flex flex-col gap-5">
 						{Array.from({ length: 5 }).map((_, i) => (
-							<div key={i} className="border border-border-subtle rounded-card bg-surface-card overflow-hidden animate-pulse">
+							<div key={i} className="border border-border-subtle rounded-action bg-surface-card overflow-hidden animate-pulse">
 								<div className="px-6 py-4 border-b border-border-subtle">
 									<div className="h-4 w-32 bg-surface-card-muted rounded" />
 								</div>
@@ -613,7 +613,7 @@ export default function EditEventPage() {
 									if (f) handleCoverFile(f)
 								}}
 								className={clsx(
-									"border-2 border-dashed rounded-card flex flex-col items-center justify-center gap-2 transition-colors overflow-hidden",
+									"border-2 border-dashed rounded-action flex flex-col items-center justify-center gap-2 transition-colors overflow-hidden",
 									coverUploading ? "cursor-wait opacity-70" : "cursor-pointer",
 									formData.coverUrl ? "aspect-video p-0" : "py-14",
 									isDraggingOver
@@ -679,7 +679,7 @@ export default function EditEventPage() {
 											}
 										}}
 										className={clsx(
-											"relative aspect-video rounded-card border-2 border-dashed border-border-default bg-surface-card-muted flex items-center justify-center transition-colors overflow-hidden",
+											"relative aspect-video rounded-action border-2 border-dashed border-border-default bg-surface-card-muted flex items-center justify-center transition-colors overflow-hidden",
 											galleryUploading[i] ? "cursor-wait opacity-70" : "cursor-pointer hover:bg-surface-card",
 										)}
 									>
@@ -856,7 +856,7 @@ export default function EditEventPage() {
 		{/* Submit confirmation modal */}
 		{showSubmitConfirm && (
 			<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-				<div className="bg-surface-card rounded-card border border-border-default shadow-floating w-full max-w-sm p-6">
+				<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-sm p-6">
 					<h2 className="text-label-lg font-semibold text-text-primary mb-2">Submit for Review?</h2>
 					<p className="text-body-sm text-text-secondary mb-6">
 						Your latest changes will be saved and the event will be sent to the team for review. You won&apos;t be able to edit it until a decision is made.

@@ -19,7 +19,7 @@ export function EventHero({ event }: { event: PublicEventDetails }) {
 	const cover = event.media.find(m => m.type === "COVER")
 
 	return (
-		<div className="relative rounded-card overflow-hidden aspect-16/6 md:aspect-16/5 bg-neutral-200">
+		<div className="relative rounded-action overflow-hidden aspect-16/6 md:aspect-16/5 bg-neutral-200">
 			{cover?.url && (
 				<Image
 					src={cover.url}

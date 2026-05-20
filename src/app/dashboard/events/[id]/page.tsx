@@ -114,7 +114,7 @@ export default function EventDetailPage() {
 					</Link>
 
 					{/* Cover hero */}
-					<div className="relative w-full aspect-3/1 min-h-36 rounded-card overflow-hidden mb-5 bg-surface-card-muted">
+					<div className="relative w-full aspect-3/1 min-h-36 rounded-action overflow-hidden mb-5 bg-surface-card-muted">
 						{coverUrl ? (
 							// eslint-disable-next-line @next/next/no-img-element
 							<img src={coverUrl} alt={event.title ?? ""} className="w-full h-full object-cover" loading="eager" fetchPriority="high" />
@@ -135,7 +135,7 @@ export default function EventDetailPage() {
 
 					{/* Rejection banner */}
 					{event.status === "REJECTED" && event.rejectionReason && (
-						<div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-card mb-5">
+						<div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-action mb-5">
 							<AlertIcon className="text-red-500 shrink-0 mt-0.5" />
 							<div>
 								<p className="text-label-sm font-semibold text-red-700 mb-0.5">Event Rejected</p>
@@ -146,7 +146,7 @@ export default function EventDetailPage() {
 
 					{/* Cancellation banner */}
 					{event.status === "CANCELLED" && event.cancellationReason && (
-						<div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-card mb-5">
+						<div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-action mb-5">
 							<AlertIcon className="text-orange-500 shrink-0 mt-0.5" />
 							<div>
 								<p className="text-label-sm font-semibold text-orange-700 mb-0.5">Cancellation Reason</p>
@@ -193,7 +193,7 @@ export default function EventDetailPage() {
 													src={url}
 													controls
 													preload="none"
-													className="w-full aspect-video rounded-card bg-surface-card-muted"
+													className="w-full aspect-video rounded-action bg-surface-card-muted"
 												/>
 											) : (
 												// eslint-disable-next-line @next/next/no-img-element
@@ -201,7 +201,7 @@ export default function EventDetailPage() {
 													key={item.id ?? i}
 													src={url}
 													alt={`Gallery ${i + 1}`}
-													className="w-full aspect-video object-cover rounded-card bg-surface-card-muted"
+													className="w-full aspect-video object-cover rounded-action bg-surface-card-muted"
 													loading="lazy"
 												/>
 											)
@@ -271,7 +271,7 @@ export default function EventDetailPage() {
 						{/* Right sidebar */}
 						<div className="flex flex-col gap-4">
 							{/* Actions */}
-							<div className="bg-surface-card border border-border-subtle rounded-card p-5">
+							<div className="bg-surface-card border border-border-subtle rounded-action p-5">
 								<p className="text-label-sm font-semibold text-text-primary mb-4">Actions</p>
 								<EventActions
 									event={event}
@@ -289,7 +289,7 @@ export default function EventDetailPage() {
 							</div>
 
 							{/* Date & Location */}
-							<div className="bg-surface-card border border-border-subtle rounded-card p-5 flex flex-col gap-3">
+							<div className="bg-surface-card border border-border-subtle rounded-action p-5 flex flex-col gap-3">
 								<p className="text-label-sm font-semibold text-text-primary">Date & Location</p>
 								<div className="flex items-start gap-3">
 									<CalendarIcon className="mt-0.5 shrink-0 text-text-brand" />
@@ -313,7 +313,7 @@ export default function EventDetailPage() {
 							</div>
 
 							{/* Event details */}
-							<div className="bg-surface-card border border-border-subtle rounded-card p-5">
+							<div className="bg-surface-card border border-border-subtle rounded-action p-5">
 								<p className="text-label-sm font-semibold text-text-primary mb-4">Details</p>
 								<div className="flex flex-col gap-3">
 									{event.category?.name && (
@@ -502,7 +502,7 @@ function CancelModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-			<div className="w-full max-w-md bg-surface-card rounded-card shadow-modal p-6 flex flex-col gap-4">
+			<div className="w-full max-w-md bg-surface-card rounded-action shadow-modal p-6 flex flex-col gap-4">
 				<div>
 					<p className="text-label-md font-semibold text-text-primary mb-1">Cancel this event?</p>
 					<p className="text-body-sm text-text-secondary">
@@ -586,7 +586,7 @@ function AddStaffModal({
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-			<div className="w-full max-w-md bg-surface-card rounded-card shadow-modal p-6 flex flex-col gap-4">
+			<div className="w-full max-w-md bg-surface-card rounded-action shadow-modal p-6 flex flex-col gap-4">
 				<div>
 					<p className="text-label-md font-semibold text-text-primary mb-1">Add Support Staff</p>
 					<p className="text-body-sm text-text-secondary">
@@ -670,21 +670,21 @@ function DetailSkeleton() {
 			<DashboardTopBar />
 			<div className="flex-1 bg-surface-page px-4 sm:px-6 lg:px-8 py-6">
 				<div className="h-4 w-32 rounded bg-surface-card-muted animate-pulse mb-5" />
-				<div className="w-full aspect-3/1 min-h-36 rounded-card bg-surface-card-muted animate-pulse mb-5" />
+				<div className="w-full aspect-3/1 min-h-36 rounded-action bg-surface-card-muted animate-pulse mb-5" />
 				<div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
 					{[0, 1, 2].map((i) => (
-						<div key={i} className="h-20 rounded-card bg-surface-card-muted animate-pulse" />
+						<div key={i} className="h-20 rounded-action bg-surface-card-muted animate-pulse" />
 					))}
 				</div>
 				<div className="grid grid-cols-1 lg:grid-cols-[1fr_288px] gap-6">
 					<div className="flex flex-col gap-6">
 						{[0, 1].map((i) => (
-							<div key={i} className="h-40 rounded-card bg-surface-card-muted animate-pulse" />
+							<div key={i} className="h-40 rounded-action bg-surface-card-muted animate-pulse" />
 						))}
 					</div>
 					<div className="flex flex-col gap-4">
-						<div className="h-48 rounded-card bg-surface-card-muted animate-pulse" />
-						<div className="h-40 rounded-card bg-surface-card-muted animate-pulse" />
+						<div className="h-48 rounded-action bg-surface-card-muted animate-pulse" />
+						<div className="h-40 rounded-action bg-surface-card-muted animate-pulse" />
 					</div>
 				</div>
 			</div>
@@ -696,7 +696,7 @@ function DetailSkeleton() {
 
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
 	return (
-		<div className="bg-surface-card border border-border-subtle rounded-card p-3 sm:p-4 flex flex-col gap-1.5">
+		<div className="bg-surface-card border border-border-subtle rounded-action p-3 sm:p-4 flex flex-col gap-1.5">
 			<div className="flex items-center gap-1.5 text-text-muted">
 				{icon}
 				<span className="text-caption text-text-secondary truncate">{label}</span>
@@ -708,7 +708,7 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
-		<div className="bg-surface-card border border-border-subtle rounded-card p-5">
+		<div className="bg-surface-card border border-border-subtle rounded-action p-5">
 			<h2 className="text-label-md font-semibold text-text-primary mb-4">{title}</h2>
 			{children}
 		</div>

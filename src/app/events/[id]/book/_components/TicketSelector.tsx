@@ -58,7 +58,7 @@ export function TicketSelector({
 			</div>
 
 			{/* Promo code card */}
-			<div className="rounded-card border border-border-subtle bg-surface-card p-4 flex items-start gap-4">
+			<div className="rounded-action border border-border-subtle bg-surface-card p-4 flex items-start gap-4">
 				<div className="size-10 shrink-0 rounded-action bg-surface-brand-soft flex items-center justify-center">
 					<Icon as={TagPriceSvg} size="md" color="brand" />
 				</div>

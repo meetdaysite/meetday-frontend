@@ -78,7 +78,7 @@ function UnderReviewScreen({
 				</div>
 
 				{isPending && (
-					<div className="w-full rounded-card border border-border-default overflow-hidden">
+					<div className="w-full rounded-action border border-border-default overflow-hidden">
 						{[
 							{ label: "Profile submitted", done: true },
 							{ label: "PAN submitted for verification", done: true },

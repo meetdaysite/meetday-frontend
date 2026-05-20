@@ -66,7 +66,7 @@ export function TicketCard({ ticket, tierIndex, quantity, onQuantityChange }: Ti
 	return (
 		<div
 			className={clsx(
-				`rounded-card border bg-surface-card p-4 flex items-center gap-4 transition-all duration-(--duration-180) border-l-4 border-l-${style.selectedBorder} hover:shadow-(--shadow-card-hover)`,
+				`rounded-action border bg-surface-card p-4 flex items-center gap-4 transition-all duration-(--duration-180) border-l-4 border-l-${style.selectedBorder} hover:shadow-(--shadow-card-hover)`,
 				isSelected
 					? `border ${style.selectedBorder} shadow-(--shadow-card-hover)`
 					: "border border-border-brand shadow-(--shadow-card)",

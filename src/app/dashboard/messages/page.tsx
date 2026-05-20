@@ -94,7 +94,7 @@ export default function MessagesPage() {
 				</div>
 
 				{/* Two-panel layout */}
-				<div className="flex flex-1 min-h-0 bg-surface-card border border-border-subtle rounded-card overflow-hidden">
+				<div className="flex flex-1 min-h-0 bg-surface-card border border-border-subtle rounded-action overflow-hidden">
 
 					{/* ── Left: conversation list ── */}
 					<aside className="w-72 shrink-0 flex flex-col border-r border-border-subtle">

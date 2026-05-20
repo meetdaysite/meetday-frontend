@@ -24,7 +24,7 @@ const iconSizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
 const radiusClasses: Record<NonNullable<ButtonProps["radius"]>, string> = {
 	sm: "rounded-badge",
 	md: "rounded-action",
-	lg: "rounded-card",
+	lg: "rounded-action",
 	pill: "rounded-avatar",
 }
 

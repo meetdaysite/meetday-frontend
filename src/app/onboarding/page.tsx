@@ -271,7 +271,7 @@ function StepAboutYou({ isEmailReadOnly }: { isEmailReadOnly: boolean }) {
 										type="button"
 										onClick={() => field.onChange(type)}
 										className={clsx(
-											"relative flex flex-col items-center gap-3 rounded-card border-2 px-4 py-5 text-center transition-all duration-(--duration-120)",
+											"relative flex flex-col items-center gap-3 rounded-action border-2 px-4 py-5 text-center transition-all duration-(--duration-120)",
 											selected
 												? "border-border-focus bg-surface-brand-soft"
 												: "border-border-default bg-surface-canvas hover:border-border-strong",
@@ -744,7 +744,7 @@ function StepReviewDetails({ onJumpTo }: { onJumpTo: (step: number) => void }) {
 			{sections.map(s => (
 				<div
 					key={s.label}
-					className="flex items-center gap-3 rounded-card border border-border-default bg-surface-canvas px-4 py-4"
+					className="flex items-center gap-3 rounded-action border border-border-default bg-surface-canvas px-4 py-4"
 				>
 					<div className="size-11 rounded-full border border-border-default bg-surface-canvas flex items-center justify-center shrink-0">
 						<Icon as={s.icon} size="md" />
@@ -792,7 +792,7 @@ function StepPayoutDetails() {
 
 	return (
 		<div className="flex flex-col gap-5">
-			<div className="flex items-center justify-between rounded-card border border-border-default bg-surface-canvas px-4 py-3">
+			<div className="flex items-center justify-between rounded-action border border-border-default bg-surface-canvas px-4 py-3">
 				<div className="flex items-center gap-3">
 					<div className="size-10 rounded-badge bg-surface-success-soft flex items-center justify-center shrink-0">
 						<Icon as={CardSvg} size="lg" color="success" />
@@ -888,7 +888,7 @@ function StepReviewPayout({ bankKycResult }: { bankKycResult: BankKycResult | nu
 	return (
 		<div className="flex flex-col gap-4">
 			{/* PAN status */}
-			<div className="flex items-center justify-between rounded-card border border-border-default bg-surface-canvas px-4 py-3">
+			<div className="flex items-center justify-between rounded-action border border-border-default bg-surface-canvas px-4 py-3">
 				<div className="flex items-center gap-3">
 					<div className="size-10 rounded-badge bg-surface-success-soft flex items-center justify-center shrink-0">
 						<Icon as={CardSvg} size="lg" color="success" />
@@ -902,7 +902,7 @@ function StepReviewPayout({ bankKycResult }: { bankKycResult: BankKycResult | nu
 			</div>
 
 			{/* Bank details */}
-			<div className="rounded-card border border-border-default bg-surface-canvas px-4 py-4 flex flex-col gap-3">
+			<div className="rounded-action border border-border-default bg-surface-canvas px-4 py-4 flex flex-col gap-3">
 				<div className="flex items-center justify-between">
 					<p className="text-label-md text-text-primary font-semibold">Bank account details</p>
 					<StatusBadge status={bankKycResult?.bankVerificationStatus ?? "PENDING"} />
@@ -1011,7 +1011,7 @@ function StepChoosePlan({ plans }: { plans: SubscriptionPlan[] }) {
 									onClick={() => field.onChange(planId)}
 									onKeyDown={e => (e.key === "Enter" || e.key === " ") && field.onChange(planId)}
 									className={clsx(
-										"flex flex-col rounded-card border-2 text-left flex-1 overflow-hidden cursor-pointer transition-all duration-(--duration-120)",
+										"flex flex-col rounded-action border-2 text-left flex-1 overflow-hidden cursor-pointer transition-all duration-(--duration-120)",
 										meta.recommended && "-my-4",
 										selected
 											? "border-border-focus bg-surface-brand-soft"
@@ -1148,7 +1148,7 @@ function StepUnderReview({ onGoToDashboard }: { onGoToDashboard: () => void }) {
 			</div>
 
 			{/* Checklist */}
-			<div className="w-full rounded-card border border-border-default overflow-hidden">
+			<div className="w-full rounded-action border border-border-default overflow-hidden">
 				{[
 					{ label: "Profile submitted", done: true },
 					{ label: "PAN submitted for verification", done: true },
@@ -1409,7 +1409,7 @@ export default function OnboardingPage() {
 			{/* Loading overlay for blocking API calls */}
 			{loadingMessage && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-					<div className="bg-surface-card rounded-card px-10 py-8 flex flex-col items-center gap-4 shadow-xl">
+					<div className="bg-surface-card rounded-action px-10 py-8 flex flex-col items-center gap-4 shadow-xl">
 						<div className="size-10 border-4 border-action-primary border-t-transparent rounded-full animate-spin" />
 						<p className="text-body-sm font-semibold text-text-primary">{loadingMessage}</p>
 					</div>

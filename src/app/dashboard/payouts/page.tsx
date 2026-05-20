@@ -206,7 +206,7 @@ export default function PayoutsPage() {
 				{/* Stats cards */}
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
 					{/* Total Earned */}
-					<div className="bg-surface-card border border-border-subtle rounded-card px-5 py-4 flex items-center gap-4">
+					<div className="bg-surface-card border border-border-subtle rounded-action px-5 py-4 flex items-center gap-4">
 						<div className="size-11 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
 							<Icon as={DollarSvg} size="md" color="success" aria-hidden />
 						</div>
@@ -219,7 +219,7 @@ export default function PayoutsPage() {
 					</div>
 
 					{/* Total Paid Out */}
-					<div className="bg-surface-card border border-border-subtle rounded-card px-5 py-4 flex items-center gap-4">
+					<div className="bg-surface-card border border-border-subtle rounded-action px-5 py-4 flex items-center gap-4">
 						<div className="size-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
 							<Icon as={CheckCircleSvg} size="md" color="info" aria-hidden />
 						</div>
@@ -232,7 +232,7 @@ export default function PayoutsPage() {
 					</div>
 
 					{/* Processing */}
-					<div className="bg-surface-card border border-border-subtle rounded-card px-5 py-4 flex items-center gap-4">
+					<div className="bg-surface-card border border-border-subtle rounded-action px-5 py-4 flex items-center gap-4">
 						<div className="size-11 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
 							<Icon as={ClockCircleSvg} size="md" color="warning" aria-hidden />
 						</div>
@@ -246,7 +246,7 @@ export default function PayoutsPage() {
 				</div>
 
 				{/* Payout History */}
-				<div className="bg-surface-card border border-border-subtle rounded-card overflow-hidden">
+				<div className="bg-surface-card border border-border-subtle rounded-action overflow-hidden">
 					{/* Section header */}
 					<div className="flex items-center justify-between gap-4 px-5 pt-5 pb-4 border-b border-border-subtle flex-wrap gap-y-3">
 						<h2 className="text-label-md font-semibold text-text-primary">Payout History</h2>

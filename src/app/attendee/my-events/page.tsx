@@ -90,7 +90,7 @@ function StatsBar({
 			{stats.map((s) => (
 				<div
 					key={s.label}
-					className="flex items-center gap-2.5 px-4 py-2 rounded-card bg-surface-card border border-border-subtle"
+					className="flex items-center gap-2.5 px-4 py-2 rounded-action bg-surface-card border border-border-subtle"
 				>
 					<span className={clsx("text-heading-sm font-extrabold", s.color)}>{s.value}</span>
 					<span className="text-label-sm text-text-secondary">{s.label}</span>
@@ -189,7 +189,7 @@ function MyEventCard({
 	}
 
 	return (
-		<div className="rounded-card border border-border-subtle bg-surface-card overflow-hidden flex flex-col">
+		<div className="rounded-action border border-border-subtle bg-surface-card overflow-hidden flex flex-col">
 			{/* Main row */}
 			<div className="flex min-h-44">
 				{/* Cover image */}
@@ -417,7 +417,7 @@ function EmptyEventsState() {
 	return (
 		<div className="flex flex-col gap-4">
 			{/* Hero banner */}
-			<div className="rounded-card border border-border-subtle bg-surface-card overflow-hidden">
+			<div className="rounded-action border border-border-subtle bg-surface-card overflow-hidden">
 				<div className="flex items-stretch min-h-52">
 					{/* Illustration side */}
 					<div className="relative w-64 shrink-0 overflow-hidden">
@@ -473,7 +473,7 @@ function EmptyEventsState() {
 			</div>
 
 			{/* Going with friends */}
-			<div className="rounded-card border border-border-subtle bg-surface-card p-4 flex items-center justify-between">
+			<div className="rounded-action border border-border-subtle bg-surface-card p-4 flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<AvatarStack />
 					<div>

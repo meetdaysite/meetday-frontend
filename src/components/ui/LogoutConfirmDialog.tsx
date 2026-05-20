@@ -33,7 +33,7 @@ export function LogoutConfirmDialog({ open, onClose, onConfirm }: LogoutConfirmD
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-			<div className="bg-surface-card rounded-card border border-border-default shadow-floating w-full max-w-sm p-6">
+			<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-sm p-6">
 				<h2 className="text-label-lg font-semibold text-text-primary mb-2">Sign out?</h2>
 				<p className="text-body-sm text-text-secondary mb-6">
 					You&apos;ll need to sign in again to manage your events and profile.

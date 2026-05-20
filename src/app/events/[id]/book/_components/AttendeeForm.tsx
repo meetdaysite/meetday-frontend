@@ -15,7 +15,7 @@ interface AttendeeFormProps {
 
 export function AttendeeForm({ slot, displayNumber, ticketName, onChange }: AttendeeFormProps) {
 	return (
-		<div className="rounded-card border border-border-subtle bg-surface-card p-5 flex flex-col gap-4">
+		<div className="rounded-action border border-border-subtle bg-surface-card p-5 flex flex-col gap-4">
 			{/* Header */}
 			<div className="flex items-center gap-2">
 				<div className="size-6 rounded-full bg-action-primary flex items-center justify-center shrink-0">

@@ -172,7 +172,7 @@ export default function InsightsPage() {
 				{/* Stat cards */}
 				<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
 					{STATS.map(stat => (
-						<div key={stat.label} className="bg-surface-card border border-border-subtle rounded-card px-5 py-4">
+						<div key={stat.label} className="bg-surface-card border border-border-subtle rounded-action px-5 py-4">
 							<div className={clsx("size-10 rounded-xl flex items-center justify-center mb-3", stat.bg)}>
 								<Icon as={stat.icon} size="md" color={stat.iconColor} aria-hidden />
 							</div>
@@ -189,7 +189,7 @@ export default function InsightsPage() {
 				{/* Charts row */}
 				<div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6">
 					{/* Monthly Revenue */}
-					<div className="bg-surface-card border border-border-subtle rounded-card px-5 py-4">
+					<div className="bg-surface-card border border-border-subtle rounded-action px-5 py-4">
 						<h2 className="text-label-md font-semibold text-text-primary mb-4">Monthly Revenue</h2>
 						<ResponsiveContainer width="100%" height={200}>
 							<BarChart data={MONTHLY_REVENUE} barCategoryGap="40%" margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
@@ -215,7 +215,7 @@ export default function InsightsPage() {
 					</div>
 
 					{/* Monthly Registrations */}
-					<div className="bg-surface-card border border-border-subtle rounded-card px-5 py-4">
+					<div className="bg-surface-card border border-border-subtle rounded-action px-5 py-4">
 						<h2 className="text-label-md font-semibold text-text-primary mb-4">Monthly Registrations</h2>
 						<ResponsiveContainer width="100%" height={200}>
 							<LineChart data={MONTHLY_REGISTRATIONS} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
@@ -248,7 +248,7 @@ export default function InsightsPage() {
 				</div>
 
 				{/* Top Performing Events */}
-				<div className="bg-surface-card border border-border-subtle rounded-card overflow-hidden">
+				<div className="bg-surface-card border border-border-subtle rounded-action overflow-hidden">
 					<div className="px-5 py-4 border-b border-border-subtle">
 						<h2 className="text-label-md font-semibold text-text-primary">Top Performing Events</h2>
 					</div>

@@ -71,7 +71,7 @@ export function OnboardingLeftPanel({ config }: Props) {
 			{/* Social proof badge (step 1 only) */}
 			{config.socialProof && (
 				<div
-					className="absolute z-20 flex items-start gap-3 bg-surface-inverse rounded-card shadow-floating px-4 py-3 max-w-72 border border-neutral-700"
+					className="absolute z-20 flex items-start gap-3 bg-surface-inverse rounded-action shadow-floating px-4 py-3 max-w-72 border border-neutral-700"
 					style={config.socialProof.position}
 				>
 					<Image

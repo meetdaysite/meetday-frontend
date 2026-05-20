@@ -142,7 +142,7 @@ function PhotoUpload({
 					onDragLeave={() => setDragging(false)}
 					onDrop={(e) => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files) }}
 					className={clsx(
-						"w-44 shrink-0 rounded-card border-2 border-dashed flex flex-col items-center justify-center gap-2 py-6 cursor-pointer transition-colors",
+						"w-44 shrink-0 rounded-action border-2 border-dashed flex flex-col items-center justify-center gap-2 py-6 cursor-pointer transition-colors",
 						dragging
 							? "border-action-primary bg-surface-brand-soft"
 							: "border-border-subtle bg-surface-secondary hover:border-action-primary",
@@ -399,7 +399,7 @@ function ReviewFormContent({
 
 				{/* Event not yet happened notice */}
 				{!isEventPast && (
-					<div className="mb-5 flex items-start gap-3 rounded-card border border-amber-200 bg-amber-50 px-4 py-3.5">
+					<div className="mb-5 flex items-start gap-3 rounded-action border border-amber-200 bg-amber-50 px-4 py-3.5">
 						<svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="shrink-0 mt-0.5 text-amber-500" aria-hidden>
 							<path d="M9 1.5L1.5 15h15L9 1.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
 							<path d="M9 7v4M9 13h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -418,7 +418,7 @@ function ReviewFormContent({
 				<div className="flex gap-6 items-start">
 					{/* ── Left: single card ── */}
 					<div className="flex-1 min-w-0">
-						<div className="rounded-card border border-border-subtle bg-surface-card overflow-hidden divide-y divide-border-subtle">
+						<div className="rounded-action border border-border-subtle bg-surface-card overflow-hidden divide-y divide-border-subtle">
 
 							{/* Event summary */}
 							<div className="flex gap-4 p-5">

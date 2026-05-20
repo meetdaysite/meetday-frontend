@@ -38,7 +38,7 @@ function TicketCard({
 }) {
 	const isFree = ticket.price === 0
 	return (
-		<div className="flex items-center justify-between gap-3 px-4 py-3 rounded-card border border-border-subtle bg-surface-canvas">
+		<div className="flex items-center justify-between gap-3 px-4 py-3 rounded-action border border-border-subtle bg-surface-canvas">
 			<div className="flex items-center gap-3 min-w-0">
 				<div className="size-7 rounded-full bg-surface-inverse text-text-inverse flex items-center justify-center text-caption font-bold shrink-0">
 					{String(index + 1).padStart(2, "0")}
@@ -106,7 +106,7 @@ function DraftForm({
 	}
 
 	return (
-		<div className="border border-border-subtle rounded-card bg-surface-card overflow-hidden">
+		<div className="border border-border-subtle rounded-action bg-surface-card overflow-hidden">
 			<div className="flex items-center gap-3 px-5 py-4 border-b border-border-subtle">
 				<p className="text-label-md font-semibold text-text-primary">
 					{isEditing ? "Edit Ticket" : "New Ticket"}
@@ -309,7 +309,7 @@ export function TicketListEditor({
 				<button
 					type="button"
 					onClick={openNew}
-					className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-card border border-dashed border-border-default text-text-secondary hover:border-border-strong hover:text-text-primary transition-colors text-label-sm font-medium"
+					className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-action border border-dashed border-border-default text-text-secondary hover:border-border-strong hover:text-text-primary transition-colors text-label-sm font-medium"
 				>
 					<Icon as={AddCircleSvg} size="sm" />
 					Add {tickets.length > 0 ? "another" : "a"} ticket type

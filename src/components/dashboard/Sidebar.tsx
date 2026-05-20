@@ -68,8 +68,8 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 
 			<div className="px-4 pb-5">
 				<Link href="/dashboard/create" onClick={onClose}>
-					<Button variant="primary" size="md" radius="pill" className="w-full">
-						+ Create new experience
+					<Button variant="primary" size="md" radius="md" className="w-full">
+						Create new experience
 					</Button>
 				</Link>
 			</div>
@@ -102,7 +102,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 			</nav>
 
 			<div className="px-4 pb-6 mt-4 flex flex-col gap-4">
-				<div className="bg-surface-brand-soft border border-border-brand rounded-card p-4">
+				<div className="bg-surface-brand-soft border border-border-brand rounded-action p-4">
 					<p className="text-label-sm font-semibold text-text-brand flex items-center gap-1.5">
 						<span className="size-2 rounded-full bg-red-500 shrink-0" />
 						{planLabel}
@@ -116,7 +116,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 					</button>
 				</div>
 
-				<div className="flex items-start justify-between gap-3 bg-orange-50 border border-orange-100 rounded-card px-4 py-3">
+				<div className="flex items-start justify-between gap-3 bg-orange-50 border border-orange-100 rounded-action px-4 py-3">
 					<div>
 						<p className="text-label-sm font-semibold text-text-primary">Refer & Earn</p>
 						<p className="text-caption text-text-secondary mt-0.5 mb-2">Invite others and earn when they publish.</p>

@@ -289,7 +289,7 @@ function AboutYouContent({ substep, q1Value, q2Value, onQ1Change, onQ2Change, on
 				</Button>
 			</div>
 
-			<div className="bg-border-subtle/10 p-6 rounded-card my-5 shadow-md">
+			<div className="bg-border-subtle/10 p-6 rounded-action my-5 shadow-md">
 				{/* Question */}
 				<p className="text-title-md font-bold text-text-primary mb-6">
 					{isQ1 ? "Your vibe at events?" : "You prefer going solo or with friends?"}
@@ -391,7 +391,7 @@ function SwipeStepContent({ onDone }: SwipeStepProps) {
 				{/* Background card — next */}
 				{nextInterest && (
 					<div
-						className="absolute rounded-card overflow-hidden shadow-card"
+						className="absolute rounded-action overflow-hidden shadow-card"
 						style={{
 							width: "220px",
 							height: "390px",
@@ -401,14 +401,14 @@ function SwipeStepContent({ onDone }: SwipeStepProps) {
 						}}
 					>
 						<Image src={nextInterest.image} alt="" fill sizes="220px" className="object-cover" aria-hidden />
-						<div className="absolute inset-0 bg-white/40 rounded-card" />
+						<div className="absolute inset-0 bg-white/40 rounded-action" />
 					</div>
 				)}
 
 				{/* Background card — prev */}
 				{prevInterest && (
 					<div
-						className="absolute rounded-card overflow-hidden shadow-card"
+						className="absolute rounded-action overflow-hidden shadow-card"
 						style={{
 							width: "220px",
 							height: "390px",
@@ -418,13 +418,13 @@ function SwipeStepContent({ onDone }: SwipeStepProps) {
 						}}
 					>
 						<Image src={prevInterest.image} alt="" fill sizes="220px" className="object-cover" aria-hidden />
-						<div className="absolute inset-0 bg-white/40 rounded-card" />
+						<div className="absolute inset-0 bg-white/40 rounded-action" />
 					</div>
 				)}
 
 				{/* Main card */}
 				<div
-					className="relative rounded-card overflow-hidden shadow-modal"
+					className="relative rounded-action overflow-hidden shadow-modal"
 					style={{ width: "250px", height: "445px", zIndex: 2 }}
 				>
 					<Image src={interest.image} alt={interest.name} fill sizes="250px" className="object-cover" priority />
@@ -495,7 +495,7 @@ function DoneContent({ onExplore }: { onExplore: () => void }) {
 				style={{ backgroundImage: "url('/assets/main_bg.svg')" }}
 			/>
 
-			<div className="relative z-10 bg-surface-canvas rounded-card shadow-md flex flex-col items-center justify-center text-center p-6 gap-6 border border-border-subtle">
+			<div className="relative z-10 bg-surface-canvas rounded-action shadow-md flex flex-col items-center justify-center text-center p-6 gap-6 border border-border-subtle">
 				<Icon as={CheckCircleSvg} color="success" className="size-20" />
 
 				<div className="flex flex-col gap-2 max-w-xs">

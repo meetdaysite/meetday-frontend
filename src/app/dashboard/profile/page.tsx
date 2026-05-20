@@ -61,7 +61,7 @@ function SectionCard({ icon, title, children, className, action }: {
 	action?: React.ReactNode
 }) {
 	return (
-		<div className={clsx("bg-surface-card border border-border-subtle rounded-card px-5 py-5", className)}>
+		<div className={clsx("bg-surface-card border border-border-subtle rounded-action px-5 py-5", className)}>
 			<div className="flex items-center justify-between gap-3 mb-5">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">

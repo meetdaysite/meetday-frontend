@@ -17,7 +17,7 @@ import CloseSvg from "@/icons/outlined/close.svg"
 function Toast({ message, type }: { message: string; type: "success" | "error" }) {
 	return (
 		<div className={clsx(
-			"fixed bottom-6 right-6 z-50 px-4 py-3 rounded-card shadow-floating text-label-sm font-medium",
+			"fixed bottom-6 right-6 z-50 px-4 py-3 rounded-action shadow-floating text-label-sm font-medium",
 			type === "success"
 				? "bg-surface-inverse text-text-inverse"
 				: "bg-status-error-bg text-status-error-text border border-red-200",
@@ -31,7 +31,7 @@ function Toast({ message, type }: { message: string; type: "success" | "error" }
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
-		<div className="bg-surface-card border border-border-subtle rounded-card px-5 py-5">
+		<div className="bg-surface-card border border-border-subtle rounded-action px-5 py-5">
 			<h2 className="text-label-lg font-semibold text-text-primary mb-5">{title}</h2>
 			{children}
 		</div>

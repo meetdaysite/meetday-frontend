@@ -16,7 +16,7 @@ export function VibeCard({ vibe, onClick, className, style }: VibeCardProps) {
 			onClick={onClick}
 			style={style}
 			className={clsx(
-				"relative shrink-0 w-44 h-52 sm:w-52 sm:h-60 md:w-56 md:h-64 rounded-card overflow-hidden group",
+				"relative shrink-0 w-44 h-52 sm:w-52 sm:h-60 md:w-56 md:h-64 rounded-action overflow-hidden group",
 				"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2",
 				"cursor-pointer",
 				className,
