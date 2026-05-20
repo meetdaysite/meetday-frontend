@@ -1,20 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { Button } from "./Button"
 
 interface LogoutConfirmDialogProps {
 	open: boolean
 	onClose: () => void
 	onConfirm: () => Promise<void>
-}
-
-function MiniSpinner() {
-	return (
-		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden className="animate-spin shrink-0">
-			<circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
-			<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-		</svg>
-	)
 }
 
 export function LogoutConfirmDialog({ open, onClose, onConfirm }: LogoutConfirmDialogProps) {
@@ -39,23 +31,18 @@ export function LogoutConfirmDialog({ open, onClose, onConfirm }: LogoutConfirmD
 					You&apos;ll need to sign in again to manage your events and profile.
 				</p>
 				<div className="flex gap-3 justify-end">
-					<button
-						type="button"
-						onClick={onClose}
-						disabled={loading}
-						className="px-4 py-2 text-label-sm font-medium text-text-primary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors disabled:opacity-50"
-					>
+					<Button variant="secondary" onClick={onClose} disabled={loading} size="sm" radius="md">
 						Cancel
-					</button>
-					<button
-						type="button"
+					</Button>
+					<Button
+						variant="primary"
 						onClick={handleConfirm}
 						disabled={loading}
-						className="flex items-center gap-2 px-4 py-2 text-label-sm font-semibold text-white bg-surface-inverse hover:opacity-90 rounded-action transition-opacity disabled:opacity-60"
+						size="sm"
+						radius="md"
 					>
-						{loading && <MiniSpinner />}
-						Sign Out
-					</button>
+						{loading ? "Signing out..." : "Sign Out"}
+					</Button>
 				</div>
 			</div>
 		</div>

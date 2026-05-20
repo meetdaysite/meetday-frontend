@@ -914,19 +914,18 @@ function Step4TicketTypes({
 
 	return (
 		<div className="flex flex-col gap-6">
-			<div className="flex items-start justify-between gap-4">
-				<div>
-					<h1 className="text-heading-sm font-semibold text-text-primary">Ticket Types</h1>
-					<p className="text-body-sm text-text-secondary mt-1">
-						Define pricing and capacity for your event tiers.
-					</p>
-				</div>
-			</div>
-
 			<TicketListEditor
 				tickets={tickets}
 				onChange={updated => setFormData(prev => ({ ...prev, tickets: updated }))}
 				listError={errors.tickets}
+				headerSlot={
+					<div>
+						<h1 className="text-heading-sm font-semibold text-text-primary">Ticket Types</h1>
+						<p className="text-body-sm text-text-secondary mt-1">
+							Define pricing and capacity for your event tiers.
+						</p>
+					</div>
+				}
 			/>
 
 			<div className="flex items-center justify-between pt-4">
@@ -1496,28 +1495,29 @@ export default function CreateExperiencePage() {
 							before you leave.
 						</p>
 						<div className="flex gap-3 justify-end">
-							<button
+							<Button
+								variant="secondary"
 								onClick={() => setShowLeaveConfirm(false)}
-								className="px-4 py-2 text-label-sm font-medium text-text-primary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors"
+								size="sm"
+								radius="md"
 							>
 								Cancel
-							</button>
-							<button
+							</Button>
+							<Button
+								variant="secondary"
 								onClick={() => {
 									localStorage.removeItem(DRAFT_KEY)
 									localStorage.removeItem(DRAFT_ID_KEY)
 									router.push("/dashboard/events")
 								}}
-								className="px-4 py-2 text-label-sm font-medium text-text-secondary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors"
+								size="sm"
+								radius="md"
 							>
 								Leave Anyway
-							</button>
-							<button
-								onClick={handleSaveAndLeave}
-								className="px-4 py-2 text-label-sm font-semibold text-white bg-surface-inverse hover:opacity-90 rounded-action transition-opacity"
-							>
-								Save Draft & Leave
-							</button>
+							</Button>
+							<Button variant="primary" onClick={handleSaveAndLeave} size="sm" radius="md">
+								Save Draft
+							</Button>
 						</div>
 					</div>
 				</div>

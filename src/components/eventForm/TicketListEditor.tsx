@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, type ReactNode } from "react"
 import { Icon } from "@/components/ui/Icon"
 import {
 	inpCls,
@@ -20,98 +20,54 @@ import type { Ticket } from "@/types/event"
 
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import AddCircleSvg from "@/icons/outlined/add-circle.svg"
-import PenSquareSvg from "@/icons/outlined/pen-square.svg"
 import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
 
-// ─── Ticket Card ──────────────────────────────────────────────────────────────
+// ─── Single Ticket Form ───────────────────────────────────────────────────────
 
-function TicketCard({
-	ticket,
+function TicketForm({
+	draft,
 	index,
-	onEdit,
+	canDelete,
+	showErrors,
+	onChange,
 	onDelete,
 }: {
-	ticket: Ticket
+	draft: DraftTicket
 	index: number
-	onEdit: () => void
+	canDelete: boolean
+	showErrors: boolean
+	onChange: (d: DraftTicket) => void
 	onDelete: () => void
 }) {
-	const isFree = ticket.price === 0
-	return (
-		<div className="flex items-center justify-between gap-3 px-4 py-3 rounded-action border border-border-subtle bg-surface-canvas">
-			<div className="flex items-center gap-3 min-w-0">
-				<div className="size-7 rounded-full bg-surface-inverse text-text-inverse flex items-center justify-center text-caption font-bold shrink-0">
-					{String(index + 1).padStart(2, "0")}
-				</div>
-				<div className="min-w-0">
-					<p className="text-label-sm font-semibold text-text-primary truncate">{ticket.name}</p>
-					<p className="text-caption text-text-secondary">
-						{isFree ? "Free" : `₹${ticket.price.toLocaleString("en-IN")}`}
-						{" · "}
-						{ticket.totalCapacity} seats
-						{" · "}
-						max {ticket.maxPerPerson}/person
-					</p>
-				</div>
-			</div>
-			<div className="flex items-center gap-1 shrink-0">
-				<button
-					type="button"
-					onClick={onEdit}
-					aria-label="Edit ticket"
-					className="size-8 flex items-center justify-center rounded-action text-text-secondary hover:text-text-primary hover:bg-surface-card-muted transition-colors"
-				>
-					<Icon as={PenSquareSvg} size="sm" />
-				</button>
-				<button
-					type="button"
-					onClick={onDelete}
-					aria-label="Delete ticket"
-					className="size-8 flex items-center justify-center rounded-action text-text-secondary hover:text-text-danger hover:bg-surface-danger-soft transition-colors"
-				>
-					<Icon as={TrashBinSvg} size="sm" />
-				</button>
-			</div>
-		</div>
-	)
-}
-
-// ─── Draft Form ───────────────────────────────────────────────────────────────
-
-function DraftForm({
-	draft,
-	onChange,
-	onSave,
-	onCancel,
-	isEditing,
-}: {
-	draft: DraftTicket
-	onChange: (d: DraftTicket) => void
-	onSave: () => void
-	onCancel: () => void
-	isEditing: boolean
-}) {
-	const [touched, setTouched] = useState(false)
-	const errors = touched ? validateDraftTicket(draft) : {}
+	const errors = showErrors ? validateDraftTicket(draft) : {}
 
 	function set(key: keyof DraftTicket, value: string) {
 		onChange({ ...draft, [key]: value })
 	}
 
-	function handleSave() {
-		setTouched(true)
-		if (Object.keys(validateDraftTicket(draft)).length === 0) {
-			onSave()
-		}
-	}
-
 	return (
 		<div className="border border-border-subtle rounded-action bg-surface-card overflow-hidden">
-			<div className="flex items-center gap-3 px-5 py-4 border-b border-border-subtle">
-				<p className="text-label-md font-semibold text-text-primary">
-					{isEditing ? "Edit Ticket" : "New Ticket"}
-				</p>
+			<div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-border-subtle bg-surface-canvas">
+				<div className="flex items-center gap-2.5">
+					<div className="size-7 rounded-full bg-surface-inverse text-text-inverse flex items-center justify-center text-caption font-bold shrink-0">
+						{String(index + 1).padStart(2, "0")}
+					</div>
+					<span className="text-label-sm font-semibold text-text-primary">
+						{draft.name.trim() || `Ticket ${index + 1}`}
+					</span>
+				</div>
+				{canDelete && (
+					<button
+						type="button"
+						onClick={onDelete}
+						aria-label="Remove ticket"
+						className="size-8 flex items-center justify-center rounded-action text-text-secondary hover:text-text-danger hover:bg-surface-danger-soft transition-colors"
+					>
+						<Icon as={TrashBinSvg} size="sm" />
+					</button>
+				)}
 			</div>
+
 			<div className="p-5 flex flex-col gap-4">
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div className="flex flex-col gap-1.5">
@@ -120,7 +76,7 @@ function DraftForm({
 							type="text"
 							value={draft.name}
 							onChange={(e) => set("name", e.target.value)}
-							placeholder="General Admission"
+							placeholder="e.g. General Admission"
 							className={inpCls(!!errors.name)}
 						/>
 						<ErrMsg msg={errors.name} />
@@ -206,23 +162,6 @@ function DraftForm({
 						<ErrMsg msg={errors.saleEndDate} />
 					</div>
 				</div>
-
-				<div className="flex items-center justify-end gap-3 pt-1">
-					<button
-						type="button"
-						onClick={onCancel}
-						className="px-4 h-(--size-input-md) text-label-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
-					>
-						Cancel
-					</button>
-					<button
-						type="button"
-						onClick={handleSave}
-						className="flex items-center gap-2 px-5 h-(--size-input-md) bg-surface-inverse text-text-inverse rounded-action text-label-sm font-medium hover:opacity-90 transition-opacity"
-					>
-						{isEditing ? "Save Changes" : "Add Ticket"}
-					</button>
-				</div>
 			</div>
 		</div>
 	)
@@ -234,87 +173,65 @@ export function TicketListEditor({
 	tickets,
 	onChange,
 	listError,
+	headerSlot,
 }: {
 	tickets: Ticket[]
 	onChange: (tickets: Ticket[]) => void
 	listError?: string
+	headerSlot?: ReactNode
 }) {
-	const [draft, setDraft] = useState<DraftTicket | null>(null)
-	const [editIndex, setEditIndex] = useState<number | null>(null)
-
-	const openNew = useCallback(() => {
-		setDraft({ ...emptyDraftTicket })
-		setEditIndex(null)
-	}, [])
-
-	const openEdit = useCallback(
-		(index: number) => {
-			setDraft(ticketToDraft(tickets[index]))
-			setEditIndex(index)
-		},
-		[tickets],
+	const [drafts, setDrafts] = useState<DraftTicket[]>(() =>
+		tickets.length > 0 ? tickets.map(ticketToDraft) : [{ ...emptyDraftTicket }],
 	)
 
-	function handleSave() {
-		if (!draft) return
-		const ticket = draftTicketToTicket(draft)
-		if (editIndex !== null) {
-			const updated = tickets.map((t, i) => (i === editIndex ? ticket : t))
-			onChange(updated)
-		} else {
-			onChange([...tickets, ticket])
-		}
-		setDraft(null)
-		setEditIndex(null)
+	function sync(next: DraftTicket[]) {
+		setDrafts(next)
+		onChange(
+			next
+				.filter((d) => Object.keys(validateDraftTicket(d)).length === 0)
+				.map(draftTicketToTicket),
+		)
 	}
 
-	function handleDelete(index: number) {
-		onChange(tickets.filter((_, i) => i !== index))
-		if (editIndex === index) {
-			setDraft(null)
-			setEditIndex(null)
-		}
+	function updateDraft(index: number, draft: DraftTicket) {
+		sync(drafts.map((d, i) => (i === index ? draft : d)))
 	}
 
-	function handleCancel() {
-		setDraft(null)
-		setEditIndex(null)
+	function addTicket() {
+		sync([...drafts, { ...emptyDraftTicket }])
+	}
+
+	function removeTicket(index: number) {
+		sync(drafts.filter((_, i) => i !== index))
 	}
 
 	return (
-		<div className="flex flex-col gap-3">
-			{tickets.length > 0 && (
-				<div className="flex flex-col gap-2">
-					{tickets.map((ticket, i) => (
-						<TicketCard
-							key={i}
-							ticket={ticket}
-							index={i}
-							onEdit={() => openEdit(i)}
-							onDelete={() => handleDelete(i)}
-						/>
-					))}
-				</div>
-			)}
-
-			{draft !== null ? (
-				<DraftForm
-					draft={draft}
-					onChange={setDraft}
-					onSave={handleSave}
-					onCancel={handleCancel}
-					isEditing={editIndex !== null}
-				/>
-			) : (
+		<div className="flex flex-col gap-4">
+			<div className="flex items-start justify-between gap-4">
+				{headerSlot ?? <span />}
 				<button
 					type="button"
-					onClick={openNew}
-					className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-action border border-dashed border-border-default text-text-secondary hover:border-border-strong hover:text-text-primary transition-colors text-label-sm font-medium"
+					onClick={addTicket}
+					className="flex items-center gap-2 px-4 h-(--size-input-md) bg-surface-inverse text-text-inverse rounded-action text-label-sm font-medium hover:opacity-90 transition-opacity shrink-0"
 				>
-					<Icon as={AddCircleSvg} size="sm" />
-					Add {tickets.length > 0 ? "another" : "a"} ticket type
+					<Icon as={AddCircleSvg} size="sm" color="inverse" />
+					Add Ticket
 				</button>
-			)}
+			</div>
+
+			<div className="flex flex-col gap-4">
+				{drafts.map((draft, i) => (
+					<TicketForm
+						key={i}
+						draft={draft}
+						index={i}
+						canDelete={i > 0}
+						showErrors={!!listError}
+						onChange={(d) => updateDraft(i, d)}
+						onDelete={() => removeTicket(i)}
+					/>
+				))}
+			</div>
 
 			{listError && <p className="text-caption text-text-danger">{listError}</p>}
 		</div>
