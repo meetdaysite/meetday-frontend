@@ -11,6 +11,7 @@ export interface Ticket {
 	name: string
 	price: number
 	totalCapacity: number
+	soldCount?: number
 	maxPerPerson: number
 	description?: string
 	saleStartDate?: string

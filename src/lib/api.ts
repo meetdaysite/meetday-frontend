@@ -400,6 +400,36 @@ export async function getCheckInStats(eventId: string): Promise<CheckInStats> {
 	return data.data
 }
 
+export type EventAttendee = {
+	firstName: string
+	lastName: string
+	ticketType: string
+	bookingDate: string
+	bookingId: string
+	amountPaid: string
+	isCheckedIn: boolean
+	checkedInAt: string | null
+}
+
+export type EventAttendeesResponse = {
+	attendees: EventAttendee[]
+	total: number
+	page: number
+	limit: number
+}
+
+export async function getEventAttendees(
+	eventId: string,
+	page = 1,
+	limit = 20,
+): Promise<EventAttendeesResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: EventAttendeesResponse }>(
+		`/events/me/${eventId}/attendees`,
+		{ params: { page, limit } },
+	)
+	return data.data
+}
+
 // ─── Public events ────────────────────────────────────────────────────────────
 
 import type { ExploreEventsResponse, PublicEventDetails } from "@/types/attendee"

@@ -7,8 +7,8 @@ import clsx from "clsx"
 import { toast } from "sonner"
 import { useEventStore } from "@/store/eventStore"
 import { storageUrl } from "@/lib/uploadMedia"
-import { createScannerSession, getCheckInStats } from "@/lib/api"
-import type { CheckInStats } from "@/lib/api"
+import { createScannerSession, getCheckInStats, getEventAttendees } from "@/lib/api"
+import type { CheckInStats, EventAttendee, EventAttendeesResponse } from "@/lib/api"
 import type { Event, ApiEventStatus } from "@/types/event"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
@@ -27,12 +27,12 @@ import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
 // ─── Status config ────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG: Record<ApiEventStatus, { label: string; badge: string }> = {
-	DRAFT:        { label: "Draft",        badge: "bg-neutral-100/95 text-neutral-700 backdrop-blur-sm shadow-sm" },
+	DRAFT: { label: "Draft", badge: "bg-neutral-100/95 text-neutral-700 backdrop-blur-sm shadow-sm" },
 	UNDER_REVIEW: { label: "Under Review", badge: "bg-blue-50/95 text-blue-700 backdrop-blur-sm shadow-sm" },
-	REJECTED:     { label: "Rejected",     badge: "bg-red-50/95 text-red-700 backdrop-blur-sm shadow-sm" },
-	PUBLISHED:    { label: "Published",    badge: "bg-green-50/95 text-green-700 backdrop-blur-sm shadow-sm" },
-	CANCELLED:    { label: "Cancelled",    badge: "bg-orange-50/95 text-orange-700 backdrop-blur-sm shadow-sm" },
-	COMPLETED:    { label: "Completed",    badge: "bg-neutral-900/90 text-white backdrop-blur-sm shadow-sm" },
+	REJECTED: { label: "Rejected", badge: "bg-red-50/95 text-red-700 backdrop-blur-sm shadow-sm" },
+	PUBLISHED: { label: "Published", badge: "bg-green-50/95 text-green-700 backdrop-blur-sm shadow-sm" },
+	CANCELLED: { label: "Cancelled", badge: "bg-orange-50/95 text-orange-700 backdrop-blur-sm shadow-sm" },
+	COMPLETED: { label: "Completed", badge: "bg-neutral-900/90 text-white backdrop-blur-sm shadow-sm" },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -58,9 +58,17 @@ function refundLabel(policy?: Event["refundPolicy"]): string {
 export default function EventDetailPage() {
 	const { id } = useParams<{ id: string }>()
 	const router = useRouter()
-	const { currentEvent, currentEventLoading, currentEventError, fetchMyEventDetail, submitForReview, cancelEvent } =
-		useEventStore()
+	const {
+		currentEvent,
+		currentEventLoading,
+		currentEventError,
+		fetchMyEventDetail,
+		submitForReview,
+		cancelEvent,
+	} = useEventStore()
 	const [checkInStats, setCheckInStats] = useState<CheckInStats | null>(null)
+	const [attendeesData, setAttendeesData] = useState<EventAttendeesResponse | null>(null)
+	const [attendeesPage, setAttendeesPage] = useState(1)
 
 	useEffect(() => {
 		fetchMyEventDetail(id)
@@ -69,8 +77,18 @@ export default function EventDetailPage() {
 	useEffect(() => {
 		if (!currentEvent) return
 		if (currentEvent.status !== "PUBLISHED" && currentEvent.status !== "COMPLETED") return
-		getCheckInStats(id).then(setCheckInStats).catch(() => {})
+		getCheckInStats(id)
+			.then(setCheckInStats)
+			.catch(() => {})
 	}, [id, currentEvent])
+
+	useEffect(() => {
+		if (!currentEvent) return
+		if (currentEvent.status !== "PUBLISHED" && currentEvent.status !== "COMPLETED") return
+		getEventAttendees(id, attendeesPage, 20)
+			.then(setAttendeesData)
+			.catch(() => {})
+	}, [id, currentEvent, attendeesPage])
 
 	if (currentEventLoading) return <DetailSkeleton />
 
@@ -92,9 +110,9 @@ export default function EventDetailPage() {
 
 	const event = currentEvent
 	const cfg = STATUS_CONFIG[event.status]
-	const cover = event.media?.find((m) => m.type === "COVER")
+	const cover = event.media?.find(m => m.type === "COVER")
 	const coverUrl = cover ? (cover.url ?? storageUrl(cover.key ?? "")) : ""
-	const galleryImages = (event.media?.filter((m) => m.type !== "COVER") ?? [])
+	const galleryImages = (event.media?.filter(m => m.type !== "COVER") ?? [])
 		.slice()
 		.sort((a, b) => a.order - b.order)
 
@@ -117,13 +135,24 @@ export default function EventDetailPage() {
 					<div className="relative w-full aspect-3/1 min-h-36 rounded-action overflow-hidden mb-5 bg-surface-card-muted">
 						{coverUrl ? (
 							// eslint-disable-next-line @next/next/no-img-element
-							<img src={coverUrl} alt={event.title ?? ""} className="w-full h-full object-cover" loading="eager" fetchPriority="high" />
+							<img
+								src={coverUrl}
+								alt={event.title ?? ""}
+								className="w-full h-full object-cover"
+								loading="eager"
+								fetchPriority="high"
+							/>
 						) : (
 							<div className="w-full h-full bg-linear-to-br from-surface-card-muted to-border-default" />
 						)}
 						<div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
 						<div className="absolute bottom-4 left-4 sm:bottom-5 sm:left-6 right-4">
-							<span className={clsx("inline-block text-caption font-semibold px-2.5 py-1 rounded-badge mb-2", cfg.badge)}>
+							<span
+								className={clsx(
+									"inline-block text-caption font-semibold px-2.5 py-1 rounded-badge mb-2",
+									cfg.badge,
+								)}
+							>
 								{cfg.label}
 							</span>
 							<h1 className="text-title-md sm:text-heading-sm font-bold text-white leading-tight mb-1">
@@ -138,7 +167,9 @@ export default function EventDetailPage() {
 						<div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-action mb-5">
 							<AlertIcon className="text-red-500 shrink-0 mt-0.5" />
 							<div>
-								<p className="text-label-sm font-semibold text-red-700 mb-0.5">Event Rejected</p>
+								<p className="text-label-sm font-semibold text-red-700 mb-0.5">
+									Event Rejected
+								</p>
 								<p className="text-body-sm text-red-600">{event.rejectionReason}</p>
 							</div>
 						</div>
@@ -149,7 +180,9 @@ export default function EventDetailPage() {
 						<div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-action mb-5">
 							<AlertIcon className="text-orange-500 shrink-0 mt-0.5" />
 							<div>
-								<p className="text-label-sm font-semibold text-orange-700 mb-0.5">Cancellation Reason</p>
+								<p className="text-label-sm font-semibold text-orange-700 mb-0.5">
+									Cancellation Reason
+								</p>
 								<p className="text-body-sm text-orange-600">{event.cancellationReason}</p>
 							</div>
 						</div>
@@ -166,7 +199,11 @@ export default function EventDetailPage() {
 						<StatCard
 							icon={<CheckInIcon />}
 							label="Checked In"
-							value={checkInStats ? `${checkInStats.checkedIn}/${checkInStats.totalAttendees}` : "—"}
+							value={
+								checkInStats
+									? `${checkInStats.checkedIn}/${checkInStats.totalAttendees}`
+									: "—"
+							}
 						/>
 					</div>
 
@@ -211,14 +248,19 @@ export default function EventDetailPage() {
 							)}
 
 							{/* Experience Details */}
-							{(event.whatToExpect?.length || event.whoShouldAttend?.length) ? (
+							{event.whatToExpect?.length || event.whoShouldAttend?.length ? (
 								<Section title="Experience Details">
 									{event.whatToExpect && event.whatToExpect.length > 0 && (
 										<div className="mb-4">
-											<p className="text-label-sm font-semibold text-text-primary mb-2">What to Expect</p>
+											<p className="text-label-sm font-semibold text-text-primary mb-2">
+												What to Expect
+											</p>
 											<ul className="flex flex-col gap-1.5">
-												{event.whatToExpect.map((item) => (
-													<li key={item} className="flex items-start gap-2 text-body-sm text-text-secondary">
+												{event.whatToExpect.map(item => (
+													<li
+														key={item}
+														className="flex items-start gap-2 text-body-sm text-text-secondary"
+													>
 														<span className="mt-1.5 size-1.5 rounded-full bg-text-brand shrink-0" />
 														{item}
 													</li>
@@ -228,10 +270,15 @@ export default function EventDetailPage() {
 									)}
 									{event.whoShouldAttend && event.whoShouldAttend.length > 0 && (
 										<div>
-											<p className="text-label-sm font-semibold text-text-primary mb-2">Who Should Attend</p>
+											<p className="text-label-sm font-semibold text-text-primary mb-2">
+												Who Should Attend
+											</p>
 											<ul className="flex flex-col gap-1.5">
-												{event.whoShouldAttend.map((item) => (
-													<li key={item} className="flex items-start gap-2 text-body-sm text-text-secondary">
+												{event.whoShouldAttend.map(item => (
+													<li
+														key={item}
+														className="flex items-start gap-2 text-body-sm text-text-secondary"
+													>
 														<span className="mt-1.5 size-1.5 rounded-full bg-text-brand shrink-0" />
 														{item}
 													</li>
@@ -242,29 +289,17 @@ export default function EventDetailPage() {
 								</Section>
 							) : null}
 
-							{/* Ticket Types */}
-							{event.tickets && event.tickets.length > 0 && (
-								<Section title="Ticket Types">
-									<div className="flex flex-col gap-4">
-										{event.tickets.map((ticket) => (
-											<div key={ticket.name}>
-												<div className="flex items-center justify-between mb-1">
-													<span className="text-label-sm font-medium text-text-primary">{ticket.name}</span>
-													<span className="text-label-sm font-semibold text-text-primary">
-														{ticket.price === 0 ? "Free" : `₹${ticket.price}`}
-													</span>
-												</div>
-												<div className="flex items-center justify-between mb-1.5">
-													<span className="text-caption text-text-muted">0 sold</span>
-													<span className="text-caption text-text-muted">{ticket.totalCapacity} capacity</span>
-												</div>
-												<div className="h-1.5 bg-surface-card-muted rounded-full overflow-hidden">
-													<div className="h-full bg-action-primary rounded-full w-0" />
-												</div>
-											</div>
-										))}
-									</div>
-								</Section>
+							{/* Attendees */}
+							{(event.status === "PUBLISHED" || event.status === "COMPLETED") && (
+								<AttendeesSection
+									data={attendeesData}
+									loading={attendeesData === null}
+									page={attendeesPage}
+									onPageChange={(p) => {
+										setAttendeesData(null)
+										setAttendeesPage(p)
+									}}
+								/>
 							)}
 						</div>
 
@@ -290,24 +325,34 @@ export default function EventDetailPage() {
 
 							{/* Date & Location */}
 							<div className="bg-surface-card border border-border-subtle rounded-action p-5 flex flex-col gap-3">
-								<p className="text-label-sm font-semibold text-text-primary">Date & Location</p>
+								<p className="text-label-sm font-semibold text-text-primary">
+									Date & Location
+								</p>
 								<div className="flex items-start gap-3">
 									<CalendarIcon className="mt-0.5 shrink-0 text-text-brand" />
 									<div>
-										<p className="text-label-sm font-medium text-text-primary">{formatDate(event.eventDate)}</p>
+										<p className="text-label-sm font-medium text-text-primary">
+											{formatDate(event.eventDate)}
+										</p>
 										<p className="text-caption text-text-muted">
 											{event.startTime && event.endTime
 												? `${event.startTime} – ${event.endTime}`
-												: event.startTime ?? "—"}
+												: (event.startTime ?? "—")}
 										</p>
 									</div>
 								</div>
 								<div className="flex items-start gap-3">
 									<LocationIcon className="mt-0.5 shrink-0 text-text-brand" />
 									<div>
-										<p className="text-label-sm font-medium text-text-primary">{event.venueName ?? "—"}</p>
-										<p className="text-caption text-text-muted">{event.fullAddress ?? "—"}</p>
-										{event.city && <p className="text-caption text-text-muted">{event.city}</p>}
+										<p className="text-label-sm font-medium text-text-primary">
+											{event.venueName ?? "—"}
+										</p>
+										<p className="text-caption text-text-muted">
+											{event.fullAddress ?? "—"}
+										</p>
+										{event.city && (
+											<p className="text-caption text-text-muted">{event.city}</p>
+										)}
 									</div>
 								</div>
 							</div>
@@ -326,10 +371,15 @@ export default function EventDetailPage() {
 									<DetailRow label="Refund" value={refundLabel(event.refundPolicy)} />
 									{event.tags && event.tags.length > 0 && (
 										<div className="flex items-start justify-between gap-3">
-											<span className="text-caption text-text-muted shrink-0">Tags</span>
+											<span className="text-caption text-text-muted shrink-0">
+												Tags
+											</span>
 											<div className="flex flex-wrap justify-end gap-1">
-												{event.tags.map((tag) => (
-													<span key={tag} className="text-caption px-2 py-0.5 bg-surface-card-muted text-text-secondary rounded-badge">
+												{event.tags.map(tag => (
+													<span
+														key={tag}
+														className="text-caption px-2 py-0.5 bg-surface-card-muted text-text-secondary rounded-badge"
+													>
 														{tag}
 													</span>
 												))}
@@ -338,6 +388,48 @@ export default function EventDetailPage() {
 									)}
 								</div>
 							</div>
+
+							{/* Ticket Types */}
+							{event.tickets && event.tickets.length > 0 && (
+								<div className="bg-surface-card border border-border-subtle rounded-action p-5">
+									<p className="text-label-sm font-semibold text-text-primary mb-4">
+										Ticket Types
+									</p>
+									<div className="flex flex-col gap-4">
+										{event.tickets.map(ticket => (
+											<div key={ticket.name}>
+												<div className="flex items-center justify-between mb-1">
+													<span className="text-label-sm font-medium text-text-primary">
+														{ticket.name}
+													</span>
+													<span className="text-label-sm font-semibold text-text-primary">
+														{ticket.price === 0 ? "Free" : `₹${ticket.price}`}
+													</span>
+												</div>
+												<div className="flex items-center justify-between mb-1.5">
+													<span className="text-caption text-text-muted">
+														{ticket.soldCount ?? 0} sold
+													</span>
+													<span className="text-caption text-text-muted">
+														{ticket.totalCapacity} capacity
+													</span>
+												</div>
+												<div className="h-1.5 bg-surface-card-muted rounded-full overflow-hidden">
+													<div
+														className="h-full bg-action-primary rounded-full"
+														style={{
+															width:
+																ticket.totalCapacity > 0
+																	? `${Math.min(100, ((ticket.soldCount ?? 0) / ticket.totalCapacity) * 100)}%`
+																	: "0%",
+														}}
+													/>
+												</div>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
 						</div>
 					</div>
 				</div>
@@ -397,7 +489,8 @@ function EventActions({
 		case "UNDER_REVIEW":
 			return (
 				<p className="text-body-sm text-text-muted">
-					Your event is currently under review. We&apos;ll notify you once it&apos;s approved or if changes are needed.
+					Your event is currently under review. We&apos;ll notify you once it&apos;s approved or if
+					changes are needed.
 				</p>
 			)
 
@@ -428,10 +521,7 @@ function EventActions({
 						</ActionButton>
 					</div>
 					{showAddStaffModal && (
-						<AddStaffModal
-							eventId={event.id}
-							onClose={() => setShowAddStaffModal(false)}
-						/>
+						<AddStaffModal eventId={event.id} onClose={() => setShowAddStaffModal(false)} />
 					)}
 					{showCancelModal && (
 						<CancelModal
@@ -506,7 +596,8 @@ function CancelModal({
 				<div>
 					<p className="text-label-md font-semibold text-text-primary mb-1">Cancel this event?</p>
 					<p className="text-body-sm text-text-secondary">
-						This will cancel a published event and notify all registered attendees. This action cannot be undone.
+						This will cancel a published event and notify all registered attendees. This action
+						cannot be undone.
 					</p>
 				</div>
 				<div className="flex flex-col gap-1.5">
@@ -517,7 +608,7 @@ function CancelModal({
 						ref={inputRef}
 						rows={3}
 						value={reason}
-						onChange={(e) => setReason(e.target.value)}
+						onChange={e => setReason(e.target.value)}
 						placeholder="e.g. Venue became unavailable due to unforeseen circumstances."
 						className="w-full px-4 py-3 rounded-input border border-border-default bg-surface-canvas text-text-primary placeholder:text-text-muted text-sm resize-none focus:outline-none focus:border-border-focused transition-colors"
 					/>
@@ -546,13 +637,7 @@ function CancelModal({
 
 // ─── Add staff modal ──────────────────────────────────────────────────────────
 
-function AddStaffModal({
-	eventId,
-	onClose,
-}: {
-	eventId: string
-	onClose: () => void
-}) {
+function AddStaffModal({ eventId, onClose }: { eventId: string; onClose: () => void }) {
 	const [name, setName] = useState("")
 	const [email, setEmail] = useState("")
 	const [phone, setPhone] = useState("")
@@ -602,7 +687,7 @@ function AddStaffModal({
 							ref={nameRef}
 							type="text"
 							value={name}
-							onChange={(e) => setName(e.target.value)}
+							onChange={e => setName(e.target.value)}
 							placeholder="e.g. Rahul Sharma"
 							className="w-full px-4 py-3 rounded-input border border-border-default bg-surface-canvas text-text-primary placeholder:text-text-muted text-sm focus:outline-none focus:border-border-focused transition-colors"
 						/>
@@ -614,7 +699,7 @@ function AddStaffModal({
 						<input
 							type="email"
 							value={email}
-							onChange={(e) => setEmail(e.target.value)}
+							onChange={e => setEmail(e.target.value)}
 							placeholder="e.g. rahul@example.com"
 							className="w-full px-4 py-3 rounded-input border border-border-default bg-surface-canvas text-text-primary placeholder:text-text-muted text-sm focus:outline-none focus:border-border-focused transition-colors"
 						/>
@@ -624,7 +709,7 @@ function AddStaffModal({
 						<input
 							type="tel"
 							value={phone}
-							onChange={(e) => setPhone(e.target.value)}
+							onChange={e => setPhone(e.target.value)}
 							placeholder="e.g. +919876543210"
 							className="w-full px-4 py-3 rounded-input border border-border-default bg-surface-canvas text-text-primary placeholder:text-text-muted text-sm focus:outline-none focus:border-border-focused transition-colors"
 						/>
@@ -634,7 +719,7 @@ function AddStaffModal({
 						<input
 							type="text"
 							value={label}
-							onChange={(e) => setLabel(e.target.value)}
+							onChange={e => setLabel(e.target.value)}
 							placeholder="e.g. Gate A"
 							className="w-full px-4 py-3 rounded-input border border-border-default bg-surface-canvas text-text-primary placeholder:text-text-muted text-sm focus:outline-none focus:border-border-focused transition-colors"
 						/>
@@ -672,14 +757,17 @@ function DetailSkeleton() {
 				<div className="h-4 w-32 rounded bg-surface-card-muted animate-pulse mb-5" />
 				<div className="w-full aspect-3/1 min-h-36 rounded-action bg-surface-card-muted animate-pulse mb-5" />
 				<div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
-					{[0, 1, 2].map((i) => (
+					{[0, 1, 2].map(i => (
 						<div key={i} className="h-20 rounded-action bg-surface-card-muted animate-pulse" />
 					))}
 				</div>
 				<div className="grid grid-cols-1 lg:grid-cols-[1fr_288px] gap-6">
 					<div className="flex flex-col gap-6">
-						{[0, 1].map((i) => (
-							<div key={i} className="h-40 rounded-action bg-surface-card-muted animate-pulse" />
+						{[0, 1].map(i => (
+							<div
+								key={i}
+								className="h-40 rounded-action bg-surface-card-muted animate-pulse"
+							/>
 						))}
 					</div>
 					<div className="flex flex-col gap-4">
@@ -743,8 +831,10 @@ function ActionButton({
 			disabled={loading}
 			className={clsx(
 				"flex items-center justify-center gap-2 h-(--size-action-md) px-4 text-label-sm font-semibold rounded-action transition-colors disabled:opacity-60",
-				variant === "primary" && "bg-action-primary text-action-primary-text hover:bg-action-primary-hover",
-				variant === "secondary" && "border border-action-secondary-border bg-action-secondary text-action-secondary-text hover:bg-action-secondary-hover",
+				variant === "primary" &&
+					"bg-action-primary text-action-primary-text hover:bg-action-primary-hover",
+				variant === "secondary" &&
+					"border border-action-secondary-border bg-action-secondary text-action-secondary-text hover:bg-action-secondary-hover",
 				variant === "danger" && "border border-red-200 bg-red-50 text-red-600 hover:bg-red-100",
 			)}
 		>
@@ -754,24 +844,176 @@ function ActionButton({
 	)
 }
 
+// ─── Attendees section ────────────────────────────────────────────────────────
+
+function AttendeesSection({
+	data,
+	loading,
+	page,
+	onPageChange,
+}: {
+	data: EventAttendeesResponse | null
+	loading: boolean
+	page: number
+	onPageChange: (p: number) => void
+}) {
+	const totalPages = data ? Math.ceil(data.total / data.limit) : 1
+
+	return (
+		<div className="bg-surface-card border border-border-subtle rounded-action p-5">
+			<div className="flex items-center justify-between mb-4">
+				<h2 className="text-label-md font-semibold text-text-primary">
+					Attendees
+					{data && (
+						<span className="ml-2 text-caption font-normal text-text-muted">({data.total})</span>
+					)}
+				</h2>
+			</div>
+
+			{loading && !data && (
+				<div className="flex flex-col gap-2">
+					{[0, 1, 2].map(i => (
+						<div key={i} className="h-14 rounded-action bg-surface-card-muted animate-pulse" />
+					))}
+				</div>
+			)}
+
+			{!loading && data && data.attendees.length === 0 && (
+				<p className="text-body-sm text-text-muted text-center py-6">No attendees yet.</p>
+			)}
+
+			{data && data.attendees.length > 0 && (
+				<>
+					{/* Table header */}
+					<div className="hidden sm:grid grid-cols-[1fr_1fr_120px_80px] gap-3 px-3 py-2 mb-1">
+						<span className="text-caption font-semibold text-text-muted uppercase tracking-wide">
+							Name
+						</span>
+						<span className="text-caption font-semibold text-text-muted uppercase tracking-wide">
+							Ticket
+						</span>
+						<span className="text-caption font-semibold text-text-muted uppercase tracking-wide">
+							Booking ID
+						</span>
+						<span className="text-caption font-semibold text-text-muted uppercase tracking-wide text-right">
+							Check-in
+						</span>
+					</div>
+
+					<div className="flex flex-col divide-y divide-border-subtle">
+						{data.attendees.map((a, i) => (
+							<AttendeeRow key={`${a.bookingId}-${i}`} attendee={a} />
+						))}
+					</div>
+
+					{totalPages > 1 && (
+						<div className="flex items-center justify-between mt-4 pt-4 border-t border-border-subtle">
+							<span className="text-caption text-text-muted">
+								Page {page} of {totalPages}
+							</span>
+							<div className="flex items-center gap-2">
+								<button
+									onClick={() => onPageChange(page - 1)}
+									disabled={page === 1 || loading}
+									className="px-3 py-1.5 text-caption font-medium border border-border-default rounded-action hover:bg-surface-card-muted disabled:opacity-40 transition-colors"
+								>
+									Prev
+								</button>
+								<button
+									onClick={() => onPageChange(page + 1)}
+									disabled={page >= totalPages || loading}
+									className="px-3 py-1.5 text-caption font-medium border border-border-default rounded-action hover:bg-surface-card-muted disabled:opacity-40 transition-colors"
+								>
+									Next
+								</button>
+							</div>
+						</div>
+					)}
+				</>
+			)}
+		</div>
+	)
+}
+
+function AttendeeRow({ attendee: a }: { attendee: EventAttendee }) {
+	return (
+		<div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_120px_80px] gap-1 sm:gap-3 px-3 py-3">
+			<div>
+				<p className="text-label-sm font-medium text-text-primary">
+					{a.firstName} {a.lastName}
+				</p>
+				<p className="text-caption text-text-muted sm:hidden">{a.ticketType}</p>
+			</div>
+			<p className="hidden sm:block text-body-sm text-text-secondary truncate self-center">
+				{a.ticketType}
+			</p>
+			<p className="text-caption text-text-muted self-center font-mono">{a.bookingId}</p>
+			<div className="sm:text-right self-center">
+				{a.isCheckedIn ? (
+					<span className="inline-flex items-center gap-1 text-caption font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-badge">
+						<span className="size-1.5 rounded-full bg-green-500 shrink-0" />
+						In
+					</span>
+				) : (
+					<span className="inline-flex items-center gap-1 text-caption font-semibold text-text-muted bg-surface-card-muted px-2 py-0.5 rounded-badge">
+						<span className="size-1.5 rounded-full bg-border-default shrink-0" />
+						Pending
+					</span>
+				)}
+			</div>
+		</div>
+	)
+}
+
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
-function ArrowLeftIcon() { return <ArrowLeftSvg className="size-4" aria-hidden /> }
-function AlertIcon({ className }: { className?: string }) { return <DangerTriangleSvg className={clsx("size-4.5", className)} aria-hidden /> }
-function PeopleStatIcon() { return <UsersGroupSvg className="size-4" aria-hidden /> }
-function DollarIcon() { return <DollarSvg className="size-4" aria-hidden /> }
-function CheckInIcon() { return <CheckCircleSvg className="size-4" aria-hidden /> }
-function CalendarIcon({ className }: { className?: string }) { return <CalendarSvg className={clsx("size-4.5", className)} aria-hidden /> }
-function LocationIcon({ className }: { className?: string }) { return <MapPointRotateSvg className={clsx("size-4.5", className)} aria-hidden /> }
-function SendIcon() { return <PlaneSvg className="size-4" aria-hidden /> }
-function PenIcon() { return <PenSvg className="size-4" aria-hidden /> }
-function PeopleActionIcon() { return <UsersGroup2Svg className="size-4" aria-hidden /> }
-function CancelIcon() { return <CloseCircleSvg className="size-4" aria-hidden /> }
-function ScannerStaffIcon() { return <UserCheckSvg className="size-4" aria-hidden /> }
+function ArrowLeftIcon() {
+	return <ArrowLeftSvg className="size-4" aria-hidden />
+}
+function AlertIcon({ className }: { className?: string }) {
+	return <DangerTriangleSvg className={clsx("size-4.5", className)} aria-hidden />
+}
+function PeopleStatIcon() {
+	return <UsersGroupSvg className="size-4" aria-hidden />
+}
+function DollarIcon() {
+	return <DollarSvg className="size-4" aria-hidden />
+}
+function CheckInIcon() {
+	return <CheckCircleSvg className="size-4" aria-hidden />
+}
+function CalendarIcon({ className }: { className?: string }) {
+	return <CalendarSvg className={clsx("size-4.5", className)} aria-hidden />
+}
+function LocationIcon({ className }: { className?: string }) {
+	return <MapPointRotateSvg className={clsx("size-4.5", className)} aria-hidden />
+}
+function SendIcon() {
+	return <PlaneSvg className="size-4" aria-hidden />
+}
+function PenIcon() {
+	return <PenSvg className="size-4" aria-hidden />
+}
+function PeopleActionIcon() {
+	return <UsersGroup2Svg className="size-4" aria-hidden />
+}
+function CancelIcon() {
+	return <CloseCircleSvg className="size-4" aria-hidden />
+}
+function ScannerStaffIcon() {
+	return <UserCheckSvg className="size-4" aria-hidden />
+}
 
 function MiniSpinner() {
 	return (
-		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden className="animate-spin shrink-0">
+		<svg
+			width="14"
+			height="14"
+			viewBox="0 0 24 24"
+			fill="none"
+			aria-hidden
+			className="animate-spin shrink-0"
+		>
 			<circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
 			<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
 		</svg>
