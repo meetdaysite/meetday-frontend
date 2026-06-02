@@ -66,11 +66,12 @@ function buildRegisterPayload(values: FormValues, phone?: string): RegisterPaylo
 		accountType: "HOST",
 		hostType: values.accountType === "Individual" ? "INDIVIDUAL" : "BUSINESS",
 		displayName: values.displayName || undefined,
-		bio: values.bio || undefined,
+		hostBio: values.bio || undefined,
 		tagline: values.tagline || undefined,
 		gender: values.gender || undefined,
 		legalName: values.legalName,
 		pan: values.pan,
+		languages: values.languages?.length ? values.languages : undefined,
 		address: values.addressLine1
 			? {
 				addressLine1: values.addressLine1,
@@ -78,14 +79,16 @@ function buildRegisterPayload(values: FormValues, phone?: string): RegisterPaylo
 				city: values.addressCity || "",
 				state: values.addressState || "",
 				pincode: values.addressPincode || "",
+				country: values.addressCountry || undefined,
 			}
 			: undefined,
 		socialLinks: {
 			instagram: values.instagram || undefined,
 			linkedin: values.linkedin || undefined,
 			youtube: values.youtube || undefined,
-			portfolio: values.portfolio || undefined,
+			website: values.portfolio || undefined,
 		},
+		portfolioLinks: values.portfolioLinks?.length ? values.portfolioLinks : undefined,
 		categoryIds: values.categoryIds ?? [],
 		yearsOfExperience: values.yearsOfExperience ?? 0,
 		totalEventsPreviouslyHosted: values.totalEventsHosted ?? 0,
@@ -139,16 +142,19 @@ const schema = z.object({
 	portfolio: z.string().optional(),
 	legalName: z.string().min(1, "Required"),
 	pan: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Enter a valid PAN (e.g. ABCDE1234F)"),
+	languages: z.array(z.string()).optional(),
 	addressLine1: z.string().optional(),
 	addressLine2: z.string().optional(),
 	addressCity: z.string().optional(),
 	addressState: z.string().optional(),
 	addressPincode: z.string().optional(),
+	addressCountry: z.string().optional(),
 	// Step 4
 	yearsOfExperience: z.coerce.number().min(0).optional(),
 	totalEventsHosted: z.coerce.number().min(0).optional(),
 	categoryIds: z.array(z.string()).optional(),
 	operatingCities: z.array(z.string()).optional(),
+	portfolioLinks: z.array(z.string()).optional(),
 	// Step 5
 	reviewConfirmed: z.boolean().refine(v => v === true, "Please confirm to continue"),
 	// Step 6
@@ -1275,11 +1281,14 @@ export default function OnboardingPage() {
 			portfolio: "",
 			legalName: "",
 			pan: "",
+			languages: [],
 			addressLine1: "",
 			addressLine2: "",
 			addressCity: "",
 			addressState: "",
 			addressPincode: "",
+			addressCountry: "",
+			portfolioLinks: [],
 			reviewConfirmed: false,
 			accountHolderName: "",
 			accountNumber: "",
@@ -1468,7 +1477,7 @@ export default function OnboardingPage() {
 								<Button
 									type="button"
 									variant="secondary"
-									size="lg"
+									size="md"
 									radius="pill"
 									className="flex-1"
 									onClick={() => setStep(s => s - 1)}
@@ -1480,7 +1489,7 @@ export default function OnboardingPage() {
 							<Button
 								type="button"
 								variant="primary"
-								size="lg"
+								size="md"
 								radius="pill"
 								className="flex-1"
 								onClick={handleNext}

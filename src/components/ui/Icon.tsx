@@ -5,6 +5,8 @@ const sizeClasses = {
 	sm: "size-4",
 	md: "size-5",
 	lg: "size-6",
+	xl: "size-8",
+	"2xl": "size-10",
 } as const;
 
 const colorClasses = {

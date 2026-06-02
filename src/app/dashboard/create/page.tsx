@@ -1,62 +1,68 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react"
-import { useRouter } from "next/navigation"
-import clsx from "clsx"
-import { toast } from "sonner"
-import { Icon } from "@/components/ui/Icon"
-import { Dropdown } from "@/components/ui/Dropdown"
+import { CopilotPanel, type CopilotPanelState, type EventSummaryData } from "@/components/aiCopilot/CopilotPanel"
+import {
+	AddressAutocompleteInput,
+	VenueAutocompleteInput,
+} from "@/components/eventForm/AddressAutocompleteInput"
+import {
+	ErrMsg,
+	FieldLabel,
+	MiniSpinner,
+	PillInput,
+	iconWrapCls,
+	inpCls,
+	taCls,
+} from "@/components/eventForm/shared"
+import { TicketListEditor } from "@/components/eventForm/TicketListEditor"
+import { Button } from "@/components/ui/Button"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
+import { Dropdown } from "@/components/ui/Dropdown"
+import { Icon } from "@/components/ui/Icon"
 import {
 	createEventDraft,
-	updateEventDraft,
-	submitEventForReview,
+	generateEventDraft,
 	getCategories,
 	getMyEventDetail,
+	submitEventForReview,
+	updateEventDraft,
 	type Category,
 } from "@/lib/api"
-import { uploadEventMedia } from "@/lib/uploadMedia"
 import {
-	LANGUAGE_OPTIONS,
 	EVENT_TYPE_OPTIONS,
+	LANGUAGE_OPTIONS,
+	buildPayload,
 	defaultFormData,
 	eventToFormData,
-	buildPayload,
 	validateStep1,
 	validateStep2,
 	validateStep3,
 	validateStep4,
 	validateStep5,
+	type DraftTicket,
 	type FormData,
 } from "@/lib/eventForm"
-import {
-	inpCls,
-	iconWrapCls,
-	taCls,
-	FieldLabel,
-	ErrMsg,
-	MiniSpinner,
-	PillInput,
-} from "@/components/eventForm/shared"
-import {
-	AddressAutocompleteInput,
-	VenueAutocompleteInput,
-} from "@/components/eventForm/AddressAutocompleteInput"
-import { TicketListEditor } from "@/components/eventForm/TicketListEditor"
+import { uploadEventMedia } from "@/lib/uploadMedia"
+import { isAxiosError } from "axios"
+import clsx from "clsx"
+import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react"
+import { toast } from "sonner"
 
-import FileTextSvg from "@/icons/outlined/file-text.svg"
-import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
-import GalleryWideSvg from "@/icons/outlined/gallery-wide.svg"
-import TicketSvg from "@/icons/outlined/ticket.svg"
-import SettingsSvg from "@/icons/outlined/settings.svg"
+import AiAvatarSvg from "@/assets/ai-avatar.svg"
+import StarsSvg from "@/icons/filled/stars.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
-import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
 import CameraAddSvg from "@/icons/outlined/camera-add.svg"
+import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
+import FileTextSvg from "@/icons/outlined/file-text.svg"
+import GalleryWideSvg from "@/icons/outlined/gallery-wide.svg"
+import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
+import SettingsSvg from "@/icons/outlined/settings.svg"
+import TicketSvg from "@/icons/outlined/ticket.svg"
+import UploadSvg from "@/icons/outlined/upload.svg"
 
 import type { ComponentType, SVGProps } from "react"
-import { Button } from "@/components/ui/Button"
-import UploadSvg from "@/icons/outlined/upload.svg"
 
 // ─── Step definitions ──────────────────────────────────────────────────────────
 
@@ -93,17 +99,17 @@ const STEPS = [
 	},
 ]
 
-// ─── Centralised form data ─────────────────────────────────────────────────────
+// ─── Copilot state ─────────────────────────────────────────────────────────────
+
+type CopilotState = { mode: "idle" } | CopilotPanelState
+
+// ─── Draft keys ────────────────────────────────────────────────────────────────
 
 const DRAFT_KEY = "meetday_create_draft"
 const DRAFT_ID_KEY = "meetday_create_draft_id"
 
-// ─── Create-specific style constants ──────────────────────────────────────────
+// ─── Style constants ───────────────────────────────────────────────────────────
 
-const saveContinueCls =
-	"flex items-center gap-2 px-6 py-3 bg-surface-inverse text-text-inverse rounded-action text-label-md font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
-const backBtnCls =
-	"px-5 py-2.5 text-label-md text-text-secondary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors"
 
 // ─── Step circle indicator ─────────────────────────────────────────────────────
 
@@ -137,7 +143,7 @@ function StepCircle({
 
 function ExperienceBuilderSidebar({ currentStep }: { currentStep: number }) {
 	return (
-		<aside className="hidden lg:flex flex-col w-72 shrink-0 border-r border-border-subtle bg-surface-card px-6 py-8 gap-6 min-h-full">
+		<aside className="hidden lg:flex flex-col w-72 shrink-0 border-r border-border-subtle bg-surface-card px-6 py-8 gap-6 overflow-y-auto">
 			<div>
 				<h2 className="text-label-md font-semibold text-text-primary">Experience Builder</h2>
 				<p className="text-caption text-text-tertiary mt-1">
@@ -168,6 +174,146 @@ function ExperienceBuilderSidebar({ currentStep }: { currentStep: number }) {
 				})}
 			</div>
 		</aside>
+	)
+}
+
+// ─── AI Copilot banners ────────────────────────────────────────────────────────
+
+function CopilotIdleBanner({ onStart }: { onStart: () => void }) {
+	return (
+		<div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-action bg-surface-vibe-soft border border-border-default mb-6">
+			<div className="flex items-center gap-3 min-w-0">
+				<Icon as={AiAvatarSvg} size="xl" color="vibe" className="shrink-0" aria-hidden />
+				<div className="min-w-0">
+					<p className="text-label-sm font-semibold text-text-primary">
+						Start with Meetday AI Copilot
+					</p>
+					<p className="text-caption text-text-secondary truncate">
+						Describe your event in natural language. Our AI will create a complete draft for you.
+					</p>
+				</div>
+			</div>
+			<Button
+				type="button"
+				size="sm"
+				radius="md"
+				onClick={onStart}
+				leftIcon={<Icon as={StarsSvg} size="sm" color="inherit" />}
+				className="bg-linear-to-r from-purple-400 to-purple-800 text-white hover:opacity-90 font-semibold shrink-0"
+			>
+				Generate draft with AI
+			</Button>
+		</div>
+	)
+}
+
+function AIDraftBanner() {
+	return (
+		<div className="flex items-center gap-3 px-4 py-3.5 rounded-action bg-surface-vibe-soft border border-border-default mb-6">
+			<Icon as={AiAvatarSvg} size="xl" color="vibe" className="shrink-0" aria-hidden />
+			<div>
+				<p className="text-label-sm font-semibold text-text-primary">AI Generated Draft</p>
+				<p className="text-caption text-text-secondary">
+					Review and edit your event details. You can refine anything before continuing.
+				</p>
+			</div>
+		</div>
+	)
+}
+
+function AIStepBanner({ title, desc }: { title: string; desc: string }) {
+	return (
+		<div className="flex items-center gap-3 px-4 py-3.5 rounded-action bg-surface-vibe-soft border border-border-default mb-6">
+			<Icon as={AiAvatarSvg} size="xl" color="vibe" className="shrink-0" aria-hidden />
+			<div>
+				<p className="text-label-sm font-semibold text-text-primary">{title}</p>
+				<p className="text-caption text-text-secondary">{desc}</p>
+			</div>
+		</div>
+	)
+}
+
+// ─── Prompt screen ─────────────────────────────────────────────────────────────
+
+function PromptScreen({
+	prompt,
+	onPromptChange,
+	onGenerate,
+	onSkip,
+	loading,
+}: {
+	prompt: string
+	onPromptChange: (v: string) => void
+	onGenerate: () => void
+	onSkip: () => void
+	loading: boolean
+}) {
+	const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+	useEffect(() => {
+		const el = textareaRef.current
+		if (!el) return
+		el.style.height = "auto"
+		el.style.height = `${el.scrollHeight}px`
+	}, [prompt])
+
+	return (
+		<div className="flex flex-col gap-6">
+			<div>
+				<h1 className="text-heading-sm font-semibold text-text-primary">
+					Start with Meetday AI Copilot
+				</h1>
+				<p className="text-body-sm text-text-secondary mt-1">
+					Describe your event in natural language. AI Copilot will create a complete draft for you.
+				</p>
+			</div>
+
+			<div className="flex flex-col gap-1.5">
+				<FieldLabel required>Describe your event</FieldLabel>
+				<textarea
+					ref={textareaRef}
+					rows={4}
+					maxLength={1500}
+					value={prompt}
+					onChange={e => onPromptChange(e.target.value)}
+					placeholder="e.g. Create a rooftop nightlife event in Kolkata for young professionals, with DJ, cocktails, sunset vibes, and ticketed entry for Saturday evening."
+					className={`${taCls(false)} resize-none overflow-hidden`}
+					disabled={loading}
+				/>
+				<p className="text-caption text-text-muted ml-auto">{prompt.length}/1500</p>
+			</div>
+
+			<div className="flex flex-col gap-4">
+				<div className="flex items-center gap-3">
+					<Button
+						type="button"
+						variant="secondary"
+						size="md"
+						radius="md"
+						onClick={onSkip}
+						disabled={loading}
+					>
+						Skip AI &amp; Fill manually
+					</Button>
+					<Button
+						type="button"
+						size="md"
+						radius="md"
+						onClick={onGenerate}
+						disabled={loading || !prompt.trim() || prompt.trim().length < 20}
+						leftIcon={loading ? <MiniSpinner /> : <Icon as={StarsSvg} size="sm" color="inherit" />}
+						className="bg-linear-to-r from-purple-400 to-purple-800 text-white hover:opacity-90 font-semibold"
+					>
+						Generate draft with AI
+					</Button>
+				</div>
+
+				<p className="text-caption text-text-muted">
+					AI will generate: title, description, category, event type, date/location suggestions,
+					pricing suggestions, and tags &amp; keywords.
+				</p>
+			</div>
+		</div>
 	)
 }
 
@@ -217,7 +363,6 @@ function Step1BasicInfo({
 	}
 
 	const categoryOptions = useMemo(() => categories.map(c => ({ value: c.id, label: c.name })), [categories])
-
 	const availableLanguages = LANGUAGE_OPTIONS.filter(o => !languages.includes(o.value))
 
 	return (
@@ -229,7 +374,6 @@ function Step1BasicInfo({
 				</p>
 			</div>
 
-			{/* Event Title */}
 			<div className="flex flex-col gap-1.5">
 				<FieldLabel required>Event Title</FieldLabel>
 				<input
@@ -246,7 +390,6 @@ function Step1BasicInfo({
 				</div>
 			</div>
 
-			{/* Description */}
 			<div className="flex flex-col gap-1.5">
 				<FieldLabel required>Description</FieldLabel>
 				<textarea
@@ -263,7 +406,6 @@ function Step1BasicInfo({
 				</div>
 			</div>
 
-			{/* Category + Event Type */}
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 				<div className="flex flex-col gap-1.5">
 					<FieldLabel required>Category</FieldLabel>
@@ -290,7 +432,6 @@ function Step1BasicInfo({
 				</div>
 			</div>
 
-			{/* Languages (multi-select) */}
 			<div className="flex flex-col gap-1.5">
 				<FieldLabel>Languages</FieldLabel>
 				<Dropdown
@@ -312,19 +453,14 @@ function Step1BasicInfo({
 									className="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-card-muted rounded-badge text-caption text-text-primary"
 								>
 									{label}
-									<button
+									<Button
 										type="button"
-										onClick={() =>
-											set(
-												"languages",
-												languages.filter(l => l !== lang),
-											)
-										}
-										className="text-text-tertiary hover:text-text-primary leading-none"
+										onClick={() => set("languages", languages.filter(l => l !== lang))}
 										aria-label={`Remove ${lang}`}
+										className="size-4 p-0 bg-transparent border-0 text-text-tertiary hover:text-text-primary hover:bg-transparent leading-none min-h-0"
 									>
 										×
-									</button>
+									</Button>
 								</span>
 							)
 						})}
@@ -332,13 +468,11 @@ function Step1BasicInfo({
 				)}
 			</div>
 
-			{/* Tags */}
 			<div className="flex flex-col gap-1.5">
 				<FieldLabel>Tags / Keywords</FieldLabel>
 				<PillInput values={tags} onChange={v => set("tags", v)} placeholder="Add tags…" />
 			</div>
 
-			{/* What to Expect */}
 			<div className="flex flex-col gap-1.5">
 				<FieldLabel required>What to Expect</FieldLabel>
 				<PillInput
@@ -349,7 +483,6 @@ function Step1BasicInfo({
 				<ErrMsg msg={errors.whatToExpect} />
 			</div>
 
-			{/* Who Should Attend */}
 			<div className="flex flex-col gap-1.5">
 				<FieldLabel required>Who Should Attend</FieldLabel>
 				<PillInput
@@ -361,16 +494,16 @@ function Step1BasicInfo({
 			</div>
 
 			<div className="flex justify-end pt-4">
-				<button
+				<Button
 					type="button"
-					onClick={() => {
-						if (validate()) onNext()
-					}}
-					className={saveContinueCls}
+					size="lg"
+					radius="md"
+					onClick={() => { if (validate()) onNext() }}
+					rightIcon={<Icon as={AltArrowRightSvg} size="sm" aria-hidden />}
+					className="bg-surface-inverse text-text-inverse hover:opacity-90 font-semibold"
 				>
-					Save & Continue
-					<AltArrowRightSvg className="size-4" aria-hidden />
-				</button>
+					Save &amp; Continue
+				</Button>
 			</div>
 		</div>
 	)
@@ -408,7 +541,7 @@ function Step2DateTime({
 				}))
 			}
 		} catch {
-			// geocoding is best-effort, silently ignore errors
+			// geocoding is best-effort
 		}
 	}
 
@@ -547,19 +680,19 @@ function Step2DateTime({
 			</div>
 
 			<div className="flex items-center justify-between pt-4">
-				<button type="button" onClick={onBack} className={backBtnCls}>
+				<Button type="button" variant="secondary" size="md" radius="md" onClick={onBack}>
 					Back
-				</button>
-				<button
+				</Button>
+				<Button
 					type="button"
-					onClick={() => {
-						if (validate()) onNext()
-					}}
-					className={saveContinueCls}
+					size="lg"
+					radius="md"
+					onClick={() => { if (validate()) onNext() }}
+					rightIcon={<Icon as={AltArrowRightSvg} size="sm" aria-hidden />}
+					className="bg-surface-inverse text-text-inverse hover:opacity-90 font-semibold"
 				>
-					Save & Continue
-					<AltArrowRightSvg className="size-4" aria-hidden />
-				</button>
+					Save &amp; Continue
+				</Button>
 			</div>
 		</div>
 	)
@@ -612,7 +745,6 @@ function Step3MediaUpload({
 
 	async function handleCoverFile(file: File) {
 		if (!file.type.startsWith("image/")) return
-		// Show preview immediately
 		if (coverUrl.startsWith("blob:")) URL.revokeObjectURL(coverUrl)
 		const previewUrl = URL.createObjectURL(file)
 		set("coverUrl", previewUrl)
@@ -632,7 +764,6 @@ function Step3MediaUpload({
 	async function handleGalleryFile(file: File, slotIndex: number) {
 		const isVideo = file.type.startsWith("video/")
 		if (!isVideo && !file.type.startsWith("image/")) return
-		// Show preview
 		const next = [...gallerySlots]
 		if (next[slotIndex].startsWith("blob:")) URL.revokeObjectURL(next[slotIndex])
 		next[slotIndex] = URL.createObjectURL(file)
@@ -701,7 +832,6 @@ function Step3MediaUpload({
 				</p>
 			</div>
 
-			{/* Cover Image */}
 			<div className="flex flex-col gap-3">
 				<FieldLabel required>Cover Image</FieldLabel>
 				<input
@@ -752,17 +882,14 @@ function Step3MediaUpload({
 								</div>
 							)}
 							{!coverUploading && (
-								<button
+								<Button
 									type="button"
-									onClick={e => {
-										e.stopPropagation()
-										removeCover()
-									}}
-									className="absolute top-2 right-2 size-6 rounded-full bg-black/50 text-white flex items-center justify-center text-sm hover:bg-black/70"
+									onClick={e => { e.stopPropagation(); removeCover() }}
 									aria-label="Remove cover"
+									className="absolute top-2 right-2 size-6 p-0 rounded-full bg-black/50 text-white text-sm hover:bg-black/70 border-0"
 								>
 									×
-								</button>
+								</Button>
 							)}
 						</div>
 					) : (
@@ -782,7 +909,6 @@ function Step3MediaUpload({
 				<ErrMsg msg={errors.coverUrl} />
 			</div>
 
-			{/* Gallery Images & Videos */}
 			<div className="flex flex-col gap-3">
 				<FieldLabel required>Gallery Images & Videos</FieldLabel>
 				<p className="text-caption text-text-muted -mt-1">
@@ -841,17 +967,14 @@ function Step3MediaUpload({
 										</div>
 									)}
 									{!galleryUploading[i] && (
-										<button
+										<Button
 											type="button"
-											onClick={e => {
-												e.stopPropagation()
-												removeGallerySlot(i)
-											}}
-											className="absolute top-1 right-1 size-5 rounded-full bg-black/50 text-white flex items-center justify-center text-xs hover:bg-black/70"
+											onClick={e => { e.stopPropagation(); removeGallerySlot(i) }}
 											aria-label={`Remove gallery item ${i + 1}`}
+											className="absolute top-1 right-1 size-5 p-0 rounded-full bg-black/50 text-white text-xs hover:bg-black/70 border-0"
 										>
 											×
-										</button>
+										</Button>
 									)}
 								</>
 							) : (
@@ -863,21 +986,21 @@ function Step3MediaUpload({
 			</div>
 
 			<div className="flex items-center justify-between pt-4">
-				<button type="button" onClick={onBack} className={backBtnCls}>
+				<Button type="button" variant="secondary" size="md" radius="md" onClick={onBack}>
 					Back
-				</button>
-				<button
+				</Button>
+				<Button
 					type="button"
-					onClick={() => {
-						if (validate()) onNext()
-					}}
-					className={saveContinueCls}
+					size="lg"
+					radius="md"
+					onClick={() => { if (validate()) onNext() }}
 					disabled={coverUploading || galleryUploading.some(Boolean)}
+					leftIcon={(coverUploading || galleryUploading.some(Boolean)) ? <MiniSpinner /> : undefined}
+					rightIcon={<Icon as={AltArrowRightSvg} size="sm" aria-hidden />}
+					className="bg-surface-inverse text-text-inverse hover:opacity-90 font-semibold"
 				>
-					{(coverUploading || galleryUploading.some(Boolean)) && <MiniSpinner />}
-					Save & Continue
-					<AltArrowRightSvg className="size-4" aria-hidden />
-				</button>
+					Save &amp; Continue
+				</Button>
 			</div>
 		</div>
 	)
@@ -891,12 +1014,16 @@ function Step4TicketTypes({
 	onNext,
 	onBack,
 	registerValidate,
+	aiInitialDrafts,
+	aiSuggested,
 }: {
 	formData: FormData
 	setFormData: Dispatch<SetStateAction<FormData>>
 	onNext: () => void
 	onBack: () => void
 	registerValidate: (fn: () => boolean) => void
+	aiInitialDrafts?: DraftTicket[]
+	aiSuggested?: boolean
 }) {
 	const [validated, setValidated] = useState(false)
 	const { tickets } = formData
@@ -918,6 +1045,8 @@ function Step4TicketTypes({
 				tickets={tickets}
 				onChange={updated => setFormData(prev => ({ ...prev, tickets: updated }))}
 				listError={errors.tickets}
+				initialDrafts={aiInitialDrafts}
+				aiSuggested={aiSuggested}
 				headerSlot={
 					<div>
 						<h1 className="text-heading-sm font-semibold text-text-primary">Ticket Types</h1>
@@ -929,19 +1058,19 @@ function Step4TicketTypes({
 			/>
 
 			<div className="flex items-center justify-between pt-4">
-				<button type="button" onClick={onBack} className={backBtnCls}>
+				<Button type="button" variant="secondary" size="md" radius="md" onClick={onBack}>
 					Back
-				</button>
-				<button
+				</Button>
+				<Button
 					type="button"
-					onClick={() => {
-						if (validate()) onNext()
-					}}
-					className={saveContinueCls}
+					size="lg"
+					radius="md"
+					onClick={() => { if (validate()) onNext() }}
+					rightIcon={<Icon as={AltArrowRightSvg} size="sm" aria-hidden />}
+					className="bg-surface-inverse text-text-inverse hover:opacity-90 font-semibold"
 				>
-					Save & Continue
-					<AltArrowRightSvg className="size-4" aria-hidden />
-				</button>
+					Save &amp; Continue
+				</Button>
 			</div>
 		</div>
 	)
@@ -956,6 +1085,7 @@ function Step5SettingsReview({
 	registerValidate,
 	onSubmit,
 	submitting,
+	hideSummary,
 }: {
 	formData: FormData
 	setFormData: Dispatch<SetStateAction<FormData>>
@@ -963,6 +1093,7 @@ function Step5SettingsReview({
 	registerValidate: (fn: () => boolean) => void
 	onSubmit: () => void
 	submitting: boolean
+	hideSummary?: boolean
 }) {
 	const [validated, setValidated] = useState(false)
 	const { visibility, ageRestriction, refundType, cutoffHours, refundPercent, instructions } = formData
@@ -1010,8 +1141,7 @@ function Step5SettingsReview({
 
 	return (
 		<div className="flex flex-col gap-6">
-			<div className="grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-5 items-start">
-				{/* Event Settings */}
+			<div className={hideSummary ? "flex flex-col gap-5" : "grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-5 items-start"}>
 				<div className="border border-border-subtle rounded-action bg-surface-card p-5 flex flex-col gap-5">
 					<h2 className="text-label-md font-semibold text-text-primary">Event Settings</h2>
 
@@ -1116,76 +1246,78 @@ function Step5SettingsReview({
 					</div>
 				</div>
 
-				{/* Summary panel */}
-				<div className="border border-border-subtle rounded-action bg-surface-card p-5 flex flex-col gap-4">
-					<h2 className="text-label-md font-semibold text-text-primary">Summary</h2>
-					<div className="w-full aspect-video rounded-action bg-surface-card-muted overflow-hidden">
-						{formData.coverUrl && (
-							// eslint-disable-next-line @next/next/no-img-element
-							<img
-								src={formData.coverUrl}
-								alt="Cover"
-								className="w-full h-full object-cover"
-								loading="lazy"
-							/>
-						)}
-					</div>
-					<div className="flex flex-col divide-y divide-border-subtle">
-						{[
-							{ label: "Title", value: formData.title || "—" },
-							{ label: "Date", value: formData.eventDate || "—" },
-							{ label: "Location", value: formData.venueName || "—" },
-						].map(({ label, value }) => (
-							<div
-								key={label}
-								className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
-							>
-								<span className="text-caption text-text-tertiary shrink-0">{label}</span>
-								<span className="text-caption font-semibold text-text-primary text-right">
-									{value}
+				{!hideSummary && (
+					<div className="border border-border-subtle rounded-action bg-surface-card p-5 flex flex-col gap-4">
+						<h2 className="text-label-md font-semibold text-text-primary">Summary</h2>
+						<div className="w-full aspect-video rounded-action bg-surface-card-muted overflow-hidden">
+							{formData.coverUrl && (
+								// eslint-disable-next-line @next/next/no-img-element
+								<img
+									src={formData.coverUrl}
+									alt="Cover"
+									className="w-full h-full object-cover"
+									loading="lazy"
+								/>
+							)}
+						</div>
+						<div className="flex flex-col divide-y divide-border-subtle">
+							{[
+								{ label: "Title", value: formData.title || "—" },
+								{ label: "Date", value: formData.eventDate || "—" },
+								{ label: "Location", value: formData.venueName || "—" },
+							].map(({ label, value }) => (
+								<div
+									key={label}
+									className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+								>
+									<span className="text-caption text-text-tertiary shrink-0">{label}</span>
+									<span className="text-caption font-semibold text-text-primary text-right">
+										{value}
+									</span>
+								</div>
+							))}
+						</div>
+						<div className="border-t border-border-subtle pt-3 flex flex-col gap-2.5">
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-caption text-text-tertiary shrink-0">Ticket Types</span>
+								<span className="text-caption font-semibold text-text-primary">
+									{formData.tickets.length > 0
+										? `${formData.tickets.length} type${formData.tickets.length > 1 ? "s" : ""}`
+										: "—"}
 								</span>
 							</div>
-						))}
-					</div>
-					<div className="border-t border-border-subtle pt-3 flex flex-col gap-2.5">
-						<div className="flex items-start justify-between gap-3">
-							<span className="text-caption text-text-tertiary shrink-0">Ticket Types</span>
-							<span className="text-caption font-semibold text-text-primary">
-								{formData.tickets.length > 0
-									? `${formData.tickets.length} type${formData.tickets.length > 1 ? "s" : ""}`
-									: "—"}
-							</span>
-						</div>
-						<div className="flex items-start justify-between gap-3">
-							<span className="text-caption text-text-tertiary shrink-0">Total Capacity</span>
-							<span className="text-caption font-semibold text-text-primary">
-								{formData.tickets.length > 0
-									? formData.tickets
-											.reduce((s, t) => s + t.totalCapacity, 0)
-											.toLocaleString("en-IN")
-									: "—"}
-							</span>
+							<div className="flex items-start justify-between gap-3">
+								<span className="text-caption text-text-tertiary shrink-0">Total Capacity</span>
+								<span className="text-caption font-semibold text-text-primary">
+									{formData.tickets.length > 0
+										? formData.tickets
+												.reduce((s, t) => s + t.totalCapacity, 0)
+												.toLocaleString("en-IN")
+										: "—"}
+								</span>
+							</div>
 						</div>
 					</div>
-				</div>
+				)}
 			</div>
 
 			<div className="flex items-center justify-between pt-2">
-				<button type="button" onClick={onBack} className={backBtnCls}>
+				<Button type="button" variant="secondary" size="md" radius="md" onClick={onBack}>
 					Back
-				</button>
-				<button
+				</Button>
+				<Button
 					type="button"
+					variant="primary"
+					size="md"
+					radius="md"
 					disabled={submitting}
-					onClick={() => {
-						if (validate()) onSubmit()
-					}}
-					className="flex items-center gap-2 px-6 py-3 bg-action-primary text-action-primary-text rounded-action text-label-md font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+					onClick={() => { if (validate()) onSubmit() }}
+					leftIcon={submitting ? <MiniSpinner /> : undefined}
+					rightIcon={<Icon as={AltArrowRightSvg} size="sm" aria-hidden />}
+					className="font-semibold"
 				>
-					{submitting && <MiniSpinner />}
 					Submit for Review
-					<AltArrowRightSvg className="size-4" aria-hidden />
-				</button>
+				</Button>
 			</div>
 		</div>
 	)
@@ -1214,7 +1346,11 @@ export default function CreateExperiencePage() {
 	const [categoriesLoading, setCategoriesLoading] = useState(true)
 	const stepValidateRef = useRef<() => boolean>(() => true)
 
-	// On mount: load existing saved draft only — never create one automatically
+	// AI copilot state
+	const [copilot, setCopilot] = useState<CopilotState>({ mode: "idle" })
+	const [copilotPrompt, setCopilotPrompt] = useState("")
+	const [copilotLoading, setCopilotLoading] = useState(false)
+
 	useEffect(() => {
 		const savedId = localStorage.getItem(DRAFT_ID_KEY)
 		if (savedId) {
@@ -1240,7 +1376,6 @@ export default function CreateExperiencePage() {
 			.finally(() => setCategoriesLoading(false))
 	}, [])
 
-	// Persist form to localStorage on every change
 	useEffect(() => {
 		try {
 			localStorage.setItem(DRAFT_KEY, JSON.stringify(formData))
@@ -1259,10 +1394,70 @@ export default function CreateExperiencePage() {
 	function goBack() {
 		setCurrentStep(s => Math.max(s - 1, 1))
 	}
-
 	function handleTopNext() {
 		if (stepValidateRef.current()) goNext()
 	}
+
+	// Language ISO code → display name mapping
+	const LANG_MAP: Record<string, string> = {
+		en: "English",
+		hi: "Hindi",
+		bn: "Bengali",
+		ta: "Tamil",
+		te: "Telugu",
+		mr: "Marathi",
+	}
+
+	async function handleGenerate() {
+		const trimmed = copilotPrompt.trim()
+		if (!trimmed || copilotLoading) return
+		setCopilotLoading(true)
+		try {
+			const draft = await generateEventDraft(trimmed)
+			const cat = categories.find(c => c.id === draft.category_id)
+			const mappedLang = LANG_MAP[draft.language]
+
+			setFormData(prev => ({
+				...prev,
+				title: draft.title,
+				desc: draft.description,
+				category: cat?.id ?? prev.category,
+				eventType: draft.event_format ?? prev.eventType,
+				languages: mappedLang ? [mappedLang] : prev.languages,
+				tags: draft.tags,
+				whatToExpect: draft.what_to_expect,
+				whoShouldAttend: draft.who_should_attend,
+			}))
+			setCopilot({ mode: "generated", draft, prompt: trimmed })
+		} catch (err) {
+			if (isAxiosError(err)) {
+				const status = err.response?.status
+				if (status === 400)
+					toast.error("Prompt too short, too long, or contains unfilled placeholders.")
+				else if (status === 403) toast.error("Host role required to use AI Copilot.")
+				else toast.error("Failed to generate draft. Please try again.")
+			} else {
+				toast.error("Failed to generate draft. Please try again.")
+			}
+		} finally {
+			setCopilotLoading(false)
+		}
+	}
+
+	// Derive AI ticket initial drafts: only used when AI generated AND no user-edited tickets yet
+	const aiInitialDrafts = useMemo<DraftTicket[] | undefined>(() => {
+		if (copilot.mode !== "generated") return undefined
+		if (formData.tickets.length > 0) return undefined
+		return copilot.draft.ticket_tiers.map(tier => ({
+			name: tier.name,
+			price: String(tier.price),
+			totalCapacity: tier.total_capacity != null ? String(tier.total_capacity) : "",
+			maxPerPerson: String(tier.max_per_person),
+			description: tier.description,
+			saleStartDate: "",
+			saleEndDate: "",
+		}))
+	}, [copilot, formData.tickets.length])
 
 	async function saveDraft() {
 		try {
@@ -1330,30 +1525,26 @@ export default function CreateExperiencePage() {
 
 	const isLastStep = currentStep === 5
 	const sharedProps = { formData, setFormData }
+	const copilotActive = copilot.mode !== "idle"
 
 	return (
 		<>
-			<div className="flex flex-col min-h-screen">
+			<div className="flex flex-col h-screen overflow-hidden">
 				<DashboardTopBar />
 
 				{/* Action bar */}
-				<div className="flex items-center justify-between px-6 lg:px-8 py-3 bg-surface-card border-b border-border-subtle">
+				<div className="flex items-center justify-between px-6 lg:px-8 py-3 bg-surface-card border-b border-border-subtle shrink-0">
 					<div className="flex items-center gap-3">
-						<button
+						<Button
 							type="button"
 							onClick={handleLeave}
-							className="p-1.5 rounded-action hover:bg-surface-card-muted transition-colors text-text-secondary hover:text-text-primary"
 							aria-label="Close"
+							className="size-8 p-0 bg-transparent border-0 text-text-secondary hover:text-text-primary hover:bg-surface-card-muted"
 						>
 							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-								<path
-									d="M5 5l10 10M15 5L5 15"
-									stroke="currentColor"
-									strokeWidth="1.75"
-									strokeLinecap="round"
-								/>
+								<path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
 							</svg>
-						</button>
+						</Button>
 						<h2 className="text-label-md font-semibold text-text-primary">
 							Create New Experience
 						</h2>
@@ -1369,7 +1560,6 @@ export default function CreateExperiencePage() {
 						>
 							{draftSaved ? "Saved!" : "Save draft"}
 						</Button>
-
 						{!isLastStep && (
 							<Button
 								onClick={handleTopNext}
@@ -1385,7 +1575,7 @@ export default function CreateExperiencePage() {
 				</div>
 
 				{/* Body */}
-				<div className="flex flex-1">
+				<div className="flex flex-1 overflow-hidden">
 					<ExperienceBuilderSidebar currentStep={currentStep} />
 
 					<div className="flex-1 px-6 lg:px-10 py-8 overflow-y-auto bg-surface-page">
@@ -1400,39 +1590,84 @@ export default function CreateExperiencePage() {
 								aria-hidden
 							/>
 							<div className="relative">
+								{/* Step 1 */}
 								{currentStep === 1 && (
-									<Step1BasicInfo
-										{...sharedProps}
-										onNext={goNext}
-										registerValidate={registerValidate}
-										categories={categories}
-										categoriesLoading={categoriesLoading}
-									/>
+									<>
+										{copilot.mode === "idle" && (
+											<CopilotIdleBanner
+												onStart={() => setCopilot({ mode: "prompt" })}
+											/>
+										)}
+										{copilot.mode === "generated" && <AIDraftBanner />}
+										{copilot.mode === "prompt" ? (
+											<PromptScreen
+												prompt={copilotPrompt}
+												onPromptChange={setCopilotPrompt}
+												onGenerate={handleGenerate}
+												onSkip={() => setCopilot({ mode: "idle" })}
+												loading={copilotLoading}
+											/>
+										) : (
+											<Step1BasicInfo
+												{...sharedProps}
+												onNext={goNext}
+												registerValidate={registerValidate}
+												categories={categories}
+												categoriesLoading={categoriesLoading}
+											/>
+										)}
+									</>
 								)}
+
+								{/* Step 2 */}
 								{currentStep === 2 && (
-									<Step2DateTime
-										{...sharedProps}
-										onNext={goNext}
-										onBack={goBack}
-										registerValidate={registerValidate}
-									/>
+									<>
+										{copilotActive && (
+											<AIStepBanner
+												title="AI Suggested Schedule & Venue Details"
+												desc="Meetday AI Copilot has prefilled these details based on your prompt. Check the suggestions panel for timing recommendations."
+											/>
+										)}
+										<Step2DateTime
+											{...sharedProps}
+											onNext={goNext}
+											onBack={goBack}
+											registerValidate={registerValidate}
+										/>
+									</>
 								)}
+
+								{/* Step 3 */}
 								{currentStep === 3 && (
-									<Step3MediaUpload
-										{...sharedProps}
-										onNext={goNext}
-										onBack={goBack}
-										registerValidate={registerValidate}
-									/>
+									<>
+										{copilotActive && (
+											<AIStepBanner
+												title="Media Upload"
+												desc="Copilot helps build your event details, but cover images, gallery photos, and videos must be uploaded manually."
+											/>
+										)}
+										<Step3MediaUpload
+											{...sharedProps}
+											onNext={goNext}
+											onBack={goBack}
+											registerValidate={registerValidate}
+										/>
+									</>
 								)}
+
+								{/* Step 4 */}
 								{currentStep === 4 && (
 									<Step4TicketTypes
 										{...sharedProps}
 										onNext={goNext}
 										onBack={goBack}
 										registerValidate={registerValidate}
+										aiInitialDrafts={aiInitialDrafts}
+										aiSuggested={copilot.mode === "generated"}
 									/>
 								)}
+
+								{/* Step 5 */}
 								{currentStep === 5 && (
 									<Step5SettingsReview
 										{...sharedProps}
@@ -1440,11 +1675,28 @@ export default function CreateExperiencePage() {
 										registerValidate={registerValidate}
 										onSubmit={requestSubmit}
 										submitting={submitting}
+										hideSummary={copilotActive}
 									/>
 								)}
 							</div>
 						</div>
 					</div>
+
+					{/* AI Copilot right panel — only shown when copilot is active */}
+					{copilotActive && (
+						<CopilotPanel
+							copilot={copilot as CopilotPanelState}
+							currentStep={currentStep}
+							summary={currentStep === 5 ? {
+								coverUrl: formData.coverUrl,
+								title: formData.title,
+								eventDate: formData.eventDate,
+								venueName: formData.venueName,
+								ticketCount: formData.tickets.length,
+								totalCapacity: formData.tickets.reduce((s, t) => s + t.totalCapacity, 0),
+							} satisfies EventSummaryData : undefined}
+						/>
+					)}
 				</div>
 			</div>
 
@@ -1460,24 +1712,25 @@ export default function CreateExperiencePage() {
 							able to edit it until a decision is made.
 						</p>
 						<div className="flex gap-3 justify-end">
-							<button
+							<Button
+								variant="secondary"
+								size="sm"
+								radius="md"
 								onClick={() => setShowSubmitConfirm(false)}
 								disabled={submitting}
-								className="px-4 py-2 text-label-sm font-medium text-text-primary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors disabled:opacity-50"
 							>
 								Cancel
-							</button>
-							<button
-								onClick={() => {
-									setShowSubmitConfirm(false)
-									handleSubmit()
-								}}
+							</Button>
+							<Button
+								variant="primary"
+								size="sm"
+								radius="md"
+								onClick={() => { setShowSubmitConfirm(false); handleSubmit() }}
 								disabled={submitting}
-								className="flex items-center gap-2 px-4 py-2 text-label-sm font-semibold text-white bg-action-primary hover:opacity-90 rounded-action transition-opacity disabled:opacity-60"
+								leftIcon={submitting ? <MiniSpinner /> : undefined}
 							>
-								{submitting && <MiniSpinner />}
 								Submit
-							</button>
+							</Button>
 						</div>
 					</div>
 				</div>

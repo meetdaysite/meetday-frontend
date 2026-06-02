@@ -165,24 +165,27 @@ export type RegisterPayload = {
 	accountType: "HOST"
 	hostType: "INDIVIDUAL" | "BUSINESS"
 	displayName?: string
-	bio?: string
+	hostBio?: string
 	tagline?: string
 	gender?: string
 	legalName: string
 	pan: string
+	languages?: string[]
 	address?: {
 		addressLine1: string
 		addressLine2?: string
 		city: string
 		state: string
 		pincode: string
+		country?: string
 	}
 	socialLinks?: {
 		instagram?: string
 		linkedin?: string
 		youtube?: string
-		portfolio?: string
+		website?: string
 	}
+	portfolioLinks?: string[]
 	categoryIds: string[]
 	yearsOfExperience: number
 	totalEventsPreviouslyHosted: number
@@ -556,4 +559,47 @@ export async function getUploadUrl(payload: UploadUrlPayload): Promise<UploadUrl
 		payload,
 	)
 	return { url: data.data.uploadUrl, key: data.data.key }
+}
+
+// ─── AI Copilot ───────────────────────────────────────────────────────────────
+
+export type CopilotTicketTier = {
+	name: string
+	price: number
+	currency: string
+	total_capacity: number | null
+	max_per_person: number
+	description: string
+	insight: string
+}
+
+export type CopilotDraft = {
+	title: string
+	description: string
+	what_to_expect: string[]
+	who_should_attend: string[]
+	category: string
+	category_id: string
+	event_type: string
+	event_format: string
+	language: string
+	tags: string[]
+	ticket_tiers: CopilotTicketTier[]
+	tier_count_reasoning: string
+	category_reasoning: string
+	suggested_day: string
+	suggested_time_of_day: string
+	suggested_start_time: string
+	suggested_end_time: string
+	time_suggestion_reason: string
+	confidence_score: number
+	ai_suggestions_used: string[]
+}
+
+export async function generateEventDraft(prompt: string): Promise<CopilotDraft> {
+	const { data } = await apiClient.post<{ success: boolean; data: CopilotDraft }>(
+		"/events/copilot/generate-draft",
+		{ prompt },
+	)
+	return data.data
 }

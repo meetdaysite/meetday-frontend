@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react"
 import { Icon } from "@/components/ui/Icon"
+import { Badge } from "@/components/ui/Badge"
 import {
 	inpCls,
 	iconWrapCls,
@@ -29,6 +30,7 @@ function TicketForm({
 	index,
 	canDelete,
 	showErrors,
+	aiSuggested,
 	onChange,
 	onDelete,
 }: {
@@ -36,6 +38,7 @@ function TicketForm({
 	index: number
 	canDelete: boolean
 	showErrors: boolean
+	aiSuggested: boolean
 	onChange: (d: DraftTicket) => void
 	onDelete: () => void
 }) {
@@ -55,6 +58,9 @@ function TicketForm({
 					<span className="text-label-sm font-semibold text-text-primary">
 						{draft.name.trim() || `Ticket ${index + 1}`}
 					</span>
+					{aiSuggested && (
+						<Badge variant="ai">AI Recommended</Badge>
+					)}
 				</div>
 				{canDelete && (
 					<button
@@ -174,15 +180,20 @@ export function TicketListEditor({
 	onChange,
 	listError,
 	headerSlot,
+	initialDrafts,
+	aiSuggested = false,
 }: {
 	tickets: Ticket[]
 	onChange: (tickets: Ticket[]) => void
 	listError?: string
 	headerSlot?: ReactNode
+	initialDrafts?: DraftTicket[]
+	aiSuggested?: boolean
 }) {
-	const [drafts, setDrafts] = useState<DraftTicket[]>(() =>
-		tickets.length > 0 ? tickets.map(ticketToDraft) : [{ ...emptyDraftTicket }],
-	)
+	const [drafts, setDrafts] = useState<DraftTicket[]>(() => {
+		if (initialDrafts && initialDrafts.length > 0) return initialDrafts
+		return tickets.length > 0 ? tickets.map(ticketToDraft) : [{ ...emptyDraftTicket }]
+	})
 
 	function sync(next: DraftTicket[]) {
 		setDrafts(next)
@@ -225,8 +236,9 @@ export function TicketListEditor({
 						key={i}
 						draft={draft}
 						index={i}
-						canDelete={i > 0}
+						canDelete={i > 0 || drafts.length > 1}
 						showErrors={!!listError}
+						aiSuggested={aiSuggested}
 						onChange={(d) => updateDraft(i, d)}
 						onDelete={() => removeTicket(i)}
 					/>
