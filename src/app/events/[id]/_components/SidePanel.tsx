@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import StarCircleSvg from "@/icons/filled/star-circle.svg"
@@ -117,16 +118,18 @@ function CommunityAccessCard() {
 				>
 					Join Community
 				</Button>
-				{/* TODO: Link to /communities/[community.id] once community detail page is built */}
-				<Button
-					variant="primary"
-					size="sm"
-					radius="pill"
-					className="flex-1 bg-neutral-900"
-					leftIcon={<Icon as={EyeSvg} size="sm" color="inverse" />}
-				>
-					View Community
-				</Button>
+				{/* TODO: Replace "meetday-music-nights" with community.id once API returns community data */}
+				<Link href="/communities/meetday-music-nights" className="flex-1">
+					<Button
+						variant="primary"
+						size="sm"
+						radius="pill"
+						className="w-full bg-neutral-900"
+						leftIcon={<Icon as={EyeSvg} size="sm" color="inverse" />}
+					>
+						View Community
+					</Button>
+				</Link>
 			</div>
 		</div>
 	)

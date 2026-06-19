@@ -1,4 +1,5 @@
 import Image from "next/image"
+import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
@@ -25,8 +26,8 @@ interface CommunityCardProps {
 
 export function CommunityCard({ community }: CommunityCardProps) {
 	return (
-		// TODO: Wrap in Link to /communities/[id] once the community detail page is built
-		<div className="w-full rounded-2xl overflow-hidden border border-border-default bg-surface-card">
+		// TODO: Replace "meetday-music-nights" with community.id once API returns real IDs
+		<Link href={`/communities/${community.id}`} className="w-full rounded-2xl overflow-hidden border border-border-default bg-surface-card block">
 			<div className="relative h-36 w-full overflow-hidden">
 				<Image
 					src={community.coverImageUrl}
@@ -77,6 +78,6 @@ export function CommunityCard({ community }: CommunityCardProps) {
 					</Button>
 				</div>
 			</div>
-		</div>
+		</Link>
 	)
 }

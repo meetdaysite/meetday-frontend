@@ -1,4 +1,5 @@
 import Image from "next/image"
+import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
@@ -105,17 +106,19 @@ export function EventCommunityBanner() {
 				</div>
 
 				{/* CTA */}
-				{/* TODO: Link to /communities/[community.id] once community detail page is built */}
+				{/* TODO: Replace "meetday-music-nights" with community.id once API returns community data */}
 				<div className="shrink-0 flex flex-col justify-end">
-					<Button
-						variant="primary"
-						size="sm"
-						radius="pill"
-						className="bg-neutral-900"
-						leftIcon={<Icon as={EyeSvg} size="sm" color="inverse" />}
-					>
-						View Community
-					</Button>
+					<Link href={`/communities/${community.id}`}>
+						<Button
+							variant="primary"
+							size="sm"
+							radius="pill"
+							className="bg-neutral-900"
+							leftIcon={<Icon as={EyeSvg} size="sm" color="inverse" />}
+						>
+							View Community
+						</Button>
+					</Link>
 				</div>
 			</div>
 		</div>
