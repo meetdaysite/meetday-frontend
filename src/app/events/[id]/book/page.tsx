@@ -109,7 +109,7 @@ function SelectTicketContent({ event }: { event: PublicEventDetails }) {
 
 				{/* Mobile sticky footer */}
 				{totalTickets > 0 && (
-					<div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-surface-card border-t border-border-subtle">
+					<div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-surface-card border-t border-border-default">
 						<button
 							type="button"
 							onClick={handleContinue}

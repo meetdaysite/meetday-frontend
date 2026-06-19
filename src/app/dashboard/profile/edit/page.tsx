@@ -31,7 +31,7 @@ function Toast({ message, type }: { message: string; type: "success" | "error" }
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
-		<div className="bg-surface-card border border-border-subtle rounded-action px-5 py-5">
+		<div className="bg-surface-card border border-border-default rounded-action px-5 py-5">
 			<h2 className="text-label-lg font-semibold text-text-primary mb-5">{title}</h2>
 			{children}
 		</div>

@@ -32,6 +32,7 @@
 	--color-text-warning: var(--text-warning);
 	--color-text-danger: var(--text-danger);
 	--color-text-vibe: var(--text-vibe);
+	--color-text-info: var(--text-info);
 
 	/* BORDER */
 	--color-border-subtle: var(--border-subtle);

@@ -24,6 +24,7 @@
 	--text-warning: var(--color-amber-700);
 	--text-danger: var(--color-red-600);
 	--text-vibe: var(--color-purple-600);
+	--text-info: var(--color-blue-600);
 
 	/* BORDER */
 	--border-subtle: var(--color-neutral-100);

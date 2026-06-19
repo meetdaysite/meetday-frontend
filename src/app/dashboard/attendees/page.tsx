@@ -213,7 +213,7 @@ function AttendeeCard({ attendee }: { attendee: Attendee }) {
 	const isCheckedIn = attendee.checkIn === "checked-in"
 
 	return (
-		<div className="bg-surface-card border border-border-subtle rounded-action px-4 py-4 flex items-center gap-3 hover:border-border-default transition-colors">
+		<div className="bg-surface-card border border-border-default rounded-action px-4 py-4 flex items-center gap-3 hover:border-border-default transition-colors">
 			{/* Avatar */}
 			<div className={clsx("size-10 rounded-full flex items-center justify-center shrink-0 text-label-sm font-semibold", color)}>
 				{initials}

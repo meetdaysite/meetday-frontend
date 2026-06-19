@@ -15,7 +15,7 @@ export function BookingStepBadge({ totalTickets }: BookingStepBadgeProps) {
 					{totalTickets} Ticket{totalTickets !== 1 ? "s" : ""} Selected
 				</span>
 			</div>
-			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-badge bg-surface-card border border-border-subtle">
+			<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-badge bg-surface-card border border-border-default">
 				<Icon as={CheckCircleSvg} size="sm" color="success" />
 				<span className="text-label-sm text-text-secondary">
 					All Attendee Details Required Before Payment

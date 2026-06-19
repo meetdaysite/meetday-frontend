@@ -107,7 +107,7 @@ function PageButton({
 
 function PayoutRow({ payout, isLast }: { payout: MockPayout; isLast: boolean }) {
 	return (
-		<tr className={clsx("hover:bg-surface-card-muted transition-colors", !isLast && "border-b border-border-subtle")}>
+		<tr className={clsx("hover:bg-surface-card-muted transition-colors", !isLast && "border-b border-border-default")}>
 			<td className="px-4 py-3.5">
 				<Link
 					href={`/dashboard/events/${payout.eventId}`}
@@ -206,7 +206,7 @@ export default function PayoutsPage() {
 				{/* Stats cards */}
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
 					{/* Total Earned */}
-					<div className="bg-surface-card border border-border-subtle rounded-action px-5 py-4 flex items-center gap-4">
+					<div className="bg-surface-card border border-border-default rounded-action px-5 py-4 flex items-center gap-4">
 						<div className="size-11 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
 							<Icon as={DollarSvg} size="md" color="success" aria-hidden />
 						</div>
@@ -219,7 +219,7 @@ export default function PayoutsPage() {
 					</div>
 
 					{/* Total Paid Out */}
-					<div className="bg-surface-card border border-border-subtle rounded-action px-5 py-4 flex items-center gap-4">
+					<div className="bg-surface-card border border-border-default rounded-action px-5 py-4 flex items-center gap-4">
 						<div className="size-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
 							<Icon as={CheckCircleSvg} size="md" color="info" aria-hidden />
 						</div>
@@ -232,7 +232,7 @@ export default function PayoutsPage() {
 					</div>
 
 					{/* Processing */}
-					<div className="bg-surface-card border border-border-subtle rounded-action px-5 py-4 flex items-center gap-4">
+					<div className="bg-surface-card border border-border-default rounded-action px-5 py-4 flex items-center gap-4">
 						<div className="size-11 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
 							<Icon as={ClockCircleSvg} size="md" color="warning" aria-hidden />
 						</div>
@@ -246,9 +246,9 @@ export default function PayoutsPage() {
 				</div>
 
 				{/* Payout History */}
-				<div className="bg-surface-card border border-border-subtle rounded-action overflow-hidden">
+				<div className="bg-surface-card border border-border-default rounded-action overflow-hidden">
 					{/* Section header */}
-					<div className="flex items-center justify-between gap-4 px-5 pt-5 pb-4 border-b border-border-subtle flex-wrap gap-y-3">
+					<div className="flex items-center justify-between gap-4 px-5 pt-5 pb-4 border-b border-border-default flex-wrap gap-y-3">
 						<h2 className="text-label-md font-semibold text-text-primary">Payout History</h2>
 						<button className="flex items-center gap-1.5 text-label-sm font-medium text-text-brand hover:text-text-brand/80 transition-colors">
 							<Icon as={AltArrowDownSvg} size="sm" color="brand" aria-hidden />
@@ -276,7 +276,7 @@ export default function PayoutsPage() {
 						</div>
 
 						{/* Status tabs */}
-						<div className="flex items-center gap-1 overflow-x-auto scrollbar-none border-b border-border-subtle -mx-5 px-5">
+						<div className="flex items-center gap-1 overflow-x-auto scrollbar-none border-b border-border-default -mx-5 px-5">
 							{STATUS_TABS.map(tab => {
 								const isActive = statusFilter === tab.value
 								return (
@@ -311,7 +311,7 @@ export default function PayoutsPage() {
 					<div className="overflow-x-auto">
 						<table className="w-full text-left border-collapse">
 							<thead>
-								<tr className="border-b border-border-subtle">
+								<tr className="border-b border-border-default">
 									<th className="px-4 py-3 text-caption font-semibold text-text-muted uppercase tracking-wide whitespace-nowrap">Event</th>
 									<th className="px-4 py-3 text-caption font-semibold text-text-muted uppercase tracking-wide whitespace-nowrap">Amount</th>
 									<th className="px-4 py-3 text-caption font-semibold text-text-muted uppercase tracking-wide whitespace-nowrap">Date</th>
@@ -340,7 +340,7 @@ export default function PayoutsPage() {
 					</div>
 
 					{/* Pagination footer */}
-					<div className="flex items-center justify-between gap-4 px-4 py-3 border-t border-border-subtle flex-wrap gap-y-3">
+					<div className="flex items-center justify-between gap-4 px-4 py-3 border-t border-border-default flex-wrap gap-y-3">
 						<p className="text-caption text-text-muted shrink-0">
 							Showing <span className="font-medium text-text-primary">{rangeStart}–{rangeEnd}</span> of{" "}
 							<span className="font-medium text-text-primary">{filtered.length}</span>

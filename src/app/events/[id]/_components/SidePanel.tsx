@@ -1,10 +1,14 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import StarCircleSvg from "@/icons/filled/star-circle.svg"
 import PulseSvg from "@/icons/filled/pulse.svg"
 import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
+import EyeSvg from "@/icons/outlined/eye-open.svg"
+import BoltSvg from "@/icons/outlined/bolt.svg"
+import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
 import type { PublicEventDetails, PublicRefundPolicy } from "@/types/attendee"
 import { useAuthStore } from "@/store/authStore"
 
@@ -12,10 +16,10 @@ import { useAuthStore } from "@/store/authStore"
 
 function VibeMatchCard({ vibeSummary }: { vibeSummary: string | null }) {
 	const router = useRouter()
-	const user = useAuthStore((s) => s.user)
+	const user = useAuthStore(s => s.user)
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-subtle">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center gap-2 mb-4">
 				<Icon as={StarCircleSvg} size="md" color="vibe" />
 				<span className="text-body-md font-medium text-text-primary">Your Vibe Match</span>
@@ -51,7 +55,11 @@ function VibeMatchCard({ vibeSummary }: { vibeSummary: string | null }) {
 					</div>
 					<button
 						type="button"
-						onClick={() => router.push(`/attendee/login?redirect=${encodeURIComponent(window.location.pathname)}`)}
+						onClick={() =>
+							router.push(
+								`/attendee/login?redirect=${encodeURIComponent(window.location.pathname)}`,
+							)
+						}
 						className="p-3 rounded-badge bg-surface-vibe-soft w-full hover:bg-violet-100 transition-colors"
 					>
 						<p className="text-body-sm text-text-vibe text-center leading-snug">
@@ -64,13 +72,73 @@ function VibeMatchCard({ vibeSummary }: { vibeSummary: string | null }) {
 	)
 }
 
+// ─── Community Access ─────────────────────────────────────────────────────────
+
+// TODO: Replace with real type once community API is integrated
+interface SidePanelCommunity {
+	name: string
+	description: string
+}
+
+// TODO: Remove mock and derive from event.community once GET /api/events/[id] returns community data
+const MOCK_COMMUNITY: SidePanelCommunity = {
+	name: "Meetday Nightlife Circle",
+	description:
+		"Join the public community to discover more nightlife experiences, meet people with similar energy and return to future rooms",
+}
+
+// TODO: Accept `community` prop and only render when event.community is not null
+function CommunityAccessCard() {
+	const community = MOCK_COMMUNITY
+
+	return (
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default flex flex-col gap-3">
+			<div className="grid grid-cols-[auto_1fr] gap-3 items-start">
+				<Icon as={UsersGroupSvg} size="2xl" color="brand" />
+				<div className="flex flex-col">
+					<span className="text-body-md font-medium text-text-primary">Community access</span>
+					<p className="text-label-sm text-text-primary font-normal">
+						This event is part of{" "}
+						<span className="font-medium">{community.name}</span>.
+					</p>
+				</div>
+			</div>
+
+			<p className="text-label-sm text-text-secondary font-normal">{community.description}</p>
+
+			<div className="flex gap-2 mt-1">
+				{/* TODO: Wire up join action via POST /api/communities/[id]/join */}
+				<Button
+					variant="primary"
+					size="sm"
+					radius="pill"
+					className="flex-1"
+					leftIcon={<Icon as={BoltSvg} size="sm" color="inverse" />}
+				>
+					Join Community
+				</Button>
+				{/* TODO: Link to /communities/[community.id] once community detail page is built */}
+				<Button
+					variant="primary"
+					size="sm"
+					radius="pill"
+					className="flex-1 bg-neutral-900"
+					leftIcon={<Icon as={EyeSvg} size="sm" color="inverse" />}
+				>
+					View Community
+				</Button>
+			</div>
+		</div>
+	)
+}
+
 // ─── Crowd Pulse ──────────────────────────────────────────────────────────────
 
 const CROWD_DIMS = ["Energy", "Crowd style", "Social friendliness"]
 
 function CrowdPulseCard({ crowdPulse }: { crowdPulse: unknown }) {
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-subtle">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center gap-2 mb-4">
 				<Icon as={PulseSvg} size="md" color="muted" />
 				<span className="text-body-md font-medium text-text-primary">Crowd Pulse</span>
@@ -86,9 +154,7 @@ function CrowdPulseCard({ crowdPulse }: { crowdPulse: unknown }) {
 							<div className="h-1.5 rounded-full bg-neutral-100" />
 						</div>
 					))}
-					<p className="text-caption text-text-muted text-center mt-0.5">
-						Crowd data coming soon
-					</p>
+					<p className="text-caption text-text-muted text-center mt-0.5">Crowd data coming soon</p>
 				</div>
 			)}
 		</div>
@@ -112,11 +178,10 @@ function RefundCard({ policy }: { policy: PublicRefundPolicy }) {
 				: "Partial refund available."
 	}
 
-	const destination =
-		policy.refundTo === "ORIGINAL_PAYMENT" ? "to original payment method" : "as credits"
+	const destination = policy.refundTo === "ORIGINAL_PAYMENT" ? "to original payment method" : "as credits"
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-subtle">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center gap-2 mb-3">
 				<Icon
 					as={ShieldCheckSvg}
@@ -139,6 +204,8 @@ export function SidePanel({ event }: { event: PublicEventDetails }) {
 	return (
 		<>
 			<VibeMatchCard vibeSummary={event.vibeSummary} />
+			{/* TODO: Replace `true` with `!!event.community` once API returns community data */}
+			{true && <CommunityAccessCard />}
 			<CrowdPulseCard crowdPulse={event.crowdPulse} />
 			{event.refundPolicy && <RefundCard policy={event.refundPolicy} />}
 		</>

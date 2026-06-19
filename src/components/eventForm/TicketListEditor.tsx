@@ -49,8 +49,8 @@ function TicketForm({
 	}
 
 	return (
-		<div className="border border-border-subtle rounded-action bg-surface-card overflow-hidden">
-			<div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-border-subtle bg-surface-canvas">
+		<div className="border border-border-default rounded-action bg-surface-card overflow-hidden">
+			<div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-border-default bg-surface-canvas">
 				<div className="flex items-center gap-2.5">
 					<div className="size-7 rounded-full bg-surface-inverse text-text-inverse flex items-center justify-center text-caption font-bold shrink-0">
 						{String(index + 1).padStart(2, "0")}

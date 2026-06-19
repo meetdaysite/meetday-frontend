@@ -90,7 +90,7 @@ function StatsBar({
 			{stats.map((s) => (
 				<div
 					key={s.label}
-					className="flex items-center gap-2.5 px-4 py-2 rounded-action bg-surface-card border border-border-subtle"
+					className="flex items-center gap-2.5 px-4 py-2 rounded-action bg-surface-card border border-border-default"
 				>
 					<span className={clsx("text-heading-sm font-extrabold", s.color)}>{s.value}</span>
 					<span className="text-label-sm text-text-secondary">{s.label}</span>
@@ -137,7 +137,7 @@ function StatusBadge({ status }: { status: string }) {
 		)
 	}
 	return (
-		<div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-badge bg-surface-secondary border border-border-subtle">
+		<div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-badge bg-surface-secondary border border-border-default">
 			<span className="text-label-sm font-semibold text-text-secondary">{status}</span>
 		</div>
 	)
@@ -189,7 +189,7 @@ function MyEventCard({
 	}
 
 	return (
-		<div className="rounded-action border border-border-subtle bg-surface-card overflow-hidden flex flex-col">
+		<div className="rounded-action border border-border-default bg-surface-card overflow-hidden flex flex-col">
 			{/* Main row */}
 			<div className="flex min-h-44">
 				{/* Cover image */}
@@ -260,7 +260,7 @@ function MyEventCard({
 							{tags.slice(0, 3).map((tag) => (
 								<span
 									key={tag}
-									className="text-[11px] font-medium px-2 py-0.5 rounded-badge bg-surface-secondary text-text-secondary border border-border-subtle"
+									className="text-[11px] font-medium px-2 py-0.5 rounded-badge bg-surface-secondary text-text-secondary border border-border-default"
 								>
 									{tag}
 								</span>
@@ -273,7 +273,7 @@ function MyEventCard({
 				</div>
 
 				{/* Status column */}
-				<div className="w-52 shrink-0 border-l border-border-subtle flex flex-col gap-3 p-5">
+				<div className="w-52 shrink-0 border-l border-border-default flex flex-col gap-3 p-5">
 					<StatusBadge status={order.status} />
 
 					<div>
@@ -417,7 +417,7 @@ function EmptyEventsState() {
 	return (
 		<div className="flex flex-col gap-4">
 			{/* Hero banner */}
-			<div className="rounded-action border border-border-subtle bg-surface-card overflow-hidden">
+			<div className="rounded-action border border-border-default bg-surface-card overflow-hidden">
 				<div className="flex items-stretch min-h-52">
 					{/* Illustration side */}
 					<div className="relative w-64 shrink-0 overflow-hidden">
@@ -462,7 +462,7 @@ function EmptyEventsState() {
 								<Link
 									key={cat}
 									href={`/explore?category=${cat.toLowerCase()}`}
-									className="inline-flex items-center gap-1 px-3 py-1 rounded-badge border border-border-subtle bg-surface-secondary text-label-sm text-text-secondary hover:text-text-primary hover:border-border-default transition-colors"
+									className="inline-flex items-center gap-1 px-3 py-1 rounded-badge border border-border-default bg-surface-secondary text-label-sm text-text-secondary hover:text-text-primary hover:border-border-default transition-colors"
 								>
 									{cat}
 								</Link>
@@ -473,7 +473,7 @@ function EmptyEventsState() {
 			</div>
 
 			{/* Going with friends */}
-			<div className="rounded-action border border-border-subtle bg-surface-card p-4 flex items-center justify-between">
+			<div className="rounded-action border border-border-default bg-surface-card p-4 flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<AvatarStack />
 					<div>
@@ -498,7 +498,7 @@ function WithEventsRightPanel() {
 	return (
 		<>
 			{/* Need help */}
-			<div className="rounded-panel bg-surface-card border border-border-subtle p-5 flex flex-col gap-3">
+			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
 						<Icon as={HeadphonesSvg} size="md" color="inherit" className="text-red-500" />
@@ -519,7 +519,7 @@ function WithEventsRightPanel() {
 			</div>
 
 			{/* Invite */}
-			<div className="rounded-panel bg-surface-card border border-border-subtle p-5 flex flex-col gap-3">
+			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 						<Icon as={GiftSvg} size="md" color="info" />
@@ -538,7 +538,7 @@ function WithEventsRightPanel() {
 			</div>
 
 			{/* Refund */}
-			<div className="rounded-panel bg-surface-card border border-border-subtle p-5 flex flex-col gap-3">
+			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-surface-brand-soft flex items-center justify-center shrink-0">
 						<Icon as={ShieldCheckSvg} size="md" color="brand" />
@@ -565,7 +565,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 	return (
 		<>
 			{/* Good vibes */}
-			<div className="rounded-panel bg-surface-card border border-border-subtle p-5 flex flex-col gap-4">
+			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4">
 				<p className="text-title-md font-bold text-text-primary">Good vibes, great company</p>
 				<div className="grid grid-cols-3 gap-3">
 					{[
@@ -584,7 +584,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 
 			{/* Recommendations */}
 			{recommendations.length > 0 && (
-				<div className="rounded-panel bg-surface-card border border-border-subtle p-5 flex flex-col gap-3">
+				<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 					<div className="flex items-center justify-between">
 						<p className="text-title-md font-bold text-text-primary">Recommended for you</p>
 						<Link
@@ -628,7 +628,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 			)}
 
 			{/* Invite */}
-			<div className="rounded-panel bg-surface-card border border-border-subtle p-5 flex flex-col gap-3">
+			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 						<Icon as={GiftSvg} size="md" color="info" />
@@ -750,7 +750,7 @@ function MyEventsPageInner() {
 						{hasAnyOrders ? (
 							<>
 								{/* Tabs */}
-								<div className="flex items-center gap-1 border-b border-border-subtle">
+								<div className="flex items-center gap-1 border-b border-border-default">
 									{tabs.map((tab) => (
 										<button
 											key={tab.key}

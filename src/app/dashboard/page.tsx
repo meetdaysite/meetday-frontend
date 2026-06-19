@@ -68,7 +68,7 @@ const EVENT_COLORS = ["bg-[#F97316]", "bg-[#6366F1]", "bg-[#10B981]", "bg-[#8B5C
 
 function StatSkeleton() {
 	return (
-		<div className="flex gap-4 items-center p-4 rounded-action border border-border-subtle bg-surface-card shadow-card animate-pulse">
+		<div className="flex gap-4 items-center p-4 rounded-action border border-border-default bg-surface-card shadow-card animate-pulse">
 			<div className="size-10 rounded-badge bg-neutral-200 shrink-0" />
 			<div className="flex flex-col gap-2 flex-1">
 				<div className="h-5 w-8 bg-neutral-200 rounded" />
@@ -151,7 +151,7 @@ export default function DashboardPage() {
 							<Link
 								key={status}
 								href={`/dashboard/events?status=${status}`}
-								className="flex gap-4 items-center p-4 rounded-action border border-border-subtle bg-surface-card shadow-card hover:shadow-card-hover transition-shadow text-left"
+								className="flex gap-4 items-center p-4 rounded-action border border-border-default bg-surface-card shadow-card hover:shadow-card-hover transition-shadow text-left"
 							>
 								<div className={`size-10 rounded-badge flex items-center justify-center ${bg}`}>
 									<Icon as={icon} size="lg" color={iconColor} />
@@ -194,8 +194,8 @@ export default function DashboardPage() {
 					)}
 
 					{/* My Events table */}
-					<div className="bg-surface-card rounded-action border border-border-subtle shadow-card overflow-hidden">
-						<div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
+					<div className="bg-surface-card rounded-action border border-border-default shadow-card overflow-hidden">
+						<div className="flex items-center justify-between px-5 py-4 border-b border-border-default">
 							<h2 className="text-label-md font-semibold text-text-primary">My Events</h2>
 							<Link href="/dashboard/events" className="text-label-sm text-text-brand hover:underline inline-flex items-center gap-1">
 								View All Events
@@ -204,7 +204,7 @@ export default function DashboardPage() {
 						</div>
 
 						{isLoading && !data ? (
-							<div className="flex flex-col divide-y divide-border-subtle">
+							<div className="flex flex-col divide-y divide-border-default">
 								{Array.from({ length: 3 }).map((_, i) => (
 									<div key={i} className="flex items-center gap-4 px-5 py-4 animate-pulse">
 										<div className="size-10 rounded-image bg-neutral-200 shrink-0" />
@@ -228,7 +228,7 @@ export default function DashboardPage() {
 							<div className="overflow-x-auto">
 								<table className="w-full min-w-160">
 									<thead>
-										<tr className="border-b border-border-subtle">
+										<tr className="border-b border-border-default">
 											<th className="text-left text-caption text-text-tertiary font-medium px-5 py-3">EVENT NAME</th>
 											<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">DATE</th>
 											<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">STATUS</th>
@@ -237,7 +237,7 @@ export default function DashboardPage() {
 											<th className="text-left text-caption text-text-tertiary font-medium px-4 py-3">ACTIONS</th>
 										</tr>
 									</thead>
-									<tbody className="divide-y divide-border-subtle">
+									<tbody className="divide-y divide-border-default">
 										{recentEvents.map((event, idx) => {
 											const statusCfg = STATUS_CONFIG[event.status as ApiEventStatus] ?? STATUS_CONFIG.DRAFT
 											const dateStr = event.eventDate
@@ -292,7 +292,7 @@ export default function DashboardPage() {
 					</div>
 
 					{/* Overview */}
-					<div className="bg-surface-card rounded-action border border-border-subtle shadow-card p-5">
+					<div className="bg-surface-card rounded-action border border-border-default shadow-card p-5">
 						<div className="flex items-center justify-between mb-4">
 							<h2 className="text-label-md font-semibold text-text-primary">Overview</h2>
 							<div className="relative">
@@ -374,7 +374,7 @@ export default function DashboardPage() {
 				{/* Right panel */}
 				<div className="flex flex-col gap-6">
 					{/* Create an Experience */}
-					<div className="bg-surface-card rounded-action border border-border-subtle shadow-card p-5">
+					<div className="bg-surface-card rounded-action border border-border-default shadow-card p-5">
 						<h2 className="text-label-md font-semibold text-text-primary">Create an Experience</h2>
 						<p className="text-caption text-text-tertiary mt-1 mb-4">
 							Follow these simple steps to launch your event.

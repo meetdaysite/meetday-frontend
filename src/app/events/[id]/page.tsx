@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Icon } from "@/components/ui/Icon"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { getPublicEventDetails } from "@/lib/api"
+import { EventCommunityBanner } from "./_components/EventCommunityBanner"
 import { EventHero } from "./_components/EventHero"
 import { EventSummaryRow } from "./_components/EventSummaryRow"
 import { GoodToKnow } from "./_components/GoodToKnow"
@@ -34,6 +35,8 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ i
 						<div className="flex-1 min-w-0 flex flex-col gap-5">
 							<EventHero event={event} />
 							<EventSummaryRow event={event} />
+							{/* TODO: Replace `true` with `!!event.community` once API returns community data */}
+							{true && <EventCommunityBanner />}
 							{event.specialInstructions && (
 								<GoodToKnow instructions={event.specialInstructions} />
 							)}
@@ -42,7 +45,7 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ i
 						</div>
 
 						{/* Right: side panel (desktop only) */}
-						<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">
+						<aside className="hidden lg:flex flex-col gap-4 w-100 shrink-0 sticky top-20">
 							<SidePanel event={event} />
 						</aside>
 					</div>

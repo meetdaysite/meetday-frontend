@@ -100,7 +100,7 @@ const STATS = [
 function RevenueTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
 	if (!active || !payload?.length) return null
 	return (
-		<div className="bg-surface-card border border-border-subtle rounded-action shadow-floating px-3 py-2">
+		<div className="bg-surface-card border border-border-default rounded-action shadow-floating px-3 py-2">
 			<p className="text-caption text-text-muted mb-0.5">{label}</p>
 			<p className="text-label-sm font-semibold text-text-primary">
 				${payload[0].value.toLocaleString()}
@@ -112,7 +112,7 @@ function RevenueTooltip({ active, payload, label }: { active?: boolean; payload?
 function RegistrationsTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
 	if (!active || !payload?.length) return null
 	return (
-		<div className="bg-surface-card border border-border-subtle rounded-action shadow-floating px-3 py-2">
+		<div className="bg-surface-card border border-border-default rounded-action shadow-floating px-3 py-2">
 			<p className="text-caption text-text-muted mb-0.5">{label}</p>
 			<p className="text-label-sm font-semibold text-text-primary">
 				{payload[0].value.toLocaleString()} registrations
@@ -149,7 +149,7 @@ export default function InsightsPage() {
 							<Icon as={AltArrowDownSvg} size="sm" color="muted" aria-hidden />
 						</button>
 						{periodOpen && (
-							<div className="absolute right-0 top-full mt-1.5 z-20 bg-surface-card border border-border-subtle rounded-action shadow-floating min-w-40 py-1">
+							<div className="absolute right-0 top-full mt-1.5 z-20 bg-surface-card border border-border-default rounded-action shadow-floating min-w-40 py-1">
 								{PERIOD_OPTIONS.map(opt => (
 									<button
 										key={opt}
@@ -172,7 +172,7 @@ export default function InsightsPage() {
 				{/* Stat cards */}
 				<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
 					{STATS.map(stat => (
-						<div key={stat.label} className="bg-surface-card border border-border-subtle rounded-action px-5 py-4">
+						<div key={stat.label} className="bg-surface-card border border-border-default rounded-action px-5 py-4">
 							<div className={clsx("size-10 rounded-xl flex items-center justify-center mb-3", stat.bg)}>
 								<Icon as={stat.icon} size="md" color={stat.iconColor} aria-hidden />
 							</div>
@@ -189,11 +189,11 @@ export default function InsightsPage() {
 				{/* Charts row */}
 				<div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6">
 					{/* Monthly Revenue */}
-					<div className="bg-surface-card border border-border-subtle rounded-action px-5 py-4">
+					<div className="bg-surface-card border border-border-default rounded-action px-5 py-4">
 						<h2 className="text-label-md font-semibold text-text-primary mb-4">Monthly Revenue</h2>
 						<ResponsiveContainer width="100%" height={200}>
 							<BarChart data={MONTHLY_REVENUE} barCategoryGap="40%" margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
-								<CartesianGrid vertical={false} stroke="var(--border-subtle)" strokeDasharray="0" />
+								<CartesianGrid vertical={false} stroke="var(--border-default)" strokeDasharray="0" />
 								<XAxis
 									dataKey="month"
 									axisLine={false}
@@ -215,11 +215,11 @@ export default function InsightsPage() {
 					</div>
 
 					{/* Monthly Registrations */}
-					<div className="bg-surface-card border border-border-subtle rounded-action px-5 py-4">
+					<div className="bg-surface-card border border-border-default rounded-action px-5 py-4">
 						<h2 className="text-label-md font-semibold text-text-primary mb-4">Monthly Registrations</h2>
 						<ResponsiveContainer width="100%" height={200}>
 							<LineChart data={MONTHLY_REGISTRATIONS} margin={{ top: 4, right: 4, bottom: 0, left: -16 }}>
-								<CartesianGrid stroke="var(--border-subtle)" strokeDasharray="0" />
+								<CartesianGrid stroke="var(--border-default)" strokeDasharray="0" />
 								<XAxis
 									dataKey="month"
 									axisLine={false}
@@ -248,11 +248,11 @@ export default function InsightsPage() {
 				</div>
 
 				{/* Top Performing Events */}
-				<div className="bg-surface-card border border-border-subtle rounded-action overflow-hidden">
-					<div className="px-5 py-4 border-b border-border-subtle">
+				<div className="bg-surface-card border border-border-default rounded-action overflow-hidden">
+					<div className="px-5 py-4 border-b border-border-default">
 						<h2 className="text-label-md font-semibold text-text-primary">Top Performing Events</h2>
 					</div>
-					<div className="divide-y divide-border-subtle">
+					<div className="divide-y divide-border-default">
 						{TOP_EVENTS.map(event => (
 							<div key={event.rank} className="flex items-center gap-4 px-5 py-4 hover:bg-surface-card-muted transition-colors">
 								{/* Rank */}

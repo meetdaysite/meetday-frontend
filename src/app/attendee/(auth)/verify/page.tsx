@@ -305,7 +305,7 @@ export default function AttendeeVerifyPage() {
 				</Button>
 
 				{/* Trust badges */}
-				<div className="flex items-start gap-2 pt-2 border-t border-border-subtle">
+				<div className="flex items-start gap-2 pt-2 border-t border-border-default">
 					<TrustBadge icon={<SafeIcon />} label="Safe & Verified" sublabel="Real people only" />
 					<TrustBadge icon={<LockIcon />} label="Secure Checkout" sublabel="Payments are 100% secure" />
 					<TrustBadge icon={<ClockIcon />} label="Limited spots held" sublabel="Spot held for 10 mins" />

@@ -63,7 +63,7 @@ export function AttendeeHeader() {
 	const initial = firstName ? firstName.charAt(0).toUpperCase() : (displayName.charAt(0).toUpperCase() || "A")
 
 	return (
-		<header className="sticky top-0 z-40 w-full bg-surface-canvas/95 backdrop-blur-md border-b border-border-subtle">
+		<header className="sticky top-0 z-40 w-full bg-surface-canvas/95 backdrop-blur-md border-b border-border-default">
 			<div className="relative flex h-16 items-center max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
 				{/* Logo */}
 				<Link href="/attendee" className="inline-flex items-center shrink-0 mr-6 lg:mr-10">
@@ -129,7 +129,7 @@ export function AttendeeHeader() {
 							</button>
 
 							{dropdownOpen && (
-								<div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-border-subtle bg-surface-canvas shadow-floating py-1.5 z-50">
+								<div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-border-default bg-surface-canvas shadow-floating py-1.5 z-50">
 									<button
 										className="w-full flex items-center gap-2.5 px-3.5 py-2 text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-card-muted transition-colors opacity-50 cursor-not-allowed"
 										disabled
@@ -137,7 +137,7 @@ export function AttendeeHeader() {
 										<UserIcon />
 										Profile
 									</button>
-									<div className="my-1 border-t border-border-subtle" />
+									<div className="my-1 border-t border-border-default" />
 									<button
 										onClick={handleSignOut}
 										className="w-full flex items-center gap-2.5 px-3.5 py-2 text-body-sm text-text-danger hover:bg-red-50 transition-colors"
@@ -188,7 +188,7 @@ export function AttendeeHeader() {
 
 			{/* Mobile drawer */}
 			{mobileOpen && (
-				<div className="lg:hidden border-t border-border-subtle bg-surface-canvas px-4 pb-4 pt-2 flex flex-col gap-1">
+				<div className="lg:hidden border-t border-border-default bg-surface-canvas px-4 pb-4 pt-2 flex flex-col gap-1">
 					{NAV_LINKS.map((link) => (
 						<Link
 							key={link.label}
@@ -206,7 +206,7 @@ export function AttendeeHeader() {
 						</Link>
 					))}
 
-					<div className="flex gap-3 mt-3 pt-3 border-t border-border-subtle">
+					<div className="flex gap-3 mt-3 pt-3 border-t border-border-default">
 						{user ? (
 							<Button
 								variant="secondary"

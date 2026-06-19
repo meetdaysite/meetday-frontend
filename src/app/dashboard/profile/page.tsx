@@ -44,7 +44,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 	return (
-		<div className="flex items-center justify-between gap-4 py-3 border-b border-border-subtle last:border-b-0">
+		<div className="flex items-center justify-between gap-4 py-3 border-b border-border-default last:border-b-0">
 			<p className="text-label-sm text-text-tertiary shrink-0">{label}</p>
 			<div className="text-right">{value}</div>
 		</div>
@@ -61,7 +61,7 @@ function SectionCard({ icon, title, children, className, action }: {
 	action?: React.ReactNode
 }) {
 	return (
-		<div className={clsx("bg-surface-card border border-border-subtle rounded-action px-5 py-5", className)}>
+		<div className={clsx("bg-surface-card border border-border-default rounded-action px-5 py-5", className)}>
 			<div className="flex items-center justify-between gap-3 mb-5">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
@@ -176,7 +176,7 @@ export default function ProfilePage() {
 							}
 						>
 							{/* Avatar row */}
-							<div className="flex items-center gap-4 mb-6 pb-6 border-b border-border-subtle">
+							<div className="flex items-center gap-4 mb-6 pb-6 border-b border-border-default">
 								<div className="size-20 rounded-full shrink-0 overflow-hidden bg-red-100 flex items-center justify-center text-red-700 text-heading-sm font-bold select-none">
 									{profile?.avatarUrl
 										// eslint-disable-next-line @next/next/no-img-element
@@ -375,7 +375,7 @@ export default function ProfilePage() {
 
 						{/* Notification Preferences */}
 						{/* <SectionCard icon={<Icon as={BellSvg} size="md" color="brand" />} title="Notifications">
-							<div className="flex flex-col divide-y divide-border-subtle -my-1">
+							<div className="flex flex-col divide-y divide-border-default -my-1">
 								{NOTIFICATION_PREFS.map((notif, i) => (
 									<div
 										key={notif.id}

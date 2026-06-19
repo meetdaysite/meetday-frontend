@@ -145,7 +145,7 @@ function PhotoUpload({
 						"w-44 shrink-0 rounded-action border-2 border-dashed flex flex-col items-center justify-center gap-2 py-6 cursor-pointer transition-colors",
 						dragging
 							? "border-action-primary bg-surface-brand-soft"
-							: "border-border-subtle bg-surface-secondary hover:border-action-primary",
+							: "border-border-default bg-surface-secondary hover:border-action-primary",
 					)}
 				>
 					<Icon as={CameraAddSvg} size="lg" color="muted" />
@@ -418,7 +418,7 @@ function ReviewFormContent({
 				<div className="flex gap-6 items-start">
 					{/* ── Left: single card ── */}
 					<div className="flex-1 min-w-0">
-						<div className="rounded-action border border-border-subtle bg-surface-card overflow-hidden divide-y divide-border-subtle">
+						<div className="rounded-action border border-border-default bg-surface-card overflow-hidden divide-y divide-border-default">
 
 							{/* Event summary */}
 							<div className="flex gap-4 p-5">
@@ -456,7 +456,7 @@ function ReviewFormContent({
 									{event.hostProfile && (
 										<div className="flex items-center gap-3">
 											<div className="flex items-center gap-2">
-												<div className="size-7 rounded-full bg-neutral-200 border border-border-subtle flex items-center justify-center shrink-0">
+												<div className="size-7 rounded-full bg-neutral-200 border border-border-default flex items-center justify-center shrink-0">
 													<span className="text-[11px] font-bold text-neutral-600">{hostInitial}</span>
 												</div>
 												<span className="text-label-sm text-text-secondary">
@@ -497,7 +497,7 @@ function ReviewFormContent({
 													"inline-flex items-center gap-1.5 px-3 py-1.5 rounded-badge text-label-sm font-medium border transition-all",
 													isSelected
 														? "bg-action-primary border-action-primary text-white"
-														: "bg-surface-secondary border-border-subtle text-text-secondary hover:border-border-default hover:text-text-primary",
+														: "bg-surface-secondary border-border-default text-text-secondary hover:border-border-default hover:text-text-primary",
 												)}
 											>
 												{HIcon && (
@@ -528,7 +528,7 @@ function ReviewFormContent({
 										onChange={(e) => setBody(e.target.value.slice(0, 800))}
 										rows={3}
 										placeholder="Share your experience, what you loved, and suggestions for next time..."
-										className="w-full resize-none rounded-action border border-border-subtle bg-surface-secondary px-3.5 py-2.5 text-body-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-action-primary transition-colors"
+										className="w-full resize-none rounded-action border border-border-default bg-surface-secondary px-3.5 py-2.5 text-body-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-action-primary transition-colors"
 									/>
 									<span className="text-caption text-text-muted text-right">{body.length}/800</span>
 								</div>
@@ -630,7 +630,7 @@ function ReviewFormContent({
 					{/* ── Right panel ── */}
 					<aside className="hidden lg:flex flex-col gap-4 w-96 shrink-0 sticky top-20">
 						{/* Experience recap */}
-						<div className="rounded-panel bg-surface-card border border-border-subtle p-5 flex flex-col gap-4">
+						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4">
 							<div className="flex items-center gap-2">
 								<Icon as={StarCircleSvg} size="md" color="brand" />
 								<p className="text-title-md font-bold text-text-primary">Your experience recap</p>
@@ -658,12 +658,12 @@ function ReviewFormContent({
 						</div>
 
 						{/* Feedback progress */}
-						<div className="rounded-panel bg-surface-card border border-border-subtle p-5">
+						<div className="rounded-panel bg-surface-card border border-border-default p-5">
 							<FeedbackProgress rating={rating} highlights={highlights} body={body} photos={photos} />
 						</div>
 
 						{/* Invite */}
-						<div className="rounded-panel bg-surface-card border border-border-subtle p-5 flex flex-col gap-3">
+						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 							<div className="flex items-center gap-3">
 								<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 									<Icon as={UsersGroup2Svg} size="md" color="info" />
@@ -682,7 +682,7 @@ function ReviewFormContent({
 						</div>
 
 						{/* Host approval */}
-						<div className="rounded-panel bg-surface-card border border-border-subtle p-5 flex flex-col gap-3">
+						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 							<div className="flex items-start gap-3">
 								<div className="size-9 rounded-full bg-surface-brand-soft flex items-center justify-center shrink-0">
 									<Icon as={ShieldCheckSvg} size="md" color="brand" />

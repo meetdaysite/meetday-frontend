@@ -69,8 +69,8 @@ function SectionCard({
 	children: React.ReactNode
 }) {
 	return (
-		<div className="border border-border-subtle rounded-action bg-surface-card overflow-hidden">
-			<div className="px-6 py-4 border-b border-border-subtle">
+		<div className="border border-border-default rounded-action bg-surface-card overflow-hidden">
+			<div className="px-6 py-4 border-b border-border-default">
 				<h2 className="text-label-md font-semibold text-text-primary">{title}</h2>
 				{subtitle && <p className="text-caption text-text-tertiary mt-0.5">{subtitle}</p>}
 			</div>
@@ -279,8 +279,8 @@ export default function EditEventPage() {
 				<div className="flex-1 px-6 lg:px-10 py-8 bg-surface-page">
 					<div className="max-w-4xl mx-auto flex flex-col gap-5">
 						{Array.from({ length: 5 }).map((_, i) => (
-							<div key={i} className="border border-border-subtle rounded-action bg-surface-card overflow-hidden animate-pulse">
-								<div className="px-6 py-4 border-b border-border-subtle">
+							<div key={i} className="border border-border-default rounded-action bg-surface-card overflow-hidden animate-pulse">
+								<div className="px-6 py-4 border-b border-border-default">
 									<div className="h-4 w-32 bg-surface-card-muted rounded" />
 								</div>
 								<div className="p-6 flex flex-col gap-4">
@@ -330,7 +330,7 @@ export default function EditEventPage() {
 			<DashboardTopBar />
 
 			{/* Action bar */}
-			<div className="flex items-center justify-between px-6 lg:px-8 py-3 bg-surface-card border-b border-border-subtle sticky top-0 z-20">
+			<div className="flex items-center justify-between px-6 lg:px-8 py-3 bg-surface-card border-b border-border-default sticky top-0 z-20">
 				<div className="flex items-center gap-3">
 					<button
 						type="button"

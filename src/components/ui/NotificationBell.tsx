@@ -129,9 +129,9 @@ export function NotificationBell() {
 
 			{/* Panel */}
 			{open && (
-				<div className="absolute right-0 top-full mt-2 z-50 w-80 bg-surface-card border border-border-subtle rounded-action shadow-floating overflow-hidden">
+				<div className="absolute right-0 top-full mt-2 z-50 w-80 bg-surface-card border border-border-default rounded-action shadow-floating overflow-hidden">
 					{/* Header */}
-					<div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
+					<div className="flex items-center justify-between px-4 py-3 border-b border-border-default">
 						<h3 className="text-label-md font-semibold text-text-primary">
 							Notifications
 							{unreadCount > 0 && (
@@ -152,7 +152,7 @@ export function NotificationBell() {
 					</div>
 
 					{/* Tabs */}
-					<div className="flex border-b border-border-subtle">
+					<div className="flex border-b border-border-default">
 						{(["all", "unread"] as Tab[]).map((t) => (
 							<button
 								key={t}
@@ -170,7 +170,7 @@ export function NotificationBell() {
 					</div>
 
 					{/* List */}
-					<div className="max-h-96 overflow-y-auto divide-y divide-border-subtle">
+					<div className="max-h-96 overflow-y-auto divide-y divide-border-default">
 						{isLoading && notifications.length === 0 ? (
 							Array.from({ length: 3 }).map((_, i) => (
 								<div key={i} className="flex gap-3 px-4 py-3.5 animate-pulse">

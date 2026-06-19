@@ -286,7 +286,7 @@ function Step4Content({ draft }: { draft: CopilotDraft }) {
 
 function EventSummaryPanel({ summary }: { summary: EventSummaryData }) {
 	return (
-		<div className="flex flex-col gap-3 pt-4 border-t border-border-subtle">
+		<div className="flex flex-col gap-3 pt-4 border-t border-border-default">
 			<p className="text-label-sm font-semibold text-text-primary">Event Summary</p>
 			{summary.coverUrl && (
 				<div className="w-full aspect-video rounded-action bg-surface-card-muted overflow-hidden">
@@ -294,7 +294,7 @@ function EventSummaryPanel({ summary }: { summary: EventSummaryData }) {
 					<img src={summary.coverUrl} alt="Cover" className="w-full h-full object-cover" loading="lazy" />
 				</div>
 			)}
-			<div className="flex flex-col divide-y divide-border-subtle">
+			<div className="flex flex-col divide-y divide-border-default">
 				{[
 					{ label: "Title", value: summary.title || "—" },
 					{ label: "Date", value: summary.eventDate || "—" },
@@ -306,7 +306,7 @@ function EventSummaryPanel({ summary }: { summary: EventSummaryData }) {
 					</div>
 				))}
 			</div>
-			<div className="border-t border-border-subtle pt-2 flex flex-col gap-1.5">
+			<div className="border-t border-border-default pt-2 flex flex-col gap-1.5">
 				<div className="flex items-start justify-between gap-3">
 					<span className="text-caption text-text-tertiary shrink-0">Ticket Types</span>
 					<span className="text-caption font-semibold text-text-primary">
@@ -381,7 +381,7 @@ export function CopilotPanel({
 	summary?: EventSummaryData
 }) {
 	return (
-		<aside className="hidden xl:flex flex-col w-72 shrink-0 border-l border-border-subtle bg-surface-card overflow-y-auto">
+		<aside className="hidden xl:flex flex-col w-72 shrink-0 border-l border-border-default bg-surface-card overflow-y-auto">
 			{copilot.mode === "prompt" ? (
 				<div className="p-5 flex flex-col gap-4">
 					<p className="text-label-md font-semibold text-text-primary">
@@ -391,7 +391,7 @@ export function CopilotPanel({
 				</div>
 			) : (
 				<>
-					<div className="flex items-center gap-2.5 px-5 py-4 border-b border-border-subtle shrink-0">
+					<div className="flex items-center gap-2.5 px-5 py-4 border-b border-border-default shrink-0">
 						<Icon as={AiAvatarSvg} size="xl" color="vibe" className="shrink-0" aria-hidden />
 						<div className="min-w-0">
 							<p className="text-label-sm font-semibold text-text-primary">

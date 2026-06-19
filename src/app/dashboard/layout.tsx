@@ -240,7 +240,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 			<div className="flex-1 flex flex-col min-w-0">
 				{/* Mobile top bar */}
-				<header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-surface-card border-b border-border-subtle">
+				<header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-surface-card border-b border-border-default">
 					<Image
 						src="/assets/brand_logo.svg"
 						alt="Meetday"

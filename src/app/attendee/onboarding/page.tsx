@@ -59,7 +59,7 @@ function TopBar({ substep, isRequired, onSkip }: TopBarProps) {
 	const vibeActive = substep === 2
 
 	return (
-		<div className="shrink-0 h-16 relative flex items-center justify-between px-6 border-b border-border-subtle bg-surface-canvas">
+		<div className="shrink-0 h-16 relative flex items-center justify-between px-6 border-b border-border-default bg-surface-canvas">
 			{/* Progress bar — centered, tracks Q1/Q2 sub-progress within About You */}
 			{substep < 2 && (
 				<div className="absolute left-1/2 -translate-x-1/2 w-32 h-2 bg-border-default rounded-full">
@@ -289,7 +289,7 @@ function AboutYouContent({ substep, q1Value, q2Value, onQ1Change, onQ2Change, on
 				</Button>
 			</div>
 
-			<div className="bg-border-subtle/10 p-6 rounded-action my-5 shadow-md">
+			<div className="bg-border-default/10 p-6 rounded-action my-5 shadow-md">
 				{/* Question */}
 				<p className="text-title-md font-bold text-text-primary mb-6">
 					{isQ1 ? "Your vibe at events?" : "You prefer going solo or with friends?"}
@@ -495,7 +495,7 @@ function DoneContent({ onExplore }: { onExplore: () => void }) {
 				style={{ backgroundImage: "url('/assets/main_bg.svg')" }}
 			/>
 
-			<div className="relative z-10 bg-surface-canvas rounded-action shadow-md flex flex-col items-center justify-center text-center p-6 gap-6 border border-border-subtle">
+			<div className="relative z-10 bg-surface-canvas rounded-action shadow-md flex flex-col items-center justify-center text-center p-6 gap-6 border border-border-default">
 				<Icon as={CheckCircleSvg} color="success" className="size-20" />
 
 				<div className="flex flex-col gap-2 max-w-xs">

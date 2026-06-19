@@ -94,11 +94,11 @@ export default function MessagesPage() {
 				</div>
 
 				{/* Two-panel layout */}
-				<div className="flex flex-1 min-h-0 bg-surface-card border border-border-subtle rounded-action overflow-hidden">
+				<div className="flex flex-1 min-h-0 bg-surface-card border border-border-default rounded-action overflow-hidden">
 
 					{/* ── Left: conversation list ── */}
-					<aside className="w-72 shrink-0 flex flex-col border-r border-border-subtle">
-						<div className="px-4 py-3 border-b border-border-subtle">
+					<aside className="w-72 shrink-0 flex flex-col border-r border-border-default">
+						<div className="px-4 py-3 border-b border-border-default">
 							<h1 className="text-heading-sm font-semibold text-text-primary">Messages</h1>
 							<p className="text-caption text-text-muted mt-0.5">Communicate with your attendees</p>
 						</div>
@@ -122,7 +122,7 @@ export default function MessagesPage() {
 					{/* ── Right: chat area ── */}
 					<div className="flex flex-col flex-1 min-w-0">
 						{/* Chat header */}
-						<div className="flex items-center gap-3 px-5 py-3.5 border-b border-border-subtle shrink-0">
+						<div className="flex items-center gap-3 px-5 py-3.5 border-b border-border-default shrink-0">
 							<div className={clsx("size-9 rounded-full flex items-center justify-center text-label-sm font-semibold shrink-0", avatarColor(active.attendeeName))}>
 								{initials(active.attendeeName)}
 							</div>
@@ -141,7 +141,7 @@ export default function MessagesPage() {
 						</div>
 
 						{/* Input */}
-						<div className="shrink-0 px-4 py-4 border-t border-border-subtle">
+						<div className="shrink-0 px-4 py-4 border-t border-border-default">
 							<div className="flex items-center gap-3 bg-surface-page border border-border-default rounded-full px-4 h-12 focus-within:border-border-focused transition-colors">
 								<input
 									type="text"

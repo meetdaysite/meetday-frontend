@@ -83,7 +83,7 @@ export function OrderSummary({
 	const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0)
 
 	return (
-		<div className="rounded-action bg-surface-card border border-border-subtle p-5 flex flex-col gap-5">
+		<div className="rounded-action bg-surface-card border border-border-default p-5 flex flex-col gap-5">
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<span className="text-title-md font-bold text-text-primary">Order Summary</span>
@@ -120,7 +120,7 @@ export function OrderSummary({
 				)}
 			</div>
 
-			<div className="border-t border-border-subtle" />
+			<div className="border-t border-border-default" />
 
 			{/* Fee breakdown */}
 			<div className="flex flex-col gap-2">
@@ -150,7 +150,7 @@ export function OrderSummary({
 				</div>
 			</div>
 
-			<div className="border-t border-border-subtle" />
+			<div className="border-t border-border-default" />
 
 			{/* Total */}
 			<div className="flex flex-col gap-0.5">
@@ -199,7 +199,7 @@ export function OrderSummary({
 			</div>
 
 			{/* Support */}
-			<div className="border-t border-border-subtle pt-3">
+			<div className="border-t border-border-default pt-3">
 				<p className="text-caption text-text-muted">
 					Need help?{" "}
 					<span className="text-text-brand cursor-pointer hover:underline font-medium">Contact support →</span>

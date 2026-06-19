@@ -135,7 +135,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
 	return (
 		<>
-			<aside className="hidden lg:flex flex-col w-60 shrink-0 h-screen sticky top-0 bg-surface-card border-r border-border-subtle overflow-y-auto">
+			<aside className="hidden lg:flex flex-col w-60 shrink-0 h-screen sticky top-0 bg-surface-card border-r border-border-default overflow-y-auto">
 				<SidebarContent onClose={onClose} />
 			</aside>
 

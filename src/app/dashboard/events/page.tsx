@@ -318,7 +318,7 @@ export default function MyEventsPage() {
 					</div>
 
 					{/* Status tabs */}
-					<div className="flex items-center gap-1 overflow-x-auto pb-1 mb-6 scrollbar-none border-b border-border-subtle">
+					<div className="flex items-center gap-1 overflow-x-auto pb-1 mb-6 scrollbar-none border-b border-border-default">
 						{STATUS_TABS.map(tab => {
 							const count = tabCounts[tab.value] ?? 0
 							const isActive = statusFilter === tab.value
@@ -375,7 +375,7 @@ export default function MyEventsPage() {
 								<div
 									key={i}
 									className={clsx(
-										"bg-surface-card border border-border-subtle rounded-action animate-pulse",
+										"bg-surface-card border border-border-default rounded-action animate-pulse",
 										viewMode === "grid" ? "h-64" : "h-28",
 									)}
 								/>
@@ -497,7 +497,7 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 	return (
 		<div
 			onClick={() => onNavigate(`/dashboard/events/${event.id}`)}
-			className="group relative cursor-pointer bg-surface-card border border-border-subtle rounded-action hover:border-border-strong hover:shadow-card-hover transition-all"
+			className="group relative cursor-pointer bg-surface-card border border-border-default rounded-action hover:border-border-strong hover:shadow-card-hover transition-all"
 		>
 			{/* Image */}
 			<div className="relative aspect-16/10 overflow-hidden rounded-t-action bg-surface-card-muted">
@@ -549,7 +549,7 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 									<EditIcon />
 									Edit
 								</button>
-								<div className="my-1 border-t border-border-subtle" />
+								<div className="my-1 border-t border-border-default" />
 								<button
 									onClick={e => {
 										e.stopPropagation()
@@ -620,7 +620,7 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 	return (
 		<div
 			onClick={() => onNavigate(`/dashboard/events/${event.id}`)}
-			className="group cursor-pointer flex gap-4 bg-surface-card border border-border-subtle rounded-action p-4 hover:border-border-strong hover:shadow-card-hover transition-all"
+			className="group cursor-pointer flex gap-4 bg-surface-card border border-border-default rounded-action p-4 hover:border-border-strong hover:shadow-card-hover transition-all"
 		>
 			{/* Thumbnail */}
 			<div className="relative w-32 sm:w-40 aspect-4/3 rounded-action overflow-hidden shrink-0 bg-surface-card-muted">
@@ -704,7 +704,7 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 										<EditIcon />
 										Edit
 									</button>
-									<div className="my-1 border-t border-border-subtle" />
+									<div className="my-1 border-t border-border-default" />
 									<button
 										onClick={e => {
 											e.stopPropagation()

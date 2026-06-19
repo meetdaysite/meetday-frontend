@@ -104,11 +104,11 @@ export default function RegistrationsPage() {
 				</div>
 
 				{/* Table card */}
-				<div className="bg-surface-card border border-border-subtle rounded-action overflow-hidden">
+				<div className="bg-surface-card border border-border-default rounded-action overflow-hidden">
 					<div className="overflow-x-auto">
 						<table className="w-full text-left border-collapse">
 							<thead>
-								<tr className="border-b border-border-subtle">
+								<tr className="border-b border-border-default">
 									<th className="px-4 py-3 text-caption font-semibold text-text-muted uppercase tracking-wide whitespace-nowrap w-64">Attendee</th>
 									<th className="px-4 py-3 text-caption font-semibold text-text-muted uppercase tracking-wide whitespace-nowrap">Event</th>
 									<th className="px-4 py-3 text-caption font-semibold text-text-muted uppercase tracking-wide whitespace-nowrap">Ticket</th>
@@ -139,7 +139,7 @@ export default function RegistrationsPage() {
 					</div>
 
 					{/* Pagination footer */}
-					<div className="flex items-center justify-between gap-4 px-4 py-3 border-t border-border-subtle flex-wrap gap-y-3">
+					<div className="flex items-center justify-between gap-4 px-4 py-3 border-t border-border-default flex-wrap gap-y-3">
 						{/* Range label */}
 						<p className="text-caption text-text-muted shrink-0">
 							Showing <span className="font-medium text-text-primary">{rangeStart}–{rangeEnd}</span> of{" "}
@@ -204,7 +204,7 @@ function RegistrationRow({ reg, isLast }: { reg: MockRegistration; isLast: boole
 	const isCheckedIn = reg.checkIn === "checked-in"
 
 	return (
-		<tr className={clsx("hover:bg-surface-card-muted transition-colors", !isLast && "border-b border-border-subtle")}>
+		<tr className={clsx("hover:bg-surface-card-muted transition-colors", !isLast && "border-b border-border-default")}>
 			{/* Attendee */}
 			<td className="px-4 py-3.5">
 				<div className="flex items-center gap-3 min-w-0">
@@ -226,7 +226,7 @@ function RegistrationRow({ reg, isLast }: { reg: MockRegistration; isLast: boole
 
 			{/* Ticket type */}
 			<td className="px-4 py-3.5">
-				<span className="inline-flex items-center px-2.5 py-1 rounded-badge text-caption font-medium bg-neutral-100 text-text-secondary border border-border-subtle whitespace-nowrap">
+				<span className="inline-flex items-center px-2.5 py-1 rounded-badge text-caption font-medium bg-neutral-100 text-text-secondary border border-border-default whitespace-nowrap">
 					{reg.ticketType}
 				</span>
 			</td>

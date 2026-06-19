@@ -198,7 +198,7 @@ function TicketPageContent({
 					{/* ── Left column ── */}
 					<div className="flex-1 min-w-0 flex flex-col gap-5">
 						{/* Physical ticket card */}
-						<div className="rounded-action overflow-hidden border border-border-subtle shadow-(--shadow-card) flex min-h-72">
+						<div className="rounded-action overflow-hidden border border-border-default shadow-(--shadow-card) flex min-h-72">
 							{/* Left: event image + details */}
 							<div className="relative flex-1 bg-neutral-900">
 								{coverImageUrl && (
@@ -302,7 +302,7 @@ function TicketPageContent({
 						</div>
 
 						{/* Action buttons */}
-						<div className="rounded-action border border-border-subtle bg-surface-card p-5 flex items-center justify-center flex-wrap gap-3">
+						<div className="rounded-action border border-border-default bg-surface-card p-5 flex items-center justify-center flex-wrap gap-3">
 							<Button
 								variant="secondary"
 								size="md"
@@ -335,7 +335,7 @@ function TicketPageContent({
 						</div>
 
 						{/* Trust footer */}
-						<div className="rounded-action border border-border-subtle bg-surface-card p-5">
+						<div className="rounded-action border border-border-default bg-surface-card p-5">
 							<div className="grid grid-cols-2 gap-6">
 								{TRUST_ITEMS.map((item) => (
 									<div key={item.title} className="flex gap-4 items-center">
@@ -364,7 +364,7 @@ function TicketPageContent({
 					{/* ── Right panel ── */}
 					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">
 						{/* Entry Instructions */}
-						<div className="rounded-panel bg-surface-card border border-border-subtle p-5 flex flex-col gap-4">
+						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4">
 							<div className="flex items-center gap-2">
 								<Icon as={RocketSvg} size="md" color="brand" />
 								<span className="text-title-md font-bold text-text-primary">Entry Instructions</span>
@@ -389,7 +389,7 @@ function TicketPageContent({
 						</div>
 
 						{/* Invite friend, get rewarded */}
-						<div className="rounded-panel bg-surface-card border border-border-subtle p-5 flex flex-col gap-3">
+						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 							<div className="flex items-center gap-3">
 								<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 									<Icon as={GiftSvg} size="md" color="info" />
@@ -407,7 +407,7 @@ function TicketPageContent({
 								<AvatarStack />
 								<button
 									type="button"
-									className="inline-flex items-center gap-1.5 h-(--size-action-sm) px-3 rounded-action border border-border-subtle text-label-sm text-text-primary hover:bg-surface-secondary transition-colors"
+									className="inline-flex items-center gap-1.5 h-(--size-action-sm) px-3 rounded-action border border-border-default text-label-sm text-text-primary hover:bg-surface-secondary transition-colors"
 								>
 									<Icon as={GiftSvg} size="sm" color="inherit" />
 									Invite friends
@@ -416,7 +416,7 @@ function TicketPageContent({
 						</div>
 
 						{/* Refund reference */}
-						<div className="rounded-panel bg-surface-card border border-border-subtle p-5 flex flex-col gap-3">
+						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 							<div className="flex items-center gap-3">
 								<div className="size-9 rounded-full bg-surface-brand-soft flex items-center justify-center shrink-0">
 									<Icon as={ShieldCheckSvg} size="md" color="brand" />

@@ -100,7 +100,7 @@ export function TicketCard({ ticket, tierIndex, quantity, onQuantityChange }: Ti
 			)}
 			{features.length === 0 && <div className="flex-1" />}
 
-			<div className="self-stretch w-px bg-border-subtle shrink-0" />
+			<div className="self-stretch w-px bg-border-default shrink-0" />
 
 			{/* Price */}
 			<div className="shrink-0 flex flex-col items-end gap-1 px-10">
@@ -119,7 +119,7 @@ export function TicketCard({ ticket, tierIndex, quantity, onQuantityChange }: Ti
 				)}
 			</div>
 
-			<div className="self-stretch w-px bg-border-subtle shrink-0" />
+			<div className="self-stretch w-px bg-border-default shrink-0" />
 
 			{/* Availability + stepper */}
 			<div className="shrink-0 flex flex-col items-center gap-2 pl-10">
@@ -140,7 +140,7 @@ export function TicketCard({ ticket, tierIndex, quantity, onQuantityChange }: Ti
 						className={clsx(
 							"size-7 rounded-full border flex items-center justify-center text-lg font-medium transition-colors duration-(--duration-120)",
 							quantity <= 1
-								? "border-border-subtle text-text-muted cursor-not-allowed"
+								? "border-border-default text-text-muted cursor-not-allowed"
 								: "border-border-default text-text-primary hover:border-border-strong hover:bg-surface-canvas",
 						)}
 					>
@@ -157,7 +157,7 @@ export function TicketCard({ ticket, tierIndex, quantity, onQuantityChange }: Ti
 						className={clsx(
 							"size-7 rounded-full border flex items-center justify-center text-lg font-medium transition-colors duration-(--duration-120)",
 							quantity >= maxQty
-								? "border-border-subtle text-text-muted cursor-not-allowed"
+								? "border-border-default text-text-muted cursor-not-allowed"
 								: "border-border-default text-text-primary",
 						)}
 					>

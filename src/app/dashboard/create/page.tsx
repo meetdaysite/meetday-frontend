@@ -133,7 +133,7 @@ function StepCircle({
 			</div>
 		)
 	return (
-		<div className="size-8 rounded-full border-2 border-border-subtle flex items-center justify-center shrink-0">
+		<div className="size-8 rounded-full border-2 border-border-default flex items-center justify-center shrink-0">
 			<Icon as={IconSvg} size="sm" color="muted" />
 		</div>
 	)
@@ -143,7 +143,7 @@ function StepCircle({
 
 function ExperienceBuilderSidebar({ currentStep }: { currentStep: number }) {
 	return (
-		<aside className="hidden lg:flex flex-col w-72 shrink-0 border-r border-border-subtle bg-surface-card px-6 py-8 gap-6 overflow-y-auto">
+		<aside className="hidden lg:flex flex-col w-72 shrink-0 border-r border-border-default bg-surface-card px-6 py-8 gap-6 overflow-y-auto">
 			<div>
 				<h2 className="text-label-md font-semibold text-text-primary">Experience Builder</h2>
 				<p className="text-caption text-text-tertiary mt-1">
@@ -574,7 +574,7 @@ function Step2DateTime({
 				</p>
 			</div>
 
-			<div className="border border-border-subtle rounded-action p-5 bg-surface-card flex flex-col gap-4">
+			<div className="border border-border-default rounded-action p-5 bg-surface-card flex flex-col gap-4">
 				<h3 className="text-label-md font-semibold text-text-primary">Date & Time</h3>
 
 				<div className="flex flex-col gap-1.5">
@@ -622,7 +622,7 @@ function Step2DateTime({
 				</div>
 			</div>
 
-			<div className="border border-border-subtle rounded-action p-5 bg-surface-card flex flex-col gap-4">
+			<div className="border border-border-default rounded-action p-5 bg-surface-card flex flex-col gap-4">
 				<h3 className="text-label-md font-semibold text-text-primary">Location Details</h3>
 
 				<div className="flex flex-col gap-1.5">
@@ -1142,7 +1142,7 @@ function Step5SettingsReview({
 	return (
 		<div className="flex flex-col gap-6">
 			<div className={hideSummary ? "flex flex-col gap-5" : "grid grid-cols-1 xl:grid-cols-[1fr_280px] gap-5 items-start"}>
-				<div className="border border-border-subtle rounded-action bg-surface-card p-5 flex flex-col gap-5">
+				<div className="border border-border-default rounded-action bg-surface-card p-5 flex flex-col gap-5">
 					<h2 className="text-label-md font-semibold text-text-primary">Event Settings</h2>
 
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1247,7 +1247,7 @@ function Step5SettingsReview({
 				</div>
 
 				{!hideSummary && (
-					<div className="border border-border-subtle rounded-action bg-surface-card p-5 flex flex-col gap-4">
+					<div className="border border-border-default rounded-action bg-surface-card p-5 flex flex-col gap-4">
 						<h2 className="text-label-md font-semibold text-text-primary">Summary</h2>
 						<div className="w-full aspect-video rounded-action bg-surface-card-muted overflow-hidden">
 							{formData.coverUrl && (
@@ -1260,7 +1260,7 @@ function Step5SettingsReview({
 								/>
 							)}
 						</div>
-						<div className="flex flex-col divide-y divide-border-subtle">
+						<div className="flex flex-col divide-y divide-border-default">
 							{[
 								{ label: "Title", value: formData.title || "—" },
 								{ label: "Date", value: formData.eventDate || "—" },
@@ -1277,7 +1277,7 @@ function Step5SettingsReview({
 								</div>
 							))}
 						</div>
-						<div className="border-t border-border-subtle pt-3 flex flex-col gap-2.5">
+						<div className="border-t border-border-default pt-3 flex flex-col gap-2.5">
 							<div className="flex items-start justify-between gap-3">
 								<span className="text-caption text-text-tertiary shrink-0">Ticket Types</span>
 								<span className="text-caption font-semibold text-text-primary">
@@ -1533,7 +1533,7 @@ export default function CreateExperiencePage() {
 				<DashboardTopBar />
 
 				{/* Action bar */}
-				<div className="flex items-center justify-between px-6 lg:px-8 py-3 bg-surface-card border-b border-border-subtle shrink-0">
+				<div className="flex items-center justify-between px-6 lg:px-8 py-3 bg-surface-card border-b border-border-default shrink-0">
 					<div className="flex items-center gap-3">
 						<Button
 							type="button"

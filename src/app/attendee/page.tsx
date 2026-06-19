@@ -165,7 +165,7 @@ export default function AttendeeLandingPage() {
 				</section>
 
 
-				<section className="relative bg-surface-canvas border-t border-border-subtle py-8 lg:-mt-36 xl:-mt-44 2xl:-mt-52 2xl:pb-20">
+				<section className="relative bg-surface-canvas border-t border-border-default py-8 lg:-mt-36 xl:-mt-44 2xl:-mt-52 2xl:pb-20">
 					<p className="text-body-sm text-text-secondary text-left mb-5 px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop) lg:pl-32">
 						Choose your vibe, and we will curate an experience for you
 					</p>

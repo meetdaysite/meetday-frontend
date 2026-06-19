@@ -21,7 +21,7 @@ export function EventPreviewBar({ event }: { event: PublicEventDetails }) {
 	const categoryLabel = event.category.name.toUpperCase()
 
 	return (
-		<div className="rounded-action bg-surface-card border border-border-subtle p-4 flex gap-5">
+		<div className="rounded-action bg-surface-card border border-border-default p-4 flex gap-5">
 			{/* Thumbnail */}
 			<div className="relative shrink-0 w-40 rounded-action overflow-hidden bg-neutral-200 self-stretch min-h-25">
 				{cover?.url && (

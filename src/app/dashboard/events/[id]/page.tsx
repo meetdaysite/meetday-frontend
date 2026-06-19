@@ -306,7 +306,7 @@ export default function EventDetailPage() {
 						{/* Right sidebar */}
 						<div className="flex flex-col gap-4">
 							{/* Actions */}
-							<div className="bg-surface-card border border-border-subtle rounded-action p-5">
+							<div className="bg-surface-card border border-border-default rounded-action p-5">
 								<p className="text-label-sm font-semibold text-text-primary mb-4">Actions</p>
 								<EventActions
 									event={event}
@@ -324,7 +324,7 @@ export default function EventDetailPage() {
 							</div>
 
 							{/* Date & Location */}
-							<div className="bg-surface-card border border-border-subtle rounded-action p-5 flex flex-col gap-3">
+							<div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-3">
 								<p className="text-label-sm font-semibold text-text-primary">
 									Date & Location
 								</p>
@@ -358,7 +358,7 @@ export default function EventDetailPage() {
 							</div>
 
 							{/* Event details */}
-							<div className="bg-surface-card border border-border-subtle rounded-action p-5">
+							<div className="bg-surface-card border border-border-default rounded-action p-5">
 								<p className="text-label-sm font-semibold text-text-primary mb-4">Details</p>
 								<div className="flex flex-col gap-3">
 									{event.category?.name && (
@@ -391,7 +391,7 @@ export default function EventDetailPage() {
 
 							{/* Ticket Types */}
 							{event.tickets && event.tickets.length > 0 && (
-								<div className="bg-surface-card border border-border-subtle rounded-action p-5">
+								<div className="bg-surface-card border border-border-default rounded-action p-5">
 									<p className="text-label-sm font-semibold text-text-primary mb-4">
 										Ticket Types
 									</p>
@@ -784,7 +784,7 @@ function DetailSkeleton() {
 
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
 	return (
-		<div className="bg-surface-card border border-border-subtle rounded-action p-3 sm:p-4 flex flex-col gap-1.5">
+		<div className="bg-surface-card border border-border-default rounded-action p-3 sm:p-4 flex flex-col gap-1.5">
 			<div className="flex items-center gap-1.5 text-text-muted">
 				{icon}
 				<span className="text-caption text-text-secondary truncate">{label}</span>
@@ -796,7 +796,7 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
 	return (
-		<div className="bg-surface-card border border-border-subtle rounded-action p-5">
+		<div className="bg-surface-card border border-border-default rounded-action p-5">
 			<h2 className="text-label-md font-semibold text-text-primary mb-4">{title}</h2>
 			{children}
 		</div>
@@ -860,7 +860,7 @@ function AttendeesSection({
 	const totalPages = data ? Math.ceil(data.total / data.limit) : 1
 
 	return (
-		<div className="bg-surface-card border border-border-subtle rounded-action p-5">
+		<div className="bg-surface-card border border-border-default rounded-action p-5">
 			<div className="flex items-center justify-between mb-4">
 				<h2 className="text-label-md font-semibold text-text-primary">
 					Attendees
@@ -900,14 +900,14 @@ function AttendeesSection({
 						</span>
 					</div>
 
-					<div className="flex flex-col divide-y divide-border-subtle">
+					<div className="flex flex-col divide-y divide-border-default">
 						{data.attendees.map((a, i) => (
 							<AttendeeRow key={`${a.bookingId}-${i}`} attendee={a} />
 						))}
 					</div>
 
 					{totalPages > 1 && (
-						<div className="flex items-center justify-between mt-4 pt-4 border-t border-border-subtle">
+						<div className="flex items-center justify-between mt-4 pt-4 border-t border-border-default">
 							<span className="text-caption text-text-muted">
 								Page {page} of {totalPages}
 							</span>

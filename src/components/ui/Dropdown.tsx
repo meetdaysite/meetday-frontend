@@ -217,7 +217,7 @@ export function Dropdown({
 						"group w-full flex items-center rounded-input border transition-colors duration-(--duration-120)",
 						triggerSizeClasses[size],
 						disabled
-							? "border-border-subtle bg-action-disabled cursor-not-allowed"
+							? "border-border-default bg-action-disabled cursor-not-allowed"
 							: error
 								? "border-border-brand bg-surface-brand-soft hover:border-border-focus focus-visible:border-border-focus focus-visible:outline-none"
 								: open

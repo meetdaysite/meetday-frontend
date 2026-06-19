@@ -46,7 +46,7 @@ export function DashboardTopBar() {
 
 	return (
 		<>
-		<div className="hidden lg:flex items-center justify-between px-8 py-4 bg-surface-card border-b border-border-subtle shrink-0">
+		<div className="hidden lg:flex items-center justify-between px-8 py-4 bg-surface-card border-b border-border-default shrink-0">
 			<p className="text-body-sm text-text-secondary">
 				Welcome to <span className="font-semibold text-text-primary">Meetday</span>
 			</p>
@@ -73,7 +73,7 @@ export function DashboardTopBar() {
 					</button>
 
 					{userOpen && (
-						<div className="absolute right-0 top-full mt-2 z-50 bg-surface-card border border-border-subtle rounded-action shadow-floating py-1 min-w-36">
+						<div className="absolute right-0 top-full mt-2 z-50 bg-surface-card border border-border-default rounded-action shadow-floating py-1 min-w-36">
 							<button
 								onClick={() => {
 									setUserOpen(false)

@@ -44,7 +44,7 @@ const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
 		"hover:bg-action-secondary-hover",
 		"focus-visible:border-border-focus focus-visible:text-text-brand focus-visible:outline-none",
 		"focus-visible:ring-1 focus-visible:ring-border-focus",
-		"disabled:bg-action-disabled disabled:text-action-disabled-text disabled:border-border-subtle disabled:cursor-not-allowed",
+		"disabled:bg-action-disabled disabled:text-action-disabled-text disabled:border-border-default disabled:cursor-not-allowed",
 	),
 }
 

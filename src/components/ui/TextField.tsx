@@ -62,7 +62,7 @@ export function TextField({
 					"group flex items-center rounded-input border transition-colors duration-(--duration-120)",
 					sizeClasses[size],
 					// disabled — checked first via has-[:disabled] so it takes precedence on hover
-					"has-disabled:border-border-subtle has-disabled:bg-action-disabled has-disabled:cursor-not-allowed",
+					"has-disabled:border-border-default has-disabled:bg-action-disabled has-disabled:cursor-not-allowed",
 					error
 						? [
 								"border-border-brand bg-surface-brand-soft",

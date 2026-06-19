@@ -106,7 +106,7 @@ export function CountrySelect({ value, onChange, disabled }: CountrySelectProps)
 					)}
 				>
 					{/* Search */}
-					<div className="px-3 py-2 border-b border-border-subtle">
+					<div className="px-3 py-2 border-b border-border-default">
 						<input
 							ref={searchRef}
 							type="text"
@@ -194,7 +194,7 @@ export function PhoneField({
 					"group flex items-center rounded-input border transition-colors duration-(--duration-120)",
 					"h-(--size-input-md)",
 					disabled
-						? "border-border-subtle bg-action-disabled cursor-not-allowed"
+						? "border-border-default bg-action-disabled cursor-not-allowed"
 						: error
 							? "border-border-brand bg-surface-brand-soft focus-within:border-border-focus"
 							: "border-border-default bg-surface-canvas hover:border-border-strong focus-within:border-border-focused",
