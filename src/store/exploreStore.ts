@@ -3,7 +3,7 @@ import { getPublicEvents, getInterests, getCategories } from "@/lib/api"
 import type { ExploreEvent } from "@/types/attendee"
 import type { Interest, Category } from "@/lib/api"
 
-const LIMIT = 20
+const LIMIT = 6
 
 export type DateRangeKey = "today" | "weekend" | "week" | "next-week" | ""
 export type SortKey = "date-asc" | "date-desc" | "price-asc" | "price-desc"

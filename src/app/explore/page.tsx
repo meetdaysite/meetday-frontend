@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { CommunityCard } from "@/components/attendee/CommunityCard"
+import type { Community } from "@/components/attendee/CommunityCard"
 import { EventCard } from "@/components/attendee/EventCard"
 import { Button } from "@/components/ui/Button"
 import { Dropdown } from "@/components/ui/Dropdown"
@@ -8,13 +10,106 @@ import { Icon } from "@/components/ui/Icon"
 import { TextField } from "@/components/ui/TextField"
 import { useExploreStore } from "@/store/exploreStore"
 import type { DateRangeKey, PriceKey, SortKey } from "@/store/exploreStore"
-import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
+import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import GpsSvg from "@/icons/outlined/gps.svg"
 import SearchSvg from "@/icons/outlined/search.svg"
 import SuspensionBoltSvg from "@/icons/outlined/suspension-bolt.svg"
 import TagPriceSvg from "@/icons/outlined/tag-price.svg"
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
+import Link from "next/link"
+
+// ---------------------------------------------------------------------------
+// Community mock data
+// ---------------------------------------------------------------------------
+
+// TODO: Replace with API call — GET /api/communities/nearby?limit=10
+const MOCK_COMMUNITIES: Community[] = [
+	{
+		id: "1",
+		name: "Founder's Huddle",
+		memberCount: 1200,
+		upcomingCount: 12,
+		coverImageUrl: "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400&h=300&fit=crop",
+		memberAvatars: [
+			"https://i.pravatar.cc/32?img=1",
+			"https://i.pravatar.cc/32?img=2",
+			"https://i.pravatar.cc/32?img=3",
+			"https://i.pravatar.cc/32?img=4",
+		],
+		extraMemberCount: 42,
+	},
+	{
+		id: "2",
+		name: "Supper Club",
+		memberCount: 2100,
+		upcomingCount: 18,
+		coverImageUrl: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=300&fit=crop",
+		memberAvatars: [
+			"https://i.pravatar.cc/32?img=5",
+			"https://i.pravatar.cc/32?img=6",
+			"https://i.pravatar.cc/32?img=7",
+			"https://i.pravatar.cc/32?img=8",
+		],
+		extraMemberCount: 56,
+	},
+	{
+		id: "3",
+		name: "Sunrise Social Club",
+		memberCount: 1800,
+		upcomingCount: 14,
+		coverImageUrl: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop",
+		memberAvatars: [
+			"https://i.pravatar.cc/32?img=9",
+			"https://i.pravatar.cc/32?img=10",
+			"https://i.pravatar.cc/32?img=11",
+			"https://i.pravatar.cc/32?img=12",
+		],
+		extraMemberCount: 34,
+	},
+	{
+		id: "4",
+		name: "Gallery Hops",
+		memberCount: 1100,
+		upcomingCount: 10,
+		coverImageUrl: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=400&h=300&fit=crop",
+		memberAvatars: [
+			"https://i.pravatar.cc/32?img=13",
+			"https://i.pravatar.cc/32?img=14",
+			"https://i.pravatar.cc/32?img=15",
+			"https://i.pravatar.cc/32?img=16",
+		],
+		extraMemberCount: 34,
+	},
+	{
+		id: "5",
+		name: "Creator Meetups",
+		memberCount: 1100,
+		upcomingCount: 10,
+		coverImageUrl: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400&h=300&fit=crop",
+		memberAvatars: [
+			"https://i.pravatar.cc/32?img=17",
+			"https://i.pravatar.cc/32?img=18",
+			"https://i.pravatar.cc/32?img=19",
+			"https://i.pravatar.cc/32?img=20",
+		],
+		extraMemberCount: 39,
+	},
+	{
+		id: "6",
+		name: "Book & Brew",
+		memberCount: 900,
+		upcomingCount: 8,
+		coverImageUrl: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop",
+		memberAvatars: [
+			"https://i.pravatar.cc/32?img=21",
+			"https://i.pravatar.cc/32?img=22",
+			"https://i.pravatar.cc/32?img=23",
+			"https://i.pravatar.cc/32?img=24",
+		],
+		extraMemberCount: 27,
+	},
+]
 
 // ---------------------------------------------------------------------------
 // Static option lists
@@ -56,14 +151,11 @@ function SkeletonCard() {
 export default function ExploreEventsPage() {
 	const filters = useExploreStore(s => s.filters)
 	const events = useExploreStore(s => s.events)
-	const total = useExploreStore(s => s.total)
 	const loading = useExploreStore(s => s.loading)
-	const loadingMore = useExploreStore(s => s.loadingMore)
 	const error = useExploreStore(s => s.error)
 	const interests = useExploreStore(s => s.interests)
 	const categories = useExploreStore(s => s.categories)
 	const fetchEvents = useExploreStore(s => s.fetchEvents)
-	const loadMore = useExploreStore(s => s.loadMore)
 	const setFilter = useExploreStore(s => s.setFilter)
 	const resetFilters = useExploreStore(s => s.resetFilters)
 	const fetchInterests = useExploreStore(s => s.fetchInterests)
@@ -119,7 +211,6 @@ export default function ExploreEventsPage() {
 		resetFilters()
 	}
 
-	const hasMore = events.length < total
 
 	return (
 		<main className="flex-1 py-8 md:py-10">
@@ -129,11 +220,9 @@ export default function ExploreEventsPage() {
 						{/* Hero */}
 						<div className="mb-8 max-w-2xl">
 							<h1 className="text-2xl md:text-3xl xl:text-4xl font-extrabold leading-[1.12] text-text-primary mb-3">
-								Find events that{" "}
-								<span className="text-text-brand">feel like you.</span>
+								Find events that <span className="text-text-brand">feel like you.</span>
 								<br />
-								Meet people who{" "}
-								<span className="text-text-brand">match your vibe.</span>
+								Meet people who <span className="text-text-brand">match your vibe.</span>
 							</h1>
 							<p className="text-body-sm text-text-secondary leading-relaxed">
 								Discover real events — from music nights to mindful mornings and connect with
@@ -180,7 +269,9 @@ export default function ExploreEventsPage() {
 									radius="md"
 									variant="secondary"
 									onClick={handleClearAll}
-									className={!isFiltered ? "bg-neutral-900! text-white! border-neutral-900!" : ""}
+									className={
+										!isFiltered ? "bg-neutral-900! text-white! border-neutral-900!" : ""
+									}
 								>
 									All Events
 								</Button>
@@ -233,16 +324,45 @@ export default function ExploreEventsPage() {
 							/>
 						</div>
 
-						{/* Results count */}
-						{!loading && !error && events.length > 0 && (
-							<p className="mt-4 text-caption text-text-muted">
-								{total} event{total !== 1 ? "s" : ""} found
-							</p>
-						)}
+						{/* Communities section */}
+						<div className="mt-10">
+							<div className="flex items-center justify-between gap-2 mb-4">
+								<div>
+									<div className="text-xl font-medium">Communities around you</div>
+									<p className="text-body-sm text-text-secondary mt-0.5">
+										Join communities to discover more events, get updates, and meet people
+										with similar vibes.
+									</p>
+								</div>
+								{/* TODO: Link to /communities once the communities listing page is built */}
+								<Link
+									href="/communities"
+									className="text-sm text-text-brand font-medium hover:underline shrink-0"
+								>
+									View all communities
+									<Icon as={ArrowRightSvg} size="sm" className="inline-block ml-1" />
+								</Link>
+							</div>
+							{/* TODO: Replace MOCK_COMMUNITIES with API data — GET /api/communities/nearby */}
+							<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mt-4">
+								{MOCK_COMMUNITIES.map(community => (
+									<CommunityCard key={community.id} community={community} />
+								))}
+							</div>
+						</div>
+
+						{/* Events grid header */}
+						<div className="mt-8 flex items-center justify-between gap-2 font-medium">
+							<div className="text-xl">Experiences for you</div>
+							<Link href="/events" className="text-sm text-text-brand hover:underline shrink-0">
+								View all experiences
+								<Icon as={ArrowRightSvg} size="sm" className="inline-block ml-1" />
+							</Link>
+						</div>
 
 						{/* Events grid */}
 						{loading ? (
-							<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mt-6">
+							<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mt-4">
 								{Array.from({ length: 12 }).map((_, i) => (
 									<SkeletonCard key={i} />
 								))}
@@ -261,29 +381,10 @@ export default function ExploreEventsPage() {
 								</p>
 							</div>
 						) : (
-							<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mt-6">
+							<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mt-4">
 								{events.map(event => (
 									<EventCard key={event.id} event={event} />
 								))}
-							</div>
-						)}
-
-						{/* Load more */}
-						{!loading && !error && hasMore && (
-							<div className="mt-8 flex justify-center">
-								<Button
-									variant="secondary"
-									size="md"
-									rightIcon={
-										!loadingMore ? (
-											<Icon as={AltArrowRightSvg} size="sm" color="secondary" />
-										) : undefined
-									}
-									onClick={loadMore}
-									disabled={loadingMore}
-								>
-									{loadingMore ? "Loading..." : "Load more events"}
-								</Button>
 							</div>
 						)}
 					</div>

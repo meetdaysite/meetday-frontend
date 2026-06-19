@@ -3,19 +3,21 @@ import React from "react"
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 	variant?: "primary" | "secondary"
-	size?: "sm" | "md" | "lg"
+	size?: "xs" | "sm" | "md" | "lg"
 	radius?: "sm" | "md" | "lg" | "pill"
 	leftIcon?: React.ReactNode
 	rightIcon?: React.ReactNode
 }
 
 const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
+	xs: "h-7 px-3 gap-1 text-[11px]",
 	sm: "h-[var(--size-action-sm)] px-3 gap-1.5 text-label-sm",
 	md: "h-[var(--size-action-md)] px-4 gap-2 text-label-sm",
 	lg: "h-[var(--size-action-lg)] px-5 gap-2 text-label-md font-medium",
 }
 
 const iconSizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
+	xs: "size-3",
 	sm: "size-4",
 	md: "size-5",
 	lg: "size-6",
