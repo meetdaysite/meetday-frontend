@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import CalendarSvg from "@/icons/filled/calendar.svg"
 import ChatSvg from "@/icons/filled/chat.svg"
-import InfoCircleSvg from "@/icons/filled/info-circle.svg"
+import BellSvg from "@/icons/filled/bell.svg"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 
 interface WhatToDoItem {
@@ -39,7 +39,7 @@ const ITEMS: WhatToDoItem[] = [
 		buttonClassName: "bg-violet-600 text-white hover:bg-violet-700 border-0",
 	},
 	{
-		icon: InfoCircleSvg,
+		icon: BellSvg,
 		// TODO: Replace with a filled bell/megaphone icon once available
 		title: "Announcements",
 		description: "Stay updated with official news and event drops.",

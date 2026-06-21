@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Icon } from "@/components/ui/Icon"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
@@ -13,11 +14,15 @@ import { UpcomingExperiences, ExperiencesGrid } from "./_components/UpcomingExpe
 import { LatestFromCommunity } from "./_components/LatestFromCommunity"
 import { JoinCommunityBanner } from "./_components/JoinCommunityBanner"
 import { CommunitySidePanel } from "./_components/CommunitySidePanel"
+import { JoinCommunityModal } from "./_components/JoinCommunityModal"
+import { JoinSuccessModal } from "./_components/JoinSuccessModal"
 import type { CommunityDetails } from "./_components/CommunityHero"
 
-// ─── Auth flag for testing ────────────────────────────────────────────────────
+// ─── Auth flags for testing ───────────────────────────────────────────────────
 // TODO: Replace with real auth state from useAuthStore once API is integrated
 const MOCK_LOGGED_IN = true
+// TODO: Replace with real membership check from GET /api/communities/[id]/membership
+const MOCK_IS_MEMBER = false
 
 // ─── Mock community data ──────────────────────────────────────────────────────
 // TODO: Replace with API call — GET /api/communities/[id]/public
@@ -56,7 +61,27 @@ const TABS: Tab[] = [
 
 // ─── Locked tab placeholder ───────────────────────────────────────────────────
 
-function LockedTabContent({ tabLabel, communityName }: { tabLabel: string; communityName: string }) {
+function LockedTabContent({
+	tabLabel,
+	communityName,
+	isLoggedIn,
+	onJoinClick,
+}: {
+	tabLabel: string
+	communityName: string
+	isLoggedIn: boolean
+	onJoinClick: () => void
+}) {
+	const router = useRouter()
+
+	const handleJoin = () => {
+		if (!isLoggedIn) {
+			router.push(`/attendee/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+			return
+		}
+		onJoinClick()
+	}
+
 	return (
 		<div className="rounded-panel bg-surface-brand-soft border border-border-focus p-6 flex flex-col sm:flex-row items-center gap-4">
 			<div className="flex items-center justify-center size-12 rounded-full bg-action-primary shrink-0">
@@ -67,20 +92,20 @@ function LockedTabContent({ tabLabel, communityName }: { tabLabel: string; commu
 					{tabLabel} is members-only
 				</p>
 				<p className="text-label-sm text-text-secondary font-normal mt-0.5 leading-snug">
-					Join{" "}
+					{isLoggedIn ? "Join " : "Log in and join "}
 					<span className="font-semibold text-text-brand">{communityName}</span>{" "}
 					to access {tabLabel.toLowerCase()} and connect with the community.
 				</p>
 			</div>
-			{/* TODO: Wire up join action via POST /api/communities/[id]/join */}
 			<Button
 				variant="primary"
 				size="md"
 				radius="pill"
 				className="shrink-0"
 				leftIcon={<Icon as={BoltSvg} size="sm" color="inverse" />}
+				onClick={handleJoin}
 			>
-				Join Community
+				{isLoggedIn ? "Join Community" : "Log in to Join"}
 			</Button>
 		</div>
 	)
@@ -92,16 +117,20 @@ function TabContent({
 	activeTab,
 	community,
 	isLoggedIn,
+	isMember,
+	onJoinClick,
 }: {
 	activeTab: TabKey
 	community: CommunityDetails
 	isLoggedIn: boolean
+	isMember: boolean
+	onJoinClick: () => void
 }) {
 	const tab = TABS.find(t => t.key === activeTab)!
-	const isLocked = tab.requiresAuth && !isLoggedIn
+	const isLocked = tab.requiresAuth && (!isLoggedIn || !isMember)
 
 	if (isLocked) {
-		return <LockedTabContent tabLabel={tab.label} communityName={community.name} />
+		return <LockedTabContent tabLabel={tab.label} communityName={community.name} isLoggedIn={isLoggedIn} onJoinClick={onJoinClick} />
 	}
 
 	if (activeTab === "overview") {
@@ -140,10 +169,16 @@ export default function CommunityDetailsPage() {
 	// TODO: Read `id` from params and fetch community — GET /api/communities/[id]/public
 	const community = MOCK_COMMUNITY
 	const isLoggedIn = MOCK_LOGGED_IN
+	// TODO: Replace with real membership state from GET /api/communities/[id]/membership
+	const [isMember, setIsMember] = useState(MOCK_IS_MEMBER)
 
 	const [activeTab, setActiveTab] = useState<TabKey>("overview")
+	const [joinModalOpen, setJoinModalOpen] = useState(false)
+	const [successModalOpen, setSuccessModalOpen] = useState(false)
 	const activeTabDef = TABS.find(t => t.key === activeTab)!
-	const isActiveTabLocked = activeTabDef.requiresAuth && !isLoggedIn
+	const isActiveTabLocked = activeTabDef.requiresAuth && (!isLoggedIn || !isMember)
+
+	const openJoinModal = () => setJoinModalOpen(true)
 
 	return (
 		<main className="flex-1 py-6 md:py-8 pb-12">
@@ -166,7 +201,7 @@ export default function CommunityDetailsPage() {
 						{/* Tabs row */}
 						<div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
 							{TABS.map(tab => {
-								const locked = tab.requiresAuth && !isLoggedIn
+								const locked = tab.requiresAuth && (!isLoggedIn || !isMember)
 								const isActive = activeTab === tab.key
 
 								return (
@@ -200,19 +235,36 @@ export default function CommunityDetailsPage() {
 						</div>
 
 						{/* Tab content */}
-						<TabContent activeTab={activeTab} community={community} isLoggedIn={isLoggedIn} />
+						<TabContent activeTab={activeTab} community={community} isLoggedIn={isLoggedIn} isMember={isMember} onJoinClick={openJoinModal} />
 
-						{/* Join banner — only for logged-in non-members; unauthenticated users see prompt inside LatestFromCommunity */}
-						{/* TODO: Replace `isLoggedIn` with `isLoggedIn && !isMember` once membership state is available */}
-						{isLoggedIn && !isActiveTabLocked && <JoinCommunityBanner communityName={community.name} />}
+						{/* Join banner — hidden once user is a member */}
+						{!isMember && !isActiveTabLocked && <JoinCommunityBanner communityName={community.name} isLoggedIn={isLoggedIn} onJoinClick={openJoinModal} />}
 					</div>
 
 					{/* Right: side panel (desktop only) */}
 					<aside className="hidden lg:flex flex-col gap-4 w-100 shrink-0 sticky top-20">
-						<CommunitySidePanel isLoggedIn={isLoggedIn} />
+						<CommunitySidePanel isLoggedIn={isLoggedIn} onJoinClick={openJoinModal} />
 					</aside>
 				</div>
 			</div>
+
+			<JoinCommunityModal
+				community={community}
+				open={joinModalOpen}
+				onClose={() => setJoinModalOpen(false)}
+				onJoin={() => {
+					// TODO: POST /api/communities/[id]/join with selected visibility before setting member state
+					setIsMember(true)
+					setJoinModalOpen(false)
+					setSuccessModalOpen(true)
+				}}
+			/>
+
+			<JoinSuccessModal
+				community={community}
+				open={successModalOpen}
+				onClose={() => setSuccessModalOpen(false)}
+			/>
 		</main>
 	)
 }

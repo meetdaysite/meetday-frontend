@@ -1,3 +1,6 @@
+"use client"
+
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import BoltSvg from "@/icons/outlined/bolt.svg"
@@ -5,11 +8,21 @@ import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
 
 interface JoinCommunityBannerProps {
 	communityName: string
+	isLoggedIn: boolean
+	onJoinClick: () => void
 }
 
-// TODO: Wire join action to POST /api/communities/[id]/join
-// TODO: Only show this banner when user is not already a member
-export function JoinCommunityBanner({ communityName }: JoinCommunityBannerProps) {
+export function JoinCommunityBanner({ communityName, isLoggedIn, onJoinClick }: JoinCommunityBannerProps) {
+	const router = useRouter()
+
+	const handleJoin = () => {
+		if (!isLoggedIn) {
+			router.push(`/attendee/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+			return
+		}
+		onJoinClick()
+	}
+
 	return (
 		<div className="rounded-panel bg-surface-brand-soft border border-border-focus p-6 flex flex-col sm:flex-row items-center gap-4">
 			<div className="flex items-center justify-center size-12 rounded-full bg-action-primary shrink-0">
@@ -18,7 +31,7 @@ export function JoinCommunityBanner({ communityName }: JoinCommunityBannerProps)
 
 			<div className="flex-1 min-w-0 text-center sm:text-left">
 				<p className="text-body-md font-semibold text-text-primary">
-					Join{" "}
+					{isLoggedIn ? "Join " : "Log in to join "}
 					<span className="text-text-brand">{communityName}</span> to unlock everything
 				</p>
 				<p className="text-label-sm text-text-secondary font-normal mt-0.5 leading-snug">
@@ -32,8 +45,9 @@ export function JoinCommunityBanner({ communityName }: JoinCommunityBannerProps)
 				radius="pill"
 				className="shrink-0"
 				leftIcon={<Icon as={BoltSvg} size="sm" color="inverse" />}
+				onClick={handleJoin}
 			>
-				Join Community
+				{isLoggedIn ? "Join Community" : "Log in to Join"}
 			</Button>
 		</div>
 	)

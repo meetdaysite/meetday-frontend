@@ -44,7 +44,7 @@ const WHY_JOIN_ITEMS = [
 	},
 ]
 
-function WhyJoinCard() {
+function WhyJoinCard({ onJoinClick }: { onJoinClick: () => void }) {
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center gap-2 mb-4">
@@ -67,13 +67,13 @@ function WhyJoinCard() {
 				))}
 			</div>
 
-			{/* TODO: Wire up join action via POST /api/communities/[id]/join */}
 			<Button
 				variant="primary"
 				size="md"
 				radius="pill"
 				className="w-full mt-5"
 				leftIcon={<Icon as={BoltSvg} size="sm" color="inverse" />}
+				onClick={onJoinClick}
 			>
 				Join Community
 			</Button>
@@ -267,10 +267,10 @@ function CommunityGuidelinesCard() {
 
 // ─── Composed Side Panel ──────────────────────────────────────────────────────
 
-export function CommunitySidePanel({ isLoggedIn }: { isLoggedIn: boolean }) {
+export function CommunitySidePanel({ isLoggedIn, onJoinClick }: { isLoggedIn: boolean; onJoinClick: () => void }) {
 	return (
 		<>
-			<WhyJoinCard />
+			<WhyJoinCard onJoinClick={onJoinClick} />
 			<PeopleInCommunityCard isLoggedIn={isLoggedIn} />
 			<TrustedHostsCard />
 			<CommunityGuidelinesCard />
