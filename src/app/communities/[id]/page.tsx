@@ -14,6 +14,10 @@ import { UpcomingExperiences, ExperiencesGrid } from "./_components/UpcomingExpe
 import { LatestFromCommunity } from "./_components/LatestFromCommunity"
 import { JoinCommunityBanner } from "./_components/JoinCommunityBanner"
 import { CommunitySidePanel } from "./_components/CommunitySidePanel"
+import { ChatTabContent } from "./_components/ChatTabContent"
+import { AnnouncementsTabContent } from "./_components/AnnouncementsTabContent"
+import { FeedTabContent } from "./_components/FeedTabContent"
+import { MembersTabContent } from "./_components/MembersTabContent"
 import { JoinCommunityModal } from "./_components/JoinCommunityModal"
 import { JoinSuccessModal } from "./_components/JoinSuccessModal"
 import type { CommunityDetails } from "./_components/CommunityHero"
@@ -143,6 +147,22 @@ function TabContent({
 		)
 	}
 
+	if (activeTab === "chat") {
+		return <ChatTabContent communityName={community.name} />
+	}
+
+	if (activeTab === "announcements") {
+		return <AnnouncementsTabContent />
+	}
+
+	if (activeTab === "feed") {
+		return <FeedTabContent />
+	}
+
+	if (activeTab === "members") {
+		return <MembersTabContent />
+	}
+
 	if (activeTab === "experiences") {
 		return (
 			<div className="rounded-panel bg-surface-card border border-border-default p-5">
@@ -244,7 +264,7 @@ export default function CommunityDetailsPage() {
 
 					{/* Right: side panel (desktop only) */}
 					<aside className="hidden lg:flex flex-col gap-4 w-100 shrink-0 sticky top-20">
-						<CommunitySidePanel isMember={isMember} onJoinClick={openJoinModal} />
+						<CommunitySidePanel activeTab={activeTab} isMember={isMember} onJoinClick={openJoinModal} />
 					</aside>
 				</div>
 			</div>
