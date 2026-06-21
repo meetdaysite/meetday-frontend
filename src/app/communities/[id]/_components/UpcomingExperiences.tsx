@@ -71,19 +71,6 @@ export const MOCK_COMMUNITY_EVENTS: ExploreEvent[] = [
 			"https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=400&h=600&fit=crop",
 		startingPrice: 0,
 	},
-	{
-		id: "ce-6",
-		title: "JAZZ & SPIRITS",
-		eventType: "UPCOMING",
-		eventDate: "2026-06-14",
-		startTime: "08:30 PM",
-		venueName: "The Jazz Room",
-		tags: ["jazz", "cocktails"],
-		category: { id: "music", name: "Music" },
-		coverImageUrl:
-			"https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=400&h=600&fit=crop",
-		startingPrice: 699,
-	},
 ]
 
 interface UpcomingExperiencesProps {
@@ -110,12 +97,9 @@ export function UpcomingExperiences({ events = MOCK_COMMUNITY_EVENTS, communityI
 				</Link>
 			</div>
 
-			{/* Horizontal scroll row */}
-			<div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 no-scrollbar">
+			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
 				{events.map(event => (
-					<div key={event.id} className="w-40 shrink-0">
-						<EventCard event={event} />
-					</div>
+					<EventCard key={event.id} event={event} />
 				))}
 			</div>
 		</div>

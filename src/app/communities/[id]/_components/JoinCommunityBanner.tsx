@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
-import BoltSvg from "@/icons/outlined/suspension-bolt.svg"
+import BoltSvg from "@/icons/outlined/bolt.svg"
 import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
 
 interface JoinCommunityBannerProps {

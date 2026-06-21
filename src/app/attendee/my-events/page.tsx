@@ -652,7 +652,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 function MyEventsPageInner() {
-	const { authLoading } = useAuthStore()
+	const { authLoading, user } = useAuthStore()
 	const [orders, setOrders] = useState<MyOrderListItem[] | null>(null)
 	const [eventDetailsMap, setEventDetailsMap] = useState<Map<string, PublicEventDetails | null>>(
 		new Map(),
@@ -686,12 +686,17 @@ function MyEventsPageInner() {
 		load()
 	}, [authLoading])
 
-	if (loading) {
+	if (authLoading || loading) {
 		return (
 			<main className="flex-1 flex items-center justify-center py-24">
 				<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
 			</main>
 		)
+	}
+
+	if (!user) {
+		router.replace(`/attendee/login?redirect=${encodeURIComponent("/attendee/my-events")}`)
+		return null
 	}
 
 	const allOrders = orders ?? []

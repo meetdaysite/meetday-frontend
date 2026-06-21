@@ -14,12 +14,13 @@ import { useNotificationStore } from "@/store/notificationStore"
 interface NavLink {
 	label: string
 	href: string
+	requiresAuth?: boolean
 	deferred?: boolean
 }
 
 const NAV_LINKS: NavLink[] = [
 	{ label: "Browse", href: "/explore" },
-	{ label: "My Events", href: "/attendee/my-events" },
+	{ label: "My Events", href: "/attendee/my-events", requiresAuth: true },
 ]
 
 export function AttendeeHeader() {
@@ -72,7 +73,7 @@ export function AttendeeHeader() {
 
 				{/* Desktop nav */}
 				<nav className="hidden lg:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2" aria-label="Main navigation">
-					{NAV_LINKS.map((link) => {
+					{NAV_LINKS.filter(link => !link.requiresAuth || !!user).map((link) => {
 						const isActive = pathname === link.href
 						return (
 							<Link
@@ -189,7 +190,7 @@ export function AttendeeHeader() {
 			{/* Mobile drawer */}
 			{mobileOpen && (
 				<div className="lg:hidden border-t border-border-default bg-surface-canvas px-4 pb-4 pt-2 flex flex-col gap-1">
-					{NAV_LINKS.map((link) => (
+					{NAV_LINKS.filter(link => !link.requiresAuth || !!user).map((link) => (
 						<Link
 							key={link.label}
 							href={link.href}

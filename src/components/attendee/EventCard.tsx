@@ -77,7 +77,7 @@ export function EventCard({ event, className }: EventCardProps) {
 			<div className="absolute inset-x-0 top-0 h-24 bg-linear-to-b from-black/50 to-transparent" />
 
 			{/* Event type badge */}
-			<span className="absolute -top-3.25 -right-3.5 shrink-0 bg-white/10 text-white text-[9px] font-semibold px-2 py-1 uppercase tracking-wide shadow-sm rounded-bl-sm">
+			<span className="absolute top-0 right-0 shrink-0 bg-white/10 text-white text-[9px] font-semibold px-2 py-1 uppercase tracking-wide shadow-sm rounded-bl-sm">
 				{event.eventType}
 			</span>
 
@@ -94,7 +94,7 @@ export function EventCard({ event, className }: EventCardProps) {
 				<div className="flex flex-col gap-3">
 					<TruncatedTitle
 						text={event.title}
-						className="text-white font-black text-xl uppercase leading-tight tracking-tight line-clamp-2 drop-shadow-md"
+						className="text-white font-black text-xl uppercase leading-tight tracking-tight line-clamp-2 drop-shadow-md truncate"
 					/>
 
 					<div className="flex flex-col gap-1">

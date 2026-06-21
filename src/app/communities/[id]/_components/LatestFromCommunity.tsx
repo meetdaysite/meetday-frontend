@@ -2,8 +2,8 @@ import Image from "next/image"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import LockSvg from "@/icons/outlined/lock.svg"
-import BoltSvg from "@/icons/outlined/suspension-bolt.svg"
-import ChatSvg from "@/icons/outlined/chat.svg"
+import BoltSvg from "@/icons/outlined/bolt.svg"
+// import ChatSvg from "@/icons/outlined/chat.svg"
 
 // TODO: Replace with real type once community chat/feed API is integrated
 interface CommunityPost {
@@ -49,24 +49,24 @@ export function LatestFromCommunity({ communityName, isLoggedIn }: LatestFromCom
 		<div className="rounded-panel bg-surface-card border border-border-default p-5">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<div className="flex items-center gap-2">
-					<Icon as={ChatSvg} size="md" color="brand" />
+					{/* <Icon as={ChatSvg} size="md" color="brand" /> */}
 					<p className="text-body-md font-semibold text-text-primary">Latest from community</p>
 				</div>
 				{!isLoggedIn && (
-					<span className="flex items-center gap-1 text-[11px] font-medium text-text-muted border border-border-default rounded-avatar px-2 py-0.5">
-						<Icon as={LockSvg} size="sm" color="muted" />
+					<span className="flex items-center gap-1 text-[10px] font-medium text-text-info bg-surface-info-soft border border-blue-200 rounded-avatar px-2 py-0.5">
+						<Icon as={LockSvg} size="xs" color="info" />
 						Preview
 					</span>
 				)}
 			</div>
 
-			{/* Posts list with conditional lock overlay */}
-			<div className="relative">
-				<div className={`flex flex-col gap-3 ${!isLoggedIn ? "pointer-events-none" : ""}`}>
+			{/* Posts list */}
+			<div>
+				<div className={`grid grid-cols-3 gap-3 ${!isLoggedIn ? "pointer-events-none" : ""}`}>
 					{MOCK_POSTS.map((post, i) => (
 						<div
 							key={post.id}
-							className={`flex gap-3 p-3 rounded-action border border-border-default bg-surface-page transition-opacity ${!isLoggedIn && i >= 1 ? "opacity-40" : ""} ${!isLoggedIn && i >= 2 ? "opacity-20" : ""}`}
+							className={`flex flex-col gap-2 p-3 rounded-action border border-border-default bg-surface-page transition-opacity ${!isLoggedIn && i >= 1 ? "opacity-40" : ""} ${!isLoggedIn && i >= 2 ? "opacity-20" : ""}`}
 						>
 							<div className="relative size-9 rounded-full overflow-hidden shrink-0">
 								<Image
@@ -77,8 +77,8 @@ export function LatestFromCommunity({ communityName, isLoggedIn }: LatestFromCom
 									className="object-cover"
 								/>
 							</div>
-							<div className="flex-1 min-w-0">
-								<div className="flex items-baseline gap-2">
+							<div>
+								<div className="flex items-baseline gap-1.5 flex-wrap">
 									<span className="text-label-sm font-semibold text-text-primary">
 										{post.authorName}
 									</span>
@@ -92,21 +92,23 @@ export function LatestFromCommunity({ communityName, isLoggedIn }: LatestFromCom
 					))}
 				</div>
 
-				{/* Lock overlay when not logged in */}
+				{/* Lock banner when not logged in */}
 				{!isLoggedIn && (
-					<div className="absolute inset-x-0 bottom-0 h-36 bg-linear-to-t from-surface-card to-transparent flex flex-col items-center justify-end gap-3 pb-2">
-						<div className="flex flex-col items-center gap-2 text-center px-4">
-							<Icon as={LockSvg} size="lg" color="muted" />
-							<p className="text-label-sm text-text-secondary font-normal leading-snug max-w-xs">
-								Join <span className="font-semibold text-text-primary">{communityName}</span> to
-								unlock conversations, connect with members and get first access to events.
-							</p>
+					<div className="mt-3 rounded-panel bg-surface-brand-soft border border-border-focus p-4 flex flex-col sm:flex-row items-center gap-4">
+						<div className="flex items-center justify-center size-10 rounded-full bg-action-primary shrink-0">
+							<Icon as={LockSvg} size="sm" color="inverse" />
 						</div>
+						<p className="flex-1 min-w-0 text-label-sm text-text-secondary font-normal leading-snug text-center sm:text-left">
+							Join{" "}
+							<span className="font-semibold text-text-brand">{communityName}</span>{" "}
+							to unlock conversations, connect with members and get first access to events.
+						</p>
 						{/* TODO: Wire up join action via POST /api/communities/[id]/join */}
 						<Button
 							variant="primary"
 							size="sm"
 							radius="pill"
+							className="shrink-0"
 							leftIcon={<Icon as={BoltSvg} size="sm" color="inverse" />}
 						>
 							Join Community
