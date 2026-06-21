@@ -44,11 +44,13 @@ const WHY_JOIN_ITEMS = [
 	},
 ]
 
-function WhyJoinCard({ onJoinClick }: { onJoinClick: () => void }) {
+function WhyJoinCard({ isMember, onJoinClick }: { isMember: boolean; onJoinClick: () => void }) {
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center gap-2 mb-4">
-				<span className="text-body-md font-semibold text-text-primary">Why join this community?</span>
+				<span className="text-body-md font-semibold text-text-primary">
+					{isMember ? "What you have access to" : "Why join this community?"}
+				</span>
 			</div>
 
 			<div className="flex flex-col gap-3">
@@ -67,16 +69,18 @@ function WhyJoinCard({ onJoinClick }: { onJoinClick: () => void }) {
 				))}
 			</div>
 
-			<Button
-				variant="primary"
-				size="md"
-				radius="pill"
-				className="w-full mt-5"
-				leftIcon={<Icon as={BoltSvg} size="sm" color="inverse" />}
-				onClick={onJoinClick}
-			>
-				Join Community
-			</Button>
+			{!isMember && (
+				<Button
+					variant="primary"
+					size="md"
+					radius="pill"
+					className="w-full mt-5"
+					leftIcon={<Icon as={BoltSvg} size="sm" color="inverse" />}
+					onClick={onJoinClick}
+				>
+					Join Community
+				</Button>
+			)}
 		</div>
 	)
 }
@@ -106,7 +110,7 @@ const MEMBER_STATS = [
 	{ label: "Event rate", value: "96%" },
 ]
 
-function PeopleInCommunityCard({ isLoggedIn }: { isLoggedIn: boolean }) {
+function PeopleInCommunityCard({ isMember }: { isMember: boolean }) {
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center justify-between gap-2 mb-4">
@@ -116,7 +120,7 @@ function PeopleInCommunityCard({ isLoggedIn }: { isLoggedIn: boolean }) {
 						People in this community
 					</span>
 				</div>
-				{!isLoggedIn && (
+				{!isMember && (
 					<span className="flex items-center gap-1 text-[10px] font-medium text-text-info bg-surface-info-soft border border-blue-200 rounded-avatar px-2 py-0.5">
 						<Icon as={LockSvg} size="xs" color="info" />
 						Preview
@@ -267,11 +271,11 @@ function CommunityGuidelinesCard() {
 
 // ─── Composed Side Panel ──────────────────────────────────────────────────────
 
-export function CommunitySidePanel({ isLoggedIn, onJoinClick }: { isLoggedIn: boolean; onJoinClick: () => void }) {
+export function CommunitySidePanel({ isMember, onJoinClick }: { isMember: boolean; onJoinClick: () => void }) {
 	return (
 		<>
-			<WhyJoinCard onJoinClick={onJoinClick} />
-			<PeopleInCommunityCard isLoggedIn={isLoggedIn} />
+			<WhyJoinCard isMember={isMember} onJoinClick={onJoinClick} />
+			<PeopleInCommunityCard isMember={isMember} />
 			<TrustedHostsCard />
 			<CommunityGuidelinesCard />
 		</>

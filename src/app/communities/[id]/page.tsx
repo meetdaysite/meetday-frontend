@@ -136,9 +136,9 @@ function TabContent({
 	if (activeTab === "overview") {
 		return (
 			<>
-				<WhatToDoCard />
+				<WhatToDoCard isMember={isMember} />
 				<UpcomingExperiences communityId={community.id} />
-				<LatestFromCommunity communityName={community.name} isLoggedIn={isLoggedIn} />
+				<LatestFromCommunity communityName={community.name} isMember={isMember} />
 			</>
 		)
 	}
@@ -196,7 +196,7 @@ export default function CommunityDetailsPage() {
 				<div className="flex gap-8 items-start">
 					{/* Left: main content */}
 					<div className="flex-1 min-w-0 flex flex-col gap-5">
-						<CommunityHero community={community} />
+						<CommunityHero community={community} isMember={isMember} />
 
 						{/* Tabs row */}
 						<div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
@@ -237,13 +237,14 @@ export default function CommunityDetailsPage() {
 						{/* Tab content */}
 						<TabContent activeTab={activeTab} community={community} isLoggedIn={isLoggedIn} isMember={isMember} onJoinClick={openJoinModal} />
 
+
 						{/* Join banner — hidden once user is a member */}
 						{!isMember && !isActiveTabLocked && <JoinCommunityBanner communityName={community.name} isLoggedIn={isLoggedIn} onJoinClick={openJoinModal} />}
 					</div>
 
 					{/* Right: side panel (desktop only) */}
 					<aside className="hidden lg:flex flex-col gap-4 w-100 shrink-0 sticky top-20">
-						<CommunitySidePanel isLoggedIn={isLoggedIn} onJoinClick={openJoinModal} />
+						<CommunitySidePanel isMember={isMember} onJoinClick={openJoinModal} />
 					</aside>
 				</div>
 			</div>

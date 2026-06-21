@@ -10,7 +10,7 @@ interface WhatToDoItem {
 	title: string
 	description: string
 	buttonLabel: string
-	// Card background, icon wrapper bg, icon color, button classes
+	memberButtonLabel: string
 	cardBg: string
 	iconWrapperBg: string
 	iconColor: React.ComponentPropsWithoutRef<typeof Icon>["color"]
@@ -23,6 +23,7 @@ const ITEMS: WhatToDoItem[] = [
 		title: "Explore Experiences",
 		description: "See upcoming music-led experiences from this community.",
 		buttonLabel: "View Experiences",
+		memberButtonLabel: "View Experiences",
 		cardBg: "bg-green-50 border-green-100",
 		iconWrapperBg: "bg-green-100",
 		iconColor: "success",
@@ -33,6 +34,7 @@ const ITEMS: WhatToDoItem[] = [
 		title: "Preview Chat",
 		description: "See what conversations are happening.",
 		buttonLabel: "Join to Chat",
+		memberButtonLabel: "Open Chat",
 		cardBg: "bg-surface-vibe-soft border-purple-100",
 		iconWrapperBg: "bg-purple-100",
 		iconColor: "vibe",
@@ -44,6 +46,7 @@ const ITEMS: WhatToDoItem[] = [
 		title: "Announcements",
 		description: "Stay updated with official news and event drops.",
 		buttonLabel: "Join to Get Updates",
+		memberButtonLabel: "See Announcements",
 		cardBg: "bg-surface-info-soft border-blue-100",
 		iconWrapperBg: "bg-blue-100",
 		iconColor: "info",
@@ -51,7 +54,7 @@ const ITEMS: WhatToDoItem[] = [
 	},
 ]
 
-export function WhatToDoCard() {
+export function WhatToDoCard({ isMember }: { isMember: boolean }) {
 	return (
 		<div className="rounded-panel bg-surface-card border border-border-default p-5">
 			<p className="text-body-md font-semibold text-text-primary">What do you want to do?</p>
@@ -92,7 +95,7 @@ export function WhatToDoCard() {
 							className={item.buttonClassName}
 							rightIcon={<Icon as={ArrowRightSvg} size="sm" color="inverse" />}
 						>
-							{item.buttonLabel}
+							{isMember ? item.memberButtonLabel : item.buttonLabel}
 						</Button>
 					</div>
 				))}

@@ -41,10 +41,10 @@ const MOCK_POSTS: CommunityPost[] = [
 
 interface LatestFromCommunityProps {
 	communityName: string
-	isLoggedIn: boolean
+	isMember: boolean
 }
 
-export function LatestFromCommunity({ communityName, isLoggedIn }: LatestFromCommunityProps) {
+export function LatestFromCommunity({ communityName, isMember }: LatestFromCommunityProps) {
 	return (
 		<div className="rounded-panel bg-surface-card border border-border-default p-5">
 			<div className="flex items-center justify-between gap-2 mb-4">
@@ -52,7 +52,7 @@ export function LatestFromCommunity({ communityName, isLoggedIn }: LatestFromCom
 					{/* <Icon as={ChatSvg} size="md" color="brand" /> */}
 					<p className="text-body-md font-semibold text-text-primary">Latest from community</p>
 				</div>
-				{!isLoggedIn && (
+				{!isMember && (
 					<span className="flex items-center gap-1 text-[10px] font-medium text-text-info bg-surface-info-soft border border-blue-200 rounded-avatar px-2 py-0.5">
 						<Icon as={LockSvg} size="xs" color="info" />
 						Preview
@@ -62,11 +62,11 @@ export function LatestFromCommunity({ communityName, isLoggedIn }: LatestFromCom
 
 			{/* Posts list */}
 			<div>
-				<div className={`grid grid-cols-3 gap-3 ${!isLoggedIn ? "pointer-events-none" : ""}`}>
+				<div className={`grid grid-cols-3 gap-3 ${!isMember ? "pointer-events-none" : ""}`}>
 					{MOCK_POSTS.map((post, i) => (
 						<div
 							key={post.id}
-							className={`flex flex-col gap-2 p-3 rounded-action border border-border-default bg-surface-page transition-opacity ${!isLoggedIn && i >= 1 ? "opacity-40" : ""} ${!isLoggedIn && i >= 2 ? "opacity-20" : ""}`}
+							className={`flex flex-col gap-2 p-3 rounded-action border border-border-default bg-surface-page transition-opacity ${!isMember && i >= 1 ? "opacity-40" : ""} ${!isMember && i >= 2 ? "opacity-20" : ""}`}
 						>
 							<div className="relative size-9 rounded-full overflow-hidden shrink-0">
 								<Image
@@ -93,7 +93,7 @@ export function LatestFromCommunity({ communityName, isLoggedIn }: LatestFromCom
 				</div>
 
 				{/* Lock banner when not logged in */}
-				{!isLoggedIn && (
+				{!isMember && (
 					<div className="mt-3 rounded-panel bg-surface-brand-soft border border-border-focus p-4 flex flex-col sm:flex-row items-center gap-4">
 						<div className="flex items-center justify-center size-10 rounded-full bg-action-primary shrink-0">
 							<Icon as={LockSvg} size="sm" color="inverse" />

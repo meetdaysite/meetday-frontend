@@ -7,6 +7,7 @@ import CalendarSvg from "@/icons/outlined/calendar.svg"
 import MapPointSvg from "@/icons/outlined/map-point.svg"
 import BookmarkSvg from "@/icons/outlined/bookmark.svg"
 import BoltSvg from "@/icons/outlined/bolt.svg"
+import CheckSvg from "@/icons/outlined/check.svg"
 
 // TODO: Replace with real type once community API is integrated
 export interface CommunityDetails {
@@ -30,7 +31,7 @@ function fmtCount(n: number): string {
 // TODO: Accept `isJoined` prop and toggle button label/action accordingly
 // TODO: Wire join action to POST /api/communities/[id]/join
 // TODO: Wire save action to POST /api/communities/[id]/save
-export function CommunityHero({ community }: { community: CommunityDetails }) {
+export function CommunityHero({ community, isMember }: { community: CommunityDetails; isMember: boolean }) {
 	return (
 		<div className="rounded-panel overflow-hidden bg-neutral-950 border border-neutral-800 relative">
 			{/* Ambient glow */}
@@ -113,14 +114,28 @@ export function CommunityHero({ community }: { community: CommunityDetails }) {
 
 				{/* Row 2: action buttons */}
 				<div className="flex gap-2">
-					<Button
-						variant="primary"
-						size="md"
-						radius="pill"
-						leftIcon={<Icon as={BoltSvg} size="sm" color="inverse" />}
-					>
-						Join Community
-					</Button>
+					{isMember ? (
+						// TODO: Wire leave action to DELETE /api/communities/[id]/membership
+						<Button
+							variant="secondary"
+							size="md"
+							radius="pill"
+							leftIcon={<Icon as={CheckSvg} size="sm" color="inherit" />}
+							className="border-white/20 text-white bg-white/10 hover:bg-white/15"
+						>
+							Joined
+						</Button>
+					) : (
+						// TODO: Wire join action — opens JoinCommunityModal
+						<Button
+							variant="primary"
+							size="md"
+							radius="pill"
+							leftIcon={<Icon as={BoltSvg} size="sm" color="inverse" />}
+						>
+							Join Community
+						</Button>
+					)}
 					<Button
 						variant="secondary"
 						size="md"
