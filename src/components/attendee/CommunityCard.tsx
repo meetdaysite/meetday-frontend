@@ -5,14 +5,22 @@ import { Icon } from "@/components/ui/Icon"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import UserSvg from "@/icons/outlined/user.svg"
 
+export type CommunityType = "MEETDAY_MANAGED_PUBLIC" | "HOST_LED" | "PRIVATE_INVITE_ONLY"
+
 export interface Community {
 	id: string
+	slug: string
 	name: string
+	type: string
 	memberCount: number
-	upcomingCount: number
+	experienceCount: number
 	coverImageUrl: string
-	memberAvatars: string[]
-	extraMemberCount: number
+}
+
+const TYPE_LABEL: Record<string, string> = {
+	MEETDAY_MANAGED_PUBLIC: "Meetday Managed",
+	HOST_LED: "Host Led",
+	PRIVATE_INVITE_ONLY: "Private • Invite Only",
 }
 
 function fmtCount(n: number): string {
@@ -26,8 +34,7 @@ interface CommunityCardProps {
 
 export function CommunityCard({ community }: CommunityCardProps) {
 	return (
-		// TODO: Replace "meetday-music-nights" with community.id once API returns real IDs
-		<Link href={`/communities/${community.id}`} className="w-full rounded-2xl overflow-hidden border border-border-default bg-surface-card block">
+		<Link href={`/communities/${community.slug}`} className="w-full rounded-2xl overflow-hidden border border-border-default bg-surface-card block">
 			<div className="relative h-36 w-full overflow-hidden">
 				<Image
 					src={community.coverImageUrl}
@@ -40,7 +47,10 @@ export function CommunityCard({ community }: CommunityCardProps) {
 			<div className="p-3 flex flex-col gap-3">
 				<div>
 					<p className="font-semibold text-lg text-text-primary leading-tight">{community.name}</p>
-					<p className="text-[11px] font-medium text-text-secondary mt-0.5">Meetday Managed • Public</p>
+					<p className="text-[11px] font-medium text-text-secondary mt-0.5">
+						{TYPE_LABEL[community.type] ?? community.type}
+						{/* • {community.access} */}
+					</p>
 				</div>
 				<div className="flex items-center gap-2">
 					<div className="flex items-center gap-1 text-[11px] text-text-secondary font-medium">
@@ -49,24 +59,10 @@ export function CommunityCard({ community }: CommunityCardProps) {
 					</div>
 					<div className="flex items-center gap-1 text-[11px] text-text-secondary font-medium">
 						<Icon as={CalendarSvg} size="sm" color="secondary" />
-						<span>{community.upcomingCount} upcoming</span>
+						<span>{community.experienceCount} upcoming</span>
 					</div>
 				</div>
-				<div className="flex items-center justify-between gap-2">
-					<div className="flex items-center">
-						{community.memberAvatars.map((src, i) => (
-							<div
-								key={i}
-								className="relative w-6 h-6 rounded-full overflow-hidden border-2 border-border-default -ml-1.5 first:ml-0"
-								style={{ zIndex: community.memberAvatars.length - i }}
-							>
-								<Image src={src} alt="" fill sizes="20px" className="object-cover" />
-							</div>
-						))}
-						<span className="ml-1 text-xs font-medium text-text-secondary">
-							+{community.extraMemberCount}
-						</span>
-					</div>
+				<div className="flex justify-end">
 					{/* TODO: Wire up join/leave toggle via POST /api/communities/[id]/join */}
 					<Button
 						variant="secondary"

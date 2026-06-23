@@ -9,18 +9,18 @@ import BookmarkSvg from "@/icons/outlined/bookmark.svg"
 import BoltSvg from "@/icons/outlined/bolt.svg"
 import CheckSvg from "@/icons/outlined/check.svg"
 
-// TODO: Replace with real type once community API is integrated
 export interface CommunityDetails {
 	id: string
+	slug: string
 	name: string
 	description: string
-	isManaged: boolean
-	visibility: "Public" | "Private"
+	type: string
+	access: string
 	memberCount: number
-	upcomingCount: number
-	city: string
+	experienceCount: number
+	primaryCity: string
 	coverImageUrl: string
-	logoUrl: string
+	iconUrl: string
 }
 
 function fmtCount(n: number): string {
@@ -28,10 +28,18 @@ function fmtCount(n: number): string {
 	return String(n)
 }
 
-// TODO: Accept `isJoined` prop and toggle button label/action accordingly
-// TODO: Wire join action to POST /api/communities/[id]/join
-// TODO: Wire save action to POST /api/communities/[id]/save
-export function CommunityHero({ community, isMember }: { community: CommunityDetails; isMember: boolean }) {
+export function CommunityHero({
+	community,
+	isMember,
+	onJoinClick,
+}: {
+	community: CommunityDetails
+	isMember: boolean
+	onJoinClick: () => void
+}) {
+	const isManaged = community.type === "MEETDAY_MANAGED_PUBLIC"
+	const visibilityLabel = community.access === "PUBLIC" ? "Public" : "Private"
+
 	return (
 		<div className="rounded-panel overflow-hidden bg-neutral-950 border border-neutral-800 relative">
 			{/* Ambient glow */}
@@ -56,12 +64,12 @@ export function CommunityHero({ community, isMember }: { community: CommunityDet
 
 			{/* Content area */}
 			<div className="relative z-10 px-6 pb-6 flex flex-col gap-5">
-				{/* Row 1: logo (left) + info (right) */}
+				{/* Row 1: icon (left) + info (right) */}
 				<div className="grid grid-cols-[auto_1fr] gap-5 items-start -mt-10">
-					{/* Left: community logo */}
+					{/* Left: community icon */}
 					<div className="relative size-32 rounded-full shrink-0 border-4 border-neutral-950 overflow-hidden bg-neutral-800">
 						<Image
-							src={community.logoUrl}
+							src={community.iconUrl}
 							alt={community.name}
 							fill
 							sizes="128px"
@@ -74,9 +82,9 @@ export function CommunityHero({ community, isMember }: { community: CommunityDet
 						{/* Badges */}
 						<div className="flex gap-2 flex-wrap">
 							<span className="text-[11px] font-medium bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded-avatar px-2.5 py-0.5">
-								{community.visibility} Community
+								{visibilityLabel} Community
 							</span>
-							{community.isManaged && (
+							{isManaged && (
 								<span className="text-[11px] font-medium bg-teal-600/20 text-teal-300 border border-teal-500/30 rounded-avatar px-2.5 py-0.5">
 									Managed by Meetday
 								</span>
@@ -86,7 +94,7 @@ export function CommunityHero({ community, isMember }: { community: CommunityDet
 						{/* Name */}
 						<div className="flex items-center gap-2">
 							<h1 className="text-xl font-extrabold text-white leading-tight">{community.name}</h1>
-							{community.isManaged && <Icon as={VerifiedSvg} size="md" color="brand" />}
+							{isManaged && <Icon as={VerifiedSvg} size="md" color="brand" />}
 						</div>
 
 						{/* Description */}
@@ -102,11 +110,11 @@ export function CommunityHero({ community, isMember }: { community: CommunityDet
 							</div>
 							<div className="flex items-center gap-1.5 text-label-sm text-white/75">
 								<Icon as={CalendarSvg} size="sm" color="inverse" />
-								<span>{community.upcomingCount} upcoming experiences</span>
+								<span>{community.experienceCount} upcoming experiences</span>
 							</div>
 							<div className="flex items-center gap-1.5 text-label-sm text-white/75">
 								<Icon as={MapPointSvg} size="sm" color="inverse" />
-								<span>{community.city}</span>
+								<span>{community.primaryCity}</span>
 							</div>
 						</div>
 					</div>
@@ -115,7 +123,7 @@ export function CommunityHero({ community, isMember }: { community: CommunityDet
 				{/* Row 2: action buttons */}
 				<div className="flex gap-2">
 					{isMember ? (
-						// TODO: Wire leave action to DELETE /api/communities/[id]/membership
+						// TODO: Wire leave action to DELETE /api/communities/[slug]/membership
 						<Button
 							variant="secondary"
 							size="md"
@@ -126,12 +134,12 @@ export function CommunityHero({ community, isMember }: { community: CommunityDet
 							Joined
 						</Button>
 					) : (
-						// TODO: Wire join action — opens JoinCommunityModal
 						<Button
 							variant="primary"
 							size="md"
 							radius="pill"
 							leftIcon={<Icon as={BoltSvg} size="sm" color="inverse" />}
+							onClick={onJoinClick}
 						>
 							Join Community
 						</Button>

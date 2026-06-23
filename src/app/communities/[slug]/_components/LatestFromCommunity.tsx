@@ -1,8 +1,6 @@
 import Image from "next/image"
-import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import LockSvg from "@/icons/outlined/lock.svg"
-import BoltSvg from "@/icons/outlined/bolt.svg"
 // import ChatSvg from "@/icons/outlined/chat.svg"
 
 // TODO: Replace with real type once community chat/feed API is integrated
@@ -92,29 +90,6 @@ export function LatestFromCommunity({ communityName, isMember }: LatestFromCommu
 					))}
 				</div>
 
-				{/* Lock banner when not logged in */}
-				{!isMember && (
-					<div className="mt-3 rounded-panel bg-surface-brand-soft border border-border-focus p-4 flex flex-col sm:flex-row items-center gap-4">
-						<div className="flex items-center justify-center size-10 rounded-full bg-action-primary shrink-0">
-							<Icon as={LockSvg} size="sm" color="inverse" />
-						</div>
-						<p className="flex-1 min-w-0 text-label-sm text-text-secondary font-normal leading-snug text-center sm:text-left">
-							Join{" "}
-							<span className="font-semibold text-text-brand">{communityName}</span>{" "}
-							to unlock conversations, connect with members and get first access to events.
-						</p>
-						{/* TODO: Wire up join action via POST /api/communities/[id]/join */}
-						<Button
-							variant="primary"
-							size="sm"
-							radius="pill"
-							className="shrink-0"
-							leftIcon={<Icon as={BoltSvg} size="sm" color="inverse" />}
-						>
-							Join Community
-						</Button>
-					</div>
-				)}
 			</div>
 		</div>
 	)

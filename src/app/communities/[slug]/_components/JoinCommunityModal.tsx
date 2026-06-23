@@ -20,9 +20,9 @@ import SmileCircleSvg from "@/icons/outlined/smile-circle.svg"
 
 export interface JoinModalCommunity {
 	name: string
-	logoUrl: string
-	isManaged: boolean
-	visibility: "Public" | "Private"
+	iconUrl: string
+	type: string
+	access: string
 }
 
 type VisibilityOption = "event" | "members" | "private"
@@ -125,17 +125,17 @@ export function JoinCommunityModal({ community, open, onClose, onJoin }: JoinCom
 					{/* Community identity */}
 					<div className="flex flex-col gap-3">
 						<div className="relative size-16 rounded-full overflow-hidden border border-border-default bg-surface-hover shrink-0">
-							<Image src={community.logoUrl} alt={community.name} fill sizes="64px" className="object-cover" />
+							<Image src={community.iconUrl} alt={community.name} fill sizes="64px" className="object-cover" />
 						</div>
 						<div>
 							<div className="flex items-start gap-1.5 flex-wrap">
 								<h2 className="text-body-lg font-extrabold text-text-primary leading-tight">
 									Join {community.name}
 								</h2>
-								{community.isManaged && <Icon as={VerifiedSvg} size="md" color="brand" className="mt-0.5 shrink-0" />}
+								{community.type === "MEETDAY_MANAGED_PUBLIC" && <Icon as={VerifiedSvg} size="md" color="brand" className="mt-0.5 shrink-0" />}
 							</div>
 							<span className="inline-block mt-2 text-[11px] font-semibold text-green-700 bg-green-50 border border-green-200 rounded-avatar px-2.5 py-0.5">
-								{community.visibility} Community
+								{community.access === "PUBLIC" ? "Public" : "Private"} Community
 							</span>
 						</div>
 						<p className="text-label-sm text-text-secondary font-normal leading-relaxed">

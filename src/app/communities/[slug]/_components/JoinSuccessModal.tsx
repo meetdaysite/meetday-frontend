@@ -18,8 +18,8 @@ import ConfettiSvg from "@/icons/filled/confetti.svg"
 export interface JoinSuccessCommunity {
 	name: string
 	memberCount: number
-	upcomingCount: number
-	city: string
+	experienceCount: number
+	primaryCity: string
 }
 
 // ─── Data ────────────────────────────────────────────────────────────────────
@@ -136,14 +136,14 @@ export function JoinSuccessModal({ community, open, onClose }: JoinSuccessModalP
 						<div className="flex items-center justify-center gap-2.5 px-3">
 							<Icon as={CalendarSvg} size="lg" color="success" className="shrink-0" />
 							<div>
-								<p className="text-body-sm font-bold text-text-primary">{community.upcomingCount}</p>
+								<p className="text-body-sm font-bold text-text-primary">{community.experienceCount}</p>
 								<p className="text-[11px] text-text-secondary">Upcoming experiences</p>
 							</div>
 						</div>
 						<div className="flex items-center justify-center gap-2.5 pl-3">
 							<Icon as={MapPointSvg} size="lg" color="success" className="shrink-0" />
 							<div>
-								<p className="text-body-sm font-bold text-text-primary">{community.city}</p>
+								<p className="text-body-sm font-bold text-text-primary">{community.primaryCity}</p>
 								<p className="text-[11px] text-text-secondary">Location</p>
 							</div>
 						</div>

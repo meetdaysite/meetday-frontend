@@ -539,6 +539,136 @@ export async function markAllNotificationsRead(): Promise<void> {
 
 export type { Notification, NotificationsResponse }
 
+// ─── Public communities ───────────────────────────────────────────────────────
+
+export type PublicCommunity = {
+	id: string
+	name: string
+	slug: string
+	description: string
+	type: string
+	access: string
+	primaryCity: string
+	communityCities: string[]
+	memberCount: number
+	experienceCount: number
+	category: { id: string; name: string }
+	coverImageUrl: string
+	iconUrl: string
+}
+
+export type PublicCommunitiesParams = {
+	city?: string
+	categoryId?: string
+	search?: string
+	page?: number
+	limit?: number
+}
+
+export type PublicCommunitiesResponse = {
+	data: PublicCommunity[]
+	total: number
+	page: number
+	limit: number
+}
+
+export async function getPublicCommunities(params?: PublicCommunitiesParams): Promise<PublicCommunitiesResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: PublicCommunitiesResponse }>(
+		"/communities",
+		{ params },
+	)
+	return data.data
+}
+
+export type CommunityDetailResponse = {
+	id: string
+	slug: string
+	name: string
+	description: string
+	type: string
+	status: string
+	access: string
+	memberVisibility: string
+	categoryId: string
+	primaryCity: string
+	communityCities: string[]
+	interestTags: string[]
+	coverImageKey: string
+	iconKey: string
+	autoAddMatchingEvents: boolean
+	memberCount: number
+	experienceCount: number
+	createdBy: string
+	publishedAt: string | null
+	deletedAt: string | null
+	createdAt: string
+	updatedAt: string
+	settings: {
+		id: string
+		communityId: string
+		chatEnabled: boolean
+		feedEnabled: boolean
+		announcementsEnabled: boolean
+		memberDirectoryEnabled: boolean
+		experiencesTabEnabled: boolean
+		feedPosting: string
+		chat: string
+		spamDetection: boolean
+		toxicContentDetection: boolean
+		linkFiltering: boolean
+		duplicateContentDetection: boolean
+		reportThreshold: number
+		dmPolicy: string
+		photoSharing: string
+		createdAt: string
+		updatedAt: string
+	}
+	category: { id: string; name: string }
+	interests: Array<{
+		communityId: string
+		interestId: string
+		interest: { id: string; name: string; slug: string }
+	}>
+	members: Array<{
+		id: string
+		communityId: string
+		userId: string
+		role: string
+		status: string
+		joinedAt: string
+		user: { id: string; firstName: string; lastName: string; email: string; avatarUrl: string | null }
+	}>
+	events: Array<{
+		id: string
+		communityId: string
+		eventId: string
+		source: string
+		addedAt: string
+		event: { id: string; title: string; city: string; eventDate: string; status: string }
+	}>
+	coverImageUrl: string
+	iconUrl: string
+}
+
+export async function getCommunityBySlug(slug: string): Promise<CommunityDetailResponse | null> {
+	try {
+		const { data } = await apiClient.get<{ success: boolean; data: CommunityDetailResponse }>(
+			`/communities/${slug}`,
+		)
+		return data.data
+	} catch {
+		return null
+	}
+}
+
+export async function getRecommendedCommunities(params?: PublicCommunitiesParams): Promise<PublicCommunitiesResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: PublicCommunitiesResponse }>(
+		"/communities/recommended",
+		{ params },
+	)
+	return data.data
+}
+
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
