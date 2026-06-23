@@ -7,7 +7,7 @@ import { useForm, useFormContext, FormProvider, Controller } from "react-hook-fo
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { isAxiosError } from "axios"
+import { ApiError, getApiErrorMessage } from "@/lib/errors"
 import clsx from "clsx"
 import {
 	registerHost,
@@ -43,19 +43,6 @@ import DuotoneStarsSvg from "@/icons/duotone/stars.svg"
 import DuotoneShieldCheckSvg from "@/icons/duotone/shield-check.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getApiErrorMessage(error: unknown): string {
-	if (isAxiosError(error)) {
-		const status = error.response?.status
-		const body = error.response?.data
-		if (status === 409) return "An account already exists for this number. Please log in."
-		if (status === 401) return "Session expired. Please sign in again."
-		if (body?.message) return body.message as string
-		if (body?.error) return body.error as string
-	}
-	return "Something went wrong. Please try again."
-}
 
 function buildRegisterPayload(values: FormValues, phone?: string): RegisterPayload {
 	return {
@@ -1337,7 +1324,7 @@ export default function OnboardingPage() {
 					await verifyPan()
 				} catch (e) {
 					// 409 = PAN already verified — treat as success
-					if (!(isAxiosError(e) && e.response?.status === 409)) throw e
+					if (!(e instanceof ApiError && e.statusCode === 409)) throw e
 				}
 
 				setStep(s => s + 1)
@@ -1365,7 +1352,7 @@ export default function OnboardingPage() {
 				setBankKycResult(result)
 				setStep(s => s + 1)
 			} catch (e) {
-				if (isAxiosError(e) && e.response?.status === 409) {
+				if (e instanceof ApiError && e.statusCode === 409) {
 					// KYC already verified
 					setBankKycResult({
 						panReferenceId: "",

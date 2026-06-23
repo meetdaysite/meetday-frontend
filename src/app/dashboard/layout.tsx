@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { isAxiosError } from "axios"
+import { ApiError } from "@/lib/errors"
 import clsx from "clsx"
 import { Sidebar } from "@/components/dashboard/Sidebar"
 import { LogoutConfirmDialog } from "@/components/ui/LogoutConfirmDialog"
@@ -171,7 +171,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 			})
 			.catch((e) => {
 				if (!cancelled) {
-					if (isAxiosError(e) && e.response?.status === 404) {
+					if (e instanceof ApiError && e.statusCode === 404) {
 						router.replace("/onboarding")
 					} else {
 						// Don't redirect to /login — the user is still authenticated in Firebase,

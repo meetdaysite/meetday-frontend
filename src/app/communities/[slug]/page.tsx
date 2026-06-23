@@ -12,6 +12,7 @@ import BoltSvg from "@/icons/outlined/bolt.svg"
 import { Button } from "@/components/ui/Button"
 import { useAuthStore } from "@/store/authStore"
 import { getCommunityBySlug, joinCommunity } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 import type { CommunityDetailResponse, ProfileVisibility } from "@/lib/api"
 import { CommunityHero } from "./_components/CommunityHero"
 import type { CommunityDetails } from "./_components/CommunityHero"
@@ -351,8 +352,8 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 				onJoin={async (profileVisibility) => {
 					try {
 						await handleJoin(profileVisibility)
-					} catch {
-						toast.error("Failed to join community. Please try again.")
+					} catch (err) {
+						toast.error(getApiErrorMessage(err))
 					}
 				}}
 			/>

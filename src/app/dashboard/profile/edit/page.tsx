@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { useHostStore } from "@/store/hostStore"
 import { updateHostProfile, getHostProfile, getCategories, getUploadUrl } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 import type { Category } from "@/lib/api"
 
 import CloseSvg from "@/icons/outlined/close.svg"
@@ -283,10 +284,10 @@ export default function EditProfilePage() {
 			})
 			setAvatarKey(key)
 			showToast("Photo ready. Save to apply.", "success")
-		} catch {
+		} catch (err) {
 			setAvatarPreview(null)
 			setAvatarKey(null)
-			showToast("Photo upload failed. Please try again.", "error")
+			showToast(getApiErrorMessage(err), "error")
 		} finally {
 			setAvatarUploading(false)
 			// Reset input so the same file can be re-selected if needed
@@ -326,8 +327,8 @@ export default function EditProfilePage() {
 			setProfile(fresh)
 			showToast("Profile updated.", "success")
 			setTimeout(() => router.push("/dashboard/profile"), 1000)
-		} catch {
-			showToast("Failed to save. Please try again.", "error")
+		} catch (err) {
+			showToast(getApiErrorMessage(err), "error")
 		} finally {
 			setSaving(false)
 		}

@@ -17,6 +17,7 @@ import LikeSvg from "@/icons/filled/like.svg"
 import DislikeSvg from "@/icons/filled/dislike.svg"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
 import { toast } from "sonner"
+import { getApiErrorMessage } from "@/lib/errors"
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -594,8 +595,8 @@ function OnboardingInner() {
 				})
 				clearSession()
 				setShowWelcomeModal(true)
-			} catch {
-				toast.error("Registration failed. Please try again.")
+			} catch (err) {
+				toast.error(getApiErrorMessage(err))
 				return
 			}
 		}
