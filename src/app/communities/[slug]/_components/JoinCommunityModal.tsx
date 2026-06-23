@@ -15,6 +15,7 @@ import PulseSvg from "@/icons/outlined/pulse.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 import SmileCircleSvg from "@/icons/outlined/smile-circle.svg"
+import type { ProfileVisibility } from "@/lib/api"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,8 +25,6 @@ export interface JoinModalCommunity {
 	type: string
 	access: string
 }
-
-type VisibilityOption = "event" | "members" | "private"
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -38,20 +37,25 @@ const UNLOCK_ITEMS = [
 	{ icon: SmileCircleSvg, title: "Post-event connections", description: "Revisit memories and stay connected." },
 ]
 
-const VISIBILITY_OPTIONS: { key: VisibilityOption; label: string; description: string; recommended?: boolean }[] = [
+const VISIBILITY_OPTIONS: {
+	key: ProfileVisibility
+	label: string
+	description: string
+	recommended?: boolean
+}[] = [
 	{
-		key: "event",
+		key: "EVENT_ATTENDEES_ONLY",
 		label: "Visible only to people attending the same event",
 		description: "Your profile and activity will be visible only to people attending the same events as you.",
 		recommended: true,
 	},
 	{
-		key: "members",
+		key: "COMMUNITY_MEMBERS",
 		label: "Visible to community members",
 		description: "Your profile and activity will be visible to all members of this community.",
 	},
 	{
-		key: "private",
+		key: "PRIVATE",
 		label: "Private until I attend an event",
 		description: "Your profile will be hidden until you attend an event in this community.",
 	},
@@ -82,12 +86,12 @@ interface JoinCommunityModalProps {
 	community: JoinModalCommunity
 	open: boolean
 	onClose: () => void
-	// TODO: Wire to POST /api/communities/[id]/join with selected visibility
-	onJoin?: (visibility: VisibilityOption) => void
+	onJoin?: (visibility: ProfileVisibility) => Promise<void>
 }
 
 export function JoinCommunityModal({ community, open, onClose, onJoin }: JoinCommunityModalProps) {
-	const [visibility, setVisibility] = useState<VisibilityOption>("event")
+	const [visibility, setVisibility] = useState<ProfileVisibility>("EVENT_ATTENDEES_ONLY")
+	const [isSubmitting, setIsSubmitting] = useState(false)
 
 	useEffect(() => {
 		if (open) {
@@ -96,17 +100,30 @@ export function JoinCommunityModal({ community, open, onClose, onJoin }: JoinCom
 		return () => { document.body.style.overflow = "" }
 	}, [open])
 
+	// Reset state when modal opens
+	useEffect(() => {
+		if (open) {
+			setVisibility("EVENT_ATTENDEES_ONLY")
+			setIsSubmitting(false)
+		}
+	}, [open])
+
 	if (!open) return null
 
-	const handleJoin = () => {
-		onJoin?.(visibility)
-		onClose()
+	const handleJoin = async () => {
+		if (!onJoin || isSubmitting) return
+		setIsSubmitting(true)
+		try {
+			await onJoin(visibility)
+		} finally {
+			setIsSubmitting(false)
+		}
 	}
 
 	return (
 		<div
 			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-			onClick={e => { if (e.target === e.currentTarget) onClose() }}
+			onClick={e => { if (e.target === e.currentTarget && !isSubmitting) onClose() }}
 		>
 			<div className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col sm:flex-row relative">
 
@@ -114,7 +131,8 @@ export function JoinCommunityModal({ community, open, onClose, onJoin }: JoinCom
 				<button
 					type="button"
 					onClick={onClose}
-					className="absolute top-4 right-4 z-10 flex items-center justify-center size-8 rounded-full bg-surface-hover hover:bg-surface-page border border-border-default transition-colors"
+					disabled={isSubmitting}
+					className="absolute top-4 right-4 z-10 flex items-center justify-center size-8 rounded-full bg-surface-hover hover:bg-surface-page border border-border-default transition-colors disabled:opacity-40"
 				>
 					<Icon as={CloseSvg} size="md" color="primary" />
 				</button>
@@ -139,7 +157,7 @@ export function JoinCommunityModal({ community, open, onClose, onJoin }: JoinCom
 							</span>
 						</div>
 						<p className="text-label-sm text-text-secondary font-normal leading-relaxed">
-							Join this public community to access conversations, updates, experiences and real connections.
+							Join this community to access conversations, updates, experiences and real connections.
 						</p>
 					</div>
 
@@ -190,8 +208,9 @@ export function JoinCommunityModal({ community, open, onClose, onJoin }: JoinCom
 									<button
 										key={opt.key}
 										type="button"
+										disabled={isSubmitting}
 										onClick={() => setVisibility(opt.key)}
-										className={`w-full text-left rounded-action border p-3.5 flex items-start gap-3 transition-colors ${
+										className={`w-full text-left rounded-action border p-3.5 flex items-start gap-3 transition-colors disabled:opacity-60 ${
 											isSelected
 												? "border-action-primary bg-red-50"
 												: "border-border-default bg-surface-page hover:bg-surface-hover"
@@ -252,15 +271,17 @@ export function JoinCommunityModal({ community, open, onClose, onJoin }: JoinCom
 							radius="pill"
 							className="w-full"
 							leftIcon={<Icon as={BoltSvg} size="sm" color="inverse" />}
+							disabled={isSubmitting}
 							onClick={handleJoin}
 						>
-							Join Community
+							{isSubmitting ? "Joining…" : "Join Community"}
 						</Button>
 						<Button
 							variant="secondary"
 							size="md"
 							radius="pill"
 							className="w-full"
+							disabled={isSubmitting}
 							onClick={onClose}
 						>
 							Maybe Later

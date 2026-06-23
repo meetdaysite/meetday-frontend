@@ -4,14 +4,15 @@ import { use, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { notFound } from "next/navigation"
 import Link from "next/link"
+import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import LockSvg from "@/icons/outlined/lock.svg"
 import BoltSvg from "@/icons/outlined/bolt.svg"
 import { Button } from "@/components/ui/Button"
 import { useAuthStore } from "@/store/authStore"
-import { getCommunityBySlug } from "@/lib/api"
-import type { CommunityDetailResponse } from "@/lib/api"
+import { getCommunityBySlug, joinCommunity } from "@/lib/api"
+import type { CommunityDetailResponse, ProfileVisibility } from "@/lib/api"
 import { CommunityHero } from "./_components/CommunityHero"
 import type { CommunityDetails } from "./_components/CommunityHero"
 import { WhatToDoCard } from "./_components/WhatToDoCard"
@@ -25,6 +26,7 @@ import { FeedTabContent } from "./_components/FeedTabContent"
 import { MembersTabContent } from "./_components/MembersTabContent"
 import { JoinCommunityModal } from "./_components/JoinCommunityModal"
 import { JoinSuccessModal } from "./_components/JoinSuccessModal"
+import { JoinPendingModal } from "./_components/JoinPendingModal"
 
 // ─── Tab definition ────────────────────────────────────────────────────────────
 
@@ -202,6 +204,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 	const [activeTab, setActiveTab] = useState<TabKey>("overview")
 	const [joinModalOpen, setJoinModalOpen] = useState(false)
 	const [successModalOpen, setSuccessModalOpen] = useState(false)
+	const [pendingModalOpen, setPendingModalOpen] = useState(false)
 
 	useEffect(() => {
 		getCommunityBySlug(slug).then(res => setApiData(res))
@@ -244,6 +247,17 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 	const isActiveTabLocked = activeTabDef.requiresAuth && (!isLoggedIn || !isMember)
 
 	const openJoinModal = () => setJoinModalOpen(true)
+
+	const handleJoin = async (profileVisibility: ProfileVisibility) => {
+		const res = await joinCommunity(apiData.id, profileVisibility)
+		setJoinModalOpen(false)
+		if (res.status === "ACTIVE") {
+			setIsMember(true)
+			setSuccessModalOpen(true)
+		} else {
+			setPendingModalOpen(true)
+		}
+	}
 
 	return (
 		<main className="flex-1 py-6 md:py-8 pb-12">
@@ -334,11 +348,12 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 				}}
 				open={joinModalOpen}
 				onClose={() => setJoinModalOpen(false)}
-				onJoin={() => {
-					// TODO: POST /api/communities/[slug]/join with selected visibility
-					setIsMember(true)
-					setJoinModalOpen(false)
-					setSuccessModalOpen(true)
+				onJoin={async (profileVisibility) => {
+					try {
+						await handleJoin(profileVisibility)
+					} catch {
+						toast.error("Failed to join community. Please try again.")
+					}
 				}}
 			/>
 
@@ -351,6 +366,12 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 				}}
 				open={successModalOpen}
 				onClose={() => setSuccessModalOpen(false)}
+			/>
+
+			<JoinPendingModal
+				community={{ name: community.name }}
+				open={pendingModalOpen}
+				onClose={() => setPendingModalOpen(false)}
 			/>
 		</main>
 	)

@@ -669,6 +669,33 @@ export async function getRecommendedCommunities(params?: PublicCommunitiesParams
 	return data.data
 }
 
+export type ProfileVisibility = "EVENT_ATTENDEES_ONLY" | "COMMUNITY_MEMBERS" | "PRIVATE"
+
+export type JoinCommunityResponse = {
+	status: "ACTIVE" | "PENDING"
+	profileVisibility: ProfileVisibility
+	community: {
+		id: string
+		name: string
+		slug: string
+		memberCount: number
+		experienceCount: number
+		primaryCity: string
+		iconUrl: string
+	}
+}
+
+export async function joinCommunity(
+	communityId: string,
+	profileVisibility: ProfileVisibility,
+): Promise<JoinCommunityResponse> {
+	const { data } = await apiClient.post<{ success: boolean; data: JoinCommunityResponse }>(
+		`/communities/${communityId}/join`,
+		{ profileVisibility, guidelinesAccepted: true },
+	)
+	return data.data
+}
+
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
