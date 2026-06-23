@@ -107,7 +107,7 @@ function TopBar({ substep, isRequired, onSkip }: TopBarProps) {
 					rightIcon={<ArrowRightSvg />}
 					onClick={onSkip}
 				>
-					Skip &amp; Browse Events
+					Skip &amp; Browse Experiences
 				</Button>
 			) : (
 				<div />
@@ -177,8 +177,8 @@ function DarkPanel({ group }: DarkPanelProps) {
 					</h2>
 					<p className="text-body-sm text-white/70 leading-relaxed max-w-xs">
 						{isAbout
-							? "A few fun questions to match you with the right events and like-minded people."
-							: "Tell us what excites you (or not). We'll show you events and people that match your energy."}
+							? "A few fun questions to match you with the right experiences and like-minded people."
+							: "Tell us what excites you (or not). We'll show you experiences and people that match your energy."}
 					</p>
 				</div>
 
@@ -292,7 +292,7 @@ function AboutYouContent({ substep, q1Value, q2Value, onQ1Change, onQ2Change, on
 			<div className="bg-border-default/10 p-6 rounded-action my-5 shadow-md">
 				{/* Question */}
 				<p className="text-title-md font-bold text-text-primary mb-6">
-					{isQ1 ? "Your vibe at events?" : "You prefer going solo or with friends?"}
+					{isQ1 ? "Your vibe at experiences?" : "You prefer going solo or with friends?"}
 				</p>
 
 				{/* Options grid */}
@@ -515,7 +515,7 @@ function DoneContent({ onExplore }: { onExplore: () => void }) {
 					onClick={onExplore}
 					className="w-full"
 				>
-					Explore Events
+					Explore Experiences
 				</Button>
 			</div>
 		</div>

@@ -19,8 +19,11 @@ interface NavLink {
 }
 
 const NAV_LINKS: NavLink[] = [
-	{ label: "Browse", href: "/explore" },
-	{ label: "My Events", href: "/attendee/my-events", requiresAuth: true },
+	{ label: "Explore", href: "/explore" },
+	{ label: "Communities", href: "/communities" },
+	{ label: "Experiences", href: "/experiences" },
+	{ label: "My Experiences", href: "/attendee/my-events", requiresAuth: true },
+	{ label: "My Communities", href: "/attendee/my-communities", requiresAuth: true },
 ]
 
 export function AttendeeHeader() {

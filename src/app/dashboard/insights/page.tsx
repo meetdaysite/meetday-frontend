@@ -58,7 +58,7 @@ const TOP_EVENTS = [
 
 const STATS = [
 	{
-		label: "Active Events",
+		label: "Active Experiences",
 		value: "2",
 		trend: "+2 vs last period",
 		up: true,

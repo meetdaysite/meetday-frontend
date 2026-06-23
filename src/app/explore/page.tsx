@@ -235,7 +235,7 @@ export default function ExploreEventsPage() {
 							<TextField
 								className="flex-1"
 								leftIcon={<Icon as={SearchSvg} color="muted" size="sm" />}
-								placeholder="Search events..."
+								placeholder="Search experiences..."
 								value={searchInput}
 								onChange={e => setSearchInput(e.target.value)}
 								size="md"
@@ -377,7 +377,7 @@ export default function ExploreEventsPage() {
 						) : events.length === 0 ? (
 							<div className="mt-16 text-center">
 								<p className="text-body-md text-text-secondary">
-									No events found. Try adjusting your filters.
+									No experiences found. Try adjusting your filters.
 								</p>
 							</div>
 						) : (

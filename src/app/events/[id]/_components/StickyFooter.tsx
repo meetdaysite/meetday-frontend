@@ -38,7 +38,7 @@ export function StickyFooter({ eventId }: { eventId: string }) {
 					Share
 				</Button>
 				<Button variant="primary" size="md" onClick={handleJoin}>
-					{user ? "Join this event" : "Sign in to join"}
+					{user ? "Join this experience" : "Sign in to join"}
 				</Button>
 			</div>
 		</div>

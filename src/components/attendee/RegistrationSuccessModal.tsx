@@ -24,7 +24,7 @@ const FEATURES = [
 		icon: <Icon as={UserGroup} color="brand" className="w-7 h-7"/>,
 		iconBg: "bg-surface-brand-soft",
 		title: "Vibe-based matching",
-		body: "We match you with events, people, and groups you'll genuinely vibe with",
+		body: "We match you with experiences, people, and groups you'll genuinely vibe with",
 	},
 	{
 		icon: <Icon as={ShareCircleSvg} color="info" className="w-7 h-7"/>,

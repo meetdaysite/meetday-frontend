@@ -44,7 +44,7 @@ const ITEMS: WhatToDoItem[] = [
 		icon: BellSvg,
 		// TODO: Replace with a filled bell/megaphone icon once available
 		title: "Announcements",
-		description: "Stay updated with official news and event drops.",
+		description: "Stay updated with official news and experience drops.",
 		buttonLabel: "Join to Get Updates",
 		memberButtonLabel: "See Announcements",
 		cardBg: "bg-surface-info-soft border-blue-100",

@@ -29,7 +29,7 @@ type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
 const NAV_ITEMS: { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; dot?: boolean }[] = [
 	{ label: "Dashboard", href: "/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
-	{ label: "My Events", href: "/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg },
+	{ label: "My Experiences", href: "/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg },
 	{ label: "Registrations", href: "/dashboard/registrations", outlined: ClipboardListSvg, filled: ClipboardListSvg },
 	{ label: "Attendees", href: "/dashboard/attendees", outlined: UsersGroup2Svg, filled: UsersGroup2Svg },
 	{ label: "Messages", href: "/dashboard/messages", outlined: MessageSvg, filled: MessageSvg, dot: true },

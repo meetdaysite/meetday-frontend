@@ -43,7 +43,7 @@ const SUMMARY_CONFIG = [
 	{ status: "DRAFT" as ApiEventStatus, countKey: "draft" as const, label: "Draft", subtitle: "Continue creating", icon: FileTextSvg, iconColor: "inherit" as const, bg: "bg-neutral-100" },
 	{ status: "UNDER_REVIEW" as ApiEventStatus, countKey: "underReview" as const, label: "Under Review", subtitle: "Awaiting approval", icon: ClockCircleSvg, iconColor: "info" as const, bg: "bg-blue-100" },
 	{ status: "PUBLISHED" as ApiEventStatus, countKey: "published" as const, label: "Published", subtitle: "Live and online", icon: PlaneSvg, iconColor: "success" as const, bg: "bg-status-success-bg" },
-	{ status: "COMPLETED" as ApiEventStatus, countKey: "completed" as const, label: "Completed", subtitle: "Events finished", icon: Checklist2Svg, iconColor: "inverse" as const, bg: "bg-neutral-800" },
+	{ status: "COMPLETED" as ApiEventStatus, countKey: "completed" as const, label: "Completed", subtitle: "Experiences finished", icon: Checklist2Svg, iconColor: "inverse" as const, bg: "bg-neutral-800" },
 	{ status: "CANCELLED" as ApiEventStatus, countKey: "cancelled" as const, label: "Cancelled", subtitle: "Not active", icon: CloseCircleSvg, iconColor: "brand" as const, bg: "bg-red-100" },
 ]
 
@@ -55,7 +55,7 @@ const PERIOD_LABELS: Record<DashboardPeriod, string> = {
 }
 
 const CREATE_STEPS = [
-	{ step: 1, title: "Basic Info", subtitle: "Tell us about your event", icon: FileTextSvg, iconColor: "inherit" as const, bg: "bg-orange-100", numColor: "text-orange-500" },
+	{ step: 1, title: "Basic Info", subtitle: "Tell us about your experience", icon: FileTextSvg, iconColor: "inherit" as const, bg: "bg-orange-100", numColor: "text-orange-500" },
 	{ step: 2, title: "Date & Location", subtitle: "When and where it happens", icon: MapPointRotateSvg, iconColor: "info" as const, bg: "bg-blue-100", numColor: "text-blue-500" },
 	{ step: 3, title: "Media Upload", subtitle: "Add photos, videos, and more", icon: GalleryWideSvg, iconColor: "vibe" as const, bg: "bg-purple-100", numColor: "text-purple-500" },
 	{ step: 4, title: "Ticket Types", subtitle: "Set pricing and ticket options", icon: TicketSvg, iconColor: "inherit" as const, bg: "bg-yellow-100", numColor: "text-yellow-600" },
@@ -221,7 +221,7 @@ export default function DashboardPage() {
 								<Icon as={CalendarOutSvg} size="lg" color="muted" />
 								<p className="text-body-sm text-text-secondary">No events yet.</p>
 								<Link href="/dashboard/create">
-									<Button variant="primary" size="sm" radius="pill">Create your first event</Button>
+									<Button variant="primary" size="sm" radius="pill">Create your first experience</Button>
 								</Link>
 							</div>
 						) : (

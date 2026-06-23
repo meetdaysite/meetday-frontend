@@ -357,15 +357,15 @@ function MyEventCard({
 function EmptyTabState({ tab }: { tab: Tab }) {
 	const msgs: Record<Tab, { title: string; body: string }> = {
 		upcoming: {
-			title: "No upcoming events",
+			title: "No upcoming experiences",
 			body: "Book your next experience and it'll show up here.",
 		},
 		past: {
-			title: "No attended events yet",
-			body: "Events you've attended will appear here after they happen.",
+			title: "No attended experiences yet",
+			body: "Experiences you've attended will appear here after they happen.",
 		},
 		cancelled: {
-			title: "No cancelled events",
+			title: "No cancelled experiences",
 			body: "You haven't cancelled any bookings.",
 		},
 	}
@@ -382,8 +382,8 @@ function EmptyTabState({ tab }: { tab: Tab }) {
 			{tab !== "cancelled" && (
 				<Link href="/explore">
 					<Button variant="primary" size="sm" radius="pill">
-						Browse Events →
-					</Button>
+						Browse Experiences →
+</Button>
 				</Link>
 			)}
 		</div>
@@ -448,7 +448,7 @@ function EmptyEventsState() {
 						<div className="flex flex-col gap-2.5">
 							<Link href="/explore">
 								<Button variant="primary" size="md" radius="pill" className="w-full justify-center">
-									Explore Events →
+									Explore Experiences →
 								</Button>
 							</Link>
 							<Link href="/explore">

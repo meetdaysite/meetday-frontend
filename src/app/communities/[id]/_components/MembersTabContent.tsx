@@ -112,7 +112,7 @@ const FILTER_OPTIONS = [
 	{ id: "online", label: "• Online Now" },
 	{ id: "new", label: "New Members" },
 	{ id: "active", label: "Most Active" },
-	{ id: "attended", label: "Attended Events" },
+	{ id: "attended", label: "Attended Experiences" },
 	{ id: "hosts", label: "Hosts" },
 ]
 

@@ -70,7 +70,7 @@ const STEPS = [
 	{
 		id: 1,
 		title: "Basic Info",
-		subtitle: "Name and describe your event",
+		subtitle: "Name and describe your experience",
 		icon: FileTextSvg as ComponentType<SVGProps<SVGSVGElement>>,
 	},
 	{
@@ -425,7 +425,7 @@ function Step1BasicInfo({
 						value={eventType}
 						onChange={v => set("eventType", v)}
 						error={!!errors.eventType}
-						placeholder="Select Event Type"
+						placeholder="Select Experience Type"
 						options={EVENT_TYPE_OPTIONS}
 					/>
 					<ErrMsg msg={errors.eventType} />
@@ -1491,7 +1491,7 @@ export default function CreateExperiencePage() {
 			await submitEventForReview(id)
 			localStorage.removeItem(DRAFT_KEY)
 			localStorage.removeItem(DRAFT_ID_KEY)
-			toast.success("Event submitted for review!")
+			toast.success("Experience submitted for review!")
 			router.push("/dashboard/events")
 		} catch {
 			toast.error("Submission failed. Please try again.")

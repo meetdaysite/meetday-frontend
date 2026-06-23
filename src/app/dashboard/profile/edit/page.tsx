@@ -164,7 +164,7 @@ function CategoryPicker({ selected, onChange, categories }: {
 
 	return (
 		<div className="flex flex-col gap-1.5">
-			<p className="text-label-sm font-medium text-text-primary">Event Categories</p>
+			<p className="text-label-sm font-medium text-text-primary">Experience Categories</p>
 			<div className="flex flex-wrap gap-2">
 				{categories.map(cat => {
 					const active = selected.includes(cat.id)
@@ -440,7 +440,7 @@ export default function EditProfilePage() {
 								placeholder="e.g. 3"
 							/>
 							<TextField
-								label="Events Hosted Before"
+								label="Experiences Hosted Before"
 								type="number"
 								min={0}
 								value={totalEventsPreviouslyHosted}
@@ -462,7 +462,7 @@ export default function EditProfilePage() {
 
 					{/* Categories */}
 					{categories.length > 0 && (
-						<SectionCard title="Event Categories">
+						<SectionCard title="Experience Categories">
 							<CategoryPicker
 								selected={categoryIds}
 								onChange={setCategoryIds}

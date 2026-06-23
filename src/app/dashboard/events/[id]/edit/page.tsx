@@ -188,7 +188,7 @@ export default function EditEventPage() {
 		try {
 			await updateEventDraft(id, buildPayload(formData))
 			await submitEventForReview(id)
-			toast.success("Event submitted for review!")
+			toast.success("Experience submitted for review!")
 			router.push("/dashboard/events")
 		} catch {
 			toast.error("Submission failed. Please try again.")
@@ -367,7 +367,7 @@ export default function EditEventPage() {
 				<div className="max-w-4xl mx-auto flex flex-col gap-5">
 
 					{/* ── 1. Basic Info ── */}
-					<SectionCard title="Basic Information" subtitle="Name and describe your event">
+					<SectionCard title="Basic Information" subtitle="Name and describe your experience">
 						<div className="flex flex-col gap-1.5">
 							<FieldLabel required>Event Title</FieldLabel>
 							<input
@@ -421,7 +421,7 @@ export default function EditEventPage() {
 									value={formData.eventType}
 									onChange={(v) => set("eventType", v)}
 									error={!!errors.eventType}
-									placeholder="Select Event Type"
+									placeholder="Select Experience Type"
 									options={EVENT_TYPE_OPTIONS}
 								/>
 								<ErrMsg msg={errors.eventType} />

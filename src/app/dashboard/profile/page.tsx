@@ -219,7 +219,7 @@ export default function ProfilePage() {
 
 						{/* Categories */}
 						{profile?.categories && profile.categories.length > 0 && (
-							<SectionCard icon={<Icon as={Chart2OutSvg} size="md" color="brand" />} title="Event Categories">
+							<SectionCard icon={<Icon as={Chart2OutSvg} size="md" color="brand" />} title="Experience Categories">
 								<div className="flex flex-wrap gap-2">
 									{profile.categories.map(({ category }) => (
 										<span key={category.id} className="inline-flex items-center px-3 py-1 rounded-badge text-label-sm font-medium bg-surface-brand-soft text-text-brand border border-border-brand">
@@ -248,13 +248,13 @@ export default function ProfilePage() {
 									)}
 									{profile?.totalEventsPreviouslyHosted != null && (
 										<InfoRow
-											label="Events hosted before"
+											label="Experiences hosted before"
 											value={<p className="text-label-sm text-text-primary">{profile.totalEventsPreviouslyHosted}</p>}
 										/>
 									)}
 									{profile?.totalEventsHosted != null && (
 										<InfoRow
-											label="Events hosted on Meetday"
+											label="Experiences hosted on Meetday"
 											value={<p className="text-label-sm text-text-primary">{profile.totalEventsHosted}</p>}
 										/>
 									)}

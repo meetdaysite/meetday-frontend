@@ -267,7 +267,7 @@ export default function MyEventsPage() {
 								type="text"
 								value={searchQuery}
 								onChange={e => handleSearchQuery(e.target.value)}
-								placeholder="Search events..."
+								placeholder="Search experiences..."
 								className="flex-1 min-w-0 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
 							/>
 							{searchQuery && (
@@ -389,11 +389,11 @@ export default function MyEventsPage() {
 							<div className="size-12 rounded-full bg-surface-card-muted flex items-center justify-center">
 								<CalendarEmptyIcon />
 							</div>
-							<p className="text-label-md font-semibold text-text-primary">No events found</p>
+							<p className="text-label-md font-semibold text-text-primary">No experiences found</p>
 							<p className="text-body-sm text-text-muted max-w-xs">
 								{searchQuery
-									? `No events match "${searchQuery}".`
-									: "No events in this category yet."}
+									? `No experiences match "${searchQuery}".`
+									: "No experiences in this category yet."}
 							</p>
 						</div>
 					)}

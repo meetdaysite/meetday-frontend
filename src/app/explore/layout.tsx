@@ -3,8 +3,8 @@ import { AttendeeHeader } from "@/components/attendee/AttendeeHeader"
 import { WelcomeModalController } from "@/components/attendee/WelcomeModalController"
 
 export const metadata: Metadata = {
-	title: "Explore Events — Meetday",
-	description: "Find events that feel like you. Meet people who match your vibe.",
+	title: "Explore Experiences — Meetday",
+	description: "Find experiences that feel like you. Meet people who match your vibe.",
 }
 
 export default function ExploreLayout({ children }: { children: React.ReactNode }) {

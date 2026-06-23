@@ -65,7 +65,7 @@ export default function LoginPage() {
 					Start hosting on <span className="text-text-brand">meetday</span>
 				</h1>
 				<p className="text-body-sm text-text-secondary">
-					Create events, grow your community, and build a host presence people trust
+					Create experiences, grow your community, and build a host presence people trust
 				</p>
 			</div>
 

@@ -50,7 +50,7 @@ const CARDS: Record<AttendeePanelVariant, CardConfig[]> = {
 			icon: "/icons/onboarding/heart.svg",
 			iconBg: "#FFFBEB",
 			title: "Create memories",
-			body: "Events picked around your interests.",
+			body: "Experiences picked around your interests.",
 			position: { bottom: "24%", left: "4%" },
 		},
 		{
@@ -82,7 +82,7 @@ const CARDS: Record<AttendeePanelVariant, CardConfig[]> = {
 			icon: "/icons/onboarding/heart.svg",
 			iconBg: "#FFFBEB",
 			title: "Create memories",
-			body: "Events picked around your interests.",
+			body: "Experiences picked around your interests.",
 			position: { bottom: "24%", right: "4%" },
 		},
 		{

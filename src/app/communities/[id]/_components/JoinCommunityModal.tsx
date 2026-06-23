@@ -31,9 +31,9 @@ type VisibilityOption = "event" | "members" | "private"
 
 const UNLOCK_ITEMS = [
 	{ icon: ChatSvg, title: "Community chat room", description: "Talk in real-time with members." },
-	{ icon: BellSvg, title: "Official announcements", description: "Get important updates and event drops." },
+	{ icon: BellSvg, title: "Official announcements", description: "Get important updates and experience drops." },
 	{ icon: PulseSvg, title: "General feed", description: "Share moments, ask, discuss and interact." },
-	{ icon: CalendarSvg, title: "Upcoming experiences", description: "Discover and book the best events first." },
+	{ icon: CalendarSvg, title: "Upcoming experiences", description: "Discover and book the best experiences first." },
 	{ icon: UsersGroupSvg, title: "People with similar vibes", description: "Meet people who share your energy." },
 	{ icon: SmileCircleSvg, title: "Post-event connections", description: "Revisit memories and stay connected." },
 ]

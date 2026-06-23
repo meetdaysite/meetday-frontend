@@ -38,13 +38,13 @@ const WHY_JOIN_ITEMS = [
 	{
 		icon: BellSvg,
 		title: "Official announcements",
-		description: "Get the latest updates and event drops.",
+		description: "Get the latest updates and experience drops.",
 	},
 	{ icon: PulseSvg, title: "General feed", description: "Share moments, ask, discuss and interact." },
 	{
 		icon: CalendarSvg,
 		title: "Upcoming experiences",
-		description: "Discover and book the best events first.",
+		description: "Discover and book the best experiences first.",
 	},
 	{
 		icon: UsersGroupSvg,

@@ -41,7 +41,7 @@ const GET_STARTED_ACTIONS = [
 		iconBg: "bg-purple-50",
 		iconColor: "vibe" as const,
 		title: "See Announcements",
-		description: "Stay updated with the latest event drops and community updates.",
+		description: "Stay updated with the latest experience drops and community updates.",
 		// TODO: Link to /communities/[id]/announcements once tab is built
 		href: "#",
 	},
@@ -62,7 +62,7 @@ const GET_STARTED_ACTIONS = [
 		iconBg: "bg-blue-50",
 		iconColor: "info" as const,
 		title: "Explore Experiences",
-		description: "Discover and book the best music events with your community.",
+		description: "Discover and book the best music experiences with your community.",
 		// TODO: Link to /communities/[id]/experiences once tab is built
 		href: "#",
 	},

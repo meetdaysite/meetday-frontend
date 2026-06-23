@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import { AttendeeHeader } from "@/components/attendee/AttendeeHeader"
 
 export const metadata: Metadata = {
-	title: "My Events — Meetday",
-	description: "View and manage all your upcoming and past events.",
+	title: "My Experiences — Meetday",
+	description: "View and manage all your upcoming and past experiences.",
 }
 
 export default function MyEventsLayout({ children }: { children: React.ReactNode }) {
