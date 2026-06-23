@@ -52,9 +52,10 @@ function fmtDate(s: string) {
 interface EventCardProps {
 	event: ExploreEvent
 	className?: string
+	communityName?: string
 }
 
-export function EventCard({ event, className }: EventCardProps) {
+export function EventCard({ event, className, communityName }: EventCardProps) {
 	const isFree = event.startingPrice === 0
 
 	return (
@@ -109,10 +110,11 @@ export function EventCard({ event, className }: EventCardProps) {
 					</div>
 				</div>
 			</div>
-			{/* TODO: Implement the part of the event card with COMMUNITY information */}
-			<div className="text-xs bg-surface-card z-10 py-2 px-4">
-				Part of <span className="font-semibold">Meetday Music Nights</span>
-			</div>
+			{communityName && (
+				<div className="text-xs bg-surface-card z-10 py-2 px-4">
+					Part of <span className="font-semibold">{communityName}</span>
+				</div>
+			)}
 		</Link>
 	)
 }

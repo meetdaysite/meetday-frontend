@@ -1,115 +1,115 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Icon } from "@/components/ui/Icon"
+import { Button } from "@/components/ui/Button"
 import SearchSvg from "@/icons/outlined/search.svg"
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import StarSvg from "@/icons/outlined/star.svg"
-import MapPointSvg from "@/icons/outlined/map-point.svg"
-import CalendarSvg from "@/icons/outlined/calendar.svg"
+// import MapPointSvg from "@/icons/outlined/map-point.svg"       // city — not in API
+// import CalendarSvg from "@/icons/outlined/calendar.svg"        // eventsAttended — not in API
 import ChatSvg from "@/icons/outlined/chat.svg"
 import BookmarkSvg from "@/icons/outlined/bookmark.svg"
 import DotsSvg from "@/icons/outlined/dots.svg"
 import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 import AltArrowUpSvg from "@/icons/outlined/alt-arrow-up.svg"
-import { MemberProfileDrawer } from "./MemberProfileDrawer"
-import type { DrawerMember } from "./MemberProfileDrawer"
+import { getCommunityMembers } from "@/lib/api"
+import type { CommunityMember } from "@/lib/api"
+// import { MemberProfileDrawer } from "./MemberProfileDrawer"    // drawer — depends on API fields not yet available
+// import type { DrawerMember } from "./MemberProfileDrawer"
 
-// ─── Types & mock data ────────────────────────────────────────────────────────
+// ─── Feature flags ─────────────────────────────────────────────────────────────
+// Set SHOW_FEATURED_MEMBERS to true once the featured members API endpoint is available
+const SHOW_FEATURED_MEMBERS = false
 
-type MemberRole = "Top Contributor" | "New Member" | "Active Member"
+// ─── API role config ───────────────────────────────────────────────────────────
 
-interface Member extends DrawerMember {
-	tags: string[]
-	eventsAttended: number
-	cardBg?: string
+type ApiRole = "OWNER" | "ADMIN" | "MEMBER"
+
+const API_ROLE_CONFIG: Record<ApiRole, { label: string; textClass: string; iconColor: "vibe" | "success" | "secondary" }> = {
+	OWNER: { label: "Owner", textClass: "text-violet-600", iconColor: "vibe" },
+	ADMIN: { label: "Admin", textClass: "text-teal-600", iconColor: "success" },
+	MEMBER: { label: "Member", textClass: "text-text-secondary", iconColor: "secondary" },
 }
 
-const ROLE_CONFIG: Record<MemberRole, { textClass: string; iconColor: "vibe" | "success" }> = {
-	"Top Contributor": { textClass: "text-violet-600", iconColor: "vibe" },
-	"New Member": { textClass: "text-violet-600", iconColor: "vibe" },
-	"Active Member": { textClass: "text-teal-600", iconColor: "success" },
+function ApiRoleBadge({ role }: { role: ApiRole }) {
+	const config = API_ROLE_CONFIG[role] ?? API_ROLE_CONFIG.MEMBER
+	return (
+		<span className={`flex items-center gap-1 text-[11px] font-semibold ${config.textClass}`}>
+			<Icon as={StarSvg} size="xs" color={config.iconColor} />
+			{config.label}
+		</span>
+	)
 }
 
-// TODO: Replace with real data from GET /api/communities/[id]/members?featured=true
-const MOCK_FEATURED_MEMBERS: Member[] = [
-	{
-		id: "f1", name: "Arjun", avatarUrl: "https://i.pravatar.cc/40?img=6", role: "Top Contributor",
-		city: "Kolkata", tags: ["Techno", "Rooftop", "Late Nights"], eventsAttended: 8, online: true, cardBg: "bg-violet-50",
-		isVerified: true, vibe: "Night Owl",
-		sharedInterests: ["Tech House", "Rooftops", "Late Nights"],
-		sharedExperiences: [
-			{ id: "e1", title: "Night Rituals", date: "May 23", imageUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=300&h=200&fit=crop", status: "going" },
-			{ id: "e2", title: "After Hours", date: "May 31", imageUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300&h=200&fit=crop", status: "going" },
-			{ id: "e3", title: "Neon Nights", date: "Jun 06", imageUrl: "https://images.unsplash.com/photo-1598387993441-a364f854cfbd?w=300&h=200&fit=crop", status: "interested" },
-		],
-		communityActivity: { joinedAgo: "2 months ago", experiencesAttended: 12, posts: 4, chatReplies: 28 },
-	},
-	{
-		id: "f2", name: "Megha", avatarUrl: "https://i.pravatar.cc/40?img=5", role: "New Member",
-		city: "Kolkata", tags: ["House", "Festivals", "Photography"], eventsAttended: 2, online: true, cardBg: "bg-emerald-50",
-		vibe: "Weekend Warrior",
-		sharedInterests: ["House", "Festivals"],
-		sharedExperiences: [
-			{ id: "e1", title: "Night Rituals", date: "May 23", imageUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=300&h=200&fit=crop", status: "going" },
-		],
-		communityActivity: { joinedAgo: "3 weeks ago", experiencesAttended: 2, posts: 1, chatReplies: 5 },
-	},
-	{
-		id: "f3", name: "Rishav", avatarUrl: "https://i.pravatar.cc/40?img=17", role: "Top Contributor",
-		city: "Kolkata", tags: ["Tech House", "Travel", "Coffee"], eventsAttended: 12, online: true, cardBg: "bg-orange-50",
-		isVerified: true, vibe: "Night Owl",
-		sharedInterests: ["Tech House", "Travel"],
-		sharedExperiences: [
-			{ id: "e2", title: "After Hours", date: "May 31", imageUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300&h=200&fit=crop", status: "going" },
-			{ id: "e3", title: "Neon Nights", date: "Jun 06", imageUrl: "https://images.unsplash.com/photo-1598387993441-a364f854cfbd?w=300&h=200&fit=crop", status: "interested" },
-		],
-		communityActivity: { joinedAgo: "6 months ago", experiencesAttended: 18, posts: 12, chatReplies: 64 },
-	},
-	{
-		id: "f4", name: "Ishita", avatarUrl: "https://i.pravatar.cc/40?img=4", role: "New Member",
-		city: "Kolkata", tags: ["Indie", "Art", "Live Music"], eventsAttended: 1, online: false, cardBg: "bg-yellow-50",
-		vibe: "Social Butterfly",
-		sharedInterests: ["Live Music"],
-		communityActivity: { joinedAgo: "1 week ago", experiencesAttended: 1, posts: 0, chatReplies: 3 },
-	},
-	{
-		id: "f5", name: "Karan", avatarUrl: "https://i.pravatar.cc/40?img=11", role: "Active Member",
-		city: "Kolkata", tags: ["Techno", "Cycling", "Workshops"], eventsAttended: 6, online: true, cardBg: "bg-purple-50",
-		vibe: "Night Owl",
-		sharedInterests: ["Techno"],
-		sharedExperiences: [
-			{ id: "e3", title: "Neon Nights", date: "Jun 06", imageUrl: "https://images.unsplash.com/photo-1598387993441-a364f854cfbd?w=300&h=200&fit=crop", status: "going" },
-		],
-		communityActivity: { joinedAgo: "1 month ago", experiencesAttended: 6, posts: 3, chatReplies: 19 },
-	},
-]
+// ─── Avatar with initials fallback ────────────────────────────────────────────
 
-// TODO: Replace with real data from GET /api/communities/[id]/members?page=1
-const MOCK_ALL_MEMBERS: Member[] = [
-	{
-		id: "m1", name: "Dev", avatarUrl: "https://i.pravatar.cc/40?img=13", role: "Active Member",
-		city: "Kolkata", tags: ["Drum & Bass", "Gaming", "Vinyl"], eventsAttended: 7,
-		vibe: "Night Owl",
-		communityActivity: { joinedAgo: "2 months ago", experiencesAttended: 7, posts: 2, chatReplies: 11 },
-	},
-	{
-		id: "m2", name: "Ananya", avatarUrl: "https://i.pravatar.cc/40?img=44", role: "New Member",
-		city: "Kolkata", tags: ["Bollywood", "Dance", "Fashion"], eventsAttended: 1,
-		vibe: "Social Butterfly",
-		communityActivity: { joinedAgo: "2 weeks ago", experiencesAttended: 1, posts: 0, chatReplies: 2 },
-	},
-	{
-		id: "m3", name: "Vikram", avatarUrl: "https://i.pravatar.cc/40?img=13", role: "New Member",
-		city: "Kolkata", tags: ["Rock", "Guitar", "Live Music"], eventsAttended: 3,
-		communityActivity: { joinedAgo: "1 month ago", experiencesAttended: 3, posts: 1, chatReplies: 8 },
-	},
-]
+function MemberAvatar({ avatarUrl, name, size = 10 }: { avatarUrl: string | null; name: string; size?: number }) {
+	const initials = name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()
+	const sizeClass = `size-${size}`
+
+	if (!avatarUrl) {
+		return (
+			<div className={`${sizeClass} rounded-full bg-surface-brand-soft border border-border-default flex items-center justify-center shrink-0`}>
+				<span className="text-[10px] font-bold text-text-brand">{initials}</span>
+			</div>
+		)
+	}
+
+	return (
+		<div className={`relative ${sizeClass} rounded-full overflow-hidden border border-border-default bg-surface-hover shrink-0`}>
+			<Image src={avatarUrl} alt={name} fill sizes={`${size * 4}px`} className="object-cover" />
+		</div>
+	)
+}
+
+// ─── Mock types & data for featured section (hidden behind SHOW_FEATURED_MEMBERS) ──
+
+// NOTE: These types and mock data are kept for when the featured members API is ready.
+// The featured section is hidden via SHOW_FEATURED_MEMBERS = false above.
+
+// import type { DrawerMember } from "./MemberProfileDrawer"
+// type MemberRole = "Top Contributor" | "New Member" | "Active Member"
+// interface Member extends DrawerMember {
+//   tags: string[]
+//   eventsAttended: number
+//   cardBg?: string
+// }
+// const MOCK_FEATURED_MEMBERS: Member[] = [
+//   { id: "f1", name: "Arjun", avatarUrl: "https://i.pravatar.cc/40?img=6", role: "Top Contributor",
+//     city: "Kolkata", tags: ["Techno", "Rooftop", "Late Nights"], eventsAttended: 8, online: true, cardBg: "bg-violet-50",
+//     isVerified: true, vibe: "Night Owl", sharedInterests: ["Tech House", "Rooftops", "Late Nights"],
+//     sharedExperiences: [
+//       { id: "e1", title: "Night Rituals", date: "May 23", imageUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=300&h=200&fit=crop", status: "going" },
+//       { id: "e2", title: "After Hours", date: "May 31", imageUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300&h=200&fit=crop", status: "going" },
+//     ], communityActivity: { joinedAgo: "2 months ago", experiencesAttended: 12, posts: 4, chatReplies: 28 } },
+//   { id: "f2", name: "Megha", avatarUrl: "https://i.pravatar.cc/40?img=5", role: "New Member",
+//     city: "Kolkata", tags: ["House", "Festivals", "Photography"], eventsAttended: 2, online: true, cardBg: "bg-emerald-50",
+//     vibe: "Weekend Warrior", sharedInterests: ["House", "Festivals"], sharedExperiences: [
+//       { id: "e1", title: "Night Rituals", date: "May 23", imageUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=300&h=200&fit=crop", status: "going" },
+//     ], communityActivity: { joinedAgo: "3 weeks ago", experiencesAttended: 2, posts: 1, chatReplies: 5 } },
+//   { id: "f3", name: "Rishav", avatarUrl: "https://i.pravatar.cc/40?img=17", role: "Top Contributor",
+//     city: "Kolkata", tags: ["Tech House", "Travel", "Coffee"], eventsAttended: 12, online: true, cardBg: "bg-orange-50",
+//     isVerified: true, vibe: "Night Owl", sharedInterests: ["Tech House", "Travel"], sharedExperiences: [
+//       { id: "e2", title: "After Hours", date: "May 31", imageUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300&h=200&fit=crop", status: "going" },
+//     ], communityActivity: { joinedAgo: "6 months ago", experiencesAttended: 18, posts: 12, chatReplies: 64 } },
+//   { id: "f4", name: "Ishita", avatarUrl: "https://i.pravatar.cc/40?img=4", role: "New Member",
+//     city: "Kolkata", tags: ["Indie", "Art", "Live Music"], eventsAttended: 1, cardBg: "bg-yellow-50",
+//     vibe: "Social Butterfly", sharedInterests: ["Live Music"],
+//     communityActivity: { joinedAgo: "1 week ago", experiencesAttended: 1, posts: 0, chatReplies: 3 } },
+//   { id: "f5", name: "Karan", avatarUrl: "https://i.pravatar.cc/40?img=11", role: "Active Member",
+//     city: "Kolkata", tags: ["Techno", "Cycling", "Workshops"], eventsAttended: 6, cardBg: "bg-purple-50",
+//     vibe: "Night Owl", sharedInterests: ["Techno"], sharedExperiences: [
+//       { id: "e3", title: "Neon Nights", date: "Jun 06", imageUrl: "https://images.unsplash.com/photo-1598387993441-a364f854cfbd?w=300&h=200&fit=crop", status: "going" },
+//     ], communityActivity: { joinedAgo: "1 month ago", experiencesAttended: 6, posts: 3, chatReplies: 19 } },
+// ]
+
+// ─── Filter / sort options ─────────────────────────────────────────────────────
 
 const FILTER_OPTIONS = [
 	{ id: "all", label: "All Members" },
-	{ id: "online", label: "• Online Now" },
+	{ id: "online", label: "• Online Now" },       // TODO: requires online status field in API
 	{ id: "new", label: "New Members" },
 	{ id: "active", label: "Most Active" },
 	{ id: "attended", label: "Attended Experiences" },
@@ -119,159 +119,62 @@ const FILTER_OPTIONS = [
 const SORT_OPTIONS = ["Recently Active", "Most Events", "New Members", "Alphabetical"] as const
 type SortOption = (typeof SORT_OPTIONS)[number]
 
-// ─── Role badge ───────────────────────────────────────────────────────────────
+// ─── Member list row ───────────────────────────────────────────────────────────
 
-function RoleBadge({ role }: { role: MemberRole }) {
-	const config = ROLE_CONFIG[role]
-	return (
-		<span className={`flex items-center gap-1 text-[11px] font-semibold ${config.textClass}`}>
-			<Icon as={StarSvg} size="xs" color={config.iconColor} />
-			{role}
-		</span>
-	)
-}
-
-// ─── Featured Member Card ─────────────────────────────────────────────────────
-
-function FeaturedMemberCard({ member, onSelect }: { member: Member; onSelect: (m: Member) => void }) {
+function ApiMemberListRow({ member }: { member: CommunityMember }) {
 	const [bookmarked, setBookmarked] = useState(false)
+	const fullName = `${member.firstName} ${member.lastName}`
 
 	return (
-		<div
-			className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex flex-col cursor-pointer hover:shadow-md transition-shadow"
-			onClick={() => onSelect(member)}
-		>
-			{/* Accent top — avatar only */}
-			<div className={`${member.cardBg} flex items-center justify-center pt-5 pb-4`}>
-				<div className="relative">
-					<div className="relative size-16 rounded-full overflow-hidden border-2 border-white bg-surface-hover">
-						<Image src={member.avatarUrl} alt={member.name} fill sizes="64px" className="object-cover" />
-					</div>
-					{member.online && (
-						<span className="absolute bottom-0.5 right-0.5 size-3 rounded-full bg-green-500 border-2 border-white" />
-					)}
-				</div>
-			</div>
-
-			{/* White content section */}
-			<div className="flex flex-col items-center gap-2 px-3 pt-3 pb-4">
-				{/* Name */}
-				<p className="text-label-sm font-bold text-text-primary">{member.name}</p>
-
-				{/* Role */}
-				<RoleBadge role={member.role} />
-
-				{/* City */}
-				<div className="flex items-center gap-1 text-[11px] text-text-secondary">
-					<Icon as={MapPointSvg} size="xs" color="secondary" />
-					{member.city}
-				</div>
-
-				{/* Interest tags */}
-				<div className="flex flex-wrap gap-1 justify-center">
-					{member.tags.map(tag => (
-						<span key={tag} className="text-[10px] text-text-muted border border-border-default rounded-full px-2 py-0.5">
-							{tag}
-						</span>
-					))}
-				</div>
-
-				{/* Events attended */}
-				<div className="flex items-center gap-1 text-[11px] text-text-secondary">
-					<Icon as={CalendarSvg} size="xs" color="secondary" />
-					Attended {member.eventsAttended} {member.eventsAttended === 1 ? "event" : "events"}
-				</div>
-
-				{/* Actions */}
-				<div className="flex items-center gap-2 w-full mt-1">
-					{/* TODO: Wire to POST /api/users/[id]/message */}
-					<button
-						type="button"
-						onClick={e => { e.stopPropagation(); onSelect(member) }}
-						className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full border border-purple-200 bg-surface-vibe-soft text-violet-600 text-[11px] font-semibold hover:bg-purple-100 transition-colors"
-					>
-						<Icon as={ChatSvg} size="xs" color="vibe" />
-						Message
-					</button>
-					{/* TODO: Wire to POST /api/users/[id]/bookmark */}
-					<button
-						type="button"
-						onClick={e => { e.stopPropagation(); setBookmarked(b => !b) }}
-						className="p-1.5 rounded-full border border-border-default bg-surface-page hover:bg-surface-hover transition-colors"
-					>
-						<Icon as={BookmarkSvg} size="xs" color={bookmarked ? "brand" : "muted"} />
-					</button>
-				</div>
-			</div>
-		</div>
-	)
-}
-
-// ─── All Members List Row ─────────────────────────────────────────────────────
-
-function MemberListRow({ member, onSelect }: { member: Member; onSelect: (m: Member) => void }) {
-	const [bookmarked, setBookmarked] = useState(false)
-
-	return (
-		<div
-			className="flex items-center gap-4 py-3 border-b border-border-default last:border-0 cursor-pointer hover:bg-surface-hover rounded-action px-2 -mx-2 transition-colors"
-			onClick={() => onSelect(member)}
-		>
+		<div className="flex items-center gap-4 py-3 border-b border-border-default last:border-0 rounded-action px-2 -mx-2">
 			{/* Avatar */}
-			<div className="relative size-10 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-				<Image src={member.avatarUrl} alt={member.name} fill sizes="40px" className="object-cover" />
-			</div>
+			<MemberAvatar avatarUrl={member.avatarUrl} name={fullName} size={10} />
 
 			{/* Name */}
-			<p className="text-label-sm font-bold text-text-primary w-20 shrink-0">{member.name}</p>
+			<p className="text-label-sm font-bold text-text-primary w-32 shrink-0">{fullName}</p>
 
 			{/* Role */}
-			<div className="w-32 shrink-0">
-				<RoleBadge role={member.role} />
+			<div className="w-24 shrink-0">
+				<ApiRoleBadge role={member.role} />
 			</div>
 
-			{/* City */}
-			<p className="text-label-sm text-text-secondary w-20 shrink-0">{member.city}</p>
+			{/* city — not in API */}
+			{/* <p className="text-label-sm text-text-secondary w-20 shrink-0">{member.city}</p> */}
 
-			{/* Tags */}
-			<div className="flex items-center gap-1.5 flex-1 min-w-0 flex-wrap">
+			{/* interest tags — not in API */}
+			{/* <div className="flex items-center gap-1.5 flex-1 min-w-0 flex-wrap">
 				{member.tags.map(tag => (
 					<span key={tag} className="text-[10px] text-text-muted border border-border-default rounded-full px-2 py-0.5 whitespace-nowrap">
 						{tag}
 					</span>
 				))}
-			</div>
+			</div> */}
 
-			{/* Events */}
-			<div className="flex items-center gap-1.5 text-[11px] text-text-secondary shrink-0 w-32">
+			{/* eventsAttended — not in API */}
+			{/* <div className="flex items-center gap-1.5 text-[11px] text-text-secondary shrink-0 w-32">
 				<Icon as={CalendarSvg} size="xs" color="secondary" />
 				Attended {member.eventsAttended} {member.eventsAttended === 1 ? "event" : "events"}
-			</div>
+			</div> */}
+
+			{/* Spacer to push actions right */}
+			<div className="flex-1" />
 
 			{/* Actions */}
 			<div className="flex items-center gap-2 shrink-0">
 				{/* TODO: Wire to POST /api/users/[id]/message */}
-				<button
-					type="button"
-					onClick={e => { e.stopPropagation(); onSelect(member) }}
-					className="text-text-muted hover:text-text-primary transition-colors"
-				>
+				<button type="button" className="text-text-muted hover:text-text-primary transition-colors">
 					<Icon as={ChatSvg} size="sm" color="muted" />
 				</button>
 				{/* TODO: Wire to POST /api/users/[id]/bookmark */}
 				<button
 					type="button"
-					onClick={e => { e.stopPropagation(); setBookmarked(b => !b) }}
+					onClick={() => setBookmarked(b => !b)}
 					className="text-text-muted hover:text-text-primary transition-colors"
 				>
 					<Icon as={BookmarkSvg} size="sm" color={bookmarked ? "brand" : "muted"} />
 				</button>
 				{/* TODO: Wire to member options menu (view profile, block, report) */}
-				<button
-					type="button"
-					onClick={e => e.stopPropagation()}
-					className="text-text-muted hover:text-text-primary transition-colors"
-				>
+				<button type="button" className="text-text-muted hover:text-text-primary transition-colors">
 					<Icon as={DotsSvg} size="sm" color="muted" />
 				</button>
 			</div>
@@ -279,29 +182,81 @@ function MemberListRow({ member, onSelect }: { member: Member; onSelect: (m: Mem
 	)
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Skeleton row ─────────────────────────────────────────────────────────────
 
-export function MembersTabContent() {
+function MemberRowSkeleton() {
+	return (
+		<div className="flex items-center gap-4 py-3 border-b border-border-default last:border-0 px-2 -mx-2">
+			<div className="size-10 rounded-full bg-surface-hover animate-pulse shrink-0" />
+			<div className="h-3 w-32 bg-surface-hover animate-pulse rounded" />
+			<div className="h-3 w-16 bg-surface-hover animate-pulse rounded" />
+		</div>
+	)
+}
+
+// ─── Main component ────────────────────────────────────────────────────────────
+
+const LIMIT = 20
+
+export function MembersTabContent({ communityId }: { communityId: string }) {
 	const [activeFilter, setActiveFilter] = useState("all")
 	const [sort, setSort] = useState<SortOption>("Recently Active")
 	const [sortOpen, setSortOpen] = useState(false)
-	const [selectedMember, setSelectedMember] = useState<Member | null>(null)
+
+	const [members, setMembers] = useState<CommunityMember[]>([])
+	const [total, setTotal] = useState(0)
+	const [page, setPage] = useState(1)
+	const [loading, setLoading] = useState(true)
+	const [loadingMore, setLoadingMore] = useState(false)
+	const [error, setError] = useState<string | null>(null)
+
+	// MemberProfileDrawer — depends on API fields not yet available
+	// const [selectedMember, setSelectedMember] = useState<DrawerMember | null>(null)
+
+	useEffect(() => {
+		setLoading(true)
+		setError(null)
+		getCommunityMembers(communityId, { page: 1, limit: LIMIT })
+			.then(res => {
+				setMembers(res.data)
+				setTotal(res.total)
+				setPage(1)
+			})
+			.catch(() => setError("Failed to load members."))
+			.finally(() => setLoading(false))
+	}, [communityId])
+
+	const handleLoadMore = () => {
+		const nextPage = page + 1
+		setLoadingMore(true)
+		getCommunityMembers(communityId, { page: nextPage, limit: LIMIT })
+			.then(res => {
+				setMembers(prev => [...prev, ...res.data])
+				setTotal(res.total)
+				setPage(nextPage)
+			})
+			.catch(() => setError("Failed to load more members."))
+			.finally(() => setLoadingMore(false))
+	}
+
+	const hasMore = members.length < total
 
 	return (
 		<>
 		<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-5">
+
 			{/* Header */}
 			<div className="flex items-start justify-between gap-4">
 				<div>
 					<h2 className="text-body-lg font-bold text-text-primary">Members</h2>
 					<p className="text-label-sm text-text-secondary font-normal mt-0.5">
-						Connect with people in the community.
+						{total > 0 ? `${total} member${total === 1 ? "" : "s"} in this community.` : "Connect with people in the community."}
 					</p>
 				</div>
 
 				{/* Search + Filters */}
 				<div className="flex items-center gap-2 shrink-0">
-					{/* TODO: Wire search to GET /api/communities/[id]/members?q=[query] */}
+					{/* TODO: Wire search to GET /api/communities/[id]/members?q=[query] once API supports it */}
 					<div className="flex items-center gap-2 px-3 py-2 rounded-action border border-border-default bg-surface-page w-64">
 						<Icon as={SearchSvg} size="sm" color="muted" />
 						<input
@@ -374,43 +329,70 @@ export function MembersTabContent() {
 				</div>
 			</div>
 
-			{/* Featured members */}
-			{/* TODO: Replace with real featured members from GET /api/communities/[id]/members?featured=true */}
-			<div>
-				<p className="text-body-sm font-semibold text-text-primary mb-3">Featured members</p>
-				<div className="grid grid-cols-5 gap-3">
-					{MOCK_FEATURED_MEMBERS.map(member => (
-						<FeaturedMemberCard key={member.id} member={member} onSelect={setSelectedMember} />
-					))}
+			{/* Featured members — hidden until featured members API is available */}
+			{SHOW_FEATURED_MEMBERS && (
+				<div>
+					<p className="text-body-sm font-semibold text-text-primary mb-3">Featured members</p>
+					{/* TODO: Render FeaturedMemberCard grid here once GET /api/communities/{id}/members?featured=true is available */}
 				</div>
-			</div>
+			)}
 
-			{/* All members list */}
-			{/* TODO: Replace with paginated data from GET /api/communities/[id]/members?sort=[sort]&filter=[filter]&page=1 */}
+			{/* All members */}
 			<div>
 				<p className="text-body-sm font-semibold text-text-primary mb-2">All members</p>
-				<div>
-					{MOCK_ALL_MEMBERS.map(member => (
-						<MemberListRow key={member.id} member={member} onSelect={setSelectedMember} />
-					))}
-				</div>
+
+				{loading ? (
+					<div>
+						{Array.from({ length: 6 }).map((_, i) => <MemberRowSkeleton key={i} />)}
+					</div>
+				) : error ? (
+					<div className="py-8 flex flex-col items-center gap-3 text-center">
+						<p className="text-label-sm text-text-secondary">{error}</p>
+						<Button variant="secondary" size="sm" onClick={() => {
+							setLoading(true)
+							setError(null)
+							getCommunityMembers(communityId, { page: 1, limit: LIMIT })
+								.then(res => { setMembers(res.data); setTotal(res.total); setPage(1) })
+								.catch(() => setError("Failed to load members."))
+								.finally(() => setLoading(false))
+						}}>
+							Retry
+						</Button>
+					</div>
+				) : members.length === 0 ? (
+					<div className="py-8 text-center">
+						<p className="text-label-sm text-text-secondary">
+							The member directory for this community is private.
+						</p>
+					</div>
+				) : (
+					<div>
+						{members.map(member => (
+							<ApiMemberListRow key={member.userId} member={member} />
+						))}
+					</div>
+				)}
 			</div>
 
 			{/* Load more */}
-			{/* TODO: Implement pagination — fetch next page on click */}
-			<button
-				type="button"
-				className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-action border border-border-default text-label-sm text-text-brand font-semibold hover:bg-surface-brand-soft transition-colors"
-			>
-				Load more members
-				<Icon as={AltArrowDownSvg} size="xs" color="brand" />
-			</button>
+			{!loading && !error && hasMore && (
+				<button
+					type="button"
+					disabled={loadingMore}
+					onClick={handleLoadMore}
+					className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-action border border-border-default text-label-sm text-text-brand font-semibold hover:bg-surface-brand-soft transition-colors disabled:opacity-50"
+				>
+					{loadingMore ? "Loading…" : "Load more members"}
+					{!loadingMore && <Icon as={AltArrowDownSvg} size="xs" color="brand" />}
+				</button>
+			)}
 		</div>
 
-		<MemberProfileDrawer
+		{/* MemberProfileDrawer — commented out until profile API fields are available */}
+		{/* <MemberProfileDrawer
 			member={selectedMember}
 			onClose={() => setSelectedMember(null)}
-		/>
+		/> */}
 		</>
 	)
 }

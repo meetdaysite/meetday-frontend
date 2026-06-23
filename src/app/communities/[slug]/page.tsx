@@ -11,13 +11,14 @@ import LockSvg from "@/icons/outlined/lock.svg"
 import BoltSvg from "@/icons/outlined/bolt.svg"
 import { Button } from "@/components/ui/Button"
 import { useAuthStore } from "@/store/authStore"
-import { getCommunityBySlug, joinCommunity } from "@/lib/api"
+import { getCommunityBySlug, joinCommunity, leaveCommunity } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import type { CommunityDetailResponse, ProfileVisibility } from "@/lib/api"
 import { CommunityHero } from "./_components/CommunityHero"
 import type { CommunityDetails } from "./_components/CommunityHero"
 import { WhatToDoCard } from "./_components/WhatToDoCard"
-import { UpcomingExperiences, ExperiencesGrid } from "./_components/UpcomingExperiences"
+import { UpcomingExperiences } from "./_components/UpcomingExperiences"
+import { ExperiencesTabContent } from "./_components/ExperiencesTabContent"
 import { LatestFromCommunity } from "./_components/LatestFromCommunity"
 import { JoinCommunityBanner } from "./_components/JoinCommunityBanner"
 import { CommunitySidePanel } from "./_components/CommunitySidePanel"
@@ -28,6 +29,7 @@ import { MembersTabContent } from "./_components/MembersTabContent"
 import { JoinCommunityModal } from "./_components/JoinCommunityModal"
 import { JoinSuccessModal } from "./_components/JoinSuccessModal"
 import { JoinPendingModal } from "./_components/JoinPendingModal"
+import { LeaveConfirmModal } from "./_components/LeaveConfirmModal"
 
 // ─── Tab definition ────────────────────────────────────────────────────────────
 
@@ -136,28 +138,18 @@ function TabContent({
 		return (
 			<>
 				<WhatToDoCard isMember={isMember} />
-				<UpcomingExperiences communityId={community.id} />
+				<UpcomingExperiences communitySlug={community.slug} />
 				<LatestFromCommunity communityName={community.name} isMember={isMember} />
 			</>
 		)
 	}
 
-	if (activeTab === "experiences") {
-		return (
-			<div className="rounded-panel bg-surface-card border border-border-default p-5">
-				<p className="text-body-md font-semibold text-text-primary mb-4">
-					All experiences from this community
-				</p>
-				{/* TODO: Replace with paginated API call — GET /api/communities/[slug]/events */}
-				<ExperiencesGrid />
-			</div>
-		)
-	}
+	if (activeTab === "experiences") return <ExperiencesTabContent communitySlug={community.slug} />
 
 	if (activeTab === "chat") return <ChatTabContent communityName={community.name} />
 	if (activeTab === "announcements") return <AnnouncementsTabContent />
 	if (activeTab === "feed") return <FeedTabContent />
-	if (activeTab === "members") return <MembersTabContent />
+	if (activeTab === "members") return <MembersTabContent communityId={community.id} />
 
 	return (
 		<div className="rounded-panel bg-surface-card border border-border-default p-10 flex items-center justify-center">
@@ -206,6 +198,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 	const [joinModalOpen, setJoinModalOpen] = useState(false)
 	const [successModalOpen, setSuccessModalOpen] = useState(false)
 	const [pendingModalOpen, setPendingModalOpen] = useState(false)
+	const [leaveModalOpen, setLeaveModalOpen] = useState(false)
 
 	useEffect(() => {
 		getCommunityBySlug(slug).then(res => setApiData(res))
@@ -249,6 +242,12 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 
 	const openJoinModal = () => setJoinModalOpen(true)
 
+	const handleLeave = async () => {
+		await leaveCommunity(apiData.id)
+		setIsMember(false)
+		setLeaveModalOpen(false)
+	}
+
 	const handleJoin = async (profileVisibility: ProfileVisibility) => {
 		const res = await joinCommunity(apiData.id, profileVisibility)
 		setJoinModalOpen(false)
@@ -276,7 +275,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 				<div className="flex gap-8 items-start">
 					{/* Left: main content */}
 					<div className="flex-1 min-w-0 flex flex-col gap-5">
-						<CommunityHero community={community} isMember={isMember} onJoinClick={openJoinModal} />
+						<CommunityHero community={community} isMember={isMember} onJoinClick={openJoinModal} onLeaveClick={() => setLeaveModalOpen(true)} />
 
 						{/* Tabs row */}
 						<div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
@@ -335,6 +334,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 							activeTab={safeActiveTab}
 							isMember={isMember}
 							onJoinClick={openJoinModal}
+							communitySlug={community.slug}
 						/>
 					</aside>
 				</div>
@@ -373,6 +373,19 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 				community={{ name: community.name }}
 				open={pendingModalOpen}
 				onClose={() => setPendingModalOpen(false)}
+			/>
+
+			<LeaveConfirmModal
+				communityName={community.name}
+				open={leaveModalOpen}
+				onClose={() => setLeaveModalOpen(false)}
+				onConfirm={async () => {
+					try {
+						await handleLeave()
+					} catch {
+						toast.error("Failed to leave community. Please try again.")
+					}
+				}}
 			/>
 		</main>
 	)

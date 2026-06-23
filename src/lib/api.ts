@@ -696,6 +696,110 @@ export async function joinCommunity(
 	return data.data
 }
 
+export async function leaveCommunity(communityId: string): Promise<void> {
+	await apiClient.delete(`/communities/${communityId}/leave`)
+}
+
+export type CommunityMember = {
+	userId: string
+	firstName: string
+	lastName: string
+	avatarUrl: string | null
+	role: "OWNER" | "ADMIN" | "MEMBER"
+	joinedAt: string
+}
+
+export type CommunityMembersResponse = {
+	data: CommunityMember[]
+	total: number
+	page: number
+	limit: number
+}
+
+export async function getCommunityMembers(
+	communityId: string,
+	params?: { page?: number; limit?: number },
+): Promise<CommunityMembersResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: CommunityMembersResponse }>(
+		`/communities/${communityId}/members`,
+		{ params },
+	)
+	return data.data
+}
+
+export type CommunityEvent = {
+	id: string
+	title: string
+	eventDate: string
+	startTime: string
+	endTime: string
+	city: string
+	venueName: string
+	fullAddress: string
+	isFree: boolean
+	minPrice: number
+	attendeeCount: number
+	status: string
+	eventType: string | null
+	tags: string[]
+	coverImageUrl: string
+	source: string
+	host: {
+		id: string
+		displayName: string
+		userId: string
+		firstName: string
+		lastName: string
+		avatarUrl: string | null
+	}
+}
+
+export type CommunityEventsResponse = {
+	data: CommunityEvent[]
+	total: number
+	page: number
+	limit: number
+}
+
+export type CommunityStats = {
+	memberCount: number
+	experienceCount: number
+	pendingCount: number
+	newMembersThisWeek: number
+	hostCount: number
+}
+
+export async function getCommunityStats(slug: string): Promise<CommunityStats> {
+	const { data } = await apiClient.get<{ success: boolean; data: CommunityStats }>(
+		`/communities/${slug}/stats`,
+	)
+	return data.data
+}
+
+export type CommunityHost = {
+	brandName: string
+	avatarUrl: string | null
+	eventCount: number
+}
+
+export async function getCommunityHosts(slug: string): Promise<CommunityHost[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: CommunityHost[] }>(
+		`/communities/${slug}/hosts`,
+	)
+	return data.data
+}
+
+export async function getCommunityEvents(
+	slug: string,
+	params?: { upcoming?: boolean; page?: number; limit?: number },
+): Promise<CommunityEventsResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: CommunityEventsResponse }>(
+		`/communities/${slug}/events`,
+		{ params },
+	)
+	return data.data
+}
+
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {

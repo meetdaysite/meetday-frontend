@@ -1,95 +1,67 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Icon } from "@/components/ui/Icon"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 import { EventCard } from "@/components/attendee/EventCard"
+import { getCommunityEvents } from "@/lib/api"
+import type { CommunityEvent } from "@/lib/api"
 import type { ExploreEvent } from "@/types/attendee"
 
-// TODO: Replace with API call — GET /api/communities/[id]/events?upcoming=true&limit=8
-export const MOCK_COMMUNITY_EVENTS: ExploreEvent[] = [
-	{
-		id: "ce-1",
-		title: "NIGHT RITUALS",
-		eventType: "UPCOMING",
-		eventDate: "2026-05-23",
-		startTime: "10:00 PM",
-		venueName: "Park Street Basement",
-		tags: ["nightlife", "electronic"],
-		category: { id: "nightlife", name: "Nightlife" },
-		coverImageUrl:
-			"https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&h=600&fit=crop",
-		startingPrice: 599,
-	},
-	{
-		id: "ce-2",
-		title: "WELLNESS SESSIONS",
-		eventType: "POPULAR",
-		eventDate: "2026-06-04",
-		startTime: "07:00 AM",
-		venueName: "Riverside Terrace",
-		tags: ["wellness", "morning"],
-		category: { id: "wellness", name: "Wellness" },
-		coverImageUrl:
-			"https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=600&fit=crop",
-		startingPrice: 0,
-	},
-	{
-		id: "ce-3",
-		title: "SUNSET SESSIONS",
-		eventType: "HOT",
-		eventDate: "2026-05-24",
-		startTime: "06:00 PM",
-		venueName: "Rooftop 22, NYC",
-		tags: ["music", "rooftop"],
-		category: { id: "music", name: "Music" },
-		coverImageUrl:
-			"https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&h=600&fit=crop",
-		startingPrice: 799,
-	},
-	{
-		id: "ce-4",
-		title: "ART AFTER DARK",
-		eventType: "UPCOMING",
-		eventDate: "2026-06-06",
-		startTime: "08:00 PM",
-		venueName: "Gallery Row, Kolkata",
-		tags: ["art", "culture"],
-		category: { id: "arts", name: "Arts & Culture" },
-		coverImageUrl:
-			"https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=400&h=600&fit=crop",
-		startingPrice: 399,
-	},
-	{
-		id: "ce-5",
-		title: "RUN CLUB VIBES",
-		eventType: "POPULAR",
-		eventDate: "2026-06-07",
-		startTime: "06:00 AM",
-		venueName: "Victoria Memorial Grounds",
-		tags: ["fitness", "community"],
-		category: { id: "fitness", name: "Fitness" },
-		coverImageUrl:
-			"https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=400&h=600&fit=crop",
-		startingPrice: 0,
-	},
-]
+// ─── Mapper ───────────────────────────────────────────────────────────────────
+// Fields present in API but not yet consumed by ExploreEvent / EventCard:
+//   endTime, city, fullAddress, isFree, attendeeCount, status, source, host
+// These are tracked in plans/community-experiences-api-gaps.md
 
-interface UpcomingExperiencesProps {
-	events?: ExploreEvent[]
-	communityId: string
+function toExploreEvent(e: CommunityEvent): ExploreEvent {
+	return {
+		id: e.id,
+		title: e.title,
+		eventDate: e.eventDate,
+		startTime: e.startTime,
+		venueName: e.venueName,
+		tags: e.tags,
+		coverImageUrl: e.coverImageUrl,
+		startingPrice: e.minPrice,
+		eventType: e.eventType ?? "UPCOMING",
+		category: { id: "city", name: e.city },
+	}
 }
 
-export function UpcomingExperiences({ events = MOCK_COMMUNITY_EVENTS, communityId }: UpcomingExperiencesProps) {
+// ─── Skeleton card ────────────────────────────────────────────────────────────
+
+function EventCardSkeleton() {
+	return (
+		<div className="rounded-2xl bg-surface-hover animate-pulse aspect-3/4 border border-border-default" />
+	)
+}
+
+// ─── Upcoming strip (overview tab) ────────────────────────────────────────────
+
+export function UpcomingExperiences({ communitySlug }: { communitySlug: string }) {
+	const [events, setEvents] = useState<ExploreEvent[]>([])
+	const [loading, setLoading] = useState(true)
+	const [error, setError] = useState(false)
+
+	useEffect(() => {
+		setLoading(true)
+		setError(false)
+		getCommunityEvents(communitySlug, { upcoming: true, limit: 8 })
+			.then(res => setEvents(res.data.map(toExploreEvent)))
+			.catch(() => setError(true))
+			.finally(() => setLoading(false))
+	}, [communitySlug])
+
 	return (
 		<div className="rounded-panel bg-surface-card border border-border-default p-5">
 			<div className="flex items-center justify-between gap-2 mb-4">
-				<div>
-					<p className="text-body-md font-semibold text-text-primary">
-						Upcoming experiences from this community
-					</p>
-				</div>
-				{/* TODO: Link to /communities/[id]/events once sub-page is built */}
+				<p className="text-body-md font-semibold text-text-primary">
+					Upcoming experiences from this community
+				</p>
+				{/* TODO: Link to /communities/[slug]/experiences once sub-page is built */}
 				<Link
-					href={`/communities/${communityId}/events`}
+					href={`/communities/${communitySlug}/experiences`}
 					className="text-sm text-text-brand font-medium hover:underline shrink-0 flex items-center gap-1"
 				>
 					View all
@@ -97,22 +69,41 @@ export function UpcomingExperiences({ events = MOCK_COMMUNITY_EVENTS, communityI
 				</Link>
 			</div>
 
-			<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-				{events.map(event => (
-					<EventCard key={event.id} event={event} />
-				))}
-			</div>
-		</div>
-	)
-}
-
-// Full grid for the Experiences tab
-export function ExperiencesGrid({ events = MOCK_COMMUNITY_EVENTS }: { events?: ExploreEvent[] }) {
-	return (
-		<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-			{events.map(event => (
-				<EventCard key={event.id} event={event} />
-			))}
+			{loading ? (
+				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+					{Array.from({ length: 5 }).map((_, i) => <EventCardSkeleton key={i} />)}
+				</div>
+			) : error ? (
+				<div className="py-6 text-center">
+					<p className="text-label-sm text-text-secondary">
+						Failed to load experiences.{" "}
+						<button
+							type="button"
+							className="text-text-brand underline"
+							onClick={() => {
+								setLoading(true)
+								setError(false)
+								getCommunityEvents(communitySlug, { upcoming: true, limit: 8 })
+									.then(res => setEvents(res.data.map(toExploreEvent)))
+									.catch(() => setError(true))
+									.finally(() => setLoading(false))
+							}}
+						>
+							Retry
+						</button>
+					</p>
+				</div>
+			) : events.length === 0 ? (
+				<div className="py-6 text-center">
+					<p className="text-label-sm text-text-secondary">No upcoming experiences from this community.</p>
+				</div>
+			) : (
+				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+					{events.map(event => (
+						<EventCard key={event.id} event={event} />
+					))}
+				</div>
+			)}
 		</div>
 	)
 }

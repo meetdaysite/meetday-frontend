@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/Button"
@@ -18,7 +18,6 @@ import LockSvg from "@/icons/outlined/lock.svg"
 import CheckSvg from "@/icons/outlined/check.svg"
 import BookmarkSvg from "@/icons/outlined/bookmark.svg"
 import ShieldCheckSvg from "@/icons/outlined/shield-check.svg"
-import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
 import CameraRotateSvg from "@/icons/outlined/camera-rotate.svg"
 import DangerTriangleSvg from "@/icons/outlined/danger-triangle.svg"
 import InfoCircleSvg from "@/icons/outlined/info-circle.svg"
@@ -30,6 +29,26 @@ import ShieldCheckFilledSvg from "@/icons/filled/shield-check.svg"
 import PulseFilledSvg from "@/icons/filled/pulse.svg"
 import HeartsFilledSvg from "@/icons/filled/hearts.svg"
 import BulbSvg from "@/icons/outlined/bulb.svg"
+import { getCommunityStats, getCommunityHosts } from "@/lib/api"
+import type { CommunityStats, CommunityHost } from "@/lib/api"
+
+// ─── Shared host avatar helper ─────────────────────────────────────────────────
+
+function HostAvatar({ avatarUrl, name }: { avatarUrl: string | null; name: string }) {
+	const initials = name.slice(0, 2).toUpperCase()
+	if (!avatarUrl) {
+		return (
+			<div className="size-9 rounded-full bg-surface-brand-soft border border-border-default flex items-center justify-center shrink-0">
+				<span className="text-[9px] font-bold text-text-brand">{initials}</span>
+			</div>
+		)
+	}
+	return (
+		<div className="relative size-9 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
+			<Image src={avatarUrl} alt={name} fill sizes="36px" className="object-cover" />
+		</div>
+	)
+}
 
 // ─── Why Join Card ────────────────────────────────────────────────────────────
 
@@ -101,7 +120,7 @@ function WhyJoinCard({ isMember, onJoinClick }: { isMember: boolean; onJoinClick
 
 // ─── People In Community Card ─────────────────────────────────────────────────
 
-// TODO: Replace with real member data from GET /api/communities/[id]/members?preview=true
+// TODO: Replace avatar grid with real member data from GET /api/communities/[id]/members?preview=true
 const MOCK_MEMBER_AVATARS = [
 	"https://i.pravatar.cc/40?img=1",
 	"https://i.pravatar.cc/40?img=2",
@@ -117,12 +136,13 @@ const MOCK_MEMBER_AVATARS = [
 	"https://i.pravatar.cc/40?img=12",
 ]
 
-const MEMBER_STATS = [
-	{ label: "Actively online", value: "62%" },
-	{ label: "Regular Attendees", value: "53%" },
-	{ label: "Night Explorers", value: "96%" },
-	{ label: "Event rate", value: "96%" },
-]
+// TODO: Replace MEMBER_STATS with real data — no API fields available yet for these percentages
+// const MOCK_MEMBER_STATS = [
+// 	{ label: "Actively online", value: "62%" },
+// 	{ label: "Regular Attendees", value: "53%" },
+// 	{ label: "Night Explorers", value: "96%" },
+// 	{ label: "Event rate", value: "96%" },
+// ]
 
 function PeopleInCommunityCard({ isMember }: { isMember: boolean }) {
 	return (
@@ -156,65 +176,37 @@ function PeopleInCommunityCard({ isMember }: { isMember: boolean }) {
 				</div>
 			</div>
 
-			{/* Stats */}
+			{/* Stats — commented out until API provides these fields
 			<div className="grid grid-cols-2 gap-2">
-				{MEMBER_STATS.map(stat => (
-					<div
-						key={stat.label}
-						className="p-2.5 rounded-action bg-neutral-50 border border-border-default"
-					>
+				{MOCK_MEMBER_STATS.map(stat => (
+					<div key={stat.label} className="p-2.5 rounded-action bg-neutral-50 border border-border-default">
 						<p className="text-body-sm font-bold text-text-primary">{stat.value}</p>
 						<p className="text-[11px] text-text-secondary mt-0.5">{stat.label}</p>
 					</div>
 				))}
 			</div>
+			*/}
 		</div>
 	)
 }
 
 // ─── Trusted Hosts Card ───────────────────────────────────────────────────────
 
-// TODO: Replace with real host data from GET /api/communities/[id]/hosts
-interface TrustedHost {
-	id: string
-	name: string
-	avatarUrl: string
-	tagline: string
-	eventCount: string
-}
+// Mock kept for reference — replaced by real API data:
+// const MOCK_TRUSTED_HOSTS = [
+// 	{ id: "h1", name: "Beercruize", avatarUrl: "https://i.pravatar.cc/40?img=20", tagline: "Host", eventCount: "900+ events" },
+// 	{ id: "h2", name: "Luna Nights", avatarUrl: "https://i.pravatar.cc/40?img=21", tagline: "Host", eventCount: "60+ events" },
+// 	{ id: "h3", name: "Rooftop Collective", avatarUrl: "https://i.pravatar.cc/40?img=22", tagline: "Host", eventCount: "80+ events" },
+// ]
 
-const MOCK_TRUSTED_HOSTS: TrustedHost[] = [
-	{
-		id: "h1",
-		name: "Beercruize",
-		avatarUrl: "https://i.pravatar.cc/40?img=20",
-		tagline: "Host",
-		eventCount: "900+ events",
-	},
-	{
-		id: "h2",
-		name: "Luna Nights",
-		avatarUrl: "https://i.pravatar.cc/40?img=21",
-		tagline: "Host",
-		eventCount: "60+ events",
-	},
-	{
-		id: "h3",
-		name: "Rooftop Collective",
-		avatarUrl: "https://i.pravatar.cc/40?img=22",
-		tagline: "Host",
-		eventCount: "80+ events",
-	},
-]
+function TrustedHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
+	if (!hosts || hosts.length === 0) return null
 
-function TrustedHostsCard() {
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center justify-between gap-2 mb-4">
-				<div className="flex items-center gap-2">
-					<span className="text-body-md font-semibold text-text-primary">Trusted hosts</span>
-				</div>
-				{/* TODO: Link to /communities/[id]/hosts once sub-page is built */}
+				<span className="text-body-md font-semibold text-text-primary">Trusted hosts</span>
+				{/* TODO: Link to /communities/[slug]/hosts once sub-page is built */}
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
 					View all
 					<Icon as={ArrowRightSvg} size="xs" color="brand" />
@@ -222,23 +214,16 @@ function TrustedHostsCard() {
 			</div>
 
 			<div className="flex flex-col gap-3">
-				{MOCK_TRUSTED_HOSTS.map(host => (
-					<div key={host.id} className="flex items-center gap-3">
-						<div className="relative size-9 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-							<Image
-								src={host.avatarUrl}
-								alt={host.name}
-								fill
-								sizes="36px"
-								className="object-cover"
-							/>
-						</div>
+				{hosts.map((host, i) => (
+					<div key={i} className="flex items-center gap-3">
+						<HostAvatar avatarUrl={host.avatarUrl} name={host.brandName} />
 						<div className="flex-1 min-w-0">
 							<p className="text-label-sm font-semibold text-text-primary truncate">
-								{host.name}
+								{host.brandName}
 							</p>
+							{/* tagline field not in API */}
 							<p className="text-[11px] text-text-secondary">
-								{host.tagline} · {host.eventCount}
+								Host · {host.eventCount} {host.eventCount === 1 ? "experience" : "experiences"}
 							</p>
 						</div>
 						<Icon as={ArrowRightSvg} size="sm" color="primary" />
@@ -285,11 +270,8 @@ function CommunityGuidelinesCard() {
 
 // TODO: Replace with real filter options from GET /api/experiences/filters
 const DATE_FILTER_OPTIONS = ["All", "This Week", "This Month", "Next Month"]
-// TODO: Replace with real experience types from GET /api/experiences/types
 const TYPE_FILTER_OPTIONS = ["All", "Rooftop", "Club", "Live", "Festival"]
-// TODO: Replace with real genre list from GET /api/experiences/genres
 const GENRE_OPTIONS = ["All Genres", "Electronic", "Hip-Hop", "Jazz", "Classical", "Afrobeats"]
-// TODO: Replace with real sort options
 const SORT_OPTIONS = ["Date: Soonest", "Date: Latest", "Popularity", "Price: Low to High"]
 
 function ExperiencesFilterCard() {
@@ -322,7 +304,6 @@ function ExperiencesFilterCard() {
 				)}
 			</div>
 
-			{/* Date */}
 			<div className="mb-4">
 				<p className="text-label-sm font-medium text-text-secondary mb-2">Date</p>
 				<div className="flex flex-wrap gap-1.5">
@@ -343,7 +324,6 @@ function ExperiencesFilterCard() {
 				</div>
 			</div>
 
-			{/* Experience type */}
 			<div className="mb-4">
 				<p className="text-label-sm font-medium text-text-secondary mb-2">Experience type</p>
 				<div className="flex flex-wrap gap-1.5">
@@ -364,7 +344,6 @@ function ExperiencesFilterCard() {
 				</div>
 			</div>
 
-			{/* Music genre */}
 			<div className="mb-4">
 				<p className="text-label-sm font-medium text-text-secondary mb-2">Music genre</p>
 				<div className="relative">
@@ -386,7 +365,6 @@ function ExperiencesFilterCard() {
 				</div>
 			</div>
 
-			{/* Sort by */}
 			<div>
 				<p className="text-label-sm font-medium text-text-secondary mb-2">Sort by</p>
 				<div className="relative">
@@ -469,34 +447,21 @@ function SavedExperiencesCard() {
 
 // ─── Experiences: Community Hosts Card ───────────────────────────────────────
 
-// TODO: Replace with real host data from GET /api/communities/[id]/hosts
-const MOCK_EXPERIENCE_HOSTS = [
-	{
-		id: "eh1",
-		name: "Beatcurate",
-		avatarUrl: "https://i.pravatar.cc/40?img=20",
-		eventCount: "120+ events",
-	},
-	{
-		id: "eh2",
-		name: "Luna Nights",
-		avatarUrl: "https://i.pravatar.cc/40?img=21",
-		eventCount: "80+ events",
-	},
-	{
-		id: "eh3",
-		name: "Rooftop Collective",
-		avatarUrl: "https://i.pravatar.cc/40?img=22",
-		eventCount: "60+ events",
-	},
-]
+// Mock kept for reference — replaced by real API data:
+// const MOCK_EXPERIENCE_HOSTS = [
+// 	{ id: "eh1", name: "Beatcurate", avatarUrl: "https://i.pravatar.cc/40?img=20", eventCount: "120+ events" },
+// 	{ id: "eh2", name: "Luna Nights", avatarUrl: "https://i.pravatar.cc/40?img=21", eventCount: "80+ events" },
+// 	{ id: "eh3", name: "Rooftop Collective", avatarUrl: "https://i.pravatar.cc/40?img=22", eventCount: "60+ events" },
+// ]
 
-function ExperiencesCommunityHostsCard() {
+function ExperiencesCommunityHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
+	if (!hosts || hosts.length === 0) return null
+
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Community hosts</span>
-				{/* TODO: Link to /communities/[id]/hosts once sub-page is built */}
+				{/* TODO: Link to /communities/[slug]/hosts once sub-page is built */}
 				<Link
 					href="#"
 					className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0"
@@ -507,25 +472,20 @@ function ExperiencesCommunityHostsCard() {
 			</div>
 
 			<div className="flex flex-col gap-3">
-				{MOCK_EXPERIENCE_HOSTS.map(host => (
-					<div key={host.id} className="flex items-center gap-3">
-						<div className="relative size-9 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-							<Image
-								src={host.avatarUrl}
-								alt={host.name}
-								fill
-								sizes="36px"
-								className="object-cover"
-							/>
-						</div>
+				{hosts.map((host, i) => (
+					<div key={i} className="flex items-center gap-3">
+						<HostAvatar avatarUrl={host.avatarUrl} name={host.brandName} />
 						<div className="flex-1 min-w-0">
 							<div className="flex items-center gap-1">
 								<p className="text-label-sm font-semibold text-text-primary truncate">
-									{host.name}
+									{host.brandName}
 								</p>
 								<Icon as={VerifiedSvg} size="xs" color="brand" className="shrink-0" />
 							</div>
-							<p className="text-[11px] text-text-secondary">Host · {host.eventCount}</p>
+							{/* tagline field not in API */}
+							<p className="text-[11px] text-text-secondary">
+								Host · {host.eventCount} {host.eventCount === 1 ? "experience" : "experiences"}
+							</p>
 						</div>
 						<Icon as={ArrowRightSvg} size="sm" color="primary" />
 					</div>
@@ -551,7 +511,7 @@ function SuggestExperienceCard() {
 					<p className="text-[11px] text-text-secondary font-normal mt-1 leading-snug">
 						Tell us what you want to experience next.
 					</p>
-					{/* TODO: Link to /communities/[id]/suggest-experience once feature is built */}
+					{/* TODO: Link to /communities/[slug]/suggest-experience once feature is built */}
 					<Link
 						href="#"
 						className="inline-flex items-center gap-1 mt-2 text-sm font-semibold text-violet-600 hover:underline"
@@ -623,7 +583,7 @@ function ChatUpcomingExperiencesCard() {
 				<span className="text-body-md font-semibold text-text-primary">
 					Upcoming Experiences
 				</span>
-				{/* TODO: Link to /communities/[id]/experiences once tab page is built */}
+				{/* TODO: Link to /communities/[slug]/experiences once tab page is built */}
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
 					View all
 					<Icon as={ArrowRightSvg} size="xs" color="brand" />
@@ -677,34 +637,10 @@ function ChatUpcomingExperiencesCard() {
 
 // TODO: Replace with real data from GET /api/communities/[id]/members/most-active?period=week&limit=4
 const MOCK_MOST_ACTIVE = [
-	{
-		rank: 1,
-		name: "Arjun",
-		avatarUrl: "https://i.pravatar.cc/40?img=6",
-		messages: 42,
-		starVariant: "gold" as const,
-	},
-	{
-		rank: 2,
-		name: "Megha",
-		avatarUrl: "https://i.pravatar.cc/40?img=5",
-		messages: 38,
-		starVariant: "silver" as const,
-	},
-	{
-		rank: 3,
-		name: "Rishav",
-		avatarUrl: "https://i.pravatar.cc/40?img=17",
-		messages: 28,
-		starVariant: "bronze" as const,
-	},
-	{
-		rank: 4,
-		name: "Karan",
-		avatarUrl: "https://i.pravatar.cc/40?img=11",
-		messages: 24,
-		starVariant: null,
-	},
+	{ rank: 1, name: "Arjun", avatarUrl: "https://i.pravatar.cc/40?img=6", messages: 42, starVariant: "gold" as const },
+	{ rank: 2, name: "Megha", avatarUrl: "https://i.pravatar.cc/40?img=5", messages: 38, starVariant: "silver" as const },
+	{ rank: 3, name: "Rishav", avatarUrl: "https://i.pravatar.cc/40?img=17", messages: 28, starVariant: "bronze" as const },
+	{ rank: 4, name: "Karan", avatarUrl: "https://i.pravatar.cc/40?img=11", messages: 24, starVariant: null },
 ]
 
 function MostActiveThisWeekCard() {
@@ -724,13 +660,7 @@ function MostActiveThisWeekCard() {
 							{member.rank}
 						</span>
 						<div className="relative size-8 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-							<Image
-								src={member.avatarUrl}
-								alt={member.name}
-								fill
-								sizes="32px"
-								className="object-cover"
-							/>
+							<Image src={member.avatarUrl} alt={member.name} fill sizes="32px" className="object-cover" />
 						</div>
 						<div className="flex-1 min-w-0">
 							<p className="text-label-sm font-semibold text-text-primary">{member.name}</p>
@@ -770,7 +700,7 @@ function ChatCommunityGuidelinesCard() {
 				<span className="text-body-md font-semibold text-text-primary">
 					Community Guidelines
 				</span>
-				{/* TODO: Link to /communities/[id]/guidelines once page is built */}
+				{/* TODO: Link to /communities/[slug]/guidelines once page is built */}
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
 					View all
 					<Icon as={ArrowRightSvg} size="xs" color="brand" />
@@ -807,7 +737,6 @@ function FeedTrendingTopicsCard() {
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Trending topics</span>
-				{/* TODO: Link to /communities/[id]/feed/topics once page is built */}
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
 					View all
 					<Icon as={ArrowRightSvg} size="xs" color="brand" />
@@ -852,7 +781,6 @@ function FeedMostActiveMembersCard() {
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Most active members</span>
-				{/* TODO: Link to /communities/[id]/members once page is built */}
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
 					View all
 					<Icon as={ArrowRightSvg} size="xs" color="brand" />
@@ -865,13 +793,7 @@ function FeedMostActiveMembersCard() {
 					return (
 						<div key={member.rank} className="flex items-center gap-3">
 							<div className="relative size-9 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-								<Image
-									src={member.avatarUrl}
-									alt={member.name}
-									fill
-									sizes="36px"
-									className="object-cover"
-								/>
+								<Image src={member.avatarUrl} alt={member.name} fill sizes="36px" className="object-cover" />
 							</div>
 							<div className="flex-1 min-w-0">
 								<p className="text-label-sm font-semibold text-text-primary">{member.name}</p>
@@ -926,7 +848,6 @@ function FeedPopularThisWeekCard() {
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Popular this week</span>
-				{/* TODO: Link to /communities/[id]/feed?sort=popular once page is built */}
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
 					View all
 					<Icon as={ArrowRightSvg} size="xs" color="brand" />
@@ -937,13 +858,7 @@ function FeedPopularThisWeekCard() {
 				{MOCK_POPULAR_POSTS.map(post => (
 					<div key={post.id} className="flex items-center gap-3">
 						<div className="relative size-12 rounded-action overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-							<Image
-								src={post.coverUrl}
-								alt={post.title}
-								fill
-								sizes="48px"
-								className="object-cover"
-							/>
+							<Image src={post.coverUrl} alt={post.title} fill sizes="48px" className="object-cover" />
 						</div>
 						<div className="flex-1 min-w-0">
 							<p className="text-label-sm font-semibold text-text-primary leading-tight line-clamp-2">
@@ -976,7 +891,6 @@ function FeedCommunityGuidelinesCard() {
 					<p className="text-[11px] text-text-secondary font-normal mt-1 leading-snug">
 						Let&apos;s keep this space positive and respectful.
 					</p>
-					{/* TODO: Link to /communities/[id]/guidelines once page is built */}
 					<Link
 						href="#"
 						className="inline-flex items-center gap-1 mt-2 text-sm font-semibold text-violet-600 hover:underline"
@@ -992,28 +906,36 @@ function FeedCommunityGuidelinesCard() {
 
 // ─── Members: Community At a Glance Card ─────────────────────────────────────
 
-// TODO: Replace with real stats from GET /api/communities/[id]/stats
-const COMMUNITY_GLANCE_STATS = [
-	{ icon: UsersGroupSvg, value: "1.6k", label: "Total members", iconBg: "bg-blue-100", iconColor: "info" as const },
-	{ icon: PulseFilledSvg, value: "18", label: "Online now", iconBg: "bg-green-100", iconColor: "success" as const },
-	{ icon: StarOutlinedSvg, value: "42", label: "New this week", iconBg: "bg-purple-100", iconColor: "vibe" as const },
-	{ icon: HeartsFilledSvg, value: "238", label: "Most active this week", iconBg: "bg-red-100", iconColor: "brand" as const },
-]
+// Mock kept for reference — replaced by real stats API data:
+// const COMMUNITY_GLANCE_STATS = [
+// 	{ icon: UsersGroupSvg, value: "1.6k", label: "Total members", iconBg: "bg-blue-100", iconColor: "info" },
+// 	{ icon: PulseFilledSvg, value: "18", label: "Online now", iconBg: "bg-green-100", iconColor: "success" },   // no API field
+// 	{ icon: StarOutlinedSvg, value: "42", label: "New this week", iconBg: "bg-purple-100", iconColor: "vibe" },
+// 	{ icon: HeartsFilledSvg, value: "238", label: "Most active this week", iconBg: "bg-red-100", iconColor: "brand" }, // no API field
+// ]
 
-function MembersCommunityAtAGlanceCard() {
+function fmtCount(n: number) {
+	if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
+	return String(n)
+}
+
+function MembersCommunityAtAGlanceCard({ stats }: { stats: CommunityStats | null }) {
+	const items = [
+		{ icon: UsersGroupSvg, value: stats ? fmtCount(stats.memberCount) : "—", label: "Total members", iconBg: "bg-blue-100", iconColor: "info" as const },
+		{ icon: StarOutlinedSvg, value: stats ? String(stats.newMembersThisWeek) : "—", label: "New this week", iconBg: "bg-purple-100", iconColor: "vibe" as const },
+		{ icon: HeartsFilledSvg, value: stats ? String(stats.hostCount) : "—", label: "Hosts", iconBg: "bg-red-100", iconColor: "brand" as const },
+		// "Online now" — no API field: { icon: PulseFilledSvg, value: "—", label: "Online now", iconBg: "bg-green-100", iconColor: "success" }
+		// "Most active this week" — no API field: { icon: HeartsFilledSvg, value: "—", label: "Most active", ... }
+	]
+
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Community at a glance</span>
-				{/* TODO: Link to /communities/[id]/members/stats once page is built */}
-				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
-					View all
-					<Icon as={ArrowRightSvg} size="xs" color="brand" />
-				</Link>
 			</div>
 
 			<div className="grid grid-cols-2 gap-2">
-				{COMMUNITY_GLANCE_STATS.map(stat => (
+				{items.map(stat => (
 					<div
 						key={stat.label}
 						className="p-3 rounded-action bg-surface-page border border-border-default flex items-start gap-2.5"
@@ -1034,12 +956,13 @@ function MembersCommunityAtAGlanceCard() {
 
 // ─── Members: Top Hosts Card ──────────────────────────────────────────────────
 
-function MembersTopHostsCard() {
+function MembersTopHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
+	if (!hosts || hosts.length === 0) return null
+
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Top hosts</span>
-				{/* TODO: Link to /communities/[id]/hosts once sub-page is built */}
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
 					View all
 					<Icon as={ArrowRightSvg} size="xs" color="brand" />
@@ -1047,17 +970,18 @@ function MembersTopHostsCard() {
 			</div>
 
 			<div className="flex flex-col gap-3">
-				{MOCK_EXPERIENCE_HOSTS.map(host => (
-					<div key={host.id} className="flex items-center gap-3">
-						<div className="relative size-9 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-							<Image src={host.avatarUrl} alt={host.name} fill sizes="36px" className="object-cover" />
-						</div>
+				{hosts.map((host, i) => (
+					<div key={i} className="flex items-center gap-3">
+						<HostAvatar avatarUrl={host.avatarUrl} name={host.brandName} />
 						<div className="flex-1 min-w-0">
 							<div className="flex items-center gap-1">
-								<p className="text-label-sm font-semibold text-text-primary truncate">{host.name}</p>
+								<p className="text-label-sm font-semibold text-text-primary truncate">{host.brandName}</p>
 								<Icon as={VerifiedSvg} size="xs" color="brand" className="shrink-0" />
 							</div>
-							<p className="text-[11px] text-text-secondary">Host · {host.eventCount}</p>
+							{/* tagline field not in API */}
+							<p className="text-[11px] text-text-secondary">
+								Host · {host.eventCount} {host.eventCount === 1 ? "experience" : "experiences"}
+							</p>
 						</div>
 						<Icon as={ArrowRightSvg} size="sm" color="primary" />
 					</div>
@@ -1081,7 +1005,6 @@ function NewMembersCard() {
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">New members</span>
-				{/* TODO: Link to /communities/[id]/members?sort=newest once page is built */}
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
 					View all
 					<Icon as={ArrowRightSvg} size="xs" color="brand" />
@@ -1125,7 +1048,6 @@ function TipsForConnectingCard() {
 					<p className="text-[11px] text-text-secondary font-normal mt-1 leading-snug">
 						Be respectful, introduce yourself, and find people with similar vibes.
 					</p>
-					{/* TODO: Link to /communities/[id]/guidelines once page is built */}
 					<Link
 						href="#"
 						className="inline-flex items-center gap-1 mt-2 text-sm font-semibold text-violet-600 hover:underline"
@@ -1141,15 +1063,14 @@ function TipsForConnectingCard() {
 
 // ─── Announcements: Trusted Hosts Card ───────────────────────────────────────
 
-// TODO: Replace with real host data from GET /api/communities/[id]/hosts?limit=2
-const MOCK_ANNOUNCEMENTS_HOSTS = MOCK_EXPERIENCE_HOSTS.slice(0, 2)
+function AnnouncementsTrustedHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
+	const visible = hosts?.slice(0, 2)
+	if (!visible || visible.length === 0) return null
 
-function AnnouncementsTrustedHostsCard() {
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Trusted hosts</span>
-				{/* TODO: Link to /communities/[id]/hosts once sub-page is built */}
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
 					View all
 					<Icon as={ArrowRightSvg} size="xs" color="brand" />
@@ -1157,25 +1078,20 @@ function AnnouncementsTrustedHostsCard() {
 			</div>
 
 			<div className="flex flex-col gap-3">
-				{MOCK_ANNOUNCEMENTS_HOSTS.map(host => (
-					<div key={host.id} className="flex items-center gap-3">
-						<div className="relative size-9 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-							<Image
-								src={host.avatarUrl}
-								alt={host.name}
-								fill
-								sizes="36px"
-								className="object-cover"
-							/>
-						</div>
+				{visible.map((host, i) => (
+					<div key={i} className="flex items-center gap-3">
+						<HostAvatar avatarUrl={host.avatarUrl} name={host.brandName} />
 						<div className="flex-1 min-w-0">
 							<div className="flex items-center gap-1">
 								<p className="text-label-sm font-semibold text-text-primary truncate">
-									{host.name}
+									{host.brandName}
 								</p>
 								<Icon as={VerifiedSvg} size="xs" color="brand" className="shrink-0" />
 							</div>
-							<p className="text-[11px] text-text-secondary">Host · {host.eventCount}</p>
+							{/* tagline field not in API */}
+							<p className="text-[11px] text-text-secondary">
+								Host · {host.eventCount} {host.eventCount === 1 ? "experience" : "experiences"}
+							</p>
 						</div>
 						<Icon as={ArrowRightSvg} size="sm" color="primary" />
 					</div>
@@ -1221,17 +1137,28 @@ export function CommunitySidePanel({
 	activeTab,
 	isMember,
 	onJoinClick,
+	communitySlug,
 }: {
 	activeTab: string
 	isMember: boolean
 	onJoinClick: () => void
+	communitySlug: string
 }) {
+	const [stats, setStats] = useState<CommunityStats | null>(null)
+	const [hosts, setHosts] = useState<CommunityHost[] | null>(null)
+
+	useEffect(() => {
+		if (!isMember) return
+		getCommunityStats(communitySlug).then(setStats).catch(() => {})
+		getCommunityHosts(communitySlug).then(setHosts).catch(() => {})
+	}, [communitySlug, isMember])
+
 	if (activeTab === "experiences") {
 		return (
 			<>
 				<ExperiencesFilterCard />
 				<SavedExperiencesCard />
-				<ExperiencesCommunityHostsCard />
+				<ExperiencesCommunityHostsCard hosts={hosts} />
 				<SuggestExperienceCard />
 			</>
 		)
@@ -1250,8 +1177,8 @@ export function CommunitySidePanel({
 	if (activeTab === "members") {
 		return (
 			<>
-				<MembersCommunityAtAGlanceCard />
-				<MembersTopHostsCard />
+				<MembersCommunityAtAGlanceCard stats={stats} />
+				<MembersTopHostsCard hosts={hosts} />
 				<NewMembersCard />
 				<TipsForConnectingCard />
 			</>
@@ -1273,19 +1200,19 @@ export function CommunitySidePanel({
 		return (
 			<>
 				<ChatUpcomingExperiencesCard />
-				<AnnouncementsTrustedHostsCard />
+				<AnnouncementsTrustedHostsCard hosts={hosts} />
 				<ChatCommunityGuidelinesCard />
 				<StayInformedCard />
 			</>
 		)
 	}
 
-	// Default: overview (and all other tabs) show the standard panel
+	// Default: overview
 	return (
 		<>
 			<WhyJoinCard isMember={isMember} onJoinClick={onJoinClick} />
 			<PeopleInCommunityCard isMember={isMember} />
-			<TrustedHostsCard />
+			<TrustedHostsCard hosts={hosts} />
 			<CommunityGuidelinesCard />
 		</>
 	)

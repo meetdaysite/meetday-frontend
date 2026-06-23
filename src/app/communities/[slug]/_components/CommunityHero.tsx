@@ -32,10 +32,12 @@ export function CommunityHero({
 	community,
 	isMember,
 	onJoinClick,
+	onLeaveClick,
 }: {
 	community: CommunityDetails
 	isMember: boolean
 	onJoinClick: () => void
+	onLeaveClick: () => void
 }) {
 	const isManaged = community.type === "MEETDAY_MANAGED_PUBLIC"
 	const visibilityLabel = community.access === "PUBLIC" ? "Public" : "Private"
@@ -123,13 +125,13 @@ export function CommunityHero({
 				{/* Row 2: action buttons */}
 				<div className="flex gap-2">
 					{isMember ? (
-						// TODO: Wire leave action to DELETE /api/communities/[slug]/membership
 						<Button
 							variant="secondary"
 							size="md"
 							radius="pill"
 							leftIcon={<Icon as={CheckSvg} size="sm" color="inherit" />}
 							className="border-white/20 text-white bg-white/10 hover:bg-white/15"
+							onClick={onLeaveClick}
 						>
 							Joined
 						</Button>
