@@ -1,389 +1,612 @@
 "use client"
 
-import { useState } from "react"
-import Image from "next/image"
+import { useEffect, useCallback, useRef, useState } from "react"
+import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
-import PlusSvg from "@/icons/outlined/plus.svg"
-import DotsSvg from "@/icons/outlined/dots.svg"
 import PinSvg from "@/icons/outlined/pin.svg"
-import CloseSvg from "@/icons/outlined/close.svg"
-import SmileCircleSvg from "@/icons/outlined/smile-circle.svg"
-import FileTextSvg from "@/icons/outlined/file-text.svg"
-import PlaneSvg from "@/icons/outlined/plane.svg"
-import ChatSvg from "@/icons/outlined/chat.svg"
-import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
+import DotsSvg from "@/icons/outlined/dots.svg"
+import { useAuthStore } from "@/store/authStore"
+import {
+	getChatChannels,
+	getChannelMessages,
+	getCommunityPresence,
+	getDMConversations,
+	getDMMessages,
+	getTotalUnreadDMCount,
+	dismissWelcomeBanner,
+	pinMessage,
+	unpinMessage as unpinMessageApi,
+	deleteChannelMessage,
+} from "@/lib/chatApi"
+import { chatSocket } from "@/lib/chatSocket"
+import { useChatStore } from "@/store/chatStore"
+import { aggregateRawReactions } from "@/lib/chatApi"
+import type { CommunityRole } from "@/lib/api"
+import type { ChatChannel, DmConversation } from "@/lib/chatApi"
+import type { StoredMessage } from "@/store/chatStore"
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+import { ChannelList } from "./chat/ChannelList"
+import { OnlinePresence } from "./chat/OnlinePresence"
+import { DMList } from "./chat/DMList"
+import { MessageList } from "./chat/MessageList"
+import { MessageInput } from "./chat/MessageInput"
+import { PinnedPanel } from "./chat/PinnedPanel"
+import { ThreadPanel } from "./chat/ThreadPanel"
+import { DMThread } from "./chat/DMThread"
 
-// TODO: Replace with real channels from GET /api/communities/[id]/chat/channels
-const CHANNELS = [
-	{ id: "general", label: "General" },
-	{ id: "introductions", label: "Introductions" },
-	{ id: "event-plans", label: "Event Plans" },
-	{ id: "recommendations", label: "Recommendations" },
-]
+// ─── Role helpers ─────────────────────────────────────────────────────────────
 
-// TODO: Replace with real online members from GET /api/communities/[id]/members?status=online
-const ONLINE_AVATARS = [
-	"https://i.pravatar.cc/40?img=1",
-	"https://i.pravatar.cc/40?img=3",
-	"https://i.pravatar.cc/40?img=5",
-	"https://i.pravatar.cc/40?img=7",
-	"https://i.pravatar.cc/40?img=9",
-	"https://i.pravatar.cc/40?img=11",
-	"https://i.pravatar.cc/40?img=13",
-	"https://i.pravatar.cc/40?img=15",
-	"https://i.pravatar.cc/40?img=17",
-	"https://i.pravatar.cc/40?img=19",
-]
-const ONLINE_OVERFLOW = 13
-
-// TODO: Replace with real DM list from GET /api/users/me/direct-messages?communityId=[id]
-const DIRECT_MESSAGES = [
-	{ id: "dm1", name: "Arjun", avatarUrl: "https://i.pravatar.cc/40?img=6", online: true },
-	{ id: "dm2", name: "Megha", avatarUrl: "https://i.pravatar.cc/40?img=5", online: true },
-	{ id: "dm3", name: "Karan", avatarUrl: "https://i.pravatar.cc/40?img=11", online: false },
-]
-
-interface Reaction {
-	emoji: string
-	count: number
-	isChat?: boolean
+const ROLE_WEIGHT: Record<CommunityRole, number> = {
+	MEMBER: 0,
+	MODERATOR: 1,
+	HOST: 2,
+	MANAGER: 3,
+	OWNER: 4,
 }
 
-interface ChatMessage {
-	id: string
-	author: string
-	avatarUrl: string
-	timeAgo: string
-	content: string
-	reactions: Reaction[]
-	isAdmin?: boolean
-	isPinned?: boolean
+function canModerate(role: CommunityRole | null) {
+	if (!role) return false
+	return ROLE_WEIGHT[role] >= ROLE_WEIGHT["MODERATOR"]
 }
 
-// TODO: Replace with real messages from GET /api/communities/[id]/chat/channels/[channelId]/messages
-const MOCK_MESSAGES: ChatMessage[] = [
-	{
-		id: "m0",
-		author: "Meetday Team",
-		avatarUrl: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=40&h=40&fit=crop",
-		timeAgo: "2d ago",
-		content: "Please be respectful to everyone.\nNo spam or promotions. Ask before sharing photos.",
-		reactions: [],
-		isAdmin: true,
-		isPinned: true,
-	},
-	{
-		id: "m1",
-		author: "Arjun",
-		avatarUrl: "https://i.pravatar.cc/40?img=6",
-		timeAgo: "2m ago",
-		content: "Anyone attending After Hours this Saturday? 🙌",
-		reactions: [{ emoji: "💜", count: 5 }, { emoji: "😆", count: 2 }],
-	},
-	{
-		id: "m2",
-		author: "Megha",
-		avatarUrl: "https://i.pravatar.cc/40?img=5",
-		timeAgo: "5m ago",
-		content: "New here 👋 Excited for my first rooftop event!",
-		reactions: [{ emoji: "💜", count: 6 }, { emoji: "👋", count: 1 }],
-	},
-	{
-		id: "m3",
-		author: "Rishav",
-		avatarUrl: "https://i.pravatar.cc/40?img=17",
-		timeAgo: "12m ago",
-		content: "Any recommendations near Park Street before Night Rituals?",
-		reactions: [{ emoji: "💜", count: 3 }, { emoji: "💬", count: 2, isChat: true }],
-	},
-	{
-		id: "m4",
-		author: "Karan",
-		avatarUrl: "https://i.pravatar.cc/40?img=11",
-		timeAgo: "18m ago",
-		content: "Looking for 1 ticket for Neon Nights. Let me know if anyone has an extra!",
-		reactions: [{ emoji: "💜", count: 2 }],
-	},
-]
+// ─── Props ────────────────────────────────────────────────────────────────────
 
-const CHANNEL_META: Record<string, { title: string; subtitle: string }> = {
-	general: { title: "General", subtitle: "General discussion for everyone in the community." },
-	introductions: { title: "Introductions", subtitle: "Say hi and introduce yourself to the community." },
-	"event-plans": { title: "Event Plans", subtitle: "Coordinate and plan upcoming experiences together." },
-	recommendations: { title: "Recommendations", subtitle: "Share your favourite spots and suggestions." },
+interface ChatTabContentProps {
+	communityName: string
+	communityId: string
+	currentUserId: string | null
+	currentUserRole: CommunityRole | null
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function ChatTabContent({ communityName }: { communityName: string }) {
-	const [activeChannel, setActiveChannel] = useState("general")
-	const [welcomeDismissed, setWelcomeDismissed] = useState(false)
+export function ChatTabContent({
+	communityName: _communityName,
+	communityId,
+	currentUserId,
+	currentUserRole,
+}: ChatTabContentProps) {
+	const store = useChatStore()
+	const isMod = canModerate(currentUserRole)
 
-	const meta = CHANNEL_META[activeChannel] ?? CHANNEL_META["general"]
+	// Track locally dismissed banners (optimistic, before API confirms)
+	const [dismissedBanners, setDismissedBanners] = useState<Set<string>>(new Set())
+
+	// Ref to track if initial data is already loading (prevent double-init in StrictMode)
+	const initialized = useRef(false)
+
+	// ── Initial data load ──────────────────────────────────────────────────────
+
+	useEffect(() => {
+		if (initialized.current) return
+		initialized.current = true
+
+		async function init() {
+			try {
+				// Channels are the critical path — abort if this fails
+				const channels = await getChatChannels(communityId)
+				store.setChannels(channels)
+
+				// Non-critical — load in parallel, ignore individual failures
+				const [presenceResult, conversationsResult, unreadResult] = await Promise.allSettled([
+					getCommunityPresence(communityId),
+					getDMConversations(communityId),
+					getTotalUnreadDMCount(communityId),
+				])
+				if (presenceResult.status === "fulfilled") {
+					store.setPresence(presenceResult.value.onlineCount, presenceResult.value.onlineUsers)
+				}
+				if (conversationsResult.status === "fulfilled") {
+					store.setDMConversations(conversationsResult.value)
+				}
+				if (unreadResult.status === "fulfilled") {
+					store.setTotalUnreadDMs(unreadResult.value)
+				}
+
+				const firstChannel = channels[0]
+				if (firstChannel) {
+					store.setActiveChannel(firstChannel.id)
+					await loadChannelMessages(firstChannel.id, channels)
+				}
+
+				// Use store user as token source — avoids auth.currentUser race condition
+				const firebaseUser = useAuthStore.getState().user
+				if (!firebaseUser || !currentUserId) {
+					console.debug("[chat] no auth user — socket not connected")
+					return
+				}
+				const token = await firebaseUser.getIdToken()
+				if (!token) {
+					console.debug("[chat] token fetch returned empty")
+					return
+				}
+
+				console.debug("[chat] connecting socket, communityId:", communityId, "userId:", currentUserId)
+				chatSocket.connect(
+					token,
+					communityId,
+					currentUserId,
+					channels.map(c => c.id),
+					{
+						onConnect: () => {
+							console.debug("[chat] socket connected")
+							store.setSocketConnected(true)
+						},
+						onDisconnect: () => {
+							console.debug("[chat] socket disconnected")
+							store.setSocketConnected(false)
+						},
+						onNewMessage: (channelId, message) => {
+							console.debug("[chat] new-message received", channelId, message.id)
+							const active = useChatStore.getState().activeChannelId
+							store.receiveNewMessage(channelId, message, currentUserId)
+							if (channelId !== active) {
+								store.incrementChannelUnread(channelId)
+							} else {
+								// Mark read automatically while viewing
+								chatSocket.markRead(channelId, message.createdAt)
+							}
+						},
+						onMessageDeleted: (channelId, messageId) => {
+							store.removeMessage(channelId, messageId)
+						},
+						onReactionUpdated: (messageId, reactions) => {
+							store.updateMessageReactions(messageId, reactions)
+						},
+						onMessagePinned: (channelId, message) => {
+							store.setPinned(channelId, message, currentUserId)
+						},
+						onMessageUnpinned: (channelId, messageId) => {
+							store.setUnpinned(channelId, messageId)
+						},
+						onTyping: (channelId, userId, displayName) => {
+							if (userId !== currentUserId) {
+								store.setTypingUser(channelId, userId, displayName)
+							}
+						},
+						onPresenceUpdate: (_communityId, onlineCount, onlineUsers) => {
+							store.setPresence(onlineCount, onlineUsers)
+						},
+						onNewDM: (conversationId, message) => {
+							store.receiveNewDM(conversationId, message, currentUserId)
+							if (message.senderId !== currentUserId) {
+								store.incrementDMUnread()
+							}
+						},
+						onDmTyping: (conversationId, userId) => {
+							if (userId !== currentUserId) {
+								store.setDmTypingUser(conversationId, userId)
+							}
+						},
+						onDmRead: (conversationId, _userId, _lastReadAt) => {
+							store.clearDMUnread(conversationId)
+						},
+						onError: (_event, message) => {
+							toast.error(message)
+						},
+					},
+				)
+			} catch {
+				toast.error("Failed to load chat. Please try again.")
+			}
+		}
+
+		init()
+
+		return () => {
+			chatSocket.disconnect()
+			store.reset()
+			initialized.current = false
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [communityId])
+
+	// ── Load channel messages ──────────────────────────────────────────────────
+
+	const loadChannelMessages = useCallback(async (channelId: string, allChannels?: ChatChannel[]) => {
+		store.setMessageLoading(channelId, true)
+		try {
+			const res = await getChannelMessages(communityId, channelId)
+			const channels = allChannels ?? store.channels
+			const ch = channels.find(c => c.id === channelId)
+
+			const stored: StoredMessage[] = res.messages
+				.slice()
+				.reverse()
+				.map(msg => ({
+					...msg,
+					reactions: aggregateRawReactions(msg.reactions, currentUserId),
+				}))
+
+			store.setMessages(channelId, stored)
+			store.setMessageCursor(channelId, res.nextCursor)
+
+			// Mark read immediately after load
+			if (stored.length > 0) {
+				const newest = stored[stored.length - 1]
+				chatSocket.markRead(channelId, newest.createdAt)
+			}
+
+			// Join channel on WS (also joins for presence updates)
+			chatSocket.joinChannel(channelId)
+
+			// Pre-dismiss banner locally if server already recorded dismissal
+			if (ch?.memberState?.bannerDismissedAt) {
+				setDismissedBanners(prev => new Set(prev).add(channelId))
+			}
+		} finally {
+			store.setMessageLoading(channelId, false)
+		}
+	}, [communityId, currentUserId, store])
+
+	// ── Channel switch ─────────────────────────────────────────────────────────
+
+	const handleChannelSelect = useCallback(async (channelId: string) => {
+		if (store.activeChannelId && store.activeChannelId !== channelId) {
+			chatSocket.leaveChannel(store.activeChannelId)
+		}
+		store.setActiveChannel(channelId)
+		store.setChatView("channel")
+		store.setThreadMessageId(null)
+		store.clearChannelUnread(channelId)
+
+		if (!store.messages[channelId]) {
+			await loadChannelMessages(channelId)
+		} else {
+			chatSocket.joinChannel(channelId)
+			const msgs = store.messages[channelId]
+			if (msgs.length > 0) {
+				chatSocket.markRead(channelId, msgs[msgs.length - 1].createdAt)
+			}
+		}
+	}, [store, loadChannelMessages])
+
+	// ── Load more (scroll up) ──────────────────────────────────────────────────
+
+	const handleLoadMore = useCallback(async () => {
+		const channelId = store.activeChannelId
+		if (!channelId) return
+		const cursor = store.messageCursors[channelId]
+		if (!cursor) return
+
+		store.setMessageLoading(channelId, true)
+		try {
+			const res = await getChannelMessages(communityId, channelId, { cursor })
+			const older: StoredMessage[] = res.messages
+				.slice()
+				.reverse()
+				.map(msg => ({
+					...msg,
+					reactions: aggregateRawReactions(msg.reactions, currentUserId),
+				}))
+			store.prependMessages(channelId, older, res.nextCursor)
+		} finally {
+			store.setMessageLoading(channelId, false)
+		}
+	}, [store, communityId, currentUserId])
+
+	// ── Send message ───────────────────────────────────────────────────────────
+
+	const handleSend = useCallback((content: string) => {
+		if (!store.activeChannelId) return
+		chatSocket.sendMessage(store.activeChannelId, content)
+	}, [store.activeChannelId])
+
+	// ── Reactions ──────────────────────────────────────────────────────────────
+
+	const handleReactionToggle = useCallback((messageId: string, emoji: string, mine: boolean) => {
+		if (mine) {
+			chatSocket.removeReaction(messageId, emoji)
+		} else {
+			chatSocket.addReaction(messageId, emoji)
+		}
+	}, [])
+
+	// ── Pin / unpin ────────────────────────────────────────────────────────────
+
+	const handlePin = useCallback(async (messageId: string) => {
+		if (!store.activeChannelId || !isMod) return
+		try {
+			await pinMessage(communityId, store.activeChannelId, messageId)
+		} catch {
+			toast.error("Failed to pin message.")
+		}
+	}, [communityId, store.activeChannelId, isMod])
+
+	const handleUnpin = useCallback(async (messageId: string) => {
+		if (!store.activeChannelId || !isMod) return
+		try {
+			await unpinMessageApi(communityId, store.activeChannelId, messageId)
+			store.setUnpinned(store.activeChannelId, messageId)
+		} catch {
+			toast.error("Failed to unpin message.")
+		}
+	}, [communityId, store.activeChannelId, isMod, store])
+
+	// ── Delete ─────────────────────────────────────────────────────────────────
+
+	const handleDelete = useCallback(async (messageId: string) => {
+		if (!store.activeChannelId) return
+		try {
+			await deleteChannelMessage(communityId, store.activeChannelId, messageId)
+			store.removeMessage(store.activeChannelId, messageId)
+		} catch {
+			toast.error("Failed to delete message.")
+		}
+	}, [communityId, store.activeChannelId, store])
+
+	// ── Welcome banner dismiss ─────────────────────────────────────────────────
+
+	const handleDismissBanner = useCallback(async (channelId: string) => {
+		setDismissedBanners(prev => new Set(prev).add(channelId))
+		try {
+			await dismissWelcomeBanner(communityId, channelId)
+		} catch {
+			// Silently fail — banner stays dismissed locally this session
+		}
+	}, [communityId])
+
+	// ── Typing ────────────────────────────────────────────────────────────────
+
+	const handleTypingStart = useCallback(() => {
+		if (store.activeChannelId) chatSocket.typingStart(store.activeChannelId)
+	}, [store.activeChannelId])
+
+	const handleTypingStop = useCallback(() => {
+		if (store.activeChannelId) chatSocket.typingStop(store.activeChannelId)
+	}, [store.activeChannelId])
+
+	// ── Thread ────────────────────────────────────────────────────────────────
+
+	const handleOpenThread = useCallback((messageId: string) => {
+		store.setThreadMessageId(messageId)
+		store.setChatView("channel")
+	}, [store])
+
+	const handleSendReply = useCallback((content: string) => {
+		if (!store.activeChannelId || !store.threadMessageId) return
+		chatSocket.sendMessage(store.activeChannelId, content, store.threadMessageId)
+	}, [store.activeChannelId, store.threadMessageId])
+
+	// ── DM ────────────────────────────────────────────────────────────────────
+
+	const handleDMSelect = useCallback(async (conv: DmConversation) => {
+		store.setActiveDMConversation(conv.id)
+		store.setChatView("dm")
+		store.setThreadMessageId(null)
+		store.clearDMUnread(conv.id)
+		chatSocket.joinDM(conv.id)
+		chatSocket.markDMRead(conv.id)
+
+		if (!store.dmMessages[conv.id]) {
+			store.setDMLoading(conv.id, true)
+			try {
+				const res = await getDMMessages(communityId, conv.id)
+				store.setDMMessages(conv.id, [...res.messages].reverse())
+				store.setDMCursor(conv.id, res.nextCursor)
+			} finally {
+				store.setDMLoading(conv.id, false)
+			}
+		}
+	}, [store, communityId])
+
+	const handleDMLoadMore = useCallback(async () => {
+		const convId = store.activeDmConversationId
+		if (!convId) return
+		const cursor = store.dmCursors[convId]
+		if (!cursor) return
+
+		store.setDMLoading(convId, true)
+		try {
+			const res = await getDMMessages(communityId, convId, { cursor })
+			store.prependDMMessages(convId, [...res.messages].reverse(), res.nextCursor)
+		} finally {
+			store.setDMLoading(convId, false)
+		}
+	}, [store, communityId])
+
+	const handleDMSend = useCallback((content: string) => {
+		const convId = store.activeDmConversationId
+		if (!convId) return
+		chatSocket.sendDM(communityId, content, convId)
+	}, [store.activeDmConversationId, communityId])
+
+	const handleNewDM = useCallback(() => {
+		// Opening a new DM requires picking a member — will be wired to MemberProfileDrawer
+		// For now this is a no-op placeholder
+		toast("Select a member from the Members tab to start a DM.")
+	}, [])
+
+	const handleDMBack = useCallback(() => {
+		store.setChatView("channel")
+		store.setActiveDMConversation(null)
+	}, [store])
+
+	const handleDMTypingStart = useCallback(() => {
+		if (store.activeDmConversationId) chatSocket.dmTypingStart(store.activeDmConversationId)
+	}, [store.activeDmConversationId])
+
+	const handleDMTypingStop = useCallback(() => {
+		if (store.activeDmConversationId) chatSocket.dmTypingStop(store.activeDmConversationId)
+	}, [store.activeDmConversationId])
+
+	// ── Derived state ──────────────────────────────────────────────────────────
+
+	const activeChannel = store.channels.find(c => c.id === store.activeChannelId) ?? null
+	const activeMessages = store.activeChannelId ? (store.messages[store.activeChannelId] ?? []) : []
+	const isLoadingMessages = store.activeChannelId ? (store.messageLoading[store.activeChannelId] ?? false) : false
+	const hasMoreMessages = store.activeChannelId ? (store.messageCursors[store.activeChannelId] !== null) : false
+
+	const typingUsers = store.activeChannelId ? (store.typingUsers[store.activeChannelId] ?? []) : []
+	const typingDisplayNames = typingUsers.map(u => u.displayName)
+
+	const threadMessage = store.threadMessageId
+		? activeMessages.find(m => m.id === store.threadMessageId) ?? null
+		: null
+
+	const activeDmConv = store.activeDmConversationId
+		? store.dmConversations.find(c => c.id === store.activeDmConversationId) ?? null
+		: null
+	const activeDmMessages = store.activeDmConversationId ? (store.dmMessages[store.activeDmConversationId] ?? []) : []
+	const isDmLoading = store.activeDmConversationId ? (store.dmLoading[store.activeDmConversationId] ?? false) : false
+	const hasDmMore = store.activeDmConversationId ? (store.dmCursors[store.activeDmConversationId] !== null) : false
+	const dmTypingUsers = store.activeDmConversationId ? (store.dmTypingUsers[store.activeDmConversationId] ?? []) : []
+
+	// ── Render ────────────────────────────────────────────────────────────────
 
 	return (
 		<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex h-155">
 			{/* ── Left sidebar ── */}
 			<aside className="w-60 shrink-0 border-r border-border-default flex flex-col bg-surface-page overflow-y-auto no-scrollbar">
-				{/* Channels */}
-				<div className="p-4">
-					<div className="flex items-center justify-between mb-2">
-						<span className="text-[10px] font-bold text-text-muted tracking-wider uppercase">
-							Channels
-						</span>
-						{/* TODO: Wire to create-channel flow */}
-						<button type="button" className="text-text-muted hover:text-text-primary transition-colors">
-							<Icon as={PlusSvg} size="sm" color="muted" />
-						</button>
-					</div>
-
-					<div className="flex flex-col gap-0.5">
-						{CHANNELS.map(ch => {
-							const isActive = activeChannel === ch.id
-							return (
-								<button
-									key={ch.id}
-									type="button"
-									onClick={() => setActiveChannel(ch.id)}
-									className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-action text-left transition-colors ${
-										isActive
-											? "bg-surface-vibe-soft text-violet-600 font-semibold"
-											: "text-text-secondary hover:text-text-primary hover:bg-surface-hover"
-									}`}
-								>
-									<span className="flex items-center gap-1.5 text-label-sm">
-										<span className="font-medium">#</span>
-										{ch.label}
-									</span>
-									{isActive && (
-										<span className="size-2 rounded-full bg-violet-500 shrink-0" />
-									)}
-								</button>
-							)
-						})}
-					</div>
-				</div>
+				<ChannelList
+					channels={store.channels}
+					activeChannelId={store.activeChannelId}
+					onSelect={handleChannelSelect}
+					unreadMap={store.channelUnread}
+					currentUserRole={currentUserRole}
+				/>
 
 				<div className="border-t border-border-default" />
 
-				{/* Online Now */}
-				<div className="p-4">
-					<p className="text-[10px] font-bold text-text-muted tracking-wider uppercase mb-3">
-						Online now · {ONLINE_AVATARS.length + ONLINE_OVERFLOW}
-					</p>
-					<div className="flex flex-wrap gap-1.5">
-						{ONLINE_AVATARS.map((src, i) => (
-							<div key={i} className="relative">
-								<div className="relative size-8 rounded-full overflow-hidden border border-surface-card bg-surface-hover">
-									<Image src={src} alt="" fill sizes="32px" className="object-cover" />
-								</div>
-								<span className="absolute bottom-0 right-0 size-2 rounded-full bg-green-500 border border-surface-card" />
-							</div>
-						))}
-						<div className="size-8 rounded-full bg-surface-hover border border-border-default flex items-center justify-center">
-							<span className="text-[9px] font-semibold text-text-muted">+{ONLINE_OVERFLOW}</span>
-						</div>
-					</div>
-				</div>
+				<OnlinePresence
+					onlineCount={store.onlineCount}
+					onlineUsers={store.onlineUsers}
+				/>
 
 				<div className="border-t border-border-default" />
 
-				{/* Direct Messages */}
-				<div className="p-4 flex-1">
-					<div className="flex items-center justify-between mb-2">
-						<span className="text-[10px] font-bold text-text-muted tracking-wider uppercase">
-							Direct Messages
-						</span>
-						{/* TODO: Wire to start-dm flow */}
-						<button type="button" className="text-text-muted hover:text-text-primary transition-colors">
-							<Icon as={PlusSvg} size="sm" color="muted" />
-						</button>
-					</div>
-
-					<div className="flex flex-col gap-1">
-						{DIRECT_MESSAGES.map(dm => (
-							<button
-								key={dm.id}
-								type="button"
-								className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-action hover:bg-surface-hover transition-colors text-left"
-							>
-								<div className="relative shrink-0">
-									<div className="relative size-7 rounded-full overflow-hidden border border-border-default bg-surface-hover">
-										<Image src={dm.avatarUrl} alt={dm.name} fill sizes="28px" className="object-cover" />
-									</div>
-									{dm.online && (
-										<span className="absolute bottom-0 right-0 size-2 rounded-full bg-green-500 border border-surface-card" />
-									)}
-								</div>
-								<span className="text-label-sm text-text-primary font-medium">{dm.name}</span>
-							</button>
-						))}
-					</div>
-
-					{/* TODO: Link to /communities/[id]/chat/dms once page is built */}
-					<button
-						type="button"
-						className="flex items-center gap-1 mt-3 px-2 text-label-sm text-text-brand font-medium hover:underline"
-					>
-						See all
-						<Icon as={ArrowRightSvg} size="xs" color="brand" />
-					</button>
-				</div>
+				<DMList
+					conversations={store.dmConversations}
+					activeDmConversationId={store.activeDmConversationId}
+					onSelect={handleDMSelect}
+					onNewDM={handleNewDM}
+				/>
 			</aside>
 
-			{/* ── Right chat panel ── */}
-			<div className="flex-1 flex flex-col min-w-0">
-				{/* Channel header */}
-				<div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-border-default shrink-0">
-					<div className="min-w-0">
-						<div className="flex items-center gap-1.5">
-							<span className="text-text-muted font-medium">#</span>
-							<h2 className="text-body-md font-bold text-text-primary">{meta.title}</h2>
-						</div>
-						<p className="text-[11px] text-text-secondary mt-0.5 truncate">{meta.subtitle}</p>
-					</div>
-					<div className="flex items-center gap-2 shrink-0">
-						{/* TODO: Wire pin to show pinned messages panel */}
-						<button type="button" className="text-text-muted hover:text-text-primary transition-colors p-1">
-							<Icon as={PinSvg} size="sm" color="muted" />
-						</button>
-						{/* TODO: Wire to channel settings/options menu */}
-						<button type="button" className="text-text-muted hover:text-text-primary transition-colors p-1">
-							<Icon as={DotsSvg} size="sm" color="muted" />
-						</button>
-					</div>
-				</div>
-
-				{/* Message list */}
-				<div className="flex-1 overflow-y-auto no-scrollbar px-5 py-4 flex flex-col gap-1">
-					{/* Welcome banner */}
-					{!welcomeDismissed && (
-						<div className="flex items-start justify-between gap-3 px-4 py-3 rounded-action bg-surface-vibe-soft border border-purple-100 mb-3">
-							<p className="text-label-sm text-text-primary font-normal leading-snug">
-								<span className="mr-1">👋</span>
-								<span className="font-bold">Welcome to {communityName}!</span>
-								<span className="text-text-secondary ml-1">
-									Introduce yourself, ask questions, and meet people attending upcoming experiences.
-								</span>
-							</p>
-							<button
-								type="button"
-								onClick={() => setWelcomeDismissed(true)}
-								className="text-text-muted hover:text-text-primary transition-colors shrink-0 mt-0.5"
-							>
-								<Icon as={CloseSvg} size="sm" color="muted" />
-							</button>
-						</div>
-					)}
-
-					{/* Messages */}
-					<div className="flex flex-col gap-4">
-						{MOCK_MESSAGES.map(msg => (
-							<div
-								key={msg.id}
-								className={`flex gap-3 ${msg.isPinned ? "p-3 rounded-action bg-surface-vibe-soft border border-purple-100" : ""}`}
-							>
-								{/* Avatar */}
-								<div className={`relative shrink-0 rounded-full overflow-hidden border border-border-default bg-surface-hover ${msg.isAdmin ? "size-10" : "size-9"}`}>
-									<Image
-										src={msg.avatarUrl}
-										alt={msg.author}
-										fill
-										sizes="40px"
-										className="object-cover"
-									/>
-								</div>
-
-								{/* Content */}
-								<div className="flex-1 min-w-0">
-									<div className="flex items-center gap-2 flex-wrap">
-										<span className="text-label-sm font-bold text-text-primary">{msg.author}</span>
-										{msg.isAdmin && (
-											<span className="text-[10px] font-semibold text-text-secondary bg-surface-hover border border-border-default rounded-avatar px-1.5 py-0.5">
-												ADMIN
-											</span>
-										)}
-										{msg.isPinned && (
-											<span className="text-[10px] font-semibold text-text-info bg-surface-info-soft border border-blue-200 rounded-avatar px-1.5 py-0.5">
-												Pinned
-											</span>
-										)}
-										<span className="text-[11px] text-text-muted">{msg.timeAgo}</span>
+			{/* ── Right panel: channel or DM view ── */}
+			{store.chatView === "dm" && activeDmConv ? (
+				<DMThread
+					conversation={activeDmConv}
+					messages={activeDmMessages}
+					currentUserId={currentUserId}
+					hasMore={hasDmMore}
+					isLoading={isDmLoading}
+					typingUserIds={dmTypingUsers.map(u => u.userId)}
+					onLoadMore={handleDMLoadMore}
+					onSend={handleDMSend}
+					onBack={handleDMBack}
+					onTypingStart={handleDMTypingStart}
+					onTypingStop={handleDMTypingStop}
+				/>
+			) : (
+				<div className="flex-1 flex min-w-0 overflow-hidden">
+					{/* Channel panel */}
+					<div className="flex-1 flex flex-col min-w-0">
+						{/* Channel header */}
+						{activeChannel && (
+							<div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-border-default shrink-0">
+								<div className="min-w-0">
+									<div className="flex items-center gap-1.5">
+										<span className="text-text-muted font-medium">#</span>
+										<h2 className="text-body-md font-bold text-text-primary">{activeChannel.name}</h2>
 									</div>
-
-									<p className="text-label-sm text-text-primary font-normal mt-0.5 leading-relaxed whitespace-pre-line">
-										{msg.content}
-									</p>
-
-									{msg.reactions.length > 0 && (
-										<div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-											{msg.reactions.map((r, i) =>
-												r.isChat ? (
-													<button
-														key={i}
-														type="button"
-														className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-page border border-border-default text-[11px] text-text-secondary hover:bg-surface-hover transition-colors"
-													>
-														<Icon as={ChatSvg} size="xs" color="secondary" />
-														{r.count}
-													</button>
-												) : (
-													<button
-														key={i}
-														type="button"
-														className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-surface-page border border-border-default text-[11px] text-text-secondary hover:bg-surface-hover transition-colors"
-													>
-														{r.emoji} {r.count}
-													</button>
-												)
-											)}
-										</div>
+									{activeChannel.description && (
+										<p className="text-[11px] text-text-secondary mt-0.5 truncate">
+											{activeChannel.description}
+										</p>
 									)}
 								</div>
-
-								{/* Pin icon for admin message */}
-								{msg.isPinned && (
-									<div className="shrink-0">
-										<Icon as={PinSvg} size="sm" color="vibe" />
-									</div>
-								)}
+								<div className="flex items-center gap-2 shrink-0">
+									<button
+										type="button"
+										onClick={() => store.setPinnedPanelOpen(!store.pinnedPanelOpen)}
+										className={`p-1 rounded transition-colors ${
+											store.pinnedPanelOpen
+												? "text-violet-600 bg-surface-vibe-soft"
+												: "text-text-muted hover:text-text-primary"
+										}`}
+										title="Pinned messages"
+									>
+										<Icon as={PinSvg} size="sm" color={store.pinnedPanelOpen ? "vibe" : "muted"} />
+									</button>
+									<button
+										type="button"
+										className="text-text-muted hover:text-text-primary transition-colors p-1"
+										title="Channel options"
+									>
+										<Icon as={DotsSvg} size="sm" color="muted" />
+									</button>
+								</div>
 							</div>
-						))}
-					</div>
-				</div>
+						)}
 
-				{/* Message input */}
-				<div className="px-5 py-3.5 border-t border-border-default shrink-0">
-					<div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-surface-page border border-border-default">
-						<input
-							type="text"
-							placeholder="Say hello to the community..."
-							className="flex-1 text-label-sm text-text-primary placeholder:text-text-muted bg-transparent outline-none"
-							// TODO: Wire to POST /api/communities/[id]/chat/channels/[channelId]/messages
-							readOnly
-						/>
-						<div className="flex items-center gap-2 shrink-0">
-							{/* TODO: Wire emoji picker */}
-							<button type="button" className="text-text-muted hover:text-text-primary transition-colors">
-								<Icon as={SmileCircleSvg} size="sm" color="muted" />
-							</button>
-							{/* TODO: Wire file attachment */}
-							<button type="button" className="text-text-muted hover:text-text-primary transition-colors">
-								<Icon as={FileTextSvg} size="sm" color="muted" />
-							</button>
+						{/* Loading state */}
+						{isLoadingMessages && activeMessages.length === 0 && (
+							<div className="flex-1 flex items-center justify-center">
+								<p className="text-label-sm text-text-muted">Loading messages…</p>
+							</div>
+						)}
+
+						{/* Message list */}
+						{activeChannel && (
+							<MessageList
+								messages={activeMessages}
+								channel={activeChannel}
+								bannerDismissed={dismissedBanners.has(activeChannel.id)}
+								typingDisplayNames={typingDisplayNames}
+								currentUserId={currentUserId}
+								currentUserRole={currentUserRole}
+								hasMore={hasMoreMessages}
+								isLoadingMore={isLoadingMessages}
+								onLoadMore={handleLoadMore}
+								onDismissBanner={() => handleDismissBanner(activeChannel.id)}
+								onReactionToggle={handleReactionToggle}
+								onPin={handlePin}
+								onUnpin={handleUnpin}
+								onDelete={handleDelete}
+								onReply={handleOpenThread}
+							/>
+						)}
+
+						{/* Message input */}
+						<div className="px-5 py-3.5 border-t border-border-default shrink-0">
+							<MessageInput
+								placeholder={activeChannel ? `Message #${activeChannel.name}` : "Say hello to the community…"}
+								quickReplies={activeChannel?.quickReplies}
+								onSend={handleSend}
+								onTypingStart={handleTypingStart}
+								onTypingStop={handleTypingStop}
+							/>
 						</div>
-						{/* TODO: Wire send message action */}
-						<button
-							type="button"
-							className="size-8 rounded-full bg-violet-600 flex items-center justify-center shrink-0 hover:bg-violet-700 transition-colors"
-						>
-							<Icon as={PlaneSvg} size="sm" color="inverse" />
-						</button>
 					</div>
+
+					{/* Thread panel — slides in when a thread is open */}
+					{threadMessage && (
+						<ThreadPanel
+							parentMessage={threadMessage}
+							communityId={communityId}
+							channelId={store.activeChannelId!}
+							currentUserId={currentUserId}
+							currentUserRole={currentUserRole}
+							onClose={() => store.setThreadMessageId(null)}
+							onSendReply={handleSendReply}
+							onTypingStart={handleTypingStart}
+							onTypingStop={handleTypingStop}
+						/>
+					)}
+
+					{/* Pinned panel — slides in from the right */}
+					{store.pinnedPanelOpen && store.activeChannelId && (
+						<PinnedPanel
+							communityId={communityId}
+							channelId={store.activeChannelId}
+							currentUserRole={currentUserRole}
+							onUnpinSuccess={(messageId) => store.setUnpinned(store.activeChannelId!, messageId)}
+							onClose={() => store.setPinnedPanelOpen(false)}
+						/>
+					)}
 				</div>
-			</div>
+			)}
 		</div>
 	)
 }

@@ -555,6 +555,7 @@ export type PublicCommunity = {
 	category: { id: string; name: string }
 	coverImageUrl: string
 	iconUrl: string
+	isMember: boolean
 }
 
 export type PublicCommunitiesParams = {
@@ -648,6 +649,7 @@ export type CommunityDetailResponse = {
 	}>
 	coverImageUrl: string
 	iconUrl: string
+	isMember: boolean
 }
 
 export async function getCommunityBySlug(slug: string): Promise<CommunityDetailResponse | null> {
@@ -700,12 +702,14 @@ export async function leaveCommunity(communityId: string): Promise<void> {
 	await apiClient.delete(`/communities/${communityId}/leave`)
 }
 
+export type CommunityRole = "OWNER" | "MANAGER" | "HOST" | "MODERATOR" | "MEMBER"
+
 export type CommunityMember = {
 	userId: string
 	firstName: string
 	lastName: string
 	avatarUrl: string | null
-	role: "OWNER" | "ADMIN" | "MEMBER"
+	role: CommunityRole
 	joinedAt: string
 }
 

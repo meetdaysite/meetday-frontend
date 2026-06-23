@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import UserSvg from "@/icons/outlined/user.svg"
+import CheckSvg from "@/icons/outlined/check.svg"
 
 export type CommunityType = "MEETDAY_MANAGED_PUBLIC" | "HOST_LED" | "PRIVATE_INVITE_ONLY"
 
@@ -15,6 +16,7 @@ export interface Community {
 	memberCount: number
 	experienceCount: number
 	coverImageUrl: string
+	isMember?: boolean
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -63,15 +65,21 @@ export function CommunityCard({ community }: CommunityCardProps) {
 					</div>
 				</div>
 				<div className="flex justify-end">
-					{/* TODO: Wire up join/leave toggle via POST /api/communities/[id]/join */}
-					<Button
-						variant="secondary"
-						size="xs"
-						radius="sm"
-						className="text-text-brand font-medium border-border-focus hover:bg-surface-brand-soft hover:cursor-pointer"
-					>
-						Join
-					</Button>
+					{community.isMember ? (
+						<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm text-[11px] font-semibold text-green-700 bg-green-50 border border-green-200">
+							<Icon as={CheckSvg} size="xs" color="success" />
+							Joined
+						</span>
+					) : (
+						<Button
+							variant="secondary"
+							size="xs"
+							radius="sm"
+							className="text-text-brand font-medium border-border-focus hover:bg-surface-brand-soft hover:cursor-pointer"
+						>
+							Join
+						</Button>
+					)}
 				</div>
 			</div>
 		</Link>

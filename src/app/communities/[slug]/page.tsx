@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/Button"
 import { useAuthStore } from "@/store/authStore"
 import { getCommunityBySlug, joinCommunity, leaveCommunity } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
-import type { CommunityDetailResponse, ProfileVisibility } from "@/lib/api"
+import type { CommunityDetailResponse, ProfileVisibility, CommunityRole } from "@/lib/api"
 import { CommunityHero } from "./_components/CommunityHero"
 import type { CommunityDetails } from "./_components/CommunityHero"
 import { WhatToDoCard } from "./_components/WhatToDoCard"
@@ -111,6 +111,8 @@ function TabContent({
 	community,
 	isLoggedIn,
 	isMember,
+	currentUserId,
+	currentUserRole,
 	onJoinClick,
 }: {
 	activeTab: TabKey
@@ -118,6 +120,8 @@ function TabContent({
 	community: CommunityDetails
 	isLoggedIn: boolean
 	isMember: boolean
+	currentUserId: string | null
+	currentUserRole: CommunityRole | null
 	onJoinClick: () => void
 }) {
 	const tab = visibleTabs.find(t => t.key === activeTab)!
@@ -146,7 +150,14 @@ function TabContent({
 
 	if (activeTab === "experiences") return <ExperiencesTabContent communitySlug={community.slug} />
 
-	if (activeTab === "chat") return <ChatTabContent communityName={community.name} />
+	if (activeTab === "chat") return (
+		<ChatTabContent
+			communityName={community.name}
+			communityId={community.id}
+			currentUserId={currentUserId}
+			currentUserRole={currentUserRole}
+		/>
+	)
 	if (activeTab === "announcements") return <AnnouncementsTabContent />
 	if (activeTab === "feed") return <FeedTabContent />
 	if (activeTab === "members") return <MembersTabContent communityId={community.id} />
@@ -201,14 +212,21 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 	const [leaveModalOpen, setLeaveModalOpen] = useState(false)
 
 	useEffect(() => {
+		if (authLoading) return
 		getCommunityBySlug(slug).then(res => setApiData(res))
-	}, [slug])
+	}, [slug, authLoading])
 
 	useEffect(() => {
-		if (apiData && apiData !== "loading" && !authLoading && user) {
-			setIsMember(apiData.members.some(m => m.userId === user.uid))
+		if (apiData && apiData !== "loading") {
+			setIsMember(apiData.isMember)
 		}
-	}, [apiData, authLoading, user])
+	}, [apiData])
+
+	const currentUserRole: CommunityRole | null = (() => {
+		if (!apiData || apiData === "loading" || !user) return null
+		const member = apiData.members.find(m => m.userId === user.uid)
+		return (member?.role as CommunityRole) ?? null
+	})()
 
 	if (apiData === "loading") return <CommunityPageSkeleton />
 	if (!apiData) notFound()
@@ -315,6 +333,8 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 							community={community}
 							isLoggedIn={isLoggedIn}
 							isMember={isMember}
+							currentUserId={user?.uid ?? null}
+							currentUserRole={currentUserRole}
 							onJoinClick={openJoinModal}
 						/>
 
