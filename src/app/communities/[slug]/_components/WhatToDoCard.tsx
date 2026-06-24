@@ -5,6 +5,8 @@ import ChatSvg from "@/icons/filled/chat.svg"
 import BellSvg from "@/icons/filled/bell.svg"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 
+type TabKey = "experiences" | "chat" | "announcements"
+
 interface WhatToDoItem {
 	icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
 	title: string
@@ -15,6 +17,7 @@ interface WhatToDoItem {
 	iconWrapperBg: string
 	iconColor: React.ComponentPropsWithoutRef<typeof Icon>["color"]
 	buttonClassName: string
+	tabKey: TabKey
 }
 
 const ITEMS: WhatToDoItem[] = [
@@ -28,6 +31,7 @@ const ITEMS: WhatToDoItem[] = [
 		iconWrapperBg: "bg-green-100",
 		iconColor: "success",
 		buttonClassName: "bg-emerald-600 text-white hover:bg-emerald-700 border-0",
+		tabKey: "experiences",
 	},
 	{
 		icon: ChatSvg,
@@ -39,6 +43,7 @@ const ITEMS: WhatToDoItem[] = [
 		iconWrapperBg: "bg-purple-100",
 		iconColor: "vibe",
 		buttonClassName: "bg-violet-600 text-white hover:bg-violet-700 border-0",
+		tabKey: "chat",
 	},
 	{
 		icon: BellSvg,
@@ -51,10 +56,17 @@ const ITEMS: WhatToDoItem[] = [
 		iconWrapperBg: "bg-blue-100",
 		iconColor: "info",
 		buttonClassName: "bg-blue-600 text-white hover:bg-blue-700 border-0",
+		tabKey: "announcements",
 	},
 ]
 
-export function WhatToDoCard({ isMember }: { isMember: boolean }) {
+export function WhatToDoCard({
+	isMember,
+	onTabChange,
+}: {
+	isMember: boolean
+	onTabChange: (tab: TabKey) => void
+}) {
 	return (
 		<div className="rounded-panel bg-surface-card border border-border-default p-5">
 			<p className="text-body-md font-semibold text-text-primary">What do you want to do?</p>
@@ -94,6 +106,7 @@ export function WhatToDoCard({ isMember }: { isMember: boolean }) {
 							radius="pill"
 							className={item.buttonClassName}
 							rightIcon={<Icon as={ArrowRightSvg} size="sm" color="inverse" />}
+							onClick={() => onTabChange(item.tabKey)}
 						>
 							{isMember ? item.memberButtonLabel : item.buttonLabel}
 						</Button>

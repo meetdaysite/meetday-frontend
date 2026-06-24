@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import type { PresenceUser } from "@/lib/chatSocket"
+import { avatarColor } from "@/lib/avatarColor"
 
 const MAX_SHOWN = 10
 
@@ -22,13 +23,14 @@ export function OnlinePresence({ onlineCount, onlineUsers }: OnlinePresenceProps
 			<div className="flex flex-wrap gap-1.5">
 				{shown.map(u => {
 					const initials = `${u.firstName[0] ?? ""}${u.lastName[0] ?? ""}`.toUpperCase()
+					const color = avatarColor(u.firstName)
 					return (
 						<div key={u.id} className="relative" title={`${u.firstName} ${u.lastName}`}>
-							<div className="relative size-8 rounded-full overflow-hidden border border-surface-card bg-surface-hover flex items-center justify-center">
+							<div className={`relative size-8 rounded-full overflow-hidden border-2 flex items-center justify-center ${u.avatarUrl ? "bg-surface-hover border-border-default" : `${color.bg} ${color.border}`}`}>
 								{u.avatarUrl ? (
 									<Image src={u.avatarUrl} alt={`${u.firstName} ${u.lastName}`} fill sizes="32px" className="object-cover" />
 								) : (
-									<span className="text-[9px] font-bold text-text-secondary">{initials}</span>
+									<span className={`text-[9px] font-bold ${color.text}`}>{initials}</span>
 								)}
 							</div>
 							<span className="absolute bottom-0 right-0 size-2 rounded-full bg-green-500 border border-surface-card" />

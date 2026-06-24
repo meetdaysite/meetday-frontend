@@ -1,11 +1,9 @@
 "use client"
 
-import { useEffect, useCallback, useRef, useState } from "react"
+import { useEffect, useCallback, useState } from "react"
 import { toast } from "sonner"
-import { Icon } from "@/components/ui/Icon"
-import PinSvg from "@/icons/outlined/pin.svg"
-import DotsSvg from "@/icons/outlined/dots.svg"
 import { useAuthStore } from "@/store/authStore"
+import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import {
 	getChatChannels,
 	getChannelMessages,
@@ -68,142 +66,16 @@ export function ChatTabContent({
 }: ChatTabContentProps) {
 	const store = useChatStore()
 	const isMod = canModerate(currentUserRole)
+	const backendUserId = useAttendeeProfileStore(s => s.profile?.id ?? null)
 
 	// Track locally dismissed banners (optimistic, before API confirms)
 	const [dismissedBanners, setDismissedBanners] = useState<Set<string>>(new Set())
-
-	// Ref to track if initial data is already loading (prevent double-init in StrictMode)
-	const initialized = useRef(false)
-
-	// ── Initial data load ──────────────────────────────────────────────────────
-
-	useEffect(() => {
-		if (initialized.current) return
-		initialized.current = true
-
-		async function init() {
-			try {
-				// Channels are the critical path — abort if this fails
-				const channels = await getChatChannels(communityId)
-				store.setChannels(channels)
-
-				// Non-critical — load in parallel, ignore individual failures
-				const [presenceResult, conversationsResult, unreadResult] = await Promise.allSettled([
-					getCommunityPresence(communityId),
-					getDMConversations(communityId),
-					getTotalUnreadDMCount(communityId),
-				])
-				if (presenceResult.status === "fulfilled") {
-					store.setPresence(presenceResult.value.onlineCount, presenceResult.value.onlineUsers)
-				}
-				if (conversationsResult.status === "fulfilled") {
-					store.setDMConversations(conversationsResult.value)
-				}
-				if (unreadResult.status === "fulfilled") {
-					store.setTotalUnreadDMs(unreadResult.value)
-				}
-
-				const firstChannel = channels[0]
-				if (firstChannel) {
-					store.setActiveChannel(firstChannel.id)
-					await loadChannelMessages(firstChannel.id, channels)
-				}
-
-				// Use store user as token source — avoids auth.currentUser race condition
-				const firebaseUser = useAuthStore.getState().user
-				if (!firebaseUser || !currentUserId) {
-					console.debug("[chat] no auth user — socket not connected")
-					return
-				}
-				const token = await firebaseUser.getIdToken()
-				if (!token) {
-					console.debug("[chat] token fetch returned empty")
-					return
-				}
-
-				console.debug("[chat] connecting socket, communityId:", communityId, "userId:", currentUserId)
-				chatSocket.connect(
-					token,
-					communityId,
-					currentUserId,
-					channels.map(c => c.id),
-					{
-						onConnect: () => {
-							console.debug("[chat] socket connected")
-							store.setSocketConnected(true)
-						},
-						onDisconnect: () => {
-							console.debug("[chat] socket disconnected")
-							store.setSocketConnected(false)
-						},
-						onNewMessage: (channelId, message) => {
-							console.debug("[chat] new-message received", channelId, message.id)
-							const active = useChatStore.getState().activeChannelId
-							store.receiveNewMessage(channelId, message, currentUserId)
-							if (channelId !== active) {
-								store.incrementChannelUnread(channelId)
-							} else {
-								// Mark read automatically while viewing
-								chatSocket.markRead(channelId, message.createdAt)
-							}
-						},
-						onMessageDeleted: (channelId, messageId) => {
-							store.removeMessage(channelId, messageId)
-						},
-						onReactionUpdated: (messageId, reactions) => {
-							store.updateMessageReactions(messageId, reactions)
-						},
-						onMessagePinned: (channelId, message) => {
-							store.setPinned(channelId, message, currentUserId)
-						},
-						onMessageUnpinned: (channelId, messageId) => {
-							store.setUnpinned(channelId, messageId)
-						},
-						onTyping: (channelId, userId, displayName) => {
-							if (userId !== currentUserId) {
-								store.setTypingUser(channelId, userId, displayName)
-							}
-						},
-						onPresenceUpdate: (_communityId, onlineCount, onlineUsers) => {
-							store.setPresence(onlineCount, onlineUsers)
-						},
-						onNewDM: (conversationId, message) => {
-							store.receiveNewDM(conversationId, message, currentUserId)
-							if (message.senderId !== currentUserId) {
-								store.incrementDMUnread()
-							}
-						},
-						onDmTyping: (conversationId, userId) => {
-							if (userId !== currentUserId) {
-								store.setDmTypingUser(conversationId, userId)
-							}
-						},
-						onDmRead: (conversationId, _userId, _lastReadAt) => {
-							store.clearDMUnread(conversationId)
-						},
-						onError: (_event, message) => {
-							toast.error(message)
-						},
-					},
-				)
-			} catch {
-				toast.error("Failed to load chat. Please try again.")
-			}
-		}
-
-		init()
-
-		return () => {
-			chatSocket.disconnect()
-			store.reset()
-			initialized.current = false
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [communityId])
+	const [chatLoading, setChatLoading] = useState(true)
 
 	// ── Load channel messages ──────────────────────────────────────────────────
 
 	const loadChannelMessages = useCallback(async (channelId: string, allChannels?: ChatChannel[]) => {
+		console.debug("[chat] loadChannelMessages", channelId)
 		store.setMessageLoading(channelId, true)
 		try {
 			const res = await getChannelMessages(communityId, channelId)
@@ -215,9 +87,10 @@ export function ChatTabContent({
 				.reverse()
 				.map(msg => ({
 					...msg,
-					reactions: aggregateRawReactions(msg.reactions, currentUserId),
+					reactions: aggregateRawReactions(msg.reactions, backendUserId),
 				}))
 
+			console.debug("[chat] loadChannelMessages — got", stored.length, "messages, cursor:", res.nextCursor)
 			store.setMessages(channelId, stored)
 			store.setMessageCursor(channelId, res.nextCursor)
 
@@ -237,7 +110,164 @@ export function ChatTabContent({
 		} finally {
 			store.setMessageLoading(channelId, false)
 		}
-	}, [communityId, currentUserId, store])
+	}, [communityId, backendUserId, store])
+
+	// ── Initial data load ──────────────────────────────────────────────────────
+
+	useEffect(() => {
+		let aborted = false
+
+		async function init() {
+			setChatLoading(true)
+			try {
+				console.debug("[chat] init — fetching channels for community", communityId)
+				// Channels are the critical path — abort if this fails
+				const channels = await getChatChannels(communityId)
+				if (aborted) return
+
+				console.debug("[chat] init — got", channels.length, "channels")
+				store.setChannels(channels)
+				setChatLoading(false)
+
+				// Non-critical — load in parallel, ignore individual failures
+				const [presenceResult, conversationsResult, unreadResult] = await Promise.allSettled([
+					getCommunityPresence(communityId),
+					getDMConversations(communityId),
+					getTotalUnreadDMCount(communityId),
+				])
+				if (aborted) return
+
+				if (presenceResult.status === "fulfilled") {
+					console.debug("[chat] init — presence:", presenceResult.value.onlineCount, "online")
+					store.setPresence(presenceResult.value.onlineCount, presenceResult.value.onlineUsers)
+				} else {
+					console.debug("[chat] init — presence failed:", presenceResult.reason)
+				}
+				if (conversationsResult.status === "fulfilled") {
+					console.debug("[chat] init — DMs:", conversationsResult.value.length, "conversations")
+					store.setDMConversations(conversationsResult.value)
+				} else {
+					console.debug("[chat] init — DMs failed:", conversationsResult.reason)
+				}
+				if (unreadResult.status === "fulfilled") {
+					console.debug("[chat] init — unread DM count:", unreadResult.value)
+					store.setTotalUnreadDMs(unreadResult.value)
+				} else {
+					console.debug("[chat] init — unread count failed:", unreadResult.reason)
+				}
+
+				const firstChannel = channels[0]
+				if (firstChannel) {
+					console.debug("[chat] init — setting active channel:", firstChannel.id, firstChannel.name)
+					store.setActiveChannel(firstChannel.id)
+					await loadChannelMessages(firstChannel.id, channels)
+				} else {
+					console.debug("[chat] init — no channels found, skipping message load")
+				}
+				if (aborted) return
+
+				// Use store user as token source — avoids auth.currentUser race condition
+				const firebaseUser = useAuthStore.getState().user
+				if (!firebaseUser || !currentUserId || !backendUserId) {
+					console.debug("[chat] init — no auth user, socket not connected")
+					return
+				}
+				const token = await firebaseUser.getIdToken()
+				if (!token) {
+					console.debug("[chat] init — token fetch returned empty")
+					return
+				}
+				if (aborted) return
+
+				console.debug("[chat] init — connecting socket, userId:", backendUserId)
+				chatSocket.connect(
+					token,
+					communityId,
+					backendUserId,
+					channels.map(c => c.id),
+					{
+						onConnect: () => {
+							console.debug("[chat] socket connected ✅")
+							store.setSocketConnected(true)
+						},
+						onDisconnect: () => {
+							console.debug("[chat] socket disconnected ❌")
+							store.setSocketConnected(false)
+						},
+						onNewMessage: (channelId, message) => {
+							const active = useChatStore.getState().activeChannelId
+							console.debug("[chat] new message in", channelId, "| active:", active, "| id:", message.id)
+							store.receiveNewMessage(channelId, message, backendUserId)
+							if (channelId !== active) {
+								store.incrementChannelUnread(channelId)
+							} else {
+								// Mark read automatically while viewing
+								chatSocket.markRead(channelId, message.createdAt)
+							}
+						},
+						onMessageDeleted: (channelId, messageId) => {
+							console.debug("[chat] message deleted", channelId, messageId)
+							store.removeMessage(channelId, messageId)
+						},
+						onReactionUpdated: (messageId, reactions) => {
+							console.debug("[chat] reaction updated", messageId, reactions.length, "reactions")
+							store.updateMessageReactions(messageId, reactions)
+						},
+						onMessagePinned: (channelId, message) => {
+							console.debug("[chat] message pinned", channelId, message.id)
+							store.setPinned(channelId, message, backendUserId)
+						},
+						onMessageUnpinned: (channelId, messageId) => {
+							console.debug("[chat] message unpinned", channelId, messageId)
+							store.setUnpinned(channelId, messageId)
+						},
+						onTyping: (channelId, userId, displayName) => {
+							if (userId !== backendUserId) {
+								store.setTypingUser(channelId, userId, displayName)
+							}
+						},
+						onPresenceUpdate: (_communityId, onlineCount, onlineUsers) => {
+							console.debug("[chat] presence update:", onlineCount, "online")
+							store.setPresence(onlineCount, onlineUsers)
+						},
+						onNewDM: (conversationId, message) => {
+							console.debug("[chat] new DM in", conversationId, "from", message.senderId)
+							store.receiveNewDM(conversationId, message, backendUserId)
+							if (message.senderId !== backendUserId) {
+								store.incrementDMUnread()
+							}
+						},
+						onDmTyping: (conversationId, userId) => {
+							if (userId !== backendUserId) {
+								store.setDmTypingUser(conversationId, userId)
+							}
+						},
+						onDmRead: (conversationId, _userId, _lastReadAt) => {
+							console.debug("[chat] DM read", conversationId)
+							store.clearDMUnread(conversationId)
+						},
+						onError: (_event, message) => {
+							console.debug("[chat] socket error:", _event, message)
+							toast.error(message)
+						},
+					},
+				)
+			} catch (err) {
+				if (!aborted) setChatLoading(false)
+				console.debug("[chat] init — uncaught error:", err)
+				toast.error("Failed to load chat. Please try again.")
+			}
+		}
+
+		init()
+
+		return () => {
+			aborted = true
+			chatSocket.disconnect()
+			store.reset()
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [communityId])
 
 	// ── Channel switch ─────────────────────────────────────────────────────────
 
@@ -277,20 +307,22 @@ export function ChatTabContent({
 				.reverse()
 				.map(msg => ({
 					...msg,
-					reactions: aggregateRawReactions(msg.reactions, currentUserId),
+					reactions: aggregateRawReactions(msg.reactions, backendUserId),
 				}))
 			store.prependMessages(channelId, older, res.nextCursor)
 		} finally {
 			store.setMessageLoading(channelId, false)
 		}
-	}, [store, communityId, currentUserId])
+	}, [store, communityId, backendUserId])
 
 	// ── Send message ───────────────────────────────────────────────────────────
 
 	const handleSend = useCallback((content: string) => {
-		if (!store.activeChannelId) return
-		chatSocket.sendMessage(store.activeChannelId, content)
-	}, [store.activeChannelId])
+		const channelId = useChatStore.getState().activeChannelId
+		console.debug("[chat] handleSend — channelId:", channelId, "content:", content)
+		if (!channelId) return
+		chatSocket.sendMessage(channelId, content)
+	}, [])
 
 	// ── Reactions ──────────────────────────────────────────────────────────────
 
@@ -305,35 +337,38 @@ export function ChatTabContent({
 	// ── Pin / unpin ────────────────────────────────────────────────────────────
 
 	const handlePin = useCallback(async (messageId: string) => {
-		if (!store.activeChannelId || !isMod) return
+		const channelId = useChatStore.getState().activeChannelId
+		if (!channelId || !isMod) return
 		try {
-			await pinMessage(communityId, store.activeChannelId, messageId)
+			await pinMessage(communityId, channelId, messageId)
 		} catch {
 			toast.error("Failed to pin message.")
 		}
-	}, [communityId, store.activeChannelId, isMod])
+	}, [communityId, isMod])
 
 	const handleUnpin = useCallback(async (messageId: string) => {
-		if (!store.activeChannelId || !isMod) return
+		const channelId = useChatStore.getState().activeChannelId
+		if (!channelId || !isMod) return
 		try {
-			await unpinMessageApi(communityId, store.activeChannelId, messageId)
-			store.setUnpinned(store.activeChannelId, messageId)
+			await unpinMessageApi(communityId, channelId, messageId)
+			store.setUnpinned(channelId, messageId)
 		} catch {
 			toast.error("Failed to unpin message.")
 		}
-	}, [communityId, store.activeChannelId, isMod, store])
+	}, [communityId, isMod, store])
 
 	// ── Delete ─────────────────────────────────────────────────────────────────
 
 	const handleDelete = useCallback(async (messageId: string) => {
-		if (!store.activeChannelId) return
+		const channelId = useChatStore.getState().activeChannelId
+		if (!channelId) return
 		try {
-			await deleteChannelMessage(communityId, store.activeChannelId, messageId)
-			store.removeMessage(store.activeChannelId, messageId)
+			await deleteChannelMessage(communityId, channelId, messageId)
+			store.removeMessage(channelId, messageId)
 		} catch {
 			toast.error("Failed to delete message.")
 		}
-	}, [communityId, store.activeChannelId, store])
+	}, [communityId, store])
 
 	// ── Welcome banner dismiss ─────────────────────────────────────────────────
 
@@ -349,12 +384,14 @@ export function ChatTabContent({
 	// ── Typing ────────────────────────────────────────────────────────────────
 
 	const handleTypingStart = useCallback(() => {
-		if (store.activeChannelId) chatSocket.typingStart(store.activeChannelId)
-	}, [store.activeChannelId])
+		const channelId = useChatStore.getState().activeChannelId
+		if (channelId) chatSocket.typingStart(channelId)
+	}, [])
 
 	const handleTypingStop = useCallback(() => {
-		if (store.activeChannelId) chatSocket.typingStop(store.activeChannelId)
-	}, [store.activeChannelId])
+		const channelId = useChatStore.getState().activeChannelId
+		if (channelId) chatSocket.typingStop(channelId)
+	}, [])
 
 	// ── Thread ────────────────────────────────────────────────────────────────
 
@@ -364,9 +401,10 @@ export function ChatTabContent({
 	}, [store])
 
 	const handleSendReply = useCallback((content: string) => {
-		if (!store.activeChannelId || !store.threadMessageId) return
-		chatSocket.sendMessage(store.activeChannelId, content, store.threadMessageId)
-	}, [store.activeChannelId, store.threadMessageId])
+		const { activeChannelId, threadMessageId } = useChatStore.getState()
+		if (!activeChannelId || !threadMessageId) return
+		chatSocket.sendMessage(activeChannelId, content, threadMessageId)
+	}, [])
 
 	// ── DM ────────────────────────────────────────────────────────────────────
 
@@ -406,10 +444,10 @@ export function ChatTabContent({
 	}, [store, communityId])
 
 	const handleDMSend = useCallback((content: string) => {
-		const convId = store.activeDmConversationId
+		const convId = useChatStore.getState().activeDmConversationId
 		if (!convId) return
 		chatSocket.sendDM(communityId, content, convId)
-	}, [store.activeDmConversationId, communityId])
+	}, [communityId])
 
 	const handleNewDM = useCallback(() => {
 		// Opening a new DM requires picking a member — will be wired to MemberProfileDrawer
@@ -423,17 +461,23 @@ export function ChatTabContent({
 	}, [store])
 
 	const handleDMTypingStart = useCallback(() => {
-		if (store.activeDmConversationId) chatSocket.dmTypingStart(store.activeDmConversationId)
-	}, [store.activeDmConversationId])
+		const convId = useChatStore.getState().activeDmConversationId
+		if (convId) chatSocket.dmTypingStart(convId)
+	}, [])
 
 	const handleDMTypingStop = useCallback(() => {
-		if (store.activeDmConversationId) chatSocket.dmTypingStop(store.activeDmConversationId)
-	}, [store.activeDmConversationId])
+		const convId = useChatStore.getState().activeDmConversationId
+		if (convId) chatSocket.dmTypingStop(convId)
+	}, [])
 
 	// ── Derived state ──────────────────────────────────────────────────────────
 
-	const activeChannel = store.channels.find(c => c.id === store.activeChannelId) ?? null
+	const displayChannels = store.channels
+	const displayDMConvs = store.dmConversations
+
+	const activeChannel = displayChannels.find(c => c.id === store.activeChannelId) ?? null
 	const activeMessages = store.activeChannelId ? (store.messages[store.activeChannelId] ?? []) : []
+	const previewUserId = backendUserId
 	const isLoadingMessages = store.activeChannelId ? (store.messageLoading[store.activeChannelId] ?? false) : false
 	const hasMoreMessages = store.activeChannelId ? (store.messageCursors[store.activeChannelId] !== null) : false
 
@@ -454,12 +498,38 @@ export function ChatTabContent({
 
 	// ── Render ────────────────────────────────────────────────────────────────
 
+	if (chatLoading) {
+		return (
+			<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex h-155">
+				<aside className="w-60 shrink-0 border-r border-border-default flex flex-col bg-surface-page p-4 gap-3">
+					<div className="h-2.5 w-14 bg-surface-hover rounded animate-pulse" />
+					{Array.from({ length: 4 }).map((_, i) => (
+						<div key={i} className="h-7 rounded-action bg-surface-hover animate-pulse" />
+					))}
+					<div className="mt-4 h-2.5 w-14 bg-surface-hover rounded animate-pulse" />
+					{Array.from({ length: 3 }).map((_, i) => (
+						<div key={i} className="h-7 rounded-action bg-surface-hover animate-pulse" />
+					))}
+				</aside>
+				<div className="flex-1 flex flex-col">
+					<div className="h-14 border-b border-border-default shrink-0 px-5 flex items-center gap-3">
+						<div className="h-4 w-28 bg-surface-hover rounded animate-pulse" />
+					</div>
+					<div className="flex-1" />
+					<div className="h-16 border-t border-border-default shrink-0 px-5 flex items-center">
+						<div className="h-9 w-full bg-surface-hover rounded-full animate-pulse" />
+					</div>
+				</div>
+			</div>
+		)
+	}
+
 	return (
 		<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex h-155">
 			{/* ── Left sidebar ── */}
-			<aside className="w-60 shrink-0 border-r border-border-default flex flex-col bg-surface-page overflow-y-auto no-scrollbar">
+			<aside className="w-60 shrink-0 border-r border-gray-200 flex flex-col bg-gray-50 overflow-y-auto no-scrollbar">
 				<ChannelList
-					channels={store.channels}
+					channels={displayChannels}
 					activeChannelId={store.activeChannelId}
 					onSelect={handleChannelSelect}
 					unreadMap={store.channelUnread}
@@ -476,7 +546,7 @@ export function ChatTabContent({
 				<div className="border-t border-border-default" />
 
 				<DMList
-					conversations={store.dmConversations}
+					conversations={displayDMConvs}
 					activeDmConversationId={store.activeDmConversationId}
 					onSelect={handleDMSelect}
 					onNewDM={handleNewDM}
@@ -488,7 +558,7 @@ export function ChatTabContent({
 				<DMThread
 					conversation={activeDmConv}
 					messages={activeDmMessages}
-					currentUserId={currentUserId}
+					currentUserId={backendUserId}
 					hasMore={hasDmMore}
 					isLoading={isDmLoading}
 					typingUserIds={dmTypingUsers.map(u => u.userId)}
@@ -502,82 +572,81 @@ export function ChatTabContent({
 				<div className="flex-1 flex min-w-0 overflow-hidden">
 					{/* Channel panel */}
 					<div className="flex-1 flex flex-col min-w-0">
-						{/* Channel header */}
-						{activeChannel && (
-							<div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-border-default shrink-0">
-								<div className="min-w-0">
-									<div className="flex items-center gap-1.5">
-										<span className="text-text-muted font-medium">#</span>
-										<h2 className="text-body-md font-bold text-text-primary">{activeChannel.name}</h2>
+						{/* No-channel empty state */}
+						{!activeChannel ? (
+							<div className="flex-1 flex flex-col items-center justify-center gap-3 text-center p-8">
+								<div className="size-12 rounded-full bg-surface-vibe-soft flex items-center justify-center">
+									<span className="text-xl font-bold text-text-vibe">#</span>
+								</div>
+								<div>
+									<p className="text-body-sm font-semibold text-text-primary">No channels yet</p>
+									<p className="text-label-sm text-text-secondary font-normal mt-1 max-w-56 leading-snug">
+										This community hasn&apos;t set up any channels yet. Check back soon.
+									</p>
+								</div>
+							</div>
+						) : (
+							<>
+								{/* Channel header */}
+								<div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-200 shrink-0 bg-white">
+									<div className="min-w-0">
+										<div className="flex items-center gap-2">
+											<span className="text-text-vibe font-bold text-lg">#</span>
+											<h2 className="text-body-md font-bold text-text-primary">{activeChannel.name}</h2>
+											{store.onlineCount > 0 && (
+												<span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+													<span className="size-1.5 rounded-full bg-emerald-500 inline-block" />
+													{store.onlineCount} online
+												</span>
+											)}
+										</div>
+										{activeChannel.description && (
+											<p className="text-[11px] text-text-secondary mt-0.5 truncate">
+												{activeChannel.description}
+											</p>
+										)}
 									</div>
-									{activeChannel.description && (
-										<p className="text-[11px] text-text-secondary mt-0.5 truncate">
-											{activeChannel.description}
-										</p>
-									)}
 								</div>
-								<div className="flex items-center gap-2 shrink-0">
-									<button
-										type="button"
-										onClick={() => store.setPinnedPanelOpen(!store.pinnedPanelOpen)}
-										className={`p-1 rounded transition-colors ${
-											store.pinnedPanelOpen
-												? "text-violet-600 bg-surface-vibe-soft"
-												: "text-text-muted hover:text-text-primary"
-										}`}
-										title="Pinned messages"
-									>
-										<Icon as={PinSvg} size="sm" color={store.pinnedPanelOpen ? "vibe" : "muted"} />
-									</button>
-									<button
-										type="button"
-										className="text-text-muted hover:text-text-primary transition-colors p-1"
-										title="Channel options"
-									>
-										<Icon as={DotsSvg} size="sm" color="muted" />
-									</button>
+
+								{/* Loading state */}
+								{isLoadingMessages && activeMessages.length === 0 && (
+									<div className="flex-1 flex items-center justify-center">
+										<p className="text-label-sm text-text-muted">Loading messages…</p>
+									</div>
+								)}
+
+								{/* Message list */}
+								<MessageList
+									messages={activeMessages}
+									channel={activeChannel}
+									bannerDismissed={dismissedBanners.has(activeChannel.id)}
+									typingDisplayNames={typingDisplayNames}
+									currentUserId={previewUserId}
+									currentUserRole={currentUserRole}
+									activeThreadMessageId={store.threadMessageId}
+									hasMore={hasMoreMessages}
+									isLoadingMore={isLoadingMessages}
+									onLoadMore={handleLoadMore}
+									onDismissBanner={() => handleDismissBanner(activeChannel.id)}
+									onReactionToggle={handleReactionToggle}
+									onPin={handlePin}
+									onUnpin={handleUnpin}
+									onDelete={handleDelete}
+									onReply={handleOpenThread}
+								/>
+
+								{/* Message input */}
+								<div className="px-5 py-3.5 border-t border-border-default shrink-0">
+									<MessageInput
+										placeholder={`Message #${activeChannel.name}`}
+										quickReplies={activeChannel.quickReplies}
+										onSend={handleSend}
+										onTypingStart={handleTypingStart}
+										onTypingStop={handleTypingStop}
+									/>
 								</div>
-							</div>
+							</>
 						)}
-
-						{/* Loading state */}
-						{isLoadingMessages && activeMessages.length === 0 && (
-							<div className="flex-1 flex items-center justify-center">
-								<p className="text-label-sm text-text-muted">Loading messages…</p>
-							</div>
-						)}
-
-						{/* Message list */}
-						{activeChannel && (
-							<MessageList
-								messages={activeMessages}
-								channel={activeChannel}
-								bannerDismissed={dismissedBanners.has(activeChannel.id)}
-								typingDisplayNames={typingDisplayNames}
-								currentUserId={currentUserId}
-								currentUserRole={currentUserRole}
-								hasMore={hasMoreMessages}
-								isLoadingMore={isLoadingMessages}
-								onLoadMore={handleLoadMore}
-								onDismissBanner={() => handleDismissBanner(activeChannel.id)}
-								onReactionToggle={handleReactionToggle}
-								onPin={handlePin}
-								onUnpin={handleUnpin}
-								onDelete={handleDelete}
-								onReply={handleOpenThread}
-							/>
-						)}
-
-						{/* Message input */}
-						<div className="px-5 py-3.5 border-t border-border-default shrink-0">
-							<MessageInput
-								placeholder={activeChannel ? `Message #${activeChannel.name}` : "Say hello to the community…"}
-								quickReplies={activeChannel?.quickReplies}
-								onSend={handleSend}
-								onTypingStart={handleTypingStart}
-								onTypingStop={handleTypingStop}
-							/>
-						</div>
 					</div>
 
 					{/* Thread panel — slides in when a thread is open */}
@@ -586,7 +655,7 @@ export function ChatTabContent({
 							parentMessage={threadMessage}
 							communityId={communityId}
 							channelId={store.activeChannelId!}
-							currentUserId={currentUserId}
+							currentUserId={backendUserId}
 							currentUserRole={currentUserRole}
 							onClose={() => store.setThreadMessageId(null)}
 							onSendReply={handleSendReply}

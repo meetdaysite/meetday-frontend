@@ -52,6 +52,12 @@ export function ChannelList({
 				)}
 			</div>
 
+			{channels.length === 0 && (
+				<p className="text-label-sm text-text-muted font-normal px-2 py-1">
+					No channels available
+				</p>
+			)}
+
 			<div className="flex flex-col gap-0.5">
 				{channels.map(ch => {
 					const isActive = activeChannelId === ch.id
@@ -62,7 +68,7 @@ export function ChannelList({
 							key={ch.id}
 							type="button"
 							onClick={() => onSelect(ch.id)}
-							className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-action text-left transition-colors ${
+							className={`w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors ${
 								isActive
 									? "bg-surface-vibe-soft text-violet-600 font-semibold"
 									: "text-text-secondary hover:text-text-primary hover:bg-surface-hover"

@@ -15,6 +15,7 @@ interface MessageListProps {
 	typingDisplayNames: string[]
 	currentUserId: string | null
 	currentUserRole: CommunityRole | null
+	activeThreadMessageId?: string | null
 	hasMore: boolean
 	isLoadingMore: boolean
 	onLoadMore: () => void
@@ -33,6 +34,7 @@ export function MessageList({
 	typingDisplayNames,
 	currentUserId,
 	currentUserRole,
+	activeThreadMessageId,
 	hasMore,
 	isLoadingMore,
 	onLoadMore,
@@ -118,20 +120,38 @@ export function MessageList({
 				/>
 			)}
 
-			<div className="flex flex-col gap-4">
-				{messages.map(msg => (
-					<MessageBubble
-						key={msg.id}
-						message={msg}
-						currentUserId={currentUserId}
-						currentUserRole={currentUserRole}
-						onReactionToggle={onReactionToggle}
-						onPin={onPin}
-						onUnpin={onUnpin}
-						onDelete={onDelete}
-						onReply={onReply}
-					/>
-				))}
+			{messages.length === 0 && !showBanner && !isLoadingMore && (
+				<div className="flex-1 flex flex-col items-center justify-center gap-2 py-16 text-center">
+					<div className="size-10 rounded-full bg-surface-hover flex items-center justify-center">
+						<span className="text-base font-bold text-text-muted">#</span>
+					</div>
+					<p className="text-body-sm font-semibold text-text-primary">Be the first to say something</p>
+					<p className="text-label-sm text-text-secondary font-normal">
+						Start the conversation in <span className="font-semibold">#{channel.name}</span>
+					</p>
+				</div>
+			)}
+
+			<div className="flex flex-col gap-0">
+				{messages.map((msg, i) => {
+					const prev = messages[i - 1]
+					const isGrouped = !!prev && prev.senderId === msg.senderId
+					return (
+						<MessageBubble
+							key={msg.id}
+							message={msg}
+							isGrouped={isGrouped}
+							isActiveThread={!!activeThreadMessageId && msg.id === activeThreadMessageId}
+							currentUserId={currentUserId}
+							currentUserRole={currentUserRole}
+							onReactionToggle={onReactionToggle}
+							onPin={onPin}
+							onUnpin={onUnpin}
+							onDelete={onDelete}
+							onReply={onReply}
+						/>
+					)
+				})}
 			</div>
 
 			<TypingIndicator displayNames={typingDisplayNames} />

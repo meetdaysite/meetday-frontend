@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
 import { Icon } from "@/components/ui/Icon"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 import { EventCard } from "@/components/attendee/EventCard"
@@ -39,7 +38,13 @@ function EventCardSkeleton() {
 
 // ─── Upcoming strip (overview tab) ────────────────────────────────────────────
 
-export function UpcomingExperiences({ communitySlug }: { communitySlug: string }) {
+export function UpcomingExperiences({
+	communitySlug,
+	onViewAll,
+}: {
+	communitySlug: string
+	onViewAll: () => void
+}) {
 	const [events, setEvents] = useState<ExploreEvent[]>([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState(false)
@@ -59,14 +64,14 @@ export function UpcomingExperiences({ communitySlug }: { communitySlug: string }
 				<p className="text-body-md font-semibold text-text-primary">
 					Upcoming experiences from this community
 				</p>
-				{/* TODO: Link to /communities/[slug]/experiences once sub-page is built */}
-				<Link
-					href={`/communities/${communitySlug}/experiences`}
+				<button
+					type="button"
+					onClick={onViewAll}
 					className="text-sm text-text-brand font-medium hover:underline shrink-0 flex items-center gap-1"
 				>
 					View all
 					<Icon as={ArrowRightSvg} size="sm" className="inline-block" color="brand" />
-				</Link>
+				</button>
 			</div>
 
 			{loading ? (

@@ -43,7 +43,20 @@ export function CommunityHero({
 	const visibilityLabel = community.access === "PUBLIC" ? "Public" : "Private"
 
 	return (
-		<div className="rounded-panel overflow-hidden bg-neutral-950 border border-neutral-800 relative">
+		<div className="rounded-panel overflow-hidden bg-neutral-950 border border-neutral-800 relative min-h-64">
+			{/* Full background cover image */}
+			<Image
+				src={community.coverImageUrl}
+				alt=""
+				fill
+				sizes="(max-width: 1280px) 100vw, 900px"
+				className="object-cover opacity-40"
+				priority
+			/>
+
+			{/* Gradient overlay for readability */}
+			<div className="absolute inset-0 bg-linear-to-b from-neutral-950/40 via-neutral-950/60 to-neutral-950/95 pointer-events-none" />
+
 			{/* Ambient glow */}
 			<div className="absolute inset-0 overflow-hidden pointer-events-none">
 				<div className="absolute -left-12 top-4 size-56 rounded-full bg-purple-600/25 blur-3xl" />
@@ -51,23 +64,10 @@ export function CommunityHero({
 				<div className="absolute left-1/2 top-0 size-40 rounded-full bg-blue-600/15 blur-2xl" />
 			</div>
 
-			{/* Cover image strip */}
-			<div className="relative h-28 w-full overflow-hidden">
-				<Image
-					src={community.coverImageUrl}
-					alt=""
-					fill
-					sizes="(max-width: 1280px) 100vw, 900px"
-					className="object-cover opacity-40"
-					priority
-				/>
-				<div className="absolute inset-0 bg-linear-to-b from-transparent to-neutral-950" />
-			</div>
-
 			{/* Content area */}
-			<div className="relative z-10 px-6 pb-6 flex flex-col gap-5">
+			<div className="relative z-10 px-8 pt-10 pb-8 flex flex-col gap-6">
 				{/* Row 1: icon (left) + info (right) */}
-				<div className="grid grid-cols-[auto_1fr] gap-5 items-start -mt-10">
+				<div className="grid grid-cols-[auto_1fr] gap-5 items-start">
 					{/* Left: community icon */}
 					<div className="relative size-32 rounded-full shrink-0 border-4 border-neutral-950 overflow-hidden bg-neutral-800">
 						<Image

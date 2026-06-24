@@ -7,6 +7,7 @@ import CloseSvg from "@/icons/outlined/close.svg"
 import ChatSvg from "@/icons/outlined/chat.svg"
 import { getMessageReplies } from "@/lib/chatApi"
 import { MessageInput } from "./MessageInput"
+import { avatarColor } from "@/lib/avatarColor"
 import type { ChatMessage } from "@/lib/chatApi"
 import type { StoredMessage } from "@/store/chatStore"
 import type { CommunityRole } from "@/lib/api"
@@ -46,6 +47,7 @@ export function ThreadPanel({
 
 	const parentName = `${parentMessage.sender.firstName} ${parentMessage.sender.lastName}`
 	const parentInitials = `${parentMessage.sender.firstName[0] ?? ""}${parentMessage.sender.lastName[0] ?? ""}`.toUpperCase()
+	const parentColor = avatarColor(parentMessage.sender.firstName)
 
 	const loadReplies = useCallback(async (cursor?: string) => {
 		const res = await getMessageReplies(communityId, channelId, parentMessage.id, cursor ? { cursor } : undefined)
@@ -70,29 +72,30 @@ export function ThreadPanel({
 	}
 
 	return (
-		<div className="w-72 shrink-0 border-l border-border-default flex flex-col bg-surface-page">
-			<div className="flex items-center justify-between px-4 py-3 border-b border-border-default shrink-0">
+		<div className="w-72 shrink-0 border-l-2 border-violet-200 flex flex-col bg-gray-50">
+			{/* Header */}
+			<div className="flex items-center justify-between px-4 py-3 border-b border-violet-100 bg-violet-50/60 shrink-0">
 				<div className="flex items-center gap-2">
-					<Icon as={ChatSvg} size="sm" color="secondary" />
-					<span className="text-body-sm font-semibold text-text-primary">Thread</span>
+					<Icon as={ChatSvg} size="sm" color="vibe" />
+					<span className="text-body-sm font-semibold text-violet-700">Thread</span>
 				</div>
 				<button
 					type="button"
 					onClick={onClose}
 					className="text-text-muted hover:text-text-primary transition-colors"
 				>
-					<Icon as={CloseSvg} size="sm" color="muted" />
+					<Icon as={CloseSvg} size="sm" color="vibe" />
 				</button>
 			</div>
 
 			{/* Parent message */}
-			<div className="px-4 py-3 border-b border-border-default bg-surface-card">
+			<div className="px-4 py-3 border-b border-violet-100 bg-white shrink-0">
 				<div className="flex gap-2">
-					<div className="relative size-8 rounded-full overflow-hidden border border-border-default bg-surface-hover shrink-0 flex items-center justify-center">
+					<div className={`relative size-8 rounded-full overflow-hidden border-2 flex items-center justify-center shrink-0 ${parentMessage.sender.avatarUrl ? "bg-surface-hover border-border-default" : `${parentColor.bg} ${parentColor.border}`}`}>
 						{parentMessage.sender.avatarUrl ? (
 							<Image src={parentMessage.sender.avatarUrl} alt={parentName} fill sizes="32px" className="object-cover" />
 						) : (
-							<span className="text-[9px] font-bold text-text-secondary">{parentInitials}</span>
+							<span className={`text-[9px] font-bold ${parentColor.text}`}>{parentInitials}</span>
 						)}
 					</div>
 					<div className="flex-1 min-w-0">
@@ -125,13 +128,14 @@ export function ThreadPanel({
 				{replies.map(reply => {
 					const name = `${reply.sender.firstName} ${reply.sender.lastName}`
 					const initials = `${reply.sender.firstName[0] ?? ""}${reply.sender.lastName[0] ?? ""}`.toUpperCase()
+					const color = avatarColor(reply.sender.firstName)
 					return (
 						<div key={reply.id} className="flex gap-2">
-							<div className="relative size-7 rounded-full overflow-hidden border border-border-default bg-surface-hover shrink-0 flex items-center justify-center">
+							<div className={`relative size-7 rounded-full overflow-hidden border-2 flex items-center justify-center shrink-0 ${reply.sender.avatarUrl ? "bg-surface-hover border-border-default" : `${color.bg} ${color.border}`}`}>
 								{reply.sender.avatarUrl ? (
 									<Image src={reply.sender.avatarUrl} alt={name} fill sizes="28px" className="object-cover" />
 								) : (
-									<span className="text-[9px] font-bold text-text-secondary">{initials}</span>
+									<span className={`text-[9px] font-bold ${color.text}`}>{initials}</span>
 								)}
 							</div>
 							<div className="flex-1 min-w-0">
@@ -149,9 +153,9 @@ export function ThreadPanel({
 			</div>
 
 			{/* Reply input */}
-			<div className="px-4 py-3 border-t border-border-default shrink-0">
+			<div className="px-4 py-3.5 border-t border-violet-100 bg-white shrink-0">
 				<MessageInput
-					placeholder="Reply…"
+					placeholder="Reply in thread"
 					onSend={onSendReply}
 					onTypingStart={onTypingStart}
 					onTypingStop={onTypingStop}

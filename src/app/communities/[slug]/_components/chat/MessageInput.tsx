@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { Icon } from "@/components/ui/Icon"
 import SmileCircleSvg from "@/icons/outlined/smile-circle.svg"
-// File attachment is commented out — no CHAT_MEDIA upload context exists on the backend yet.
-// import FileTextSvg from "@/icons/outlined/file-text.svg"
 import PlaneSvg from "@/icons/outlined/plane.svg"
 
 const TYPING_THROTTLE_MS = 2000
+
+const EMOJI_TRAY = ["😀", "😂", "🥹", "😍", "🤩", "😎", "🥳", "😅", "🙌", "👍", "❤️", "🔥", "✨", "🎉", "😮", "😢"]
 
 interface MessageInputProps {
 	placeholder?: string
@@ -25,8 +25,22 @@ export function MessageInput({
 	onTypingStop,
 }: MessageInputProps) {
 	const [value, setValue] = useState("")
+	const [emojiTrayOpen, setEmojiTrayOpen] = useState(false)
 	const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const lastTypingEmit = useRef(0)
+	const inputRef = useRef<HTMLInputElement>(null)
+	const emojiRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		if (!emojiTrayOpen) return
+		function handleClick(e: MouseEvent) {
+			if (emojiRef.current && !emojiRef.current.contains(e.target as Node)) {
+				setEmojiTrayOpen(false)
+			}
+		}
+		document.addEventListener("mousedown", handleClick)
+		return () => document.removeEventListener("mousedown", handleClick)
+	}, [emojiTrayOpen])
 
 	const handleTyping = useCallback(() => {
 		const now = Date.now()
@@ -47,6 +61,25 @@ export function MessageInput({
 		} else {
 			onTypingStop()
 		}
+	}
+
+	const handleEmojiPick = (emoji: string) => {
+		const input = inputRef.current
+		if (input) {
+			const start = input.selectionStart ?? value.length
+			const end = input.selectionEnd ?? value.length
+			const next = value.slice(0, start) + emoji + value.slice(end)
+			setValue(next)
+			// Restore cursor after the inserted emoji
+			requestAnimationFrame(() => {
+				input.focus()
+				input.setSelectionRange(start + emoji.length, start + emoji.length)
+			})
+		} else {
+			setValue(v => v + emoji)
+		}
+		handleTyping()
+		setEmojiTrayOpen(false)
 	}
 
 	const handleSend = () => {
@@ -87,44 +120,56 @@ export function MessageInput({
 				</div>
 			)}
 
-			<div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-surface-page border border-border-default">
-				<input
-					type="text"
-					value={value}
-					onChange={handleChange}
-					onKeyDown={handleKeyDown}
-					onBlur={handleBlur}
-					placeholder={placeholder}
-					className="flex-1 text-label-sm text-text-primary placeholder:text-text-muted bg-transparent outline-none"
-				/>
-				<div className="flex items-center gap-2 shrink-0">
-					{/* Emoji picker — UI placeholder, not yet wired to a picker library */}
+			<div className="relative">
+				{emojiTrayOpen && (
+					<div
+						ref={emojiRef}
+						className="absolute bottom-full mb-2 right-0 z-20 flex flex-wrap gap-1 p-2 w-64 bg-surface-card border border-border-default rounded-action shadow-lg"
+					>
+						{EMOJI_TRAY.map(emoji => (
+							<button
+								key={emoji}
+								type="button"
+								onMouseDown={e => { e.preventDefault(); handleEmojiPick(emoji) }}
+								className="text-xl leading-none p-1.5 rounded hover:bg-surface-hover transition-colors"
+							>
+								{emoji}
+							</button>
+						))}
+					</div>
+				)}
+
+				<div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-surface-page border border-border-default transition-all focus-within:border-violet-300 focus-within:ring-2 focus-within:ring-violet-100">
+					<input
+						ref={inputRef}
+						type="text"
+						value={value}
+						onChange={handleChange}
+						onKeyDown={handleKeyDown}
+						onBlur={handleBlur}
+						placeholder={placeholder}
+						className="flex-1 text-label-sm text-text-primary placeholder:text-text-muted bg-transparent outline-none"
+					/>
+					<div className="flex items-center gap-2 shrink-0">
+						<button
+							type="button"
+							onClick={() => setEmojiTrayOpen(v => !v)}
+							className={`transition-colors ${emojiTrayOpen ? "text-violet-600" : "text-text-muted hover:text-text-primary"}`}
+							title="Add emoji"
+						>
+							<Icon as={SmileCircleSvg} size="sm" color={emojiTrayOpen ? "vibe" : "muted"} />
+						</button>
+					</div>
+
 					<button
 						type="button"
-						className="text-text-muted hover:text-text-primary transition-colors"
-						title="Add emoji (coming soon)"
+						onClick={handleSend}
+						disabled={!value.trim()}
+						className="size-8 rounded-full bg-action-primary flex items-center justify-center shrink-0 hover:bg-action-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
 					>
-						<Icon as={SmileCircleSvg} size="sm" color="muted" />
+						<Icon as={PlaneSvg} size="sm" color="inverse" />
 					</button>
-
-					{/*
-						File attachment disabled — backend has no CHAT_MEDIA upload context yet.
-						When backend adds support, uncomment and wire to uploadMedia + send URL as message.
-
-					<button type="button" className="text-text-muted hover:text-text-primary transition-colors" title="Attach file (coming soon)">
-						<Icon as={FileTextSvg} size="sm" color="muted" />
-					</button>
-					*/}
 				</div>
-
-				<button
-					type="button"
-					onClick={handleSend}
-					disabled={!value.trim()}
-					className="size-8 rounded-full bg-violet-600 flex items-center justify-center shrink-0 hover:bg-violet-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-				>
-					<Icon as={PlaneSvg} size="sm" color="inverse" />
-				</button>
 			</div>
 		</div>
 	)

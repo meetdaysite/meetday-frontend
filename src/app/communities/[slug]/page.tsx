@@ -114,6 +114,7 @@ function TabContent({
 	currentUserId,
 	currentUserRole,
 	onJoinClick,
+	onTabChange,
 }: {
 	activeTab: TabKey
 	visibleTabs: Tab[]
@@ -123,6 +124,7 @@ function TabContent({
 	currentUserId: string | null
 	currentUserRole: CommunityRole | null
 	onJoinClick: () => void
+	onTabChange: (tab: TabKey) => void
 }) {
 	const tab = visibleTabs.find(t => t.key === activeTab)!
 	const isLocked = tab.requiresAuth && (!isLoggedIn || !isMember)
@@ -141,8 +143,8 @@ function TabContent({
 	if (activeTab === "overview") {
 		return (
 			<>
-				<WhatToDoCard isMember={isMember} />
-				<UpcomingExperiences communitySlug={community.slug} />
+				<WhatToDoCard isMember={isMember} onTabChange={onTabChange} />
+				<UpcomingExperiences communitySlug={community.slug} onViewAll={() => onTabChange("experiences")} />
 				<LatestFromCommunity communityName={community.name} isMember={isMember} />
 			</>
 		)
@@ -336,6 +338,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 							currentUserId={user?.uid ?? null}
 							currentUserRole={currentUserRole}
 							onJoinClick={openJoinModal}
+							onTabChange={setActiveTab}
 						/>
 
 						{/* Join banner — hidden once member or tab is already locked */}

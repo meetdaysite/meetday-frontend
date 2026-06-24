@@ -48,17 +48,20 @@ function getOrigin(): string {
 function rejoinRooms() {
 	if (!socket || !_communityId) return
 
+	console.debug("[chatSocket] rejoinRooms — joining", _allChannelIds.length, "channels")
 	// Silently join all channels for session-level unread tracking (gap #8 mitigation)
 	for (const channelId of _allChannelIds) {
 		socket.emit("join-channel", { channelId, communityId: _communityId })
 	}
 
 	if (_activeDmConversationId) {
+		console.debug("[chatSocket] rejoinRooms — rejoining DM", _activeDmConversationId)
 		socket.emit("join-dm", { conversationId: _activeDmConversationId })
 	}
 
 	// Fire any pending mark-read that couldn't be sent before connect
 	if (_pendingMarkRead) {
+		console.debug("[chatSocket] rejoinRooms — flushing pending mark-read", _pendingMarkRead.channelId)
 		socket.emit("mark-read", _pendingMarkRead)
 		_pendingMarkRead = null
 	}
@@ -68,13 +71,16 @@ function attachHandlers(h: ChatSocketHandlers) {
 	if (!socket) return
 
 	socket.on("connect", () => {
+		console.debug("[chatSocket] ✅ connected, id:", socket?.id)
 		rejoinRooms()
 		h.onConnect()
 	})
 
 	socket.on("disconnect", async (reason) => {
+		console.debug("[chatSocket] ❌ disconnected, reason:", reason)
 		h.onDisconnect()
 		if (reason === "io server disconnect" || reason === "transport close") {
+			console.debug("[chatSocket] attempting reconnect with fresh token")
 			const freshToken = await auth.currentUser?.getIdToken(true)
 			if (!freshToken) return
 			socket!.auth = { token: freshToken }
@@ -82,15 +88,18 @@ function attachHandlers(h: ChatSocketHandlers) {
 		}
 	})
 
-	socket.on("connect_error", () => {
+	socket.on("connect_error", (err) => {
+		console.debug("[chatSocket] ⚠️ connect_error:", err.message)
 		h.onDisconnect()
 	})
 
 	socket.on("new-message", ({ channelId, message }: { channelId: string; message: ChatMessage }) => {
+		console.debug("[chatSocket] ← new-message", channelId, message.id)
 		h.onNewMessage(channelId, message)
 	})
 
 	socket.on("message-deleted", ({ channelId, messageId }: { channelId: string; messageId: string }) => {
+		console.debug("[chatSocket] ← message-deleted", channelId, messageId)
 		h.onMessageDeleted(channelId, messageId)
 	})
 
@@ -101,6 +110,7 @@ function attachHandlers(h: ChatSocketHandlers) {
 		messageId: string
 		reactions: (AggregatedReaction & { userIds: string[] })[]
 	}) => {
+		console.debug("[chatSocket] ← reaction-updated", messageId, reactions.length, "reactions")
 		const enriched = reactions.map(r => ({
 			...r,
 			mine: _currentUserId ? r.userIds.includes(_currentUserId) : false,
@@ -109,14 +119,17 @@ function attachHandlers(h: ChatSocketHandlers) {
 	})
 
 	socket.on("message-pinned", ({ channelId, message }: { channelId: string; message: ChatMessage }) => {
+		console.debug("[chatSocket] ← message-pinned", channelId, message.id)
 		h.onMessagePinned(channelId, message)
 	})
 
 	socket.on("message-unpinned", ({ channelId, messageId }: { channelId: string; messageId: string }) => {
+		console.debug("[chatSocket] ← message-unpinned", channelId, messageId)
 		h.onMessageUnpinned(channelId, messageId)
 	})
 
 	socket.on("typing", ({ channelId, userId, displayName }: { channelId: string; userId: string; displayName: string }) => {
+		console.debug("[chatSocket] ← typing", channelId, userId)
 		h.onTyping(channelId, userId, displayName)
 	})
 
@@ -125,14 +138,17 @@ function attachHandlers(h: ChatSocketHandlers) {
 		onlineCount: number
 		onlineUsers: PresenceUser[]
 	}) => {
+		console.debug("[chatSocket] ← presence-update", communityId, onlineCount, "online")
 		h.onPresenceUpdate(communityId, onlineCount, onlineUsers)
 	})
 
 	socket.on("new-dm", ({ conversationId, message }: { conversationId: string; message: DmMessage }) => {
+		console.debug("[chatSocket] ← new-dm", conversationId, message.id)
 		h.onNewDM(conversationId, message)
 	})
 
 	socket.on("dm-typing", ({ conversationId, userId }: { conversationId: string; userId: string }) => {
+		console.debug("[chatSocket] ← dm-typing", conversationId, userId)
 		h.onDmTyping(conversationId, userId)
 	})
 
@@ -141,10 +157,12 @@ function attachHandlers(h: ChatSocketHandlers) {
 		userId: string
 		lastReadAt: string
 	}) => {
+		console.debug("[chatSocket] ← dm-read", conversationId, userId)
 		h.onDmRead(conversationId, userId, lastReadAt)
 	})
 
 	socket.on("error", ({ event, message }: { event: string; message: string }) => {
+		console.debug("[chatSocket] ← error", event, message)
 		h.onError(event, message)
 	})
 }
@@ -160,6 +178,7 @@ export const chatSocket = {
 		handlers: ChatSocketHandlers,
 	) {
 		if (socket) {
+			console.debug("[chatSocket] connect — tearing down existing socket")
 			socket.removeAllListeners()
 			socket.disconnect()
 			socket = null
@@ -171,7 +190,7 @@ export const chatSocket = {
 		_handlers = handlers
 
 		const url = `${getOrigin()}/community-chat`
-		console.debug("[chatSocket] io connecting to:", url)
+		console.debug("[chatSocket] → connecting to", url, "communityId:", communityId, "channels:", allChannelIds.length)
 		socket = io(url, {
 			auth: { token },
 			transports: ["websocket"],
@@ -181,6 +200,7 @@ export const chatSocket = {
 	},
 
 	disconnect() {
+		console.debug("[chatSocket] disconnect called")
 		if (socket) {
 			socket.removeAllListeners()
 			socket.disconnect()
@@ -201,28 +221,35 @@ export const chatSocket = {
 
 	joinChannel(channelId: string) {
 		_activeChannelId = channelId
-		if (!socket?.connected || !_communityId) return
+		if (!socket?.connected || !_communityId) {
+			console.debug("[chatSocket] → joinChannel deferred (not connected yet)", channelId)
+			return
+		}
+		console.debug("[chatSocket] → join-channel emit", channelId)
 		socket.emit("join-channel", { channelId, communityId: _communityId })
 	},
 
 	leaveChannel(channelId: string) {
 		if (!socket?.connected) return
+		console.debug("[chatSocket] → leave-channel emit", channelId)
 		socket.emit("leave-channel", { channelId })
 	},
 
 	sendMessage(channelId: string, content: string, parentMessageId?: string) {
-		console.debug("[chatSocket] sendMessage — connected:", socket?.connected, "channelId:", channelId)
+		console.debug("[chatSocket] → send-message, connected:", socket?.connected, "channelId:", channelId)
 		if (!socket?.connected) return
 		socket.emit("send-message", { channelId, content, ...(parentMessageId ? { parentMessageId } : {}) })
 	},
 
 	addReaction(messageId: string, emoji: string) {
 		if (!socket?.connected) return
+		console.debug("[chatSocket] → add-reaction", messageId, emoji)
 		socket.emit("add-reaction", { messageId, emoji })
 	},
 
 	removeReaction(messageId: string, emoji: string) {
 		if (!socket?.connected) return
+		console.debug("[chatSocket] → remove-reaction", messageId, emoji)
 		socket.emit("remove-reaction", { messageId, emoji })
 	},
 
@@ -238,19 +265,23 @@ export const chatSocket = {
 
 	markRead(channelId: string, lastReadAt: string) {
 		if (!socket?.connected) {
+			console.debug("[chatSocket] → mark-read queued (not connected)", channelId)
 			_pendingMarkRead = { channelId, lastReadAt }
 			return
 		}
+		console.debug("[chatSocket] → mark-read emit", channelId)
 		socket.emit("mark-read", { channelId, lastReadAt })
 	},
 
 	joinDM(conversationId: string) {
 		_activeDmConversationId = conversationId
 		if (!socket?.connected) return
+		console.debug("[chatSocket] → join-dm emit", conversationId)
 		socket.emit("join-dm", { conversationId })
 	},
 
 	sendDM(communityId: string, content: string, conversationId?: string, targetUserId?: string) {
+		console.debug("[chatSocket] → send-dm, connected:", socket?.connected, "convId:", conversationId)
 		if (!socket?.connected) return
 		socket.emit("send-dm", {
 			communityId,
@@ -272,6 +303,7 @@ export const chatSocket = {
 
 	markDMRead(conversationId: string) {
 		if (!socket?.connected) return
+		console.debug("[chatSocket] → mark-dm-read emit", conversationId)
 		socket.emit("mark-dm-read", { conversationId })
 	},
 

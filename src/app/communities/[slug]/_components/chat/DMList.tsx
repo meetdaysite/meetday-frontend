@@ -5,6 +5,7 @@ import { Icon } from "@/components/ui/Icon"
 import PlusSvg from "@/icons/outlined/plus.svg"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 import type { DmConversation } from "@/lib/chatApi"
+import { avatarColor } from "@/lib/avatarColor"
 
 interface DMListProps {
 	conversations: DmConversation[]
@@ -33,11 +34,27 @@ export function DMList({ conversations, activeDmConversationId, onSelect, onNewD
 				</button>
 			</div>
 
+			{conversations.length === 0 && (
+				<div className="flex flex-col gap-1.5 px-2 py-2">
+					<p className="text-label-sm text-text-muted font-normal leading-snug">
+						No direct messages yet.
+					</p>
+					<button
+						type="button"
+						onClick={onNewDM}
+						className="text-label-sm text-text-brand font-medium hover:underline text-left"
+					>
+						Go to Members to start one
+					</button>
+				</div>
+			)}
+
 			<div className="flex flex-col gap-1">
 				{shown.map(conv => {
 					const isActive = activeDmConversationId === conv.id
 					const name = `${conv.other.firstName} ${conv.other.lastName}`
 					const initials = `${conv.other.firstName[0] ?? ""}${conv.other.lastName[0] ?? ""}`.toUpperCase()
+					const color = avatarColor(conv.other.firstName)
 
 					return (
 						<button
@@ -51,11 +68,11 @@ export function DMList({ conversations, activeDmConversationId, onSelect, onNewD
 							}`}
 						>
 							<div className="relative shrink-0">
-								<div className="relative size-7 rounded-full overflow-hidden border border-border-default bg-surface-hover flex items-center justify-center">
+								<div className={`relative size-7 rounded-full overflow-hidden border flex items-center justify-center ${conv.other.avatarUrl ? "bg-surface-hover border-border-default" : `${color.bg} ${color.border}`}`}>
 									{conv.other.avatarUrl ? (
 										<Image src={conv.other.avatarUrl} alt={name} fill sizes="28px" className="object-cover" />
 									) : (
-										<span className="text-[9px] font-bold text-text-secondary">{initials}</span>
+										<span className={`text-[9px] font-bold ${color.text}`}>{initials}</span>
 									)}
 								</div>
 							</div>
