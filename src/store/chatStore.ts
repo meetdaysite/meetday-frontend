@@ -1,7 +1,7 @@
 "use client"
 
 import { create } from "zustand"
-import type { ChatChannel, ChatMessage, DmConversation, DmMessage } from "@/lib/chatApi"
+import type { ChatChannel, ChatMessage, DmConversation, DmMessage, DecryptedDmMessage } from "@/lib/chatApi"
 import type { PresenceUser } from "@/lib/chatSocket"
 import { aggregateRawReactions } from "@/lib/chatApi"
 
@@ -49,7 +49,7 @@ type ChatState = {
 	// DMs
 	dmConversations: DmConversation[]
 	activeDmConversationId: string | null
-	dmMessages: Record<string, DmMessage[]>
+	dmMessages: Record<string, DecryptedDmMessage[]>
 	dmCursors: Record<string, string | null>
 	dmLoading: Record<string, boolean>
 	totalUnreadDMs: number
@@ -94,11 +94,11 @@ type ChatActions = {
 	// DMs
 	setDMConversations: (convs: DmConversation[]) => void
 	setActiveDMConversation: (conversationId: string | null) => void
-	setDMMessages: (conversationId: string, messages: DmMessage[]) => void
-	prependDMMessages: (conversationId: string, messages: DmMessage[], nextCursor: string | null) => void
+	setDMMessages: (conversationId: string, messages: DecryptedDmMessage[]) => void
+	prependDMMessages: (conversationId: string, messages: DecryptedDmMessage[], nextCursor: string | null) => void
 	setDMCursor: (conversationId: string, cursor: string | null) => void
 	setDMLoading: (conversationId: string, loading: boolean) => void
-	receiveNewDM: (conversationId: string, message: DmMessage, currentUserId: string | null) => void
+	receiveNewDM: (conversationId: string, message: DecryptedDmMessage, currentUserId: string | null) => void
 	setTotalUnreadDMs: (count: number) => void
 	incrementDMUnread: () => void
 	clearDMUnread: (conversationId: string) => void
@@ -364,11 +364,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 
 			const updatedConvs = s.dmConversations.map(c =>
 				c.id === conversationId
-					? {
-						...c,
-						lastMessageAt: message.createdAt,
-						lastMessagePreview: message.content,
-					}
+					? { ...c, lastMessageAt: message.createdAt }
 					: c,
 			)
 

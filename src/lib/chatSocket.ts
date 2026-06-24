@@ -22,6 +22,8 @@ export type ChatSocketHandlers = {
 	onNewDM: (conversationId: string, message: DmMessage) => void
 	onDmTyping: (conversationId: string, userId: string) => void
 	onDmRead: (conversationId: string, userId: string, lastReadAt: string) => void
+	onIntroReceived: (conversationId: string, fromUser: { id: string; firstName: string; lastName: string; avatarUrl: string | null }) => void
+	onIntroAccepted: (conversationId: string, byUser: { id: string; firstName: string; lastName: string; avatarUrl: string | null }) => void
 	onError: (event: string, message: string) => void
 	onConnect: () => void
 	onDisconnect: () => void
@@ -161,6 +163,22 @@ function attachHandlers(h: ChatSocketHandlers) {
 		h.onDmRead(conversationId, userId, lastReadAt)
 	})
 
+	socket.on("intro-received", ({
+		conversationId,
+		fromUser,
+	}: { conversationId: string; fromUser: { id: string; firstName: string; lastName: string; avatarUrl: string | null } }) => {
+		console.debug("[chatSocket] ← intro-received", conversationId, fromUser.id)
+		h.onIntroReceived(conversationId, fromUser)
+	})
+
+	socket.on("intro-accepted", ({
+		conversationId,
+		byUser,
+	}: { conversationId: string; byUser: { id: string; firstName: string; lastName: string; avatarUrl: string | null } }) => {
+		console.debug("[chatSocket] ← intro-accepted", conversationId, byUser.id)
+		h.onIntroAccepted(conversationId, byUser)
+	})
+
 	socket.on("error", ({ event, message }: { event: string; message: string }) => {
 		console.debug("[chatSocket] ← error", event, message)
 		h.onError(event, message)
@@ -280,14 +298,17 @@ export const chatSocket = {
 		socket.emit("join-dm", { conversationId })
 	},
 
-	sendDM(communityId: string, content: string, conversationId?: string, targetUserId?: string) {
+	sendDM(
+		communityId: string,
+		conversationId: string,
+		payload: { ciphertext: string; nonce: string; keyEpoch: number; messageType?: "TEXT" | "IMAGE"; mediaKey?: string; mediaSizeBytes?: number },
+	) {
 		console.debug("[chatSocket] → send-dm, connected:", socket?.connected, "convId:", conversationId)
 		if (!socket?.connected) return
 		socket.emit("send-dm", {
 			communityId,
-			content,
-			...(conversationId ? { conversationId } : {}),
-			...(targetUserId ? { targetUserId } : {}),
+			conversationId,
+			...payload,
 		})
 	},
 

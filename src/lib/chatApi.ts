@@ -67,20 +67,72 @@ export type DmMessage = {
 	id: string
 	conversationId: string
 	senderId: string
-	content: string
+	ciphertext: string
+	nonce: string
+	keyEpoch: number
+	messageType: "TEXT" | "IMAGE"
+	mediaKey: string | null
+	mediaSizeBytes: number | null
 	deletedAt: string | null
 	createdAt: string
 	updatedAt: string
 	sender: ChatMessageSender
 }
 
+export type DecryptedDmMessage = DmMessage & { plaintext: string | null }
+
 export type DmConversation = {
 	id: string
 	communityId: string
 	other: { id: string; firstName: string; lastName: string; avatarUrl: string | null }
 	lastMessageAt: string | null
-	lastMessagePreview: string | null
 	unreadCount: number
+}
+
+export type MemberDeviceKey = {
+	deviceId: string
+	identityPublicKey: string
+	signingPublicKey: string | null
+	label: string | null
+}
+
+export type DeviceWrap = {
+	recipientUserId: string
+	recipientDeviceId: string
+	epoch: number
+	wrappedKey: string
+}
+
+export type MasterWrap = {
+	userId: string
+	epoch: number
+	wrappedKey: string
+}
+
+export type IntroMessage = {
+	ciphertext: string
+	nonce: string
+	keyEpoch: number
+	messageType: "TEXT"
+}
+
+export type ReceivedIntro = {
+	conversationId: string
+	from: { id: string; firstName: string; lastName: string; avatarUrl: string | null }
+	message: DmMessage
+	sentAt: string
+	sharedInterests?: { count: number; tags: Array<{ id: string; name: string }> }
+}
+
+export type SentIntro = {
+	conversationId: string
+	to: { id: string; firstName: string; lastName: string; avatarUrl: string | null }
+	sentAt: string
+}
+
+export type ConversationKeys = {
+	deviceKeys: Array<{ epoch: number; wrappedKey: string }>
+	masterKeys: Array<{ epoch: number; wrappedKey: string }>
 }
 
 export type DmMessagesResponse = {
@@ -209,6 +261,84 @@ export async function getDMMessages(
 	const { data } = await apiClient.get<{ success: boolean; data: DmMessagesResponse }>(
 		`/communities/${communityId}/dms/${conversationId}/messages`,
 		{ params },
+	)
+	return data.data
+}
+
+// ─── E2EE DM endpoints ───────────────────────────────────────────────────────
+
+export async function getMemberDeviceKeys(
+	communityId: string,
+	userId: string,
+): Promise<MemberDeviceKey[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: MemberDeviceKey[] }>(
+		`/communities/${communityId}/members/${userId}/keys`,
+	)
+	return data.data
+}
+
+export async function sendIntro(
+	communityId: string,
+	payload: {
+		targetUserId: string
+		message: IntroMessage
+		keys: { deviceWraps: DeviceWrap[]; masterWraps: MasterWrap[] }
+	},
+): Promise<{ conversationId: string; message: DmMessage }> {
+	const { data } = await apiClient.post<{
+		success: boolean
+		data: { conversationId: string; message: DmMessage }
+	}>(`/communities/${communityId}/dms/intros`, payload)
+	return data.data
+}
+
+export async function getReceivedIntros(communityId: string): Promise<ReceivedIntro[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: ReceivedIntro[] }>(
+		`/communities/${communityId}/dms/intros`,
+	)
+	return data.data
+}
+
+export async function getSentIntros(communityId: string): Promise<SentIntro[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: SentIntro[] }>(
+		`/communities/${communityId}/dms/intros/sent`,
+	)
+	return data.data
+}
+
+export async function acceptIntro(
+	communityId: string,
+	conversationId: string,
+): Promise<{ conversationId: string }> {
+	const { data } = await apiClient.post<{ success: boolean; data: { conversationId: string } }>(
+		`/communities/${communityId}/dms/intros/${conversationId}/accept`,
+	)
+	return data.data
+}
+
+export async function rejectIntro(communityId: string, conversationId: string): Promise<void> {
+	await apiClient.post(`/communities/${communityId}/dms/intros/${conversationId}/reject`)
+}
+
+export async function uploadConversationKeys(
+	communityId: string,
+	conversationId: string,
+	payload: { deviceWraps?: DeviceWrap[]; masterWraps?: MasterWrap[] },
+): Promise<void> {
+	await apiClient.post(
+		`/communities/${communityId}/dms/${conversationId}/keys`,
+		payload,
+	)
+}
+
+export async function fetchConversationKeys(
+	communityId: string,
+	conversationId: string,
+	deviceId: string,
+): Promise<ConversationKeys> {
+	const { data } = await apiClient.get<{ success: boolean; data: ConversationKeys }>(
+		`/communities/${communityId}/dms/${conversationId}/keys`,
+		{ params: { deviceId } },
 	)
 	return data.data
 }

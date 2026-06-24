@@ -731,6 +731,49 @@ export async function getCommunityMembers(
 	return data.data
 }
 
+export type MemberBadge = "NEW_MEMBER" | "TOP_CONTRIBUTOR" | "ACTIVE_MEMBER"
+
+export type MemberDetailCard = {
+	userId: string
+	firstName: string
+	lastName: string
+	avatarUrl: string | null
+	role: CommunityRole
+	badge: MemberBadge | null
+	isOnline: boolean
+	joinedAt: string
+	dmStatus: "none" | "intro_sent" | "intro_received" | "connected"
+	city: string | null
+	restricted: boolean
+	// present when restricted === false
+	vibe?: string | null
+	sharedInterests?: Array<{ id: string; name: string }>
+	sharedExperiences?: Array<{
+		id: string
+		title: string
+		date: string
+		imageUrl: string
+		status: "going" | "interested"
+	}>
+	communityActivity?: {
+		joinedAgo: string
+		experiencesAttended: number
+		posts: number
+		chatReplies: number
+	}
+	conversationId?: string | null
+}
+
+export async function getCommunityMemberDetail(
+	communityId: string,
+	userId: string,
+): Promise<MemberDetailCard> {
+	const { data } = await apiClient.get<{ success: boolean; data: MemberDetailCard }>(
+		`/communities/${communityId}/members/${userId}`,
+	)
+	return data.data
+}
+
 export type CommunityEvent = {
 	id: string
 	title: string

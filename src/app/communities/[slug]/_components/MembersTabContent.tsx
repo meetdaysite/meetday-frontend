@@ -14,10 +14,11 @@ import BookmarkSvg from "@/icons/outlined/bookmark.svg"
 import DotsSvg from "@/icons/outlined/dots.svg"
 import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 import AltArrowUpSvg from "@/icons/outlined/alt-arrow-up.svg"
-import { getCommunityMembers } from "@/lib/api"
-import type { CommunityMember } from "@/lib/api"
-// import { MemberProfileDrawer } from "./MemberProfileDrawer"    // drawer — depends on API fields not yet available
-// import type { DrawerMember } from "./MemberProfileDrawer"
+import { getCommunityMembers, getCommunityMemberDetail } from "@/lib/api"
+import type { CommunityMember, MemberBadge, MemberDetailCard } from "@/lib/api"
+import { MemberProfileDrawer } from "./MemberProfileDrawer"
+import type { DrawerMember } from "./MemberProfileDrawer"
+import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 
 // ─── Feature flags ─────────────────────────────────────────────────────────────
 // Set SHOW_FEATURED_MEMBERS to true once the featured members API endpoint is available
@@ -121,12 +122,15 @@ type SortOption = (typeof SORT_OPTIONS)[number]
 
 // ─── Member list row ───────────────────────────────────────────────────────────
 
-function ApiMemberListRow({ member }: { member: CommunityMember }) {
+function ApiMemberListRow({ member, onOpenDrawer }: { member: CommunityMember; onOpenDrawer: (m: CommunityMember) => void }) {
 	const [bookmarked, setBookmarked] = useState(false)
 	const fullName = `${member.firstName} ${member.lastName}`
 
 	return (
-		<div className="flex items-center gap-4 py-3 border-b border-border-default last:border-0 rounded-action px-2 -mx-2">
+		<div
+			className="flex items-center gap-4 py-3 border-b border-border-default last:border-0 rounded-action px-2 -mx-2 cursor-pointer hover:bg-surface-hover transition-colors"
+			onClick={() => onOpenDrawer(member)}
+		>
 			{/* Avatar */}
 			<MemberAvatar avatarUrl={member.avatarUrl} name={fullName} size={10} />
 
@@ -194,11 +198,38 @@ function MemberRowSkeleton() {
 	)
 }
 
+// ─── Detail mapping helpers ────────────────────────────────────────────────────
+
+function badgeToRole(badge: MemberBadge | null): DrawerMember["role"] {
+	if (badge === "TOP_CONTRIBUTOR") return "Top Contributor"
+	if (badge === "ACTIVE_MEMBER") return "Active Member"
+	return "New Member"
+}
+
+function mapDetailToDrawer(d: MemberDetailCard): DrawerMember {
+	return {
+		id: d.userId,
+		name: `${d.firstName} ${d.lastName}`,
+		avatarUrl: d.avatarUrl,
+		role: badgeToRole(d.badge),
+		city: d.city ?? "",
+		online: d.isOnline,
+		vibe: d.vibe ?? undefined,
+		dmStatus: d.dmStatus,
+		conversationId: d.conversationId ?? undefined,
+		sharedInterests: d.sharedInterests?.map(i => i.name),
+		sharedExperiences: d.sharedExperiences,
+		communityActivity: d.communityActivity,
+	}
+}
+
 // ─── Main component ────────────────────────────────────────────────────────────
 
 const LIMIT = 20
 
 export function MembersTabContent({ communityId }: { communityId: string }) {
+	const backendUserId = useAttendeeProfileStore(s => s.profile?.id ?? null)
+
 	const [activeFilter, setActiveFilter] = useState("all")
 	const [sort, setSort] = useState<SortOption>("Recently Active")
 	const [sortOpen, setSortOpen] = useState(false)
@@ -210,8 +241,29 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 	const [loadingMore, setLoadingMore] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 
-	// MemberProfileDrawer — depends on API fields not yet available
-	// const [selectedMember, setSelectedMember] = useState<DrawerMember | null>(null)
+	const [selectedMember, setSelectedMember] = useState<DrawerMember | null>(null)
+	const [drawerLoading, setDrawerLoading] = useState(false)
+
+	const handleOpenDrawer = async (m: CommunityMember) => {
+		// Open drawer immediately with list-level data so there's no blank wait
+		setSelectedMember({
+			id: m.userId,
+			name: `${m.firstName} ${m.lastName}`,
+			avatarUrl: m.avatarUrl,
+			role: badgeToRole(null),
+			city: "",
+			dmStatus: "none",
+		})
+		setDrawerLoading(true)
+		try {
+			const detail = await getCommunityMemberDetail(communityId, m.userId)
+			setSelectedMember(mapDetailToDrawer(detail))
+		} catch {
+			// Keep the stub — drawer is already open with basic info
+		} finally {
+			setDrawerLoading(false)
+		}
+	}
 
 	useEffect(() => {
 		setLoading(true)
@@ -368,7 +420,7 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 				) : (
 					<div>
 						{members.map(member => (
-							<ApiMemberListRow key={member.userId} member={member} />
+							<ApiMemberListRow key={member.userId} member={member} onOpenDrawer={handleOpenDrawer} />
 						))}
 					</div>
 				)}
@@ -388,11 +440,13 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 			)}
 		</div>
 
-		{/* MemberProfileDrawer — commented out until profile API fields are available */}
-		{/* <MemberProfileDrawer
+		<MemberProfileDrawer
 			member={selectedMember}
-			onClose={() => setSelectedMember(null)}
-		/> */}
+			communityId={communityId}
+			currentUserId={backendUserId}
+			detailLoading={drawerLoading}
+			onClose={() => { setSelectedMember(null); setDrawerLoading(false) }}
+		/>
 		</>
 	)
 }

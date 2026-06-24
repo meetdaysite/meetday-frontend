@@ -15,6 +15,9 @@ import {
 	pinMessage,
 	unpinMessage as unpinMessageApi,
 	deleteChannelMessage,
+	fetchConversationKeys,
+	type DmMessage,
+	type DecryptedDmMessage,
 } from "@/lib/chatApi"
 import { chatSocket } from "@/lib/chatSocket"
 import { useChatStore } from "@/store/chatStore"
@@ -22,6 +25,24 @@ import { aggregateRawReactions } from "@/lib/chatApi"
 import type { CommunityRole } from "@/lib/api"
 import type { ChatChannel, DmConversation } from "@/lib/chatApi"
 import type { StoredMessage } from "@/store/chatStore"
+import {
+	getOrCreateDeviceIdentity,
+	getMasterKey,
+	getConversationKey,
+	setConversationKey,
+} from "@/lib/deviceStore"
+import {
+	getSodium,
+	b64,
+	unb64,
+	encryptMessage,
+	decryptMessage,
+	wrapKeyToDevice,
+	unwrapDeviceKey,
+	unwrapMasterKey,
+} from "@/lib/e2ee"
+import { getDmKeyWrapRequests, listMyDevices } from "@/lib/e2eeApi"
+import { getMemberDeviceKeys, uploadConversationKeys } from "@/lib/chatApi"
 
 import { ChannelList } from "./chat/ChannelList"
 import { OnlinePresence } from "./chat/OnlinePresence"
@@ -31,6 +52,7 @@ import { MessageInput } from "./chat/MessageInput"
 import { PinnedPanel } from "./chat/PinnedPanel"
 import { ThreadPanel } from "./chat/ThreadPanel"
 import { DMThread } from "./chat/DMThread"
+import { IntroInboxPanel } from "./IntroInboxPanel"
 
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 
@@ -56,6 +78,38 @@ interface ChatTabContentProps {
 	currentUserRole: CommunityRole | null
 }
 
+// ─── Phase 8: background device-wrap provisioning ────────────────────────────
+
+async function provisionMissingDeviceWraps(communityId: string) {
+	try {
+		await getSodium()
+		const [requests, myDevices] = await Promise.all([
+			getDmKeyWrapRequests(),
+			listMyDevices(),
+		])
+		if (!requests.length) return
+
+		for (const req of requests) {
+			const K = await getConversationKey(req.conversationId, req.epoch)
+			if (!K) continue
+			const targetDevices = await getMemberDeviceKeys(communityId, req.userId)
+			const targetDevice = targetDevices.find(d => d.deviceId === req.deviceId)
+			if (!targetDevice) continue
+			const wrappedKey = await wrapKeyToDevice(K, unb64(targetDevice.identityPublicKey))
+			await uploadConversationKeys(communityId, req.conversationId, {
+				deviceWraps: [{
+					recipientUserId: req.userId,
+					recipientDeviceId: req.deviceId,
+					epoch: req.epoch,
+					wrappedKey,
+				}],
+			})
+		}
+	} catch {
+		// Silent — background task
+	}
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function ChatTabContent({
@@ -71,6 +125,41 @@ export function ChatTabContent({
 	// Track locally dismissed banners (optimistic, before API confirms)
 	const [dismissedBanners, setDismissedBanners] = useState<Set<string>>(new Set())
 	const [chatLoading, setChatLoading] = useState(true)
+	const [introInboxOpen, setIntroInboxOpen] = useState(false)
+	const [introBadgeCount, setIntroBadgeCount] = useState(0)
+
+	// ── E2EE helpers ──────────────────────────────────────────────────────────
+
+	const resolveKey = useCallback(async (convId: string, epoch: number): Promise<Uint8Array | null> => {
+		const cached = await getConversationKey(convId, epoch)
+		if (cached) return cached
+		try {
+			const { deviceId, publicKey, privateKey } = await getOrCreateDeviceIdentity()
+			const keys = await fetchConversationKeys(communityId, convId, deviceId)
+			let K: Uint8Array | null = null
+			if (keys.deviceKeys.length > 0) {
+				K = await unwrapDeviceKey(keys.deviceKeys[0].wrappedKey, publicKey, privateKey)
+			} else if (keys.masterKeys.length > 0) {
+				const MK = await getMasterKey()
+				if (MK) K = await unwrapMasterKey(keys.masterKeys[0].wrappedKey, MK)
+			}
+			if (K) await setConversationKey(convId, epoch, K)
+			return K
+		} catch {
+			return null
+		}
+	}, [communityId])
+
+	const decryptDmMessage = useCallback(async (msg: DmMessage): Promise<DecryptedDmMessage> => {
+		try {
+			const K = await resolveKey(msg.conversationId, msg.keyEpoch)
+			if (!K) return { ...msg, plaintext: null }
+			const plaintext = await decryptMessage(K, msg)
+			return { ...msg, plaintext }
+		} catch {
+			return { ...msg, plaintext: null }
+		}
+	}, [resolveKey])
 
 	// ── Load channel messages ──────────────────────────────────────────────────
 
@@ -230,9 +319,10 @@ export function ChatTabContent({
 							console.debug("[chat] presence update:", onlineCount, "online")
 							store.setPresence(onlineCount, onlineUsers)
 						},
-						onNewDM: (conversationId, message) => {
+						onNewDM: async (conversationId, message) => {
 							console.debug("[chat] new DM in", conversationId, "from", message.senderId)
-							store.receiveNewDM(conversationId, message, backendUserId)
+							const decrypted = await decryptDmMessage(message)
+							store.receiveNewDM(conversationId, decrypted, backendUserId)
 							if (message.senderId !== backendUserId) {
 								store.incrementDMUnread()
 							}
@@ -246,12 +336,23 @@ export function ChatTabContent({
 							console.debug("[chat] DM read", conversationId)
 							store.clearDMUnread(conversationId)
 						},
+						onIntroReceived: (conversationId, fromUser) => {
+							console.debug("[chat] intro-received from", fromUser.id, "conv:", conversationId)
+							setIntroBadgeCount(prev => prev + 1)
+						},
+						onIntroAccepted: (conversationId, byUser) => {
+							console.debug("[chat] intro-accepted by", byUser.id, "conv:", conversationId)
+							toast(`${byUser.firstName} accepted your intro! You can now chat.`)
+						},
 						onError: (_event, message) => {
 							console.debug("[chat] socket error:", _event, message)
 							toast.error(message)
 						},
 					},
 				)
+
+				// Phase 8: background provision missing device wraps (silent)
+				provisionMissingDeviceWraps(communityId).catch(() => {})
 			} catch (err) {
 				if (!aborted) setChatLoading(false)
 				console.debug("[chat] init — uncaught error:", err)
@@ -420,13 +521,15 @@ export function ChatTabContent({
 			store.setDMLoading(conv.id, true)
 			try {
 				const res = await getDMMessages(communityId, conv.id)
-				store.setDMMessages(conv.id, [...res.messages].reverse())
+				const msgs = [...res.messages].reverse()
+				const decrypted = await Promise.all(msgs.map(m => decryptDmMessage(m)))
+				store.setDMMessages(conv.id, decrypted)
 				store.setDMCursor(conv.id, res.nextCursor)
 			} finally {
 				store.setDMLoading(conv.id, false)
 			}
 		}
-	}, [store, communityId])
+	}, [store, communityId, decryptDmMessage])
 
 	const handleDMLoadMore = useCallback(async () => {
 		const convId = store.activeDmConversationId
@@ -437,17 +540,29 @@ export function ChatTabContent({
 		store.setDMLoading(convId, true)
 		try {
 			const res = await getDMMessages(communityId, convId, { cursor })
-			store.prependDMMessages(convId, [...res.messages].reverse(), res.nextCursor)
+			const older = [...res.messages].reverse()
+			const decrypted = await Promise.all(older.map(m => decryptDmMessage(m)))
+			store.prependDMMessages(convId, decrypted, res.nextCursor)
 		} finally {
 			store.setDMLoading(convId, false)
 		}
-	}, [store, communityId])
+	}, [store, communityId, decryptDmMessage])
 
-	const handleDMSend = useCallback((content: string) => {
+	const handleDMSend = useCallback(async (content: string) => {
 		const convId = useChatStore.getState().activeDmConversationId
 		if (!convId) return
-		chatSocket.sendDM(communityId, content, convId)
-	}, [communityId])
+		try {
+			const K = await resolveKey(convId, 1)
+			if (!K) {
+				toast.error("Unable to encrypt message. Try reopening the conversation.")
+				return
+			}
+			const payload = await encryptMessage(K, content)
+			chatSocket.sendDM(communityId, convId, payload)
+		} catch {
+			toast.error("Failed to send message.")
+		}
+	}, [communityId, resolveKey])
 
 	const handleNewDM = useCallback(() => {
 		// Opening a new DM requires picking a member — will be wired to MemberProfileDrawer
@@ -551,10 +666,37 @@ export function ChatTabContent({
 					onSelect={handleDMSelect}
 					onNewDM={handleNewDM}
 				/>
+
+				{/* Intro requests badge button */}
+				<button
+					type="button"
+					onClick={() => { setIntroInboxOpen(true); setIntroBadgeCount(0) }}
+					className="mx-3 mb-3 mt-1 flex items-center gap-2 px-3 py-2 rounded-action border border-border-default text-label-sm text-text-secondary hover:bg-surface-hover transition-colors"
+				>
+					<span className="flex-1 text-left">Intro Requests</span>
+					{introBadgeCount > 0 && (
+						<span className="flex items-center justify-center min-w-4 h-4 px-1 text-[10px] font-bold bg-action-primary text-text-inverse rounded-full leading-none">
+							{introBadgeCount > 9 ? "9+" : introBadgeCount}
+						</span>
+					)}
+				</button>
 			</aside>
 
 			{/* ── Right panel: channel or DM view ── */}
-			{store.chatView === "dm" && activeDmConv ? (
+			{introInboxOpen ? (
+				<IntroInboxPanel
+					communityId={communityId}
+					currentUserId={backendUserId ?? ""}
+					onClose={() => setIntroInboxOpen(false)}
+					onAccepted={(conversationId) => {
+						setIntroInboxOpen(false)
+						// Refresh DM list so accepted conversation appears
+						getDMConversations(communityId)
+							.then(convs => store.setDMConversations(convs))
+							.catch(() => {})
+					}}
+				/>
+			) : store.chatView === "dm" && activeDmConv ? (
 				<DMThread
 					conversation={activeDmConv}
 					messages={activeDmMessages}
@@ -679,3 +821,4 @@ export function ChatTabContent({
 		</div>
 	)
 }
+

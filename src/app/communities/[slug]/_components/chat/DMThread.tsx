@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/Icon"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { MessageInput } from "./MessageInput"
 import { TypingIndicator } from "./TypingIndicator"
-import type { DmConversation, DmMessage } from "@/lib/chatApi"
+import type { DmConversation, DecryptedDmMessage } from "@/lib/chatApi"
 
 function formatTime(iso: string) {
 	const d = new Date(iso)
@@ -21,7 +21,7 @@ function formatTime(iso: string) {
 
 interface DMThreadProps {
 	conversation: DmConversation
-	messages: DmMessage[]
+	messages: DecryptedDmMessage[]
 	currentUserId: string | null
 	hasMore: boolean
 	isLoading: boolean
@@ -157,7 +157,7 @@ export function DMThread({
 											: "bg-surface-card border border-border-default text-text-primary rounded-tl-sm"
 									}`}
 								>
-									{msg.content}
+									{msg.plaintext ?? <span className="italic opacity-60">Unable to decrypt</span>}
 								</div>
 								<span className="text-[10px] text-text-muted">{formatTime(msg.createdAt)}</span>
 							</div>
