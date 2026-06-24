@@ -17,20 +17,11 @@ import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 import LockSvg from "@/icons/outlined/lock.svg"
 import CheckSvg from "@/icons/outlined/check.svg"
 import BookmarkSvg from "@/icons/outlined/bookmark.svg"
-import ShieldCheckSvg from "@/icons/outlined/shield-check.svg"
-import CameraRotateSvg from "@/icons/outlined/camera-rotate.svg"
-import DangerTriangleSvg from "@/icons/outlined/danger-triangle.svg"
-import InfoCircleSvg from "@/icons/outlined/info-circle.svg"
 import StarOutlinedSvg from "@/icons/outlined/star.svg"
 import VerifiedSvg from "@/icons/filled/verified-check.svg"
-import StarFilledSvg from "@/icons/filled/star.svg"
-import BoltFilledSvg from "@/icons/filled/bolt.svg"
-import ShieldCheckFilledSvg from "@/icons/filled/shield-check.svg"
-import PulseFilledSvg from "@/icons/filled/pulse.svg"
 import HeartsFilledSvg from "@/icons/filled/hearts.svg"
-import BulbSvg from "@/icons/outlined/bulb.svg"
-import { getCommunityStats, getCommunityHosts } from "@/lib/api"
-import type { CommunityStats, CommunityHost } from "@/lib/api"
+import { getCommunityStats, getCommunityHosts, getCommunityMembers, getCommunityEvents } from "@/lib/api"
+import type { CommunityStats, CommunityHost, CommunityMember, CommunityEvent } from "@/lib/api"
 
 // ─── Shared host avatar helper ─────────────────────────────────────────────────
 
@@ -120,31 +111,18 @@ function WhyJoinCard({ isMember, onJoinClick }: { isMember: boolean; onJoinClick
 
 // ─── People In Community Card ─────────────────────────────────────────────────
 
-// TODO: Replace avatar grid with real member data from GET /api/communities/[id]/members?preview=true
-const MOCK_MEMBER_AVATARS = [
-	"https://i.pravatar.cc/40?img=1",
-	"https://i.pravatar.cc/40?img=2",
-	"https://i.pravatar.cc/40?img=3",
-	"https://i.pravatar.cc/40?img=4",
-	"https://i.pravatar.cc/40?img=5",
-	"https://i.pravatar.cc/40?img=6",
-	"https://i.pravatar.cc/40?img=7",
-	"https://i.pravatar.cc/40?img=8",
-	"https://i.pravatar.cc/40?img=9",
-	"https://i.pravatar.cc/40?img=10",
-	"https://i.pravatar.cc/40?img=11",
-	"https://i.pravatar.cc/40?img=12",
-]
+function PeopleInCommunityCard({ isMember, communityId }: { isMember: boolean; communityId: string }) {
+	const [members, setMembers] = useState<CommunityMember[]>([])
+	const [total, setTotal] = useState(0)
 
-// TODO: Replace MEMBER_STATS with real data — no API fields available yet for these percentages
-// const MOCK_MEMBER_STATS = [
-// 	{ label: "Actively online", value: "62%" },
-// 	{ label: "Regular Attendees", value: "53%" },
-// 	{ label: "Night Explorers", value: "96%" },
-// 	{ label: "Event rate", value: "96%" },
-// ]
+	useEffect(() => {
+		getCommunityMembers(communityId, { limit: 12 })
+			.then(res => { setMembers(res.data); setTotal(res.total) })
+			.catch(() => {})
+	}, [communityId])
 
-function PeopleInCommunityCard({ isMember }: { isMember: boolean }) {
+	const overflow = total > 12 ? total - 12 : 0
+
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center justify-between gap-2 mb-4">
@@ -161,31 +139,25 @@ function PeopleInCommunityCard({ isMember }: { isMember: boolean }) {
 				)}
 			</div>
 
-			{/* Avatar grid */}
 			<div className="flex flex-wrap gap-1.5 mb-4">
-				{MOCK_MEMBER_AVATARS.map((src, i) => (
-					<div
-						key={i}
-						className="relative size-8 rounded-full overflow-hidden border border-border-default"
-					>
-						<Image src={src} alt="" fill sizes="32px" className="object-cover" />
+				{members.map((m, i) => {
+					const initials = `${m.firstName[0] ?? ""}${m.lastName[0] ?? ""}`.toUpperCase()
+					return m.avatarUrl ? (
+						<div key={i} className="relative size-8 rounded-full overflow-hidden border border-border-default bg-surface-hover">
+							<Image src={m.avatarUrl} alt={`${m.firstName} ${m.lastName}`} fill sizes="32px" className="object-cover" />
+						</div>
+					) : (
+						<div key={i} className="size-8 rounded-full bg-surface-brand-soft border border-border-default flex items-center justify-center">
+							<span className="text-[9px] font-bold text-text-brand">{initials}</span>
+						</div>
+					)
+				})}
+				{overflow > 0 && (
+					<div className="size-8 rounded-full bg-surface-hover border border-border-default flex items-center justify-center">
+						<span className="text-[9px] font-semibold text-text-muted">+{overflow}</span>
 					</div>
-				))}
-				<div className="size-8 rounded-full bg-surface-hover border border-border-default flex items-center justify-center">
-					<span className="text-[9px] font-semibold text-text-muted">+2</span>
-				</div>
+				)}
 			</div>
-
-			{/* Stats — commented out until API provides these fields
-			<div className="grid grid-cols-2 gap-2">
-				{MOCK_MEMBER_STATS.map(stat => (
-					<div key={stat.label} className="p-2.5 rounded-action bg-neutral-50 border border-border-default">
-						<p className="text-body-sm font-bold text-text-primary">{stat.value}</p>
-						<p className="text-[11px] text-text-secondary mt-0.5">{stat.label}</p>
-					</div>
-				))}
-			</div>
-			*/}
 		</div>
 	)
 }
@@ -497,412 +469,78 @@ function ExperiencesCommunityHostsCard({ hosts }: { hosts: CommunityHost[] | nul
 
 // ─── Experiences: Suggest Experience Card ────────────────────────────────────
 
-function SuggestExperienceCard() {
-	return (
-		<div className="p-5 rounded-panel bg-surface-vibe-soft border border-purple-200">
-			<div className="flex items-start gap-3">
-				<div className="size-9 rounded-full bg-purple-100 flex items-center justify-center shrink-0 mt-0.5">
-					<Icon as={BulbSvg} size="md" color="vibe" />
-				</div>
-				<div className="flex-1 min-w-0">
-					<p className="text-label-sm font-semibold text-text-primary leading-snug">
-						Can&apos;t find what you&apos;re looking for?
-					</p>
-					<p className="text-[11px] text-text-secondary font-normal mt-1 leading-snug">
-						Tell us what you want to experience next.
-					</p>
-					{/* TODO: Link to /communities/[slug]/suggest-experience once feature is built */}
-					<Link
-						href="#"
-						className="inline-flex items-center gap-1 mt-2 text-sm font-semibold text-violet-600 hover:underline"
-					>
-						Suggest an experience
-						<Icon as={ArrowRightSvg} size="xs" color="vibe" />
-					</Link>
-				</div>
-			</div>
-		</div>
-	)
-}
 
 // ─── Chat: Upcoming Experiences Card ─────────────────────────────────────────
 
-// TODO: Replace with real data from GET /api/communities/[id]/events?limit=3&upcoming=true
-const MOCK_CHAT_UPCOMING = [
-	{
-		id: "cu1",
-		name: "Night Rituals",
-		coverUrl: "https://images.unsplash.com/photo-1598387993441-a364f854cfbd?w=80&h=80&fit=crop",
-		date: "Fri, 24 May",
-		time: "8:00 PM",
-		venue: "Skyline Rooftop, Park Street",
-		goingCount: "120+",
-		attendeeAvatars: [
-			"https://i.pravatar.cc/40?img=3",
-			"https://i.pravatar.cc/40?img=7",
-			"https://i.pravatar.cc/40?img=12",
-			"https://i.pravatar.cc/40?img=18",
-		],
-	},
-	{
-		id: "cu2",
-		name: "After Hours",
-		coverUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=80&h=80&fit=crop",
-		date: "Sat, 31 May",
-		time: "9:00 PM",
-		venue: "Park Street, Kolkata",
-		goingCount: "86",
-		attendeeAvatars: [
-			"https://i.pravatar.cc/40?img=5",
-			"https://i.pravatar.cc/40?img=9",
-			"https://i.pravatar.cc/40?img=14",
-			"https://i.pravatar.cc/40?img=22",
-		],
-	},
-	{
-		id: "cu3",
-		name: "Neon Nights",
-		coverUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=80&h=80&fit=crop",
-		date: "Fri, 06 Jun",
-		time: "10:00 PM",
-		venue: "Warehouse Kolkata",
-		goingCount: "70",
-		attendeeAvatars: [
-			"https://i.pravatar.cc/40?img=2",
-			"https://i.pravatar.cc/40?img=8",
-			"https://i.pravatar.cc/40?img=15",
-			"https://i.pravatar.cc/40?img=20",
-		],
-	},
-]
+function fmtEventDate(date: string) {
+	return new Date(date + "T00:00:00").toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" })
+}
 
-function ChatUpcomingExperiencesCard() {
+function fmtEventTime(time: string) {
+	const [h, m] = time.split(":")
+	const d = new Date()
+	d.setHours(parseInt(h, 10), parseInt(m, 10))
+	return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true })
+}
+
+function ChatUpcomingExperiencesCard({ communitySlug, onViewAll }: { communitySlug: string; onViewAll?: () => void }) {
+	const [events, setEvents] = useState<CommunityEvent[]>([])
+
+	useEffect(() => {
+		getCommunityEvents(communitySlug, { upcoming: true, limit: 3 })
+			.then(res => setEvents(res.data))
+			.catch(() => {})
+	}, [communitySlug])
+
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">
 					Upcoming Experiences
 				</span>
-				{/* TODO: Link to /communities/[slug]/experiences once tab page is built */}
-				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
+				<button
+					type="button"
+					onClick={onViewAll}
+					className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0"
+				>
 					View all
 					<Icon as={ArrowRightSvg} size="xs" color="brand" />
-				</Link>
+				</button>
 			</div>
 
-			<div className="flex flex-col gap-4">
-				{MOCK_CHAT_UPCOMING.map(event => (
-					<div key={event.id} className="flex items-start gap-3">
-						<div className="relative size-14 rounded-action overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-							<Image
-								src={event.coverUrl}
-								alt={event.name}
-								fill
-								sizes="56px"
-								className="object-cover"
-							/>
-						</div>
-						<div className="flex-1 min-w-0">
-							<p className="text-label-sm font-semibold text-text-primary leading-tight">
-								{event.name}
-							</p>
-							<p className="text-[11px] text-text-secondary mt-0.5">
-								{event.date} · {event.time}
-							</p>
-							<p className="text-[11px] text-text-muted mt-0.5 truncate">{event.venue}</p>
-							<div className="flex items-center gap-1.5 mt-1.5">
-								<div className="flex -space-x-1.5">
-									{event.attendeeAvatars.map((src, i) => (
-										<div
-											key={i}
-											className="relative size-5 rounded-full overflow-hidden border border-surface-card bg-surface-hover shrink-0"
-										>
-											<Image src={src} alt="" fill sizes="20px" className="object-cover" />
-										</div>
-									))}
-								</div>
-								<span className="text-[11px] text-text-secondary">
-									{event.goingCount} going
-								</span>
-							</div>
-						</div>
-					</div>
-				))}
-			</div>
-		</div>
-	)
-}
-
-// ─── Chat: Most Active This Week Card ────────────────────────────────────────
-
-// TODO: Replace with real data from GET /api/communities/[id]/members/most-active?period=week&limit=4
-const MOCK_MOST_ACTIVE = [
-	{ rank: 1, name: "Arjun", avatarUrl: "https://i.pravatar.cc/40?img=6", messages: 42, starVariant: "gold" as const },
-	{ rank: 2, name: "Megha", avatarUrl: "https://i.pravatar.cc/40?img=5", messages: 38, starVariant: "silver" as const },
-	{ rank: 3, name: "Rishav", avatarUrl: "https://i.pravatar.cc/40?img=17", messages: 28, starVariant: "bronze" as const },
-	{ rank: 4, name: "Karan", avatarUrl: "https://i.pravatar.cc/40?img=11", messages: 24, starVariant: null },
-]
-
-function MostActiveThisWeekCard() {
-	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
-			<div className="flex items-center gap-2 mb-4">
-				<span className="text-body-md font-semibold text-text-primary">
-					Most Active This Week
-				</span>
-				<Icon as={InfoCircleSvg} size="xs" color="muted" />
-			</div>
-
-			<div className="flex flex-col gap-3">
-				{MOCK_MOST_ACTIVE.map(member => (
-					<div key={member.rank} className="flex items-center gap-3">
-						<span className="text-[11px] font-bold text-text-muted w-3 shrink-0 text-center">
-							{member.rank}
-						</span>
-						<div className="relative size-8 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-							<Image src={member.avatarUrl} alt={member.name} fill sizes="32px" className="object-cover" />
-						</div>
-						<div className="flex-1 min-w-0">
-							<p className="text-label-sm font-semibold text-text-primary">{member.name}</p>
-							<p className="text-[11px] text-text-secondary">{member.messages} messages</p>
-						</div>
-						{member.starVariant === "gold" && (
-							<Icon as={StarFilledSvg} size="sm" color="success" className="text-amber-400 shrink-0" />
-						)}
-						{member.starVariant === "silver" && (
-							<Icon as={StarOutlinedSvg} size="sm" color="muted" className="shrink-0" />
-						)}
-						{member.starVariant === "bronze" && (
-							<Icon as={StarFilledSvg} size="sm" color="success" className="text-orange-400 shrink-0" />
-						)}
-					</div>
-				))}
-			</div>
-		</div>
-	)
-}
-
-// ─── Chat: Community Guidelines Card ─────────────────────────────────────────
-
-// TODO: Replace with real guidelines from GET /api/communities/[id]/guidelines
-const CHAT_GUIDELINES = [
-	"Be respectful and kind",
-	"No spam or self-promotion",
-	"Ask before sharing photos",
-	"Keep conversations inclusive",
-	"Report anything uncomfortable",
-]
-
-function ChatCommunityGuidelinesCard() {
-	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
-			<div className="flex items-center justify-between gap-2 mb-4">
-				<span className="text-body-md font-semibold text-text-primary">
-					Community Guidelines
-				</span>
-				{/* TODO: Link to /communities/[slug]/guidelines once page is built */}
-				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
-					View all
-					<Icon as={ArrowRightSvg} size="xs" color="brand" />
-				</Link>
-			</div>
-
-			<div className="flex flex-col gap-2.5">
-				{CHAT_GUIDELINES.map((g, i) => (
-					<div key={i} className="flex items-center gap-2.5">
-						<Icon as={CheckSvg} size="sm" color="success" className="shrink-0" />
-						<span className="text-label-sm text-text-primary font-normal leading-snug">
-							{g}
-						</span>
-					</div>
-				))}
-			</div>
-		</div>
-	)
-}
-
-// ─── Feed: Trending Topics Card ──────────────────────────────────────────────
-
-// TODO: Replace with real data from GET /api/communities/[id]/feed/trending-topics?limit=5
-const MOCK_TRENDING_TOPICS = [
-	{ id: "t1", name: "After Hours", posts: 32 },
-	{ id: "t2", name: "Neon Nights", posts: 28 },
-	{ id: "t3", name: "Night Rituals", posts: 26 },
-	{ id: "t4", name: "Best Rooftop Spots", posts: 18 },
-	{ id: "t5", name: "Event Recommendations", posts: 16 },
-]
-
-function FeedTrendingTopicsCard() {
-	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
-			<div className="flex items-center justify-between gap-2 mb-4">
-				<span className="text-body-md font-semibold text-text-primary">Trending topics</span>
-				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
-					View all
-					<Icon as={ArrowRightSvg} size="xs" color="brand" />
-				</Link>
-			</div>
-
-			<div className="flex flex-col gap-3">
-				{MOCK_TRENDING_TOPICS.map(topic => (
-					<div key={topic.id} className="flex items-center gap-2.5">
-						<div className="size-7 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-							<Icon as={BoltFilledSvg} size="sm" color="brand" className="text-orange-500" />
-						</div>
-						<span className="flex-1 text-label-sm font-medium text-text-primary truncate">
-							{topic.name}
-						</span>
-						<span className="text-[11px] text-text-muted shrink-0">{topic.posts} posts</span>
-					</div>
-				))}
-			</div>
-		</div>
-	)
-}
-
-// ─── Feed: Most Active Members Card ──────────────────────────────────────────
-
-// TODO: Replace with real data from GET /api/communities/[id]/members/most-active?period=week&limit=4
-const MOCK_FEED_ACTIVE_MEMBERS = [
-	{ rank: 1, name: "Arjun", avatarUrl: "https://i.pravatar.cc/40?img=6", messages: 42 },
-	{ rank: 2, name: "Megha", avatarUrl: "https://i.pravatar.cc/40?img=5", messages: 38 },
-	{ rank: 3, name: "Rishav", avatarUrl: "https://i.pravatar.cc/40?img=17", messages: 28 },
-	{ rank: 4, name: "Karan", avatarUrl: "https://i.pravatar.cc/40?img=11", messages: 24 },
-]
-
-const RANK_BADGE: Record<number, { bg: string; text: string }> = {
-	1: { bg: "bg-amber-400", text: "text-white" },
-	2: { bg: "bg-violet-400", text: "text-white" },
-	3: { bg: "bg-orange-400", text: "text-white" },
-}
-
-function FeedMostActiveMembersCard() {
-	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
-			<div className="flex items-center justify-between gap-2 mb-4">
-				<span className="text-body-md font-semibold text-text-primary">Most active members</span>
-				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
-					View all
-					<Icon as={ArrowRightSvg} size="xs" color="brand" />
-				</Link>
-			</div>
-
-			<div className="flex flex-col gap-3">
-				{MOCK_FEED_ACTIVE_MEMBERS.map(member => {
-					const badge = RANK_BADGE[member.rank]
-					return (
-						<div key={member.rank} className="flex items-center gap-3">
-							<div className="relative size-9 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-								<Image src={member.avatarUrl} alt={member.name} fill sizes="36px" className="object-cover" />
+			{events.length === 0 ? (
+				<p className="text-label-sm text-text-muted text-center py-4">No upcoming experiences.</p>
+			) : (
+				<div className="flex flex-col gap-4">
+					{events.map(event => (
+						<div key={event.id} className="flex items-start gap-3">
+							<div className="relative size-14 rounded-action overflow-hidden shrink-0 border border-border-default bg-surface-hover">
+								{event.coverImageUrl && (
+									<Image src={event.coverImageUrl} alt={event.title} fill sizes="56px" className="object-cover" />
+								)}
 							</div>
 							<div className="flex-1 min-w-0">
-								<p className="text-label-sm font-semibold text-text-primary">{member.name}</p>
-								<p className="text-[11px] text-text-secondary">{member.messages} messages</p>
+								<p className="text-label-sm font-semibold text-text-primary leading-tight truncate">
+									{event.title}
+								</p>
+								<p className="text-[11px] text-text-secondary mt-0.5">
+									{fmtEventDate(event.eventDate)} · {fmtEventTime(event.startTime)}
+								</p>
+								<p className="text-[11px] text-text-muted mt-0.5 truncate">{event.venueName}</p>
+								{event.attendeeCount > 0 && (
+									<p className="text-[11px] text-text-secondary mt-1">{event.attendeeCount} going</p>
+								)}
 							</div>
-							{badge ? (
-								<div className={`size-6 rounded-full ${badge.bg} flex items-center justify-center shrink-0`}>
-									<span className={`text-[10px] font-bold ${badge.text}`}>{member.rank}</span>
-								</div>
-							) : (
-								<span className="text-[12px] font-bold text-text-muted w-6 text-center shrink-0">
-									{member.rank}
-								</span>
-							)}
 						</div>
-					)
-				})}
-			</div>
-		</div>
-	)
-}
-
-// ─── Feed: Popular This Week Card ─────────────────────────────────────────────
-
-// TODO: Replace with real data from GET /api/communities/[id]/feed/posts?sort=popular&period=week&limit=3
-const MOCK_POPULAR_POSTS = [
-	{
-		id: "pp1",
-		title: "Photos from Night Rituals",
-		coverUrl: "https://images.unsplash.com/photo-1598387993441-a364f854cfbd?w=80&h=80&fit=crop",
-		likes: 128,
-		comments: 24,
-	},
-	{
-		id: "pp2",
-		title: "After Hours Set Times Out!",
-		coverUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=80&h=80&fit=crop",
-		likes: 96,
-		comments: 15,
-	},
-	{
-		id: "pp3",
-		title: "Neon Nights Early Access",
-		coverUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=80&h=80&fit=crop",
-		likes: 84,
-		comments: 11,
-	},
-]
-
-function FeedPopularThisWeekCard() {
-	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
-			<div className="flex items-center justify-between gap-2 mb-4">
-				<span className="text-body-md font-semibold text-text-primary">Popular this week</span>
-				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
-					View all
-					<Icon as={ArrowRightSvg} size="xs" color="brand" />
-				</Link>
-			</div>
-
-			<div className="flex flex-col gap-3">
-				{MOCK_POPULAR_POSTS.map(post => (
-					<div key={post.id} className="flex items-center gap-3">
-						<div className="relative size-12 rounded-action overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-							<Image src={post.coverUrl} alt={post.title} fill sizes="48px" className="object-cover" />
-						</div>
-						<div className="flex-1 min-w-0">
-							<p className="text-label-sm font-semibold text-text-primary leading-tight line-clamp-2">
-								{post.title}
-							</p>
-							<p className="text-[11px] text-text-secondary mt-0.5">
-								{post.likes} likes · {post.comments} comments
-							</p>
-						</div>
-					</div>
-				))}
-			</div>
-		</div>
-	)
-}
-
-// ─── Feed: Community Guidelines Card ─────────────────────────────────────────
-
-function FeedCommunityGuidelinesCard() {
-	return (
-		<div className="p-5 rounded-panel bg-surface-vibe-soft border border-purple-200">
-			<div className="flex items-start gap-3">
-				<div className="size-9 rounded-full bg-purple-100 flex items-center justify-center shrink-0 mt-0.5">
-					<Icon as={ShieldCheckFilledSvg} size="sm" color="vibe" />
+					))}
 				</div>
-				<div className="flex-1 min-w-0">
-					<p className="text-label-sm font-semibold text-text-primary leading-snug">
-						Community guidelines
-					</p>
-					<p className="text-[11px] text-text-secondary font-normal mt-1 leading-snug">
-						Let&apos;s keep this space positive and respectful.
-					</p>
-					<Link
-						href="#"
-						className="inline-flex items-center gap-1 mt-2 text-sm font-semibold text-violet-600 hover:underline"
-					>
-						View guidelines
-						<Icon as={ArrowRightSvg} size="xs" color="vibe" />
-					</Link>
-				</div>
-			</div>
+			)}
 		</div>
 	)
 }
+
+
+
 
 // ─── Members: Community At a Glance Card ─────────────────────────────────────
 
@@ -1032,34 +670,6 @@ function NewMembersCard() {
 	)
 }
 
-// ─── Members: Tips for Connecting Card ───────────────────────────────────────
-
-function TipsForConnectingCard() {
-	return (
-		<div className="p-5 rounded-panel bg-surface-vibe-soft border border-purple-200">
-			<div className="flex items-start gap-3">
-				<div className="size-9 rounded-full bg-purple-100 flex items-center justify-center shrink-0 mt-0.5">
-					<Icon as={ShieldCheckSvg} size="sm" color="vibe" />
-				</div>
-				<div className="flex-1 min-w-0">
-					<p className="text-label-sm font-semibold text-text-primary leading-snug">
-						Tips for connecting
-					</p>
-					<p className="text-[11px] text-text-secondary font-normal mt-1 leading-snug">
-						Be respectful, introduce yourself, and find people with similar vibes.
-					</p>
-					<Link
-						href="#"
-						className="inline-flex items-center gap-1 mt-2 text-sm font-semibold text-violet-600 hover:underline"
-					>
-						Community guidelines
-						<Icon as={ArrowRightSvg} size="xs" color="vibe" />
-					</Link>
-				</div>
-			</div>
-		</div>
-	)
-}
 
 // ─── Announcements: Trusted Hosts Card ───────────────────────────────────────
 
@@ -1101,35 +711,6 @@ function AnnouncementsTrustedHostsCard({ hosts }: { hosts: CommunityHost[] | nul
 	)
 }
 
-// ─── Announcements: Stay Informed Card ───────────────────────────────────────
-
-function StayInformedCard() {
-	return (
-		<div className="p-5 rounded-panel bg-surface-vibe-soft border border-purple-200">
-			<div className="flex items-start gap-3">
-				<div className="size-9 rounded-full bg-purple-100 flex items-center justify-center shrink-0 mt-0.5">
-					<Icon as={BellSvg} size="sm" color="vibe" />
-				</div>
-				<div className="flex-1 min-w-0">
-					<p className="text-label-sm font-semibold text-text-primary leading-snug">
-						Stay informed
-					</p>
-					<p className="text-[11px] text-text-secondary font-normal mt-1 leading-snug">
-						You can manage announcement notifications anytime.
-					</p>
-					{/* TODO: Link to /attendee/notifications/settings once page is built */}
-					<Link
-						href="#"
-						className="inline-flex items-center gap-1 mt-2 text-sm font-semibold text-violet-600 hover:underline"
-					>
-						Manage notifications
-						<Icon as={ArrowRightSvg} size="xs" color="vibe" />
-					</Link>
-				</div>
-			</div>
-		</div>
-	)
-}
 
 // ─── Composed Side Panel ──────────────────────────────────────────────────────
 
@@ -1138,11 +719,15 @@ export function CommunitySidePanel({
 	isMember,
 	onJoinClick,
 	communitySlug,
+	communityId,
+	onTabChange,
 }: {
 	activeTab: string
 	isMember: boolean
 	onJoinClick: () => void
 	communitySlug: string
+	communityId: string
+	onTabChange?: (tab: string) => void
 }) {
 	const [stats, setStats] = useState<CommunityStats | null>(null)
 	const [hosts, setHosts] = useState<CommunityHost[] | null>(null)
@@ -1159,7 +744,6 @@ export function CommunitySidePanel({
 				<ExperiencesFilterCard />
 				<SavedExperiencesCard />
 				<ExperiencesCommunityHostsCard hosts={hosts} />
-				<SuggestExperienceCard />
 			</>
 		)
 	}
@@ -1167,9 +751,8 @@ export function CommunitySidePanel({
 	if (activeTab === "chat") {
 		return (
 			<>
-				<ChatUpcomingExperiencesCard />
-				<MostActiveThisWeekCard />
-				<ChatCommunityGuidelinesCard />
+				<ChatUpcomingExperiencesCard communitySlug={communitySlug} onViewAll={() => onTabChange?.("experiences")} />
+				<CommunityGuidelinesCard />
 			</>
 		)
 	}
@@ -1180,29 +763,22 @@ export function CommunitySidePanel({
 				<MembersCommunityAtAGlanceCard stats={stats} />
 				<MembersTopHostsCard hosts={hosts} />
 				<NewMembersCard />
-				<TipsForConnectingCard />
 			</>
 		)
 	}
 
 	if (activeTab === "feed") {
 		return (
-			<>
-				<FeedTrendingTopicsCard />
-				<FeedMostActiveMembersCard />
-				<FeedPopularThisWeekCard />
-				<FeedCommunityGuidelinesCard />
-			</>
+			<CommunityGuidelinesCard />
 		)
 	}
 
 	if (activeTab === "announcements") {
 		return (
 			<>
-				<ChatUpcomingExperiencesCard />
+				<ChatUpcomingExperiencesCard communitySlug={communitySlug} onViewAll={() => onTabChange?.("experiences")} />
 				<AnnouncementsTrustedHostsCard hosts={hosts} />
-				<ChatCommunityGuidelinesCard />
-				<StayInformedCard />
+				<CommunityGuidelinesCard />
 			</>
 		)
 	}
@@ -1211,7 +787,7 @@ export function CommunitySidePanel({
 	return (
 		<>
 			<WhyJoinCard isMember={isMember} onJoinClick={onJoinClick} />
-			<PeopleInCommunityCard isMember={isMember} />
+			<PeopleInCommunityCard isMember={isMember} communityId={communityId} />
 			<TrustedHostsCard hosts={hosts} />
 			<CommunityGuidelinesCard />
 		</>

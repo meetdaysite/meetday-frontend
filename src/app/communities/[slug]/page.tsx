@@ -358,6 +358,8 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 							isMember={isMember}
 							onJoinClick={openJoinModal}
 							communitySlug={community.slug}
+							communityId={community.id}
+							onTabChange={tab => setActiveTab(tab as TabKey)}
 						/>
 					</aside>
 				</div>
