@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { toast } from "sonner"
 import Image from "next/image"
 import { Icon } from "@/components/ui/Icon"
 import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
@@ -8,13 +9,22 @@ import AltArrowUpSvg from "@/icons/outlined/alt-arrow-up.svg"
 import PinSvg from "@/icons/outlined/pin.svg"
 import LikeSvg from "@/icons/outlined/like.svg"
 import BookmarkSvg from "@/icons/outlined/bookmark.svg"
-import ShareSvg from "@/icons/outlined/share.svg"
 import ShieldCheckSvg from "@/icons/outlined/shield-check.svg"
+import {
+	getCommunityAnnouncements,
+	getAnnouncementBookmarks,
+	likeAnnouncement,
+	unlikeAnnouncement,
+	bookmarkAnnouncement,
+	unbookmarkAnnouncement,
+} from "@/lib/api"
+import type { CommunityAnnouncement } from "@/lib/api"
 
-// ─── Types & mock data ────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type AnnouncementCategory = "EVENT_DROP" | "EVENT_REMINDER" | "COMMUNITY_UPDATE" | "COMMUNITY_REMINDER"
 type AuthorRole = "ADMIN" | "HOST"
+type ViewMode = "all" | "saved"
 
 interface Announcement {
 	id: string
@@ -22,76 +32,13 @@ interface Announcement {
 	title: string
 	description: string
 	coverImageUrl: string | null
-	author: { name: string; avatarUrl: string; role: AuthorRole }
+	author: { name: string; avatarUrl: string | null; role: AuthorRole }
 	timeAgo: string
 	likeCount: number
+	likedByMe: boolean
+	bookmarkedByMe: boolean
+	isPinned: boolean
 }
-
-// TODO: Replace with real data from GET /api/communities/[id]/announcements?sort=latest
-const MOCK_ANNOUNCEMENTS: Announcement[] = [
-	{
-		id: "a1",
-		category: "EVENT_DROP",
-		title: "Neon Nights Early Access Opens Tomorrow!",
-		description:
-			"Early access tickets for Neon Nights go live tomorrow at 12 PM. Get ready for an unforgettable night at Warehouse Kolkata.",
-		coverImageUrl:
-			"https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&h=200&fit=crop",
-		author: {
-			name: "Meetday Team",
-			avatarUrl: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=40&h=40&fit=crop",
-			role: "ADMIN",
-		},
-		timeAgo: "20m ago",
-		likeCount: 45,
-	},
-	{
-		id: "a2",
-		category: "EVENT_REMINDER",
-		title: "After Hours is This Saturday!",
-		description:
-			"Doors open at 7 PM. Don't forget to bring a valid ID. See you at Park Street, Kolkata.",
-		coverImageUrl:
-			"https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&h=200&fit=crop",
-		author: {
-			name: "Meetday Team",
-			avatarUrl: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=40&h=40&fit=crop",
-			role: "ADMIN",
-		},
-		timeAgo: "3h ago",
-		likeCount: 32,
-	},
-	{
-		id: "a3",
-		category: "COMMUNITY_UPDATE",
-		title: "Night Rituals Photo Album is Live 📸",
-		description: "Relive the magic! Check out the full album from Night Rituals.",
-		coverImageUrl:
-			"https://images.unsplash.com/photo-1598387993441-a364f854cfbd?w=400&h=200&fit=crop",
-		author: {
-			name: "Community Manager",
-			avatarUrl: "https://i.pravatar.cc/40?img=12",
-			role: "HOST",
-		},
-		timeAgo: "1d ago",
-		likeCount: 28,
-	},
-	{
-		id: "a4",
-		category: "COMMUNITY_REMINDER",
-		title: "Community Guidelines Update",
-		description:
-			"We've updated a few guidelines to keep our community safe, inclusive and fun for everyone.",
-		coverImageUrl: null,
-		author: {
-			name: "Meetday Team",
-			avatarUrl: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=40&h=40&fit=crop",
-			role: "ADMIN",
-		},
-		timeAgo: "2d ago",
-		likeCount: 19,
-	},
-]
 
 const SORT_OPTIONS = ["Latest", "Oldest", "Most liked"] as const
 type SortOption = (typeof SORT_OPTIONS)[number]
@@ -122,12 +69,78 @@ const ROLE_CONFIG: Record<AuthorRole, string> = {
 	HOST: "bg-amber-100 text-amber-600",
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatTimeAgo(dateString: string): string {
+	const diffMs = Date.now() - new Date(dateString).getTime()
+	const diffMinutes = Math.floor(diffMs / 60000)
+	const diffHours = Math.floor(diffMinutes / 60)
+	const diffDays = Math.floor(diffHours / 24)
+	const diffWeeks = Math.floor(diffDays / 7)
+	if (diffMinutes < 60) return `${diffMinutes}m ago`
+	if (diffHours < 24) return `${diffHours}h ago`
+	if (diffDays < 7) return `${diffDays}d ago`
+	return `${diffWeeks}w ago`
+}
+
+function toAuthorRole(role: string): AuthorRole {
+	if (role === "HOST") return "HOST"
+	return "ADMIN"
+}
+
+function mapAnnouncement(item: CommunityAnnouncement): Announcement {
+	return {
+		id: item.id,
+		category: item.category as AnnouncementCategory,
+		title: item.title,
+		description: item.body,
+		coverImageUrl: item.imageUrl,
+		author: {
+			name: item.author.name,
+			avatarUrl: item.author.avatarUrl,
+			role: toAuthorRole(item.authorRole),
+		},
+		timeAgo: formatTimeAgo(item.publishedAt),
+		likeCount: item.likeCount,
+		likedByMe: item.likedByMe,
+		bookmarkedByMe: item.bookmarkedByMe,
+		isPinned: item.isPinned,
+	}
+}
+
+function sortAnnouncements(items: Announcement[], sort: SortOption): Announcement[] {
+	const copy = [...items]
+	if (sort === "Oldest") return copy.reverse()
+	if (sort === "Most liked") return copy.sort((a, b) => b.likeCount - a.likeCount)
+	return copy
+}
+
 // ─── Announcement Card ────────────────────────────────────────────────────────
 
-function AnnouncementCard({ announcement }: { announcement: Announcement }) {
-	const [liked, setLiked] = useState(false)
-	const [bookmarked, setBookmarked] = useState(false)
+function AnnouncementCard({
+	announcement,
+	communityId,
+	onUnbookmark,
+}: {
+	announcement: Announcement
+	communityId: string
+	onUnbookmark?: () => void
+}) {
+	const [liked, setLiked] = useState(announcement.likedByMe)
+	const [likeCount, setLikeCount] = useState(announcement.likeCount)
+	const [bookmarked, setBookmarked] = useState(announcement.bookmarkedByMe)
 	const category = CATEGORY_CONFIG[announcement.category]
+
+	// Debounce refs — track intended final state so rapid clicks collapse into one request
+	const likeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+	const intendedLikeRef = useRef(announcement.likedByMe)
+	const bookmarkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+	const intendedBookmarkRef = useRef(announcement.bookmarkedByMe)
+
+	useEffect(() => () => {
+		if (likeTimerRef.current) clearTimeout(likeTimerRef.current)
+		if (bookmarkTimerRef.current) clearTimeout(bookmarkTimerRef.current)
+	}, [])
 
 	return (
 		<div className="rounded-panel bg-surface-card border border-border-default flex gap-4 p-4 relative">
@@ -172,13 +185,19 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
 					{/* Author */}
 					<div className="flex items-center gap-2 min-w-0">
 						<div className="relative size-6 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-							<Image
-								src={announcement.author.avatarUrl}
-								alt={announcement.author.name}
-								fill
-								sizes="24px"
-								className="object-cover"
-							/>
+							{announcement.author.avatarUrl ? (
+								<Image
+									src={announcement.author.avatarUrl}
+									alt={announcement.author.name}
+									fill
+									sizes="24px"
+									className="object-cover"
+								/>
+							) : (
+								<div className="w-full h-full flex items-center justify-center bg-surface-brand-soft text-[9px] font-bold text-text-brand">
+									{announcement.author.name.charAt(0).toUpperCase()}
+								</div>
+							)}
 						</div>
 						<span className="text-[11px] font-semibold text-text-primary truncate">
 							{announcement.author.name}
@@ -191,48 +210,188 @@ function AnnouncementCard({ announcement }: { announcement: Announcement }) {
 
 					{/* Actions */}
 					<div className="flex items-center gap-3 shrink-0">
-						{/* TODO: Wire to POST /api/announcements/[id]/like */}
 						<button
 							type="button"
-							onClick={() => setLiked(l => !l)}
+							onClick={() => {
+								const next = !intendedLikeRef.current
+								intendedLikeRef.current = next
+								setLiked(next)
+								setLikeCount(c => c + (next ? 1 : -1))
+								if (likeTimerRef.current) clearTimeout(likeTimerRef.current)
+								likeTimerRef.current = setTimeout(async () => {
+									const intended = intendedLikeRef.current
+									try {
+										if (intended) await likeAnnouncement(communityId, announcement.id)
+										else await unlikeAnnouncement(communityId, announcement.id)
+									} catch {
+										setLiked(!intended)
+										setLikeCount(c => c + (intended ? -1 : 1))
+									}
+								}, 500)
+							}}
 							className={`flex items-center gap-1 text-[11px] font-medium transition-colors ${liked ? "text-text-brand" : "text-text-secondary hover:text-text-primary"}`}
 						>
 							<Icon as={LikeSvg} size="sm" color={liked ? "brand" : "secondary"} />
-							{announcement.likeCount + (liked ? 1 : 0)}
+							{likeCount}
 						</button>
-						{/* TODO: Wire to POST /api/announcements/[id]/bookmark */}
 						<button
 							type="button"
-							onClick={() => setBookmarked(b => !b)}
+							onClick={() => {
+								const next = !intendedBookmarkRef.current
+								intendedBookmarkRef.current = next
+								setBookmarked(next)
+								if (bookmarkTimerRef.current) clearTimeout(bookmarkTimerRef.current)
+								bookmarkTimerRef.current = setTimeout(async () => {
+									const intended = intendedBookmarkRef.current
+									try {
+										if (intended) {
+											await bookmarkAnnouncement(communityId, announcement.id)
+											toast.success("Announcement saved")
+										} else {
+											await unbookmarkAnnouncement(communityId, announcement.id)
+											toast("Removed from saved")
+											onUnbookmark?.()
+										}
+									} catch {
+										setBookmarked(!intended)
+										intendedBookmarkRef.current = !intended
+										toast.error("Something went wrong. Please try again.")
+									}
+								}, 500)
+							}}
 							className={`transition-colors ${bookmarked ? "text-text-brand" : "text-text-muted hover:text-text-primary"}`}
 						>
 							<Icon as={BookmarkSvg} size="sm" color={bookmarked ? "brand" : "muted"} />
-						</button>
-						{/* TODO: Wire to native share or copy-link */}
-						<button type="button" className="text-text-muted hover:text-text-primary transition-colors">
-							<Icon as={ShareSvg} size="sm" color="muted" />
 						</button>
 					</div>
 				</div>
 			</div>
 
-			{/* Pin icon — top right */}
-			{/* TODO: Wire to POST /api/announcements/[id]/pin (admin only) */}
-			<button
-				type="button"
-				className="absolute top-4 right-4 text-text-muted hover:text-text-primary transition-colors"
-			>
-				<Icon as={PinSvg} size="sm" color="muted" />
-			</button>
+			{/* Pin icon — top right, only for pinned announcements */}
+			{announcement.isPinned && (
+				<div className="absolute top-4 right-4 text-text-brand">
+					<Icon as={PinSvg} size="sm" color="brand" />
+				</div>
+			)}
+		</div>
+	)
+}
+
+// ─── Loading skeleton ─────────────────────────────────────────────────────────
+
+function AnnouncementSkeleton() {
+	return (
+		<div className="rounded-panel bg-surface-card border border-border-default flex gap-4 p-4 animate-pulse">
+			<div className="w-32 shrink-0 rounded-action bg-surface-hover min-h-27.5" />
+			<div className="flex-1 flex flex-col gap-2">
+				<div className="h-4 w-24 bg-surface-hover rounded" />
+				<div className="h-5 w-3/4 bg-surface-hover rounded" />
+				<div className="h-4 w-full bg-surface-hover rounded" />
+				<div className="h-4 w-5/6 bg-surface-hover rounded" />
+			</div>
 		</div>
 	)
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function AnnouncementsTabContent() {
+export function AnnouncementsTabContent({ communityId }: { communityId: string }) {
+	const [view, setView] = useState<ViewMode>("all")
 	const [sort, setSort] = useState<SortOption>("Latest")
 	const [sortOpen, setSortOpen] = useState(false)
+
+	// All view
+	const [allItems, setAllItems] = useState<Announcement[]>([])
+	const [nextCursor, setNextCursor] = useState<string | null>(null)
+	const [allLoading, setAllLoading] = useState(true)
+	const [allLoadingMore, setAllLoadingMore] = useState(false)
+	const [allError, setAllError] = useState<string | null>(null)
+
+	// Saved view
+	const [savedItems, setSavedItems] = useState<Announcement[]>([])
+	const [savedNextCursor, setSavedNextCursor] = useState<string | null>(null)
+	const [savedLoading, setSavedLoading] = useState(false)
+	const [savedLoaded, setSavedLoaded] = useState(false)
+	const [savedLoadingMore, setSavedLoadingMore] = useState(false)
+	const [savedError, setSavedError] = useState<string | null>(null)
+
+	const fetchAll = useCallback(async () => {
+		setAllLoading(true)
+		setAllError(null)
+		try {
+			const res = await getCommunityAnnouncements(communityId, { limit: 20 })
+			setAllItems(res.items.map(mapAnnouncement))
+			setNextCursor(res.nextCursor)
+		} catch {
+			setAllError("Failed to load announcements.")
+		} finally {
+			setAllLoading(false)
+		}
+	}, [communityId])
+
+	const fetchSaved = useCallback(async () => {
+		setSavedLoading(true)
+		setSavedError(null)
+		try {
+			const res = await getAnnouncementBookmarks(communityId, { limit: 20 })
+			setSavedItems(res.items.map(mapAnnouncement))
+			setSavedNextCursor(res.nextCursor)
+			setSavedLoaded(true)
+		} catch {
+			setSavedError("Failed to load saved announcements.")
+		} finally {
+			setSavedLoading(false)
+		}
+	}, [communityId])
+
+	useEffect(() => {
+		fetchAll()
+	}, [fetchAll])
+
+	useEffect(() => {
+		if (view === "saved" && !savedLoaded) {
+			fetchSaved()
+		}
+	}, [view, savedLoaded, fetchSaved])
+
+	const handleLoadMoreAll = async () => {
+		if (!nextCursor || allLoadingMore) return
+		setAllLoadingMore(true)
+		try {
+			const res = await getCommunityAnnouncements(communityId, { cursor: nextCursor, limit: 20 })
+			setAllItems(prev => [...prev, ...res.items.map(mapAnnouncement)])
+			setNextCursor(res.nextCursor)
+		} catch {
+			// silent — user can retry
+		} finally {
+			setAllLoadingMore(false)
+		}
+	}
+
+	const handleLoadMoreSaved = async () => {
+		if (!savedNextCursor || savedLoadingMore) return
+		setSavedLoadingMore(true)
+		try {
+			const res = await getAnnouncementBookmarks(communityId, { cursor: savedNextCursor, limit: 20 })
+			setSavedItems(prev => [...prev, ...res.items.map(mapAnnouncement)])
+			setSavedNextCursor(res.nextCursor)
+		} catch {
+			// silent — user can retry
+		} finally {
+			setSavedLoadingMore(false)
+		}
+	}
+
+	const handleUnbookmarkInSaved = (id: string) => {
+		setSavedItems(prev => prev.filter(a => a.id !== id))
+	}
+
+	const isAllView = view === "all"
+	const loading = isAllView ? allLoading : savedLoading
+	const error = isAllView ? allError : savedError
+	const displayItems = sortAnnouncements(isAllView ? allItems : savedItems, sort)
+	const hasMore = isAllView ? !!nextCursor : !!savedNextCursor
+	const loadingMore = isAllView ? allLoadingMore : savedLoadingMore
 
 	return (
 		<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4">
@@ -278,23 +437,62 @@ export function AnnouncementsTabContent() {
 				</div>
 			</div>
 
-			{/* Announcement cards */}
-			{/* TODO: Replace with paginated API call — GET /api/communities/[id]/announcements?sort=[sort]&page=[page] */}
-			<div className="flex flex-col gap-3">
-				{MOCK_ANNOUNCEMENTS.map(a => (
-					<AnnouncementCard key={a.id} announcement={a} />
+			{/* All / Saved toggle */}
+			<div className="flex items-center gap-2">
+				{(["all", "saved"] as const).map(v => (
+					<button
+						key={v}
+						type="button"
+						onClick={() => setView(v)}
+						className={`px-3 py-1.5 rounded-full text-[12px] font-medium border whitespace-nowrap transition-colors ${
+							view === v
+								? "border-text-primary text-text-primary bg-transparent"
+								: "border-border-default text-text-secondary hover:text-text-primary hover:border-border-focus"
+						}`}
+					>
+						{v === "all" ? "All" : "Saved"}
+					</button>
 				))}
 			</div>
 
+			{/* Announcement cards */}
+			<div className="flex flex-col gap-3">
+				{loading ? (
+					<>
+						<AnnouncementSkeleton />
+						<AnnouncementSkeleton />
+						<AnnouncementSkeleton />
+					</>
+				) : error ? (
+					<div className="py-8 text-center text-label-sm text-text-secondary">{error}</div>
+				) : displayItems.length === 0 ? (
+					<div className="py-8 text-center text-label-sm text-text-secondary">
+						{isAllView ? "No announcements yet." : "No saved announcements."}
+					</div>
+				) : (
+					displayItems.map(a => (
+						<AnnouncementCard
+							key={a.id}
+							announcement={a}
+							communityId={communityId}
+							onUnbookmark={!isAllView ? () => handleUnbookmarkInSaved(a.id) : undefined}
+						/>
+					))
+				)}
+			</div>
+
 			{/* Load more */}
-			{/* TODO: Implement pagination — fetch next page on click */}
-			<button
-				type="button"
-				className="flex items-center justify-center gap-1.5 w-full py-3 text-label-sm text-text-secondary font-medium hover:text-text-primary transition-colors"
-			>
-				Load older announcements
-				<Icon as={AltArrowDownSvg} size="xs" color="secondary" />
-			</button>
+			{!loading && hasMore && (
+				<button
+					type="button"
+					onClick={isAllView ? handleLoadMoreAll : handleLoadMoreSaved}
+					disabled={loadingMore}
+					className="flex items-center justify-center gap-1.5 w-full py-3 text-label-sm text-text-secondary font-medium hover:text-text-primary transition-colors disabled:opacity-50"
+				>
+					{loadingMore ? "Loading…" : "Load older announcements"}
+					{!loadingMore && <Icon as={AltArrowDownSvg} size="xs" color="secondary" />}
+				</button>
+			)}
 		</div>
 	)
 }

@@ -11,7 +11,7 @@ import LockSvg from "@/icons/outlined/lock.svg"
 import BoltSvg from "@/icons/outlined/bolt.svg"
 import { Button } from "@/components/ui/Button"
 import { useAuthStore } from "@/store/authStore"
-import { getCommunityBySlug, joinCommunity, leaveCommunity } from "@/lib/api"
+import { getCommunityBySlug, joinCommunity, leaveCommunity, getAnnouncementUnreadCount, markAnnouncementsRead } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import type { CommunityDetailResponse, ProfileVisibility, CommunityRole } from "@/lib/api"
 import { CommunityHero } from "./_components/CommunityHero"
@@ -160,7 +160,7 @@ function TabContent({
 			currentUserRole={currentUserRole}
 		/>
 	)
-	if (activeTab === "announcements") return <AnnouncementsTabContent />
+	if (activeTab === "announcements") return <AnnouncementsTabContent communityId={community.id} />
 	if (activeTab === "feed") return <FeedTabContent />
 	if (activeTab === "members") return <MembersTabContent communityId={community.id} />
 
@@ -208,6 +208,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 	const [apiData, setApiData] = useState<CommunityDetailResponse | null | "loading">("loading")
 	const [isMember, setIsMember] = useState(false)
 	const [activeTab, setActiveTab] = useState<TabKey>("overview")
+	const [announcementUnreadCount, setAnnouncementUnreadCount] = useState(0)
 	const [joinModalOpen, setJoinModalOpen] = useState(false)
 	const [successModalOpen, setSuccessModalOpen] = useState(false)
 	const [pendingModalOpen, setPendingModalOpen] = useState(false)
@@ -223,6 +224,13 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 			setIsMember(apiData.isMember)
 		}
 	}, [apiData])
+
+	useEffect(() => {
+		if (!user || !apiData || apiData === "loading" || !apiData.isMember) return
+		getAnnouncementUnreadCount(apiData.id)
+			.then(count => setAnnouncementUnreadCount(count))
+			.catch(() => {/* silent */})
+	}, [user, apiData])
 
 	const currentUserRole: CommunityRole | null = (() => {
 		if (!apiData || apiData === "loading" || !user) return null
@@ -302,12 +310,19 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 							{visibleTabs.map(tab => {
 								const locked = tab.requiresAuth && (!isLoggedIn || !isMember)
 								const isActive = safeActiveTab === tab.key
+								const showUnreadBadge = tab.key === "announcements" && !locked && announcementUnreadCount > 0
 
 								return (
 									<button
 										key={tab.key}
 										type="button"
-										onClick={() => setActiveTab(tab.key)}
+										onClick={() => {
+											setActiveTab(tab.key)
+											if (tab.key === "announcements" && announcementUnreadCount > 0) {
+												setAnnouncementUnreadCount(0)
+												markAnnouncementsRead(apiData.id).catch(() => {/* silent */})
+											}
+										}}
 										className={`relative flex items-center gap-1.5 px-4 py-2.5 text-body-sm font-medium whitespace-nowrap transition-colors ${
 											isActive
 												? "text-text-brand"
@@ -318,6 +333,11 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 										{locked && (
 											<span className="flex items-center gap-0.5 text-[10px] font-medium text-text-info border border-icon-info bg-surface-info rounded-avatar px-1 py-1">
 												<Icon as={LockSvg} size="xs" color="info" className="size-2" />
+											</span>
+										)}
+										{showUnreadBadge && (
+											<span className="flex items-center justify-center min-w-4 h-4 px-1 text-[10px] font-bold bg-action-primary text-text-inverse rounded-full leading-none">
+												{announcementUnreadCount > 99 ? "99+" : announcementUnreadCount}
 											</span>
 										)}
 										{isActive && (

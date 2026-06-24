@@ -804,6 +804,88 @@ export async function getCommunityEvents(
 	return data.data
 }
 
+export type CommunityAnnouncement = {
+	id: string
+	communityId: string
+	authorId: string
+	authorRole: "ADMIN" | "HOST" | string
+	category: "EVENT_DROP" | "EVENT_REMINDER" | "COMMUNITY_UPDATE" | "COMMUNITY_REMINDER"
+	title: string
+	body: string
+	imageKey: string | null
+	isPinned: boolean
+	pinnedAt: string | null
+	likeCount: number
+	bookmarkCount: number
+	publishedAt: string
+	deletedAt: string | null
+	createdAt: string
+	updatedAt: string
+	author: {
+		id: string
+		name: string
+		avatarUrl: string | null
+		isBrand: boolean
+	}
+	likedByMe: boolean
+	bookmarkedByMe: boolean
+	imageUrl: string | null
+}
+
+export type CommunityAnnouncementsResponse = {
+	items: CommunityAnnouncement[]
+	nextCursor: string | null
+}
+
+export async function getAnnouncementUnreadCount(communityId: string): Promise<number> {
+	const { data } = await apiClient.get<{ success: boolean; data: { count: number } }>(
+		`/communities/${communityId}/announcements/unread-count`,
+	)
+	return data.data.count
+}
+
+export async function likeAnnouncement(communityId: string, announcementId: string): Promise<void> {
+	await apiClient.post(`/communities/${communityId}/announcements/${announcementId}/like`)
+}
+
+export async function unlikeAnnouncement(communityId: string, announcementId: string): Promise<void> {
+	await apiClient.delete(`/communities/${communityId}/announcements/${announcementId}/like`)
+}
+
+export async function bookmarkAnnouncement(communityId: string, announcementId: string): Promise<void> {
+	await apiClient.post(`/communities/${communityId}/announcements/${announcementId}/bookmark`)
+}
+
+export async function unbookmarkAnnouncement(communityId: string, announcementId: string): Promise<void> {
+	await apiClient.delete(`/communities/${communityId}/announcements/${announcementId}/bookmark`)
+}
+
+export async function getAnnouncementBookmarks(
+	communityId: string,
+	params?: { cursor?: string; limit?: number },
+): Promise<CommunityAnnouncementsResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: CommunityAnnouncement[] }>(
+		`/communities/${communityId}/announcements/bookmarks`,
+		{ params },
+	)
+	return { items: data.data, nextCursor: null }
+}
+
+export async function markAnnouncementsRead(communityId: string): Promise<void> {
+	await apiClient.post(`/communities/${communityId}/announcements/mark-read`)
+}
+
+export async function getCommunityAnnouncements(
+	communityId: string,
+	params?: { cursor?: string; limit?: number },
+): Promise<CommunityAnnouncementsResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: CommunityAnnouncementsResponse }>(
+		`/communities/${communityId}/announcements`,
+		{ params },
+	)
+	return data.data
+}
+
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
