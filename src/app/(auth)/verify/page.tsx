@@ -19,6 +19,7 @@ import { useHostStore } from "@/store/hostStore"
 import { checkPhone, getHostProfile } from "@/lib/api"
 import { CountrySelect } from "@/components/auth/PhoneField"
 import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/countries"
+import { getApiErrorMessage } from "@/lib/errors"
 
 const schema = z.object({
 	otp: z
@@ -95,8 +96,8 @@ export default function VerifyPage() {
 			await sendOtp(phone, "recaptcha-container-verify")
 			setSecondsLeft(RESEND_SECONDS)
 			toast.success("OTP resent!")
-		} catch {
-			toast.error("Failed to resend OTP. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		}
 	}
 
@@ -105,8 +106,8 @@ export default function VerifyPage() {
 
 		try {
 			await confirmOtp(otp)
-		} catch {
-			toast.error("Invalid OTP. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 			setValue("otp", "")
 			setLoading(false)
 			return
@@ -137,8 +138,8 @@ export default function VerifyPage() {
 					router.push("/onboarding")
 				}
 			}
-		} catch {
-			toast.error("Something went wrong. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setLoading(false)
 		}

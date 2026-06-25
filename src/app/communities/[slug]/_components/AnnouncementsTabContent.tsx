@@ -21,6 +21,7 @@ import {
 	unbookmarkAnnouncement,
 } from "@/lib/api"
 import type { CommunityAnnouncement } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -254,10 +255,10 @@ function AnnouncementCard({
 											toast("Removed from saved")
 											onUnbookmark?.()
 										}
-									} catch {
+									} catch (err) {
 										setBookmarked(!intended)
 										intendedBookmarkRef.current = !intended
-										toast.error("Something went wrong. Please try again.")
+										toast.error(getApiErrorMessage(err))
 									}
 								}, 500)
 							}}
@@ -324,8 +325,8 @@ export function AnnouncementsTabContent({ communityId }: { communityId: string }
 			const res = await getCommunityAnnouncements(communityId, { limit: 20 })
 			setAllItems(res.items.map(mapAnnouncement))
 			setNextCursor(res.nextCursor)
-		} catch {
-			setAllError("Failed to load announcements.")
+		} catch (err) {
+			setAllError(getApiErrorMessage(err))
 		} finally {
 			setAllLoading(false)
 		}
@@ -339,8 +340,8 @@ export function AnnouncementsTabContent({ communityId }: { communityId: string }
 			setSavedItems(res.items.map(mapAnnouncement))
 			setSavedNextCursor(res.nextCursor)
 			setSavedLoaded(true)
-		} catch {
-			setSavedError("Failed to load saved announcements.")
+		} catch (err) {
+			setSavedError(getApiErrorMessage(err))
 		} finally {
 			setSavedLoading(false)
 		}

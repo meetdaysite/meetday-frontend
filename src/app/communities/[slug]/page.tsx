@@ -435,8 +435,8 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 				onConfirm={async () => {
 					try {
 						await handleLeave()
-					} catch {
-						toast.error("Failed to leave community. Please try again.")
+					} catch (err) {
+						toast.error(getApiErrorMessage(err))
 					}
 				}}
 			/>

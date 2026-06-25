@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button"
 import CloseSvg from "@/icons/outlined/close.svg"
 import { updateCommunityFeedPost } from "@/lib/api"
 import type { FeedPost, FeedPostCategory, UpdateFeedPostPayload } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 
 const CATEGORIES: { value: FeedPostCategory; label: string }[] = [
 	{ value: "GENERAL", label: "General" },
@@ -56,8 +57,8 @@ export function EditPostModal({ post, communityId, onClose, onSaved }: EditPostM
 			toast.success("Post updated.")
 			onSaved(updated)
 			onClose()
-		} catch {
-			toast.error("Failed to update post.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setSaving(false)
 		}

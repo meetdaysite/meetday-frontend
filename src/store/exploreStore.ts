@@ -2,6 +2,7 @@ import { create } from "zustand"
 import { getPublicEvents, getInterests, getCategories } from "@/lib/api"
 import type { ExploreEvent } from "@/types/attendee"
 import type { Interest, Category } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 
 const LIMIT = 12
 
@@ -130,8 +131,8 @@ export const useExploreStore = create<ExploreStore>((set, get) => ({
 		try {
 			const result = await getPublicEvents(buildParams(get().filters, 1))
 			set({ events: result.events, total: result.total, page: 1, loading: false })
-		} catch {
-			set({ loading: false, error: "Failed to load events." })
+		} catch (err) {
+			set({ loading: false, error: getApiErrorMessage(err) })
 		}
 	},
 

@@ -43,6 +43,7 @@ import {
 	type FormData,
 } from "@/lib/eventForm"
 import { uploadEventMedia } from "@/lib/uploadMedia"
+import { getApiErrorMessage } from "@/lib/errors"
 import { isAxiosError } from "axios"
 import clsx from "clsx"
 import { useRouter } from "next/navigation"
@@ -753,8 +754,8 @@ function Step3MediaUpload({
 		try {
 			const key = await uploadEventMedia(file, "COVER")
 			set("coverKey", key)
-		} catch {
-			toast.error("Cover upload failed. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 			set("coverUrl", "")
 		} finally {
 			setCoverUploading(false)
@@ -786,8 +787,8 @@ function Step3MediaUpload({
 				keys[slotIndex] = key
 				return { ...prev, galleryKeys: keys }
 			})
-		} catch {
-			toast.error(`Gallery slot ${slotIndex + 1} upload failed.`)
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 			setFormData(prev => {
 				const slots = [...prev.gallerySlots]
 				slots[slotIndex] = ""
@@ -1435,9 +1436,9 @@ export default function CreateExperiencePage() {
 				if (status === 400)
 					toast.error("Prompt too short, too long, or contains unfilled placeholders.")
 				else if (status === 403) toast.error("Host role required to use AI Copilot.")
-				else toast.error("Failed to generate draft. Please try again.")
+				else toast.error(getApiErrorMessage(err))
 			} else {
-				toast.error("Failed to generate draft. Please try again.")
+				toast.error(getApiErrorMessage(err))
 			}
 		} finally {
 			setCopilotLoading(false)
@@ -1471,8 +1472,8 @@ export default function CreateExperiencePage() {
 			}
 			setDraftSaved(true)
 			setTimeout(() => setDraftSaved(false), 2000)
-		} catch {
-			toast.error("Failed to save draft.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		}
 	}
 
@@ -1493,8 +1494,8 @@ export default function CreateExperiencePage() {
 			localStorage.removeItem(DRAFT_ID_KEY)
 			toast.success("Experience submitted for review!")
 			router.push("/dashboard/events")
-		} catch {
-			toast.error("Submission failed. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 			setSubmitting(false)
 		}
 	}

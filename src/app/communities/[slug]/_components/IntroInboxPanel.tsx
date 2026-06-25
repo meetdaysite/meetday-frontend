@@ -13,6 +13,7 @@ import {
 	rejectIntro,
 	type ReceivedIntro,
 } from "@/lib/chatApi"
+import { getApiErrorMessage } from "@/lib/errors"
 
 // ─── Intro card ───────────────────────────────────────────────────────────────
 
@@ -37,8 +38,8 @@ function IntroCard({
 			await acceptIntro(communityId, intro.conversationId)
 			toast.success(`Connected with ${fullName}!`)
 			onAccepted(intro.conversationId)
-		} catch {
-			toast.error("Failed to accept intro. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setLoading(null)
 		}
@@ -49,8 +50,8 @@ function IntroCard({
 		try {
 			await rejectIntro(communityId, intro.conversationId)
 			onRejected(intro.conversationId)
-		} catch {
-			toast.error("Failed to decline intro. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setLoading(null)
 		}
@@ -159,8 +160,8 @@ export function IntroInboxPanel({
 		try {
 			const raw = await getReceivedIntros(communityId)
 			setIntros(raw)
-		} catch {
-			setError("Failed to load intro requests.")
+		} catch (err) {
+			setError(getApiErrorMessage(err))
 		} finally {
 			setLoading(false)
 		}

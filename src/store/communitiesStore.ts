@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import { getPublicCommunities, getCategories } from "@/lib/api"
 import type { PublicCommunity, Category } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 
 const LIMIT = 12
 
@@ -55,8 +56,8 @@ export const useCommunitiesStore = create<CommunitiesStore>((set, get) => ({
 				limit: LIMIT,
 			})
 			set({ communities: res.data, total: res.total, page: 1, loading: false })
-		} catch {
-			set({ error: "Failed to load communities.", loading: false })
+		} catch (err) {
+			set({ error: getApiErrorMessage(err), loading: false })
 		}
 	},
 

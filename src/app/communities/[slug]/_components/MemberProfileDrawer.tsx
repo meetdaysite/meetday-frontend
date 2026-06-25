@@ -19,6 +19,7 @@ import PlaneSvg from "@/icons/outlined/plane.svg"
 import LockSvg from "@/icons/outlined/lock.svg"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import { sendIntro, acceptIntro, rejectIntro } from "@/lib/chatApi"
+import { getApiErrorMessage } from "@/lib/errors"
 import { avatarColor } from "@/lib/avatarColor"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -142,7 +143,7 @@ function SayHiModal({
 			} else if (status === 403) {
 				toast.error("This member isn't accepting intro requests right now.")
 			} else {
-				toast.error("Failed to send intro. Please try again.")
+				toast.error(getApiErrorMessage(err))
 			}
 		} finally {
 			setSending(false)
@@ -382,8 +383,8 @@ export function MemberProfileDrawer({
 			await acceptIntro(communityId, member.conversationId)
 			setLocalDmStatus("connected")
 			toast.success("Intro accepted! You can now chat.")
-		} catch {
-			toast.error("Failed to accept intro. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setActionLoading(false)
 		}
@@ -395,8 +396,8 @@ export function MemberProfileDrawer({
 		try {
 			await rejectIntro(communityId, member.conversationId)
 			setLocalDmStatus("none")
-		} catch {
-			toast.error("Failed to decline intro. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setActionLoading(false)
 		}

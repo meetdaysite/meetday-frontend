@@ -13,6 +13,7 @@ import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 import AltArrowUpSvg from "@/icons/outlined/alt-arrow-up.svg"
 import { getCommunityMembers, getCommunityMemberDetail } from "@/lib/api"
 import type { CommunityMember, MemberBadge, MemberDetailCard } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 import { MemberProfileDrawer } from "./MemberProfileDrawer"
 import type { DrawerMember } from "./MemberProfileDrawer"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
@@ -272,7 +273,7 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 				setTotal(res.total)
 				setPage(1)
 			})
-			.catch(() => setError("Failed to load members."))
+			.catch((err) => setError(getApiErrorMessage(err)))
 			.finally(() => setLoading(false))
 	}, [communityId])
 
@@ -285,7 +286,7 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 				setTotal(res.total)
 				setPage(nextPage)
 			})
-			.catch(() => setError("Failed to load more members."))
+			.catch((err) => setError(getApiErrorMessage(err)))
 			.finally(() => setLoadingMore(false))
 	}
 
@@ -419,7 +420,7 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 											setTotal(res.total)
 											setPage(1)
 										})
-										.catch(() => setError("Failed to load members."))
+										.catch((err) => setError(getApiErrorMessage(err)))
 										.finally(() => setLoading(false))
 								}}
 							>

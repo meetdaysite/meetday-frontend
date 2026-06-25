@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { useEventStore } from "@/store/eventStore"
 import { storageUrl } from "@/lib/uploadMedia"
 import { createScannerSession, getCheckInStats, getEventAttendees } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 import type { CheckInStats, EventAttendee, EventAttendeesResponse } from "@/lib/api"
 import type { Event, ApiEventStatus } from "@/types/event"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
@@ -314,8 +315,8 @@ export default function EventDetailPage() {
 										try {
 											await submitForReview(event.id)
 											toast.success("Submitted for review.")
-										} catch {
-											toast.error("Failed to submit. Please try again.")
+										} catch (err) {
+											toast.error(getApiErrorMessage(err))
 										}
 									}}
 									onEdit={() => router.push(`/dashboard/events/${event.id}/edit`)}
@@ -584,8 +585,8 @@ function CancelModal({
 			await onCancel(eventId, reason.trim())
 			toast.success("Event cancelled.")
 			onClose()
-		} catch {
-			toast.error("Failed to cancel event. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 			setLoading(false)
 		}
 	}
@@ -661,8 +662,8 @@ function AddStaffModal({ eventId, onClose }: { eventId: string; onClose: () => v
 			})
 			toast.success("Support staff added. An invite email has been sent.")
 			onClose()
-		} catch {
-			toast.error("Failed to add support staff. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 			setLoading(false)
 		}
 	}

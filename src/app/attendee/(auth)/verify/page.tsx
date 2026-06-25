@@ -20,6 +20,7 @@ import { checkPhone, registerAttendee, type AttendeeVibeType, type AttendeeSocia
 import { CountrySelect } from "@/components/auth/PhoneField"
 import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/countries"
 import { ATTENDEE_VIBES_KEY, ATTENDEE_ABOUT_KEY } from "@/app/attendee/onboarding/page"
+import { getApiErrorMessage } from "@/lib/errors"
 
 const schema = z.object({
 	otp: z
@@ -132,8 +133,8 @@ export default function AttendeeVerifyPage() {
 			await sendOtp(phone, "recaptcha-container-verify")
 			setSecondsLeft(RESEND_SECONDS)
 			toast.success("OTP resent!")
-		} catch {
-			toast.error("Failed to resend OTP. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		}
 	}
 
@@ -142,8 +143,8 @@ export default function AttendeeVerifyPage() {
 
 		try {
 			await confirmOtp(otp)
-		} catch {
-			toast.error("Invalid OTP. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 			setValue("otp", "")
 			setLoading(false)
 			return
@@ -206,8 +207,8 @@ export default function AttendeeVerifyPage() {
 				// No vibes: go to mandatory onboarding first; registration happens there
 				router.push("/attendee/onboarding?required=true")
 			}
-		} catch {
-			toast.error("Something went wrong. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setLoading(false)
 		}

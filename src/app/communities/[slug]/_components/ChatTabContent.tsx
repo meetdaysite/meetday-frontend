@@ -20,6 +20,7 @@ import { chatSocket } from "@/lib/chatSocket"
 import { useChatStore } from "@/store/chatStore"
 import { aggregateRawReactions } from "@/lib/chatApi"
 import type { CommunityRole } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 import type { ChatChannel, DmConversation } from "@/lib/chatApi"
 import type { StoredMessage } from "@/store/chatStore"
 
@@ -267,7 +268,7 @@ export function ChatTabContent({
 			} catch (err) {
 				if (!aborted) setChatLoading(false)
 				console.debug("[chat] init — uncaught error:", err)
-				toast.error("Failed to load chat. Please try again.")
+				toast.error(getApiErrorMessage(err))
 			}
 		}
 
@@ -353,8 +354,8 @@ export function ChatTabContent({
 		if (!channelId || !isMod) return
 		try {
 			await pinMessage(communityId, channelId, messageId)
-		} catch {
-			toast.error("Failed to pin message.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		}
 	}, [communityId, isMod])
 
@@ -364,8 +365,8 @@ export function ChatTabContent({
 		try {
 			await unpinMessageApi(communityId, channelId, messageId)
 			store.setUnpinned(channelId, messageId)
-		} catch {
-			toast.error("Failed to unpin message.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		}
 	}, [communityId, isMod, store])
 
@@ -377,8 +378,8 @@ export function ChatTabContent({
 		try {
 			await deleteChannelMessage(communityId, channelId, messageId)
 			store.removeMessage(channelId, messageId)
-		} catch {
-			toast.error("Failed to delete message.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		}
 	}, [communityId, store])
 

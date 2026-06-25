@@ -8,6 +8,7 @@ import { Dropdown } from "@/components/ui/Dropdown"
 import { Icon } from "@/components/ui/Icon"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { getMyEventDetail, updateEventDraft, submitEventForReview, getCategories, type Category } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 import { uploadEventMedia } from "@/lib/uploadMedia"
 import {
 	LANGUAGE_OPTIONS,
@@ -116,7 +117,7 @@ export default function EditEventPage() {
 				setOriginalStatus(event.status)
 				setCategories(cats)
 			})
-			.catch(() => setLoadError("Failed to load event. Please try again."))
+			.catch((err) => setLoadError(getApiErrorMessage(err)))
 			.finally(() => {
 				setLoading(false)
 				setCategoriesLoading(false)
@@ -169,8 +170,8 @@ export default function EditEventPage() {
 		try {
 			await updateEventDraft(id, buildPayload(formData))
 			toast.success("Changes saved.")
-		} catch {
-			toast.error("Failed to save changes.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setSaving(false)
 		}
@@ -190,8 +191,8 @@ export default function EditEventPage() {
 			await submitEventForReview(id)
 			toast.success("Experience submitted for review!")
 			router.push("/dashboard/events")
-		} catch {
-			toast.error("Submission failed. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 			setSubmitting(false)
 		}
 	}
@@ -208,8 +209,8 @@ export default function EditEventPage() {
 		try {
 			const key = await uploadEventMedia(file, "COVER")
 			set("coverKey", key)
-		} catch {
-			toast.error("Cover upload failed. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 			set("coverUrl", "")
 		} finally {
 			setCoverUploading(false)
@@ -237,8 +238,8 @@ export default function EditEventPage() {
 				keys[slotIndex] = key
 				return { ...prev, galleryKeys: keys }
 			})
-		} catch {
-			toast.error(`Gallery slot ${slotIndex + 1} upload failed.`)
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 			setFormData((prev) => {
 				const slots = [...prev.gallerySlots]
 				slots[slotIndex] = ""

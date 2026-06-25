@@ -9,6 +9,7 @@ import CloseSvg from "@/icons/outlined/close.svg"
 import GalleryWideSvg from "@/icons/outlined/gallery-wide.svg"
 import { createCommunityFeedPost, getUploadUrl } from "@/lib/api"
 import type { FeedPost } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 import { useAuthStore } from "@/store/authStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import { avatarColor } from "@/lib/avatarColor"
@@ -110,8 +111,8 @@ export function CreatePostModal({ open, communityId, onClose, onPosted }: Create
 			toast.success("Post shared!")
 			onPosted?.(post)
 			onClose()
-		} catch {
-			toast.error("Failed to post. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setIsSubmitting(false)
 		}

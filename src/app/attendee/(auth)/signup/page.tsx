@@ -17,6 +17,7 @@ import { useAuth } from "@/context/AuthContext"
 import { useAttendeeSessionStore } from "@/store/attendeeSessionStore"
 import { checkPhone } from "@/lib/api"
 import { DEFAULT_COUNTRY, type Country } from "@/lib/countries"
+import { getApiErrorMessage } from "@/lib/errors"
 
 const schema = z.object({
 	firstName: z.string().min(1, "First name is required").max(50),
@@ -69,8 +70,8 @@ export default function AttendeeSignupPage() {
 			setSession({ intent: "signup", phone: fullPhone, firstName, lastName, email })
 			toast.success("OTP sent to your phone!")
 			router.push("/attendee/verify")
-		} catch {
-			toast.error("Failed to send OTP. Please check the number and try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setLoading(false)
 		}

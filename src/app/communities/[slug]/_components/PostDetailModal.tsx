@@ -30,6 +30,7 @@ import {
 	deleteFeedPostComment,
 } from "@/lib/api"
 import type { FeedPost, FeedComment, CommunityRole } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import { avatarColor } from "@/lib/avatarColor"
 
@@ -143,7 +144,7 @@ export function PostDetailModal({ postId, communityId, currentUserRole, onClose 
 				committedBookmark.current = p.bookmarkedByMe
 				committedPin.current = p.isPinned
 			})
-			.catch(() => toast.error("Failed to load post."))
+			.catch((err) => toast.error(getApiErrorMessage(err)))
 			.finally(() => setLoading(false))
 	}, [communityId, postId])
 
@@ -161,8 +162,8 @@ export function PostDetailModal({ postId, communityId, currentUserRole, onClose 
 				const res = await getFeedPostComments(communityId, postId, { cursor, limit: 20 })
 				setComments(prev => (cursor ? [...prev, ...res.comments] : res.comments))
 				setCommentsNextCursor(res.nextCursor)
-			} catch {
-				toast.error("Failed to load comments.")
+			} catch (err) {
+				toast.error(getApiErrorMessage(err))
 			} finally {
 				setCommentsLoading(false)
 			}
@@ -201,10 +202,10 @@ export function PostDetailModal({ postId, communityId, currentUserRole, onClose 
 				if (next) await addFeedPostReaction(communityId, postId, REACTION_EMOJI)
 				else await removeFeedPostReaction(communityId, postId, REACTION_EMOJI)
 				committedReaction.current = next
-			} catch {
+			} catch (err) {
 				setReacted(committedReaction.current)
 				setReactionCount(c => c + (committedReaction.current ? 1 : -1))
-				toast.error("Failed to update reaction.")
+				toast.error(getApiErrorMessage(err))
 			}
 		}, 500)
 	}
@@ -220,9 +221,9 @@ export function PostDetailModal({ postId, communityId, currentUserRole, onClose 
 				else await unbookmarkFeedPost(communityId, postId)
 				committedBookmark.current = next
 				window.dispatchEvent(new CustomEvent("feed:bookmark-changed", { detail: { communityId } }))
-			} catch {
+			} catch (err) {
 				setBookmarked(committedBookmark.current)
-				toast.error("Failed to update bookmark.")
+				toast.error(getApiErrorMessage(err))
 			}
 		}, 500)
 	}
@@ -237,9 +238,9 @@ export function PostDetailModal({ postId, communityId, currentUserRole, onClose 
 				if (next) await pinFeedPost(communityId, postId)
 				else await unpinFeedPost(communityId, postId)
 				committedPin.current = next
-			} catch {
+			} catch (err) {
 				setPinned(committedPin.current)
-				toast.error("Failed to update pin.")
+				toast.error(getApiErrorMessage(err))
 			}
 		}, 500)
 	}
@@ -260,11 +261,11 @@ export function PostDetailModal({ postId, communityId, currentUserRole, onClose 
 		if (!prevVote) setTotalVotes(t => t + 1)
 		try {
 			await voteFeedPoll(communityId, postId, optionId)
-		} catch {
+		} catch (err) {
 			setMyVote(prevVote)
 			setPollOptions(prevOptions)
 			setTotalVotes(prevTotal)
-			toast.error("Failed to record vote.")
+			toast.error(getApiErrorMessage(err))
 		}
 	}
 
@@ -277,8 +278,8 @@ export function PostDetailModal({ postId, communityId, currentUserRole, onClose 
 			setComments(prev => [created, ...prev])
 			setCommentCount(c => c + 1)
 			setCommentText("")
-		} catch {
-			toast.error("Failed to post comment.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setSubmittingComment(false)
 		}
@@ -289,8 +290,8 @@ export function PostDetailModal({ postId, communityId, currentUserRole, onClose 
 		setCommentCount(c => c - 1)
 		try {
 			await deleteFeedPostComment(communityId, postId, commentId)
-		} catch {
-			toast.error("Failed to delete comment.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 			loadComments()
 		}
 	}

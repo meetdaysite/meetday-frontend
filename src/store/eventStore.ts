@@ -9,6 +9,7 @@ import {
 	deleteEventDraft as deleteEventDraftApi,
 } from "@/lib/api"
 import type { Event, EventDraftPayload, ApiEventStatus } from "@/types/event"
+import { getApiErrorMessage } from "@/lib/errors"
 
 type EventStore = {
 	// ── List state ───────────────────────────────────────────────────────────
@@ -48,8 +49,8 @@ export const useEventStore = create<EventStore>((set) => ({
 		try {
 			const result = await getMyEvents({ limit: 100, ...params })
 			set({ events: result.events, eventsTotal: result.total, eventsLoading: false })
-		} catch {
-			set({ eventsLoading: false, eventsError: "Failed to load events. Please refresh." })
+		} catch (err) {
+			set({ eventsLoading: false, eventsError: getApiErrorMessage(err) })
 		}
 	},
 
@@ -58,8 +59,8 @@ export const useEventStore = create<EventStore>((set) => ({
 		try {
 			const event = await getMyEventDetail(id)
 			set({ currentEvent: event, currentEventLoading: false })
-		} catch {
-			set({ currentEventLoading: false, currentEventError: "Failed to load event." })
+		} catch (err) {
+			set({ currentEventLoading: false, currentEventError: getApiErrorMessage(err) })
 		}
 	},
 

@@ -7,6 +7,7 @@ import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 import { EventCard } from "@/components/attendee/EventCard"
 import { getCommunityEvents } from "@/lib/api"
 import type { CommunityEvent } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 import type { ExploreEvent } from "@/types/attendee"
 
 // ─── Mapper (same logic as UpcomingExperiences) ───────────────────────────────
@@ -58,7 +59,7 @@ export function ExperiencesTabContent({ communitySlug }: { communitySlug: string
 				setTotal(res.total)
 				setPage(1)
 			})
-			.catch(() => setError("Failed to load experiences."))
+			.catch((err) => setError(getApiErrorMessage(err)))
 			.finally(() => setLoading(false))
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [communitySlug])
@@ -72,7 +73,7 @@ export function ExperiencesTabContent({ communitySlug }: { communitySlug: string
 				setTotal(res.total)
 				setPage(next)
 			})
-			.catch(() => setError("Failed to load more experiences."))
+			.catch((err) => setError(getApiErrorMessage(err)))
 			.finally(() => setLoadingMore(false))
 	}
 
@@ -104,7 +105,7 @@ export function ExperiencesTabContent({ communitySlug }: { communitySlug: string
 							setError(null)
 							fetchPage(1)
 								.then(res => { setEvents(res.data.map(toExploreEvent)); setTotal(res.total); setPage(1) })
-								.catch(() => setError("Failed to load experiences."))
+								.catch((err) => setError(getApiErrorMessage(err)))
 								.finally(() => setLoading(false))
 						}}
 					>

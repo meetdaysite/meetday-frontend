@@ -41,6 +41,7 @@ import {
 	deleteFeedPostComment,
 } from "@/lib/api"
 import type { FeedPost, FeedComment, CommunityRole } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
 import { useAuthStore } from "@/store/authStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import { avatarColor } from "@/lib/avatarColor"
@@ -231,8 +232,8 @@ function CreatePostCard({
 			setImageFiles([])
 			setImagePreviews([])
 			onPosted(post)
-		} catch {
-			toast.error("Failed to post. Please try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setIsSubmitting(false)
 		}
@@ -467,8 +468,8 @@ function PostCard({
 				const res = await getFeedPostComments(communityId, post.id, { cursor, limit: 20 })
 				setComments(prev => (cursor ? [...prev, ...res.comments] : res.comments))
 				setCommentsNextCursor(res.nextCursor)
-			} catch {
-				toast.error("Failed to load comments.")
+			} catch (err) {
+				toast.error(getApiErrorMessage(err))
 			} finally {
 				setCommentsLoading(false)
 			}
@@ -492,8 +493,8 @@ function PostCard({
 			setComments(prev => [created, ...prev])
 			setCommentCount(c => c + 1)
 			setCommentText("")
-		} catch {
-			toast.error("Failed to post comment.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setSubmittingComment(false)
 		}
@@ -504,8 +505,8 @@ function PostCard({
 		setCommentCount(c => c - 1)
 		try {
 			await deleteFeedPostComment(communityId, post.id, commentId)
-		} catch {
-			toast.error("Failed to delete comment.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 			// Reload to restore correct state
 			loadComments()
 		}
@@ -548,11 +549,11 @@ function PostCard({
 		setTotalVotes(v => (prevVote ? v : v + 1))
 		try {
 			await voteFeedPoll(communityId, post.id, optionId)
-		} catch {
+		} catch (err) {
 			setMyVote(prevVote)
 			setPollOptions(prevOptions)
 			setTotalVotes(prevTotal)
-			toast.error("Failed to record vote. Please try again.")
+			toast.error(getApiErrorMessage(err))
 		}
 	}
 
@@ -575,9 +576,9 @@ function PostCard({
 					toast.success("Post unpinned")
 				}
 				committedPin.current = next
-			} catch {
+			} catch (err) {
 				setPinned(committedPin.current)
-				toast.error("Failed to update pin. Please try again.")
+				toast.error(getApiErrorMessage(err))
 			}
 		}, 500)
 	}
@@ -599,9 +600,9 @@ function PostCard({
 					await removeFeedPostReaction(communityId, post.id, REACTION_EMOJI)
 				}
 				committedReaction.current = next
-			} catch {
+			} catch (err) {
 				setReacted(committedReaction.current)
-				toast.error("Failed to update reaction. Please try again.")
+				toast.error(getApiErrorMessage(err))
 			}
 		}, 500)
 	}
@@ -626,9 +627,9 @@ function PostCard({
 				}
 				committedBookmark.current = next
 				window.dispatchEvent(new CustomEvent("feed:bookmark-changed", { detail: { communityId } }))
-			} catch {
+			} catch (err) {
 				setBookmarked(committedBookmark.current)
-				toast.error("Failed to update bookmark. Please try again.")
+				toast.error(getApiErrorMessage(err))
 			}
 		}, 500)
 	}
@@ -1024,8 +1025,8 @@ export function FeedTabContent({
 					setPosts(res.items)
 				}
 				setNextCursor(res.nextCursor)
-			} catch {
-				toast.error("Failed to load feed.")
+			} catch (err) {
+				toast.error(getApiErrorMessage(err))
 			}
 		},
 		[communityId],

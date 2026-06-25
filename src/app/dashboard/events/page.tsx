@@ -21,6 +21,7 @@ import UsersGroupSvg from "@/icons/outlined/users-group.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
 import { toast } from "sonner"
+import { getApiErrorMessage } from "@/lib/errors"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -220,8 +221,8 @@ export default function MyEventsPage() {
 			await deleteEvent(confirmDeleteId)
 			toast.success("Draft deleted")
 			setConfirmDeleteId(null)
-		} catch {
-			toast.error("Failed to delete draft")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setDeletingEventId(null)
 		}

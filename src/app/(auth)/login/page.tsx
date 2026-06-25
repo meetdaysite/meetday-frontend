@@ -14,6 +14,7 @@ import { PhoneField } from "@/components/auth/PhoneField"
 import { useAuth } from "@/context/AuthContext"
 import { useAuthSessionStore } from "@/store/authSessionStore"
 import { DEFAULT_COUNTRY, type Country } from "@/lib/countries"
+import { getApiErrorMessage } from "@/lib/errors"
 
 const schema = z.object({
 	phone: z
@@ -48,8 +49,8 @@ export default function LoginPage() {
 			setSession({ intent: "login", phone: `${country.dialCode}${phone}` })
 			toast.success("OTP sent to your phone!")
 			router.push("/verify")
-		} catch {
-			toast.error("Failed to send OTP. Please check the number and try again.")
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		} finally {
 			setLoading(false)
 		}
