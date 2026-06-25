@@ -6,9 +6,11 @@ import Image from "next/image"
 import { Icon } from "@/components/ui/Icon"
 import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 import AltArrowUpSvg from "@/icons/outlined/alt-arrow-up.svg"
-import PinSvg from "@/icons/outlined/pin.svg"
+import PinFilledSvg from "@/icons/filled/pin.svg"
 import LikeSvg from "@/icons/outlined/like.svg"
+import LikeFilledSvg from "@/icons/filled/like.svg"
 import BookmarkSvg from "@/icons/outlined/bookmark.svg"
+import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
 import ShieldCheckSvg from "@/icons/outlined/shield-check.svg"
 import {
 	getCommunityAnnouncements,
@@ -229,9 +231,9 @@ function AnnouncementCard({
 									}
 								}, 500)
 							}}
-							className={`flex items-center gap-1 text-[11px] font-medium transition-colors ${liked ? "text-text-brand" : "text-text-secondary hover:text-text-primary"}`}
+							className={`flex items-center gap-1 text-[11px] font-medium transition-colors ${liked ? "text-text-brand" : "text-text-secondary hover:text-text-brand"}`}
 						>
-							<Icon as={LikeSvg} size="sm" color={liked ? "brand" : "secondary"} />
+							<Icon as={liked ? LikeFilledSvg : LikeSvg} size="sm" color="inherit" />
 							{likeCount}
 						</button>
 						<button
@@ -259,9 +261,9 @@ function AnnouncementCard({
 									}
 								}, 500)
 							}}
-							className={`transition-colors ${bookmarked ? "text-text-brand" : "text-text-muted hover:text-text-primary"}`}
+							className={`transition-colors ${bookmarked ? "text-text-brand" : "text-text-muted hover:text-text-brand"}`}
 						>
-							<Icon as={BookmarkSvg} size="sm" color={bookmarked ? "brand" : "muted"} />
+							<Icon as={bookmarked ? BookmarkFilledSvg : BookmarkSvg} size="sm" color="inherit" />
 						</button>
 					</div>
 				</div>
@@ -270,7 +272,7 @@ function AnnouncementCard({
 			{/* Pin icon — top right, only for pinned announcements */}
 			{announcement.isPinned && (
 				<div className="absolute top-4 right-4 text-text-brand">
-					<Icon as={PinSvg} size="sm" color="brand" />
+					<Icon as={PinFilledSvg} size="sm" color="brand" />
 				</div>
 			)}
 		</div>

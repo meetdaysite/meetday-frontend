@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 import ChatSvg from "@/icons/outlined/chat.svg"
+import ChatDotsSvg from "@/icons/outlined/chat-dots.svg"
 import BellSvg from "@/icons/outlined/bell.svg"
 import PulseSvg from "@/icons/outlined/pulse.svg"
 import SmileCircleSvg from "@/icons/outlined/smile-circle.svg"
@@ -19,9 +20,11 @@ import CheckSvg from "@/icons/outlined/check.svg"
 import BookmarkSvg from "@/icons/outlined/bookmark.svg"
 import StarOutlinedSvg from "@/icons/outlined/star.svg"
 import VerifiedSvg from "@/icons/filled/verified-check.svg"
-import HeartsFilledSvg from "@/icons/filled/hearts.svg"
-import { getCommunityStats, getCommunityHosts, getCommunityMembers, getCommunityEvents } from "@/lib/api"
-import type { CommunityStats, CommunityHost, CommunityMember, CommunityEvent } from "@/lib/api"
+import HeartSvg from "@/icons/outlined/heart.svg"
+import FireSvg from "@/icons/outlined/fire.svg"
+import { avatarColor } from "@/lib/avatarColor"
+import { getCommunityStats, getCommunityHosts, getCommunityMembers, getCommunityEvents, getCommunityTrendingTopics, getCommunityPopularPosts, getCommunityBookmarkedPosts } from "@/lib/api"
+import type { CommunityStats, CommunityHost, CommunityMember, CommunityEvent, TrendingTopic, FeedPost } from "@/lib/api"
 
 // ─── Shared host avatar helper ─────────────────────────────────────────────────
 
@@ -712,6 +715,248 @@ function AnnouncementsTrustedHostsCard({ hosts }: { hosts: CommunityHost[] | nul
 }
 
 
+// ─── Feed: Popular Posts Card ─────────────────────────────────────────────────
+
+const WINDOW_OPTIONS = [
+	{ label: "This week", days: 7 },
+	{ label: "This month", days: 30 },
+]
+
+function PopularPostsCard({ communityId }: { communityId: string }) {
+	const [windowDays, setWindowDays] = useState(7)
+	const [posts, setPosts] = useState<FeedPost[]>([])
+	const [loading, setLoading] = useState(true)
+
+	useEffect(() => {
+		setLoading(true)
+		getCommunityPopularPosts(communityId, { windowDays, limit: 5 })
+			.then(setPosts)
+			.catch(() => setPosts([]))
+			.finally(() => setLoading(false))
+	}, [communityId, windowDays])
+
+	return (
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+			{/* Header */}
+			<div className="flex items-center justify-between gap-2 mb-3">
+				<span className="text-body-md font-semibold text-text-primary">Popular Posts</span>
+				{/* Window toggle */}
+				<div className="flex items-center gap-0.5 bg-surface-page border border-border-default rounded-full p-0.5">
+					{WINDOW_OPTIONS.map(opt => (
+						<button
+							key={opt.days}
+							type="button"
+							onClick={() => setWindowDays(opt.days)}
+							className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
+								windowDays === opt.days
+									? "bg-action-primary text-white"
+									: "text-text-secondary hover:text-text-primary"
+							}`}
+						>
+							{opt.label}
+						</button>
+					))}
+				</div>
+			</div>
+
+			{loading ? (
+				<div className="flex flex-col gap-3">
+					{[1, 2, 3].map(i => (
+						<div key={i} className="flex gap-2.5 animate-pulse">
+							<div className="size-8 rounded-full bg-surface-hover shrink-0" />
+							<div className="flex-1 flex flex-col gap-1.5">
+								<div className="h-2.5 w-20 bg-surface-hover rounded" />
+								<div className="h-3 w-full bg-surface-hover rounded" />
+								<div className="h-2.5 w-16 bg-surface-hover rounded" />
+							</div>
+						</div>
+					))}
+				</div>
+			) : posts.length === 0 ? (
+				<p className="text-label-sm text-text-muted text-center py-3">No popular posts yet.</p>
+			) : (
+				<div className="flex flex-col divide-y divide-border-default">
+					{posts.map(post => {
+						const authorInitials = post.author.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()
+						const color = avatarColor(post.author.name)
+						return (
+							<div key={post.id} className="flex items-start gap-2.5 py-3 first:pt-0 last:pb-0">
+								{/* Author avatar */}
+								{post.author.avatarUrl ? (
+									<div className="relative size-7 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
+										<Image src={post.author.avatarUrl} alt={post.author.name} fill sizes="28px" className="object-cover" />
+									</div>
+								) : (
+									<div className={`size-7 rounded-full ${color.bg} border ${color.border} flex items-center justify-center shrink-0`}>
+										<span className={`text-[9px] font-bold ${color.text}`}>{authorInitials}</span>
+									</div>
+								)}
+
+								<div className="flex-1 min-w-0">
+									<p className="text-[11px] font-semibold text-text-primary">{post.author.name}</p>
+									{post.content && (
+										<p className="text-[11px] text-text-secondary leading-snug mt-0.5 line-clamp-2">
+											{post.content}
+										</p>
+									)}
+									<div className="flex items-center gap-3 mt-1.5">
+										<span className="flex items-center gap-1 text-[10px] text-text-muted">
+											<Icon as={HeartSvg} size="xs" color="muted" />
+											{post.counts.reactions}
+										</span>
+										<span className="flex items-center gap-1 text-[10px] text-text-muted">
+											<Icon as={ChatDotsSvg} size="xs" color="muted" />
+											{post.counts.comments}
+										</span>
+									</div>
+								</div>
+							</div>
+						)
+					})}
+				</div>
+			)}
+		</div>
+	)
+}
+
+// ─── Feed: Saved Posts Card ───────────────────────────────────────────────────
+
+function SavedPostsCard({ communityId }: { communityId: string }) {
+	const [posts, setPosts] = useState<FeedPost[]>([])
+	const [loading, setLoading] = useState(true)
+
+	const fetchPosts = useCallback(() => {
+		getCommunityBookmarkedPosts(communityId)
+			.then(setPosts)
+			.catch(() => setPosts([]))
+			.finally(() => setLoading(false))
+	}, [communityId])
+
+	useEffect(() => { fetchPosts() }, [fetchPosts])
+
+	useEffect(() => {
+		const handler = (e: Event) => {
+			if ((e as CustomEvent<{ communityId: string }>).detail?.communityId === communityId) fetchPosts()
+		}
+		window.addEventListener("feed:bookmark-changed", handler)
+		return () => window.removeEventListener("feed:bookmark-changed", handler)
+	}, [communityId, fetchPosts])
+
+	if (!loading && posts.length === 0) return null
+
+	return (
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+			<div className="flex items-center justify-between gap-2 mb-3">
+				<div className="flex items-center gap-2">
+					<Icon as={BookmarkSvg} size="sm" color="brand" />
+					<span className="text-body-md font-semibold text-text-primary">Saved Posts</span>
+				</div>
+				<span className="text-[11px] text-text-muted font-medium">
+					{!loading ? `${posts.length} saved` : ""}
+				</span>
+			</div>
+
+			{loading ? (
+				<div className="flex flex-col gap-3">
+					{[1, 2].map(i => (
+						<div key={i} className="flex gap-2.5 animate-pulse">
+							<div className="size-7 rounded-full bg-surface-hover shrink-0" />
+							<div className="flex-1 flex flex-col gap-1.5">
+								<div className="h-2.5 w-20 bg-surface-hover rounded" />
+								<div className="h-3 w-full bg-surface-hover rounded" />
+							</div>
+						</div>
+					))}
+				</div>
+			) : (
+				<div className="flex flex-col divide-y divide-border-default">
+					{posts.map(post => {
+						const authorInitials = post.author.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()
+						const color = avatarColor(post.author.name)
+						return (
+							<div key={post.id} className="flex items-start gap-2.5 py-3 first:pt-0 last:pb-0">
+								{post.author.avatarUrl ? (
+									<div className="relative size-7 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
+										<Image src={post.author.avatarUrl} alt={post.author.name} fill sizes="28px" className="object-cover" />
+									</div>
+								) : (
+									<div className={`size-7 rounded-full ${color.bg} border ${color.border} flex items-center justify-center shrink-0`}>
+										<span className={`text-[9px] font-bold ${color.text}`}>{authorInitials}</span>
+									</div>
+								)}
+								<div className="flex-1 min-w-0">
+									<p className="text-[11px] font-semibold text-text-primary">{post.author.name}</p>
+									{post.content && (
+										<p className="text-[11px] text-text-secondary leading-snug mt-0.5 line-clamp-2">
+											{post.content}
+										</p>
+									)}
+									{post.mediaUrls.length > 0 && !post.content && (
+										<p className="text-[11px] text-text-muted italic mt-0.5">Photo post</p>
+									)}
+									{post.poll && !post.content && (
+										<p className="text-[11px] text-text-muted italic mt-0.5">Poll · {post.poll.totalVotes} votes</p>
+									)}
+								</div>
+							</div>
+						)
+					})}
+				</div>
+			)}
+		</div>
+	)
+}
+
+// ─── Feed: Trending Topics Card ───────────────────────────────────────────────
+
+const TOPICS_PREVIEW = 5
+
+function TrendingTopicsCard({ communityId }: { communityId: string }) {
+	const [topics, setTopics] = useState<TrendingTopic[]>([])
+	const [expanded, setExpanded] = useState(false)
+
+	useEffect(() => {
+		getCommunityTrendingTopics(communityId, { limit: 10 }).then(setTopics).catch(() => {})
+	}, [communityId])
+
+	if (topics.length === 0) return null
+
+	const visible = expanded ? topics : topics.slice(0, TOPICS_PREVIEW)
+	const hasMore = topics.length > TOPICS_PREVIEW
+
+	return (
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+			<div className="flex items-center justify-between gap-2 mb-4">
+				<span className="text-body-md font-semibold text-text-primary">Trending Topics</span>
+				{hasMore && (
+					<button
+						type="button"
+						onClick={() => setExpanded(e => !e)}
+						className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0"
+					>
+						{expanded ? "Show less" : "See all"}
+						<Icon as={ArrowRightSvg} size="xs" color="brand" className={expanded ? "rotate-180" : ""} />
+					</button>
+				)}
+			</div>
+
+			<div className="flex flex-col gap-2.5">
+				{visible.map((t, i) => (
+					<div key={t.topic} className="flex items-center gap-3">
+						<Icon as={FireSvg} size="sm" color="brand" className="shrink-0" />
+						<span className="flex-1 text-label-sm font-normal text-text-primary truncate">
+							{t.topic}
+						</span>
+						<span className="text-[11px] text-text-muted font-medium shrink-0 tabular-nums">
+							{t.postCount} {t.postCount === 1 ? "post" : "posts"}
+						</span>
+					</div>
+				))}
+			</div>
+		</div>
+	)
+}
+
 // ─── Composed Side Panel ──────────────────────────────────────────────────────
 
 export function CommunitySidePanel({
@@ -769,7 +1014,12 @@ export function CommunitySidePanel({
 
 	if (activeTab === "feed") {
 		return (
-			<CommunityGuidelinesCard />
+			<>
+				<TrendingTopicsCard communityId={communityId} />
+				<PopularPostsCard communityId={communityId} />
+				<SavedPostsCard communityId={communityId} />
+				<CommunityGuidelinesCard />
+			</>
 		)
 	}
 

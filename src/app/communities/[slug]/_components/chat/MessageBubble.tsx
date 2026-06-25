@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import { Icon } from "@/components/ui/Icon"
 import PinSvg from "@/icons/outlined/pin.svg"
+import PinFilledSvg from "@/icons/filled/pin.svg"
 import DotsSvg from "@/icons/outlined/dots.svg"
-import ChatSvg from "@/icons/outlined/chat.svg"
+import ChatDotsSvg from "@/icons/outlined/chat-dots.svg"
 import SmileCircleSvg from "@/icons/outlined/smile-circle.svg"
 import { ReactionBar } from "./ReactionBar"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
@@ -168,7 +169,7 @@ export function MessageBubble({
 							onClick={() => onReply(message.id)}
 							className="flex items-center gap-1 mt-1.5 text-[11px] text-text-brand hover:underline"
 						>
-							<Icon as={ChatSvg} size="xs" color="brand" />
+							<Icon as={ChatDotsSvg} size="xs" color="brand" />
 							{message.replyCount} {message.replyCount === 1 ? "reply" : "replies"}
 						</button>
 					)}
@@ -211,10 +212,10 @@ export function MessageBubble({
 						<button
 							type="button"
 							onClick={() => onUnpin(message.id)}
-							className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors"
+							className="p-1 rounded text-text-brand hover:text-text-brand hover:bg-surface-hover transition-colors"
 							title="Unpin"
 						>
-							<Icon as={PinSvg} size="sm" color="muted" />
+							<Icon as={PinFilledSvg} size="sm" color="brand" />
 						</button>
 					)}
 
@@ -247,8 +248,9 @@ export function MessageBubble({
 											onPin(message.id)
 											setMenuOpen(false)
 										}}
-										className="w-full text-left px-3 py-1.5 text-text-primary hover:bg-surface-hover transition-colors"
+										className="group w-full flex items-center gap-2 px-3 py-1.5 text-text-primary hover:text-text-brand hover:bg-surface-hover transition-colors"
 									>
+										<Icon as={PinSvg} size="sm" color="inherit" />
 										Pin message
 									</button>
 								)}

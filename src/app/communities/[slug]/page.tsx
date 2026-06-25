@@ -11,7 +11,8 @@ import LockSvg from "@/icons/outlined/lock.svg"
 import BoltSvg from "@/icons/outlined/bolt.svg"
 import { Button } from "@/components/ui/Button"
 import { useAuthStore } from "@/store/authStore"
-import { getCommunityBySlug, joinCommunity, leaveCommunity, getAnnouncementUnreadCount, markAnnouncementsRead } from "@/lib/api"
+import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
+import { getCommunityBySlug, joinCommunity, leaveCommunity, getAnnouncementUnreadCount, markAnnouncementsRead, getCommunityMembers } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import type { CommunityDetailResponse, ProfileVisibility, CommunityRole } from "@/lib/api"
 import { CommunityHero } from "./_components/CommunityHero"
@@ -161,7 +162,7 @@ function TabContent({
 		/>
 	)
 	if (activeTab === "announcements") return <AnnouncementsTabContent communityId={community.id} />
-	if (activeTab === "feed") return <FeedTabContent />
+	if (activeTab === "feed") return <FeedTabContent communityId={community.id} currentUserRole={currentUserRole} />
 	if (activeTab === "members") return <MembersTabContent communityId={community.id} />
 
 	return (
@@ -204,9 +205,11 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 
 	const user = useAuthStore(s => s.user)
 	const authLoading = useAuthStore(s => s.authLoading)
+	const profileId = useAttendeeProfileStore(s => s.profile?.id ?? null)
 
 	const [apiData, setApiData] = useState<CommunityDetailResponse | null | "loading">("loading")
 	const [isMember, setIsMember] = useState(false)
+	const [currentUserRole, setCurrentUserRole] = useState<CommunityRole | null>(null)
 	const [activeTab, setActiveTab] = useState<TabKey>("overview")
 	const [announcementUnreadCount, setAnnouncementUnreadCount] = useState(0)
 	const [joinModalOpen, setJoinModalOpen] = useState(false)
@@ -232,11 +235,16 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 			.catch(() => {/* silent */})
 	}, [user, apiData])
 
-	const currentUserRole: CommunityRole | null = (() => {
-		if (!apiData || apiData === "loading" || !user) return null
-		const member = apiData.members.find(m => m.userId === user.uid)
-		return (member?.role as CommunityRole) ?? null
-	})()
+	// Fetch current user's role from members list — community detail members array may be partial
+	useEffect(() => {
+		if (!profileId || !apiData || apiData === "loading" || !apiData.isMember) return
+		getCommunityMembers(apiData.id, { limit: 500 })
+			.then(res => {
+				const me = res.data.find(m => m.userId === profileId)
+				setCurrentUserRole((me?.role as CommunityRole) ?? null)
+			})
+			.catch(() => setCurrentUserRole(null))
+	}, [profileId, apiData])
 
 	if (apiData === "loading") return <CommunityPageSkeleton />
 	if (!apiData) notFound()

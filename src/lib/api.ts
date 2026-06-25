@@ -932,7 +932,7 @@ export async function getCommunityAnnouncements(
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
-	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO"
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA"
 	contentType: string
 	resourceId?: string
 	mediaType?: string
@@ -949,6 +949,240 @@ export async function getUploadUrl(payload: UploadUrlPayload): Promise<UploadUrl
 		payload,
 	)
 	return { url: data.data.uploadUrl, key: data.data.key }
+}
+
+// ─── Community Feed ───────────────────────────────────────────────────────────
+
+export type FeedPostType = "TEXT" | "PHOTO" | "POLL"
+export type FeedPostCategory = "GENERAL" | "MEMORIES" | "RECOMMENDATION" | "QUESTION" | "POLL"
+
+export type CreateFeedPostPayload = {
+	postType: FeedPostType
+	category: FeedPostCategory
+	content?: string
+	mediaKeys?: string[]
+	topic?: string
+	eventId?: string
+	pollOptions?: string[]
+}
+
+export type FeedPollOption = {
+	id: string
+	text: string
+	voteCount: number
+}
+
+export type FeedPost = {
+	id: string
+	communityId: string
+	postType: FeedPostType
+	category: FeedPostCategory
+	topic: string | null
+	content: string | null
+	mediaUrls: string[]
+	author: {
+		id: string
+		name: string
+		avatarUrl: string | null
+		badge: string | null
+	}
+	event: {
+		id: string
+		title: string
+		eventDate: string
+		city: string
+	} | null
+	poll: {
+		totalVotes: number
+		myVote: string | null
+		options: FeedPollOption[]
+	} | null
+	isPinned: boolean
+	counts: {
+		reactions: number
+		comments: number
+		shares: number
+		views: number
+		bookmarks: number
+	}
+	reactedByMe: boolean
+	myReactions: string[]
+	bookmarkedByMe: boolean
+	sharedByMe: boolean
+	createdAt: string
+}
+
+export async function createCommunityFeedPost(
+	communityId: string,
+	payload: CreateFeedPostPayload,
+): Promise<FeedPost> {
+	const { data } = await apiClient.post<{ success: boolean; data: FeedPost }>(
+		`/communities/${communityId}/feed/posts`,
+		payload,
+	)
+	return data.data
+}
+
+export type UpdateFeedPostPayload = {
+	content?: string
+	mediaKeys?: string[]
+	category?: FeedPostCategory
+	topic?: string
+}
+
+export async function updateCommunityFeedPost(
+	communityId: string,
+	postId: string,
+	payload: UpdateFeedPostPayload,
+): Promise<FeedPost> {
+	const { data } = await apiClient.patch<{ success: boolean; data: FeedPost }>(
+		`/communities/${communityId}/feed/posts/${postId}`,
+		payload,
+	)
+	return data.data
+}
+
+export type FeedPostsParams = {
+	cursor?: string
+	limit?: number
+	category?: FeedPostCategory
+	topic?: string
+}
+
+export type FeedPostsResponse = {
+	items: FeedPost[]
+	nextCursor: string | null
+}
+
+export async function getCommunityFeedPosts(
+	communityId: string,
+	params?: FeedPostsParams,
+): Promise<FeedPostsResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: FeedPostsResponse }>(
+		`/communities/${communityId}/feed/posts`,
+		{ params },
+	)
+	return data.data
+}
+
+export async function getCommunityFeedPost(communityId: string, postId: string): Promise<FeedPost> {
+	const { data } = await apiClient.get<{ success: boolean; data: FeedPost }>(
+		`/communities/${communityId}/feed/posts/${postId}`,
+	)
+	return data.data
+}
+
+export type TrendingTopic = {
+	topic: string
+	postCount: number
+}
+
+export async function getCommunityTrendingTopics(
+	communityId: string,
+	params?: { windowDays?: number; limit?: number },
+): Promise<TrendingTopic[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: TrendingTopic[] }>(
+		`/communities/${communityId}/feed/trending-topics`,
+		{ params },
+	)
+	return data.data
+}
+
+export async function getCommunityPopularPosts(
+	communityId: string,
+	params?: { windowDays?: number; limit?: number },
+): Promise<FeedPost[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: FeedPost[] }>(
+		`/communities/${communityId}/feed/popular`,
+		{ params },
+	)
+	return data.data
+}
+
+export async function viewFeedPost(communityId: string, postId: string): Promise<void> {
+	await apiClient.post(`/communities/${communityId}/feed/posts/${postId}/view`)
+}
+
+// ─── Feed Comments ─────────────────────────────────────────────────────────────
+
+export type FeedComment = {
+	id: string
+	postId: string
+	content: string
+	createdAt: string
+	author: { id: string; name: string; avatarUrl: string | null }
+}
+
+export type FeedCommentsResponse = {
+	comments: FeedComment[]
+	nextCursor: string | null
+}
+
+export async function getFeedPostComments(
+	communityId: string,
+	postId: string,
+	params?: { cursor?: string; limit?: number },
+): Promise<FeedCommentsResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: FeedCommentsResponse }>(
+		`/communities/${communityId}/feed/posts/${postId}/comments`,
+		{ params },
+	)
+	return data.data
+}
+
+export async function addFeedPostComment(
+	communityId: string,
+	postId: string,
+	content: string,
+): Promise<FeedComment> {
+	const { data } = await apiClient.post<{ success: boolean; data: FeedComment }>(
+		`/communities/${communityId}/feed/posts/${postId}/comments`,
+		{ content },
+	)
+	return data.data
+}
+
+export async function deleteFeedPostComment(
+	communityId: string,
+	postId: string,
+	commentId: string,
+): Promise<void> {
+	await apiClient.delete(`/communities/${communityId}/feed/posts/${postId}/comments/${commentId}`)
+}
+
+export async function voteFeedPoll(communityId: string, postId: string, optionId: string): Promise<void> {
+	await apiClient.post(`/communities/${communityId}/feed/posts/${postId}/poll/vote`, { optionId })
+}
+
+export async function pinFeedPost(communityId: string, postId: string): Promise<void> {
+	await apiClient.post(`/communities/${communityId}/feed/posts/${postId}/pin`)
+}
+
+export async function unpinFeedPost(communityId: string, postId: string): Promise<void> {
+	await apiClient.delete(`/communities/${communityId}/feed/posts/${postId}/pin`)
+}
+
+export async function addFeedPostReaction(communityId: string, postId: string, emoji: string): Promise<void> {
+	await apiClient.post(`/communities/${communityId}/feed/posts/${postId}/reactions`, { emoji })
+}
+
+export async function removeFeedPostReaction(communityId: string, postId: string, emoji: string): Promise<void> {
+	await apiClient.delete(`/communities/${communityId}/feed/posts/${postId}/reactions`, { data: { emoji } })
+}
+
+export async function bookmarkFeedPost(communityId: string, postId: string): Promise<void> {
+	await apiClient.post(`/communities/${communityId}/feed/posts/${postId}/bookmark`)
+}
+
+export async function unbookmarkFeedPost(communityId: string, postId: string): Promise<void> {
+	await apiClient.delete(`/communities/${communityId}/feed/posts/${postId}/bookmark`)
+}
+
+export async function getCommunityBookmarkedPosts(communityId: string): Promise<FeedPost[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: FeedPost[] }>(
+		`/communities/${communityId}/feed/bookmarks`,
+	)
+	return data.data
 }
 
 // ─── AI Copilot ───────────────────────────────────────────────────────────────

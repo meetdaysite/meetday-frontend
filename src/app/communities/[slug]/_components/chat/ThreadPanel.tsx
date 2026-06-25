@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import Image from "next/image"
 import { Icon } from "@/components/ui/Icon"
 import CloseSvg from "@/icons/outlined/close.svg"
-import ChatSvg from "@/icons/outlined/chat.svg"
+import ChatDotsSvg from "@/icons/outlined/chat-dots.svg"
 import { getMessageReplies } from "@/lib/chatApi"
 import { MessageInput } from "./MessageInput"
 import { avatarColor } from "@/lib/avatarColor"
@@ -76,7 +76,7 @@ export function ThreadPanel({
 			{/* Header */}
 			<div className="flex items-center justify-between px-4 py-3 border-b border-violet-100 bg-violet-50/60 shrink-0">
 				<div className="flex items-center gap-2">
-					<Icon as={ChatSvg} size="sm" color="vibe" />
+					<Icon as={ChatDotsSvg} size="sm" color="vibe" />
 					<span className="text-body-sm font-semibold text-violet-700">Thread</span>
 				</div>
 				<button
