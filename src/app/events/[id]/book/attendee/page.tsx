@@ -9,7 +9,8 @@ import { Checkbox } from "@/components/ui/Checkbox"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
 import { useBookingStore } from "@/store/bookingStore"
-import { createOrder, mockConfirmOrder, getOrderDetail } from "@/lib/ordersApi"
+import { createOrder, getOrderDetail, initiatePayment, verifyPayment } from "@/lib/ordersApi"
+import { getApiErrorMessage } from "@/lib/errors"
 import { getPublicEventDetails } from "@/lib/api"
 import type { PublicEventDetails } from "@/types/attendee"
 import { EventPreviewBar } from "../_components/EventPreviewBar"
@@ -37,6 +38,15 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 
 	const [submitting, setSubmitting] = useState(false)
 	const [submitError, setSubmitError] = useState<string | null>(null)
+
+	useEffect(() => {
+		if (document.getElementById("razorpay-checkout-js")) return
+		const script = document.createElement("script")
+		script.id = "razorpay-checkout-js"
+		script.src = "https://checkout.razorpay.com/v1/checkout.js"
+		script.async = true
+		document.head.appendChild(script)
+	}, [])
 
 	const selectedTickets = event.tickets.filter((t) => (quantities[t.id] ?? 0) > 0)
 	const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0)
@@ -89,18 +99,46 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 
 			setPendingOrderId(order.id)
 
-			if (process.env.NODE_ENV !== "production") {
-				await mockConfirmOrder(order.id)
-			}
+			const { razorpayOrderId, amount, currency, keyId } = await initiatePayment(order.id)
 
-			const confirmed = await getOrderDetail(order.id)
-			setConfirmedOrder(confirmed)
-			router.push(`/events/${event.id}/book/confirmed?orderId=${order.id}`)
+			const rzp = new window.Razorpay({
+				key: keyId,
+				amount,
+				currency,
+				order_id: razorpayOrderId,
+				name: "Meetday",
+				description: "Event Ticket",
+				handler: async (response) => {
+					try {
+						await verifyPayment({
+							razorpayOrderId: response.razorpay_order_id,
+							razorpayPaymentId: response.razorpay_payment_id,
+							razorpaySignature: response.razorpay_signature,
+							internalOrderId: order.id,
+						})
+						const confirmed = await getOrderDetail(order.id)
+						setConfirmedOrder(confirmed)
+						router.push(`/events/${event.id}/book/confirmed?orderId=${order.id}`)
+					} catch (err: unknown) {
+						setSubmitError(getApiErrorMessage(err))
+						setSubmitting(false)
+					}
+				},
+				modal: {
+					ondismiss: () => {
+						setSubmitting(false)
+					},
+				},
+			})
+
+			rzp.on("payment.failed", (response) => {
+				setSubmitError(`Payment failed: ${response.error.description}`)
+				setSubmitting(false)
+			})
+
+			rzp.open()
 		} catch (err: unknown) {
-			const message =
-				err instanceof Error ? err.message : "Something went wrong. Please try again."
-			setSubmitError(message)
-		} finally {
+			setSubmitError(getApiErrorMessage(err))
 			setSubmitting(false)
 		}
 	}

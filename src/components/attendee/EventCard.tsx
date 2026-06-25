@@ -82,7 +82,7 @@ export function EventCard({ event, className, communityName }: EventCardProps) {
 				{event.eventType}
 			</span>
 
-			<div className="relative z-10 flex flex-col h-full p-4">
+<div className="relative z-10 flex flex-col h-full p-4">
 				<div className="font-medium">
 					<p className="text-white text-body-md leading-tight drop-shadow">
 						{fmtDate(event.eventDate)}

@@ -1,13 +1,22 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
 import VerifiedSvg from "@/icons/filled/verified-check.svg"
+import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import MapPointSvg from "@/icons/outlined/map-point.svg"
 import BookmarkSvg from "@/icons/outlined/bookmark.svg"
 import BoltSvg from "@/icons/outlined/bolt.svg"
 import CheckSvg from "@/icons/outlined/check.svg"
+import { useAuthStore } from "@/store/authStore"
+import { saveCommunity, unsaveCommunity } from "@/lib/api"
+import { getApiErrorMessage } from "@/lib/errors"
+import { toast } from "sonner"
 
 export interface CommunityDetails {
 	id: string
@@ -31,16 +40,48 @@ function fmtCount(n: number): string {
 export function CommunityHero({
 	community,
 	isMember,
+	isSaved: initialSaved = false,
 	onJoinClick,
 	onLeaveClick,
 }: {
 	community: CommunityDetails
 	isMember: boolean
+	isSaved?: boolean
 	onJoinClick: () => void
 	onLeaveClick: () => void
 }) {
+	const router = useRouter()
+	const user = useAuthStore((s) => s.user)
+	const [saved, setSaved] = useState(initialSaved)
+	const [saving, setSaving] = useState(false)
+
 	const isManaged = community.type === "MEETDAY_MANAGED_PUBLIC"
 	const visibilityLabel = community.access === "PUBLIC" ? "Public" : "Private"
+
+	async function handleSave() {
+		if (!user) {
+			router.push(`/attendee/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+			return
+		}
+		if (saving) return
+		const next = !saved
+		setSaved(next)
+		setSaving(true)
+		try {
+			if (next) {
+				await saveCommunity(community.id)
+				toast.success("Community saved", { description: "Find it anytime in your saved list." })
+			} else {
+				await unsaveCommunity(community.id)
+				toast.success("Community removed from saved")
+			}
+		} catch (err) {
+			setSaved(!next)
+			toast.error(getApiErrorMessage(err))
+		} finally {
+			setSaving(false)
+		}
+	}
 
 	return (
 		<div className="rounded-panel overflow-hidden bg-neutral-950 border border-neutral-800 relative min-h-64">
@@ -150,10 +191,12 @@ export function CommunityHero({
 						variant="secondary"
 						size="md"
 						radius="pill"
-						leftIcon={<Icon as={BookmarkSvg} size="sm" color="inverse" />}
+						leftIcon={<Icon as={saved ? BookmarkFilledSvg : BookmarkSvg} size="sm" color="inverse" />}
 						className="border-white/20 text-white bg-white/5 hover:bg-white/10"
+						onClick={handleSave}
+						disabled={saving}
 					>
-						Save
+						{saved ? "Saved" : "Save"}
 					</Button>
 				</div>
 			</div>

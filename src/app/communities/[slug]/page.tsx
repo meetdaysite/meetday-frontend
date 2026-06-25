@@ -306,7 +306,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 				<div className="flex gap-8 items-start">
 					{/* Left: main content */}
 					<div className="flex-1 min-w-0 flex flex-col gap-5">
-						<CommunityHero community={community} isMember={isMember} onJoinClick={openJoinModal} onLeaveClick={() => setLeaveModalOpen(true)} />
+						<CommunityHero community={community} isMember={isMember} isSaved={apiData.isSaved} onJoinClick={openJoinModal} onLeaveClick={() => setLeaveModalOpen(true)} />
 
 						{/* Tabs row */}
 						<div className="flex items-center gap-1 overflow-x-auto no-scrollbar">

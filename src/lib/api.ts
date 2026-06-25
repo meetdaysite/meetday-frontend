@@ -435,7 +435,7 @@ export async function getEventAttendees(
 
 // ─── Public events ────────────────────────────────────────────────────────────
 
-import type { ExploreEventsResponse, PublicEventDetails } from "@/types/attendee"
+import type { ExploreEventsResponse, PublicEventDetails, SavedEventsResponse } from "@/types/attendee"
 
 export type PublicEventsParams = {
 	city?: string
@@ -453,13 +453,8 @@ export type PublicEventsParams = {
 
 export async function getPublicEventDetails(id: string): Promise<PublicEventDetails | null> {
 	try {
-		const res = await fetch(
-			`${process.env.NEXT_PUBLIC_API_BASE_URL}/events/${id}/public`,
-			{ next: { revalidate: 60 } },
-		)
-		if (!res.ok) return null
-		const json = await res.json()
-		return (json.data as PublicEventDetails) ?? null
+		const { data } = await apiClient.get<{ success: boolean; data: PublicEventDetails }>(`/events/${id}/public`)
+		return data.data ?? null
 	} catch {
 		return null
 	}
@@ -472,6 +467,19 @@ export async function getPublicEvents(params?: PublicEventsParams): Promise<Expl
 		paramsSerializer: { indexes: null },
 	})
 	return data.data
+}
+
+export async function getSavedEvents(params?: { page?: number; limit?: number }): Promise<SavedEventsResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: SavedEventsResponse }>("/events/saved", { params })
+	return data.data
+}
+
+export async function saveEvent(eventId: string): Promise<void> {
+	await apiClient.post(`/events/${eventId}/save`)
+}
+
+export async function unsaveEvent(eventId: string): Promise<void> {
+	await apiClient.delete(`/events/${eventId}/save`)
 }
 
 // ─── Attendee profile ─────────────────────────────────────────────────────────
@@ -650,6 +658,7 @@ export type CommunityDetailResponse = {
 	coverImageUrl: string
 	iconUrl: string
 	isMember: boolean
+	isSaved: boolean
 }
 
 export async function getCommunityBySlug(slug: string): Promise<CommunityDetailResponse | null> {
@@ -700,6 +709,47 @@ export async function joinCommunity(
 
 export async function leaveCommunity(communityId: string): Promise<void> {
 	await apiClient.delete(`/communities/${communityId}/leave`)
+}
+
+export async function saveCommunity(communityId: string): Promise<void> {
+	await apiClient.post(`/communities/${communityId}/save`)
+}
+
+export async function unsaveCommunity(communityId: string): Promise<void> {
+	await apiClient.delete(`/communities/${communityId}/save`)
+}
+
+export interface SavedCommunity extends PublicCommunity {
+	isSaved: true
+}
+
+export interface CommunitiesPageResponse {
+	data: PublicCommunity[]
+	total: number
+	page: number
+	limit: number
+}
+
+export async function getJoinedCommunities(params?: {
+	page?: number
+	limit?: number
+}): Promise<CommunitiesPageResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: CommunitiesPageResponse }>(
+		"/communities/joined",
+		{ params },
+	)
+	return data.data
+}
+
+export async function getSavedCommunities(params?: {
+	page?: number
+	limit?: number
+}): Promise<CommunitiesPageResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: CommunitiesPageResponse }>(
+		"/communities/saved",
+		{ params },
+	)
+	return data.data
 }
 
 export type CommunityRole = "OWNER" | "MANAGER" | "HOST" | "MODERATOR" | "MEMBER"

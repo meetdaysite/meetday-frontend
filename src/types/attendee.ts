@@ -25,6 +25,17 @@ export interface ExploreEventsResponse {
 	limit: number
 }
 
+export interface SavedEvent extends ExploreEvent {
+	isSaved: true
+}
+
+export interface SavedEventsResponse {
+	data: SavedEvent[]
+	total: number
+	page: number
+	limit: number
+}
+
 // ─── Public event details (GET /events/:id/public) ───────────────────────────
 
 export interface PublicHostProfile {
@@ -100,6 +111,7 @@ export interface PublicEventDetails {
 		reviewCount: number
 		recentReviews: unknown[]
 	}
+	isSaved: boolean
 }
 
 export interface AttendeeProfile {

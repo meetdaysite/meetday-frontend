@@ -18,13 +18,15 @@ import MapPointSvg from "@/icons/outlined/map-point.svg"
 import CopySvg from "@/icons/outlined/copy.svg"
 import GiftSvg from "@/icons/outlined/gift.svg"
 import { getMyOrders } from "@/lib/ordersApi"
-import { getPublicEventDetails, getPublicEvents } from "@/lib/api"
+import { getPublicEventDetails, getPublicEvents, getSavedEvents } from "@/lib/api"
 import { downloadICS, generateICSContent } from "@/lib/icsUtils"
 import { useAuthStore } from "@/store/authStore"
+import { EventCard } from "@/components/attendee/EventCard"
+import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
 import type { MyOrderListItem } from "@/types/order"
-import type { PublicEventDetails, ExploreEvent } from "@/types/attendee"
+import type { PublicEventDetails, ExploreEvent, SavedEvent } from "@/types/attendee"
 
-type Tab = "upcoming" | "past" | "cancelled"
+type Tab = "upcoming" | "past" | "cancelled" | "saved"
 
 function daysFromNow(isoDate: string): number {
 	const today = new Date()
@@ -75,14 +77,16 @@ function copyToClipboard(text: string) {
 function StatsBar({
 	upcomingCount,
 	attendedCount,
+	savedCount,
 }: {
 	upcomingCount: number
 	attendedCount: number
+	savedCount: number
 }) {
 	const stats = [
 		{ label: "Upcoming", value: upcomingCount, color: "text-text-brand" },
 		{ label: "Attended", value: attendedCount, color: "text-icon-success" },
-		{ label: "Points Earned", value: "—", color: "text-amber-500" },
+		{ label: "Saved", value: savedCount, color: "text-amber-500" },
 		{ label: "People Met", value: "—", color: "text-purple-500" },
 	]
 	return (
@@ -150,7 +154,7 @@ function MyEventCard({
 }: {
 	order: MyOrderListItem
 	eventDetails: PublicEventDetails | null
-	tab: Tab
+	tab: "upcoming" | "past" | "cancelled"
 }) {
 	const [copied, setCopied] = useState(false)
 	const router = useRouter()
@@ -355,25 +359,34 @@ function MyEventCard({
 // ─── Empty tab state (has orders but current tab is empty) ────────────────────
 
 function EmptyTabState({ tab }: { tab: Tab }) {
-	const msgs: Record<Tab, { title: string; body: string }> = {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const msgs: Record<Tab, { title: string; body: string; icon: any }> = {
 		upcoming: {
 			title: "No upcoming experiences",
 			body: "Book your next experience and it'll show up here.",
+			icon: TicketSvg,
 		},
 		past: {
 			title: "No attended experiences yet",
 			body: "Experiences you've attended will appear here after they happen.",
+			icon: TicketSvg,
 		},
 		cancelled: {
 			title: "No cancelled experiences",
 			body: "You haven't cancelled any bookings.",
+			icon: TicketSvg,
+		},
+		saved: {
+			title: "No saved experiences yet",
+			body: "Tap the bookmark on any event to save it here for later.",
+			icon: BookmarkFilledSvg,
 		},
 	}
-	const { title, body } = msgs[tab]
+	const { title, body, icon } = msgs[tab]
 	return (
 		<div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
 			<div className="size-14 rounded-full bg-surface-secondary flex items-center justify-center">
-				<Icon as={TicketSvg} size="lg" color="muted" />
+				<Icon as={icon} size="lg" color="muted" />
 			</div>
 			<div>
 				<p className="text-body-md font-bold text-text-primary">{title}</p>
@@ -383,7 +396,7 @@ function EmptyTabState({ tab }: { tab: Tab }) {
 				<Link href="/explore">
 					<Button variant="primary" size="sm" radius="pill">
 						Browse Experiences →
-</Button>
+					</Button>
 				</Link>
 			)}
 		</div>
@@ -658,6 +671,7 @@ function MyEventsPageInner() {
 	const [eventDetailsMap, setEventDetailsMap] = useState<Map<string, PublicEventDetails | null>>(
 		new Map(),
 	)
+	const [savedEvents, setSavedEvents] = useState<SavedEvent[]>([])
 	const [recommendations, setRecommendations] = useState<ExploreEvent[]>([])
 	const [loading, setLoading] = useState(true)
 	const [activeTab, setActiveTab] = useState<Tab>("upcoming")
@@ -667,8 +681,12 @@ function MyEventsPageInner() {
 
 		const load = async () => {
 			try {
-				const allOrders = await getMyOrders()
+				const [allOrders, savedRes] = await Promise.all([
+					getMyOrders(),
+					getSavedEvents({ limit: 20 }).catch(() => ({ data: [], total: 0, page: 1, limit: 20 })),
+				])
 				setOrders(allOrders)
+				setSavedEvents(savedRes.data)
 
 				const uniqueEventIds = [...new Set(allOrders.map((o) => o.event.id))]
 				const detailsArray = await Promise.all(
@@ -714,18 +732,19 @@ function MyEventsPageInner() {
 	)
 	const cancelledOrders = allOrders.filter((o) => o.status === "CANCELLED")
 
-	const tabOrders: Record<Tab, MyOrderListItem[]> = {
+	const tabOrders: Record<"upcoming" | "past" | "cancelled", MyOrderListItem[]> = {
 		upcoming: upcomingOrders,
 		past: pastOrders,
 		cancelled: cancelledOrders,
 	}
-	const filteredOrders = tabOrders[activeTab]
+	const filteredOrders = activeTab !== "saved" ? tabOrders[activeTab] : []
 	const hasAnyOrders = allOrders.length > 0
 
 	const tabs: { key: Tab; label: string; count: number }[] = [
 		{ key: "upcoming", label: "Upcoming", count: upcomingOrders.length },
 		{ key: "past", label: "Past", count: pastOrders.length },
 		{ key: "cancelled", label: "Cancelled", count: cancelledOrders.length },
+		{ key: "saved", label: "Saved", count: savedEvents.length },
 	]
 
 	return (
@@ -740,11 +759,12 @@ function MyEventsPageInner() {
 				</div>
 
 				{/* Stats */}
-				{hasAnyOrders && (
+				{(hasAnyOrders || savedEvents.length > 0) && (
 					<div className="mb-6">
 						<StatsBar
 							upcomingCount={upcomingOrders.length}
 							attendedCount={pastOrders.length}
+							savedCount={savedEvents.length}
 						/>
 					</div>
 				)}
@@ -753,58 +773,66 @@ function MyEventsPageInner() {
 				<div className="flex gap-8 items-start">
 					{/* Left */}
 					<div className="flex-1 min-w-0 flex flex-col gap-4">
-						{hasAnyOrders ? (
-							<>
-								{/* Tabs */}
-								<div className="flex items-center gap-1 border-b border-border-default">
-									{tabs.map((tab) => (
-										<button
-											key={tab.key}
-											type="button"
-											onClick={() => setActiveTab(tab.key)}
+						{/* Tabs — always visible */}
+						<div className="flex items-center gap-1 border-b border-border-default">
+							{tabs.map((tab) => (
+								<button
+									key={tab.key}
+									type="button"
+									onClick={() => setActiveTab(tab.key)}
+									className={clsx(
+										"relative px-4 py-2.5 text-label-sm font-medium transition-colors",
+										activeTab === tab.key
+											? "text-text-primary"
+											: "text-text-secondary hover:text-text-primary",
+									)}
+								>
+									{tab.label}
+									{tab.count > 0 && (
+										<span
 											className={clsx(
-												"relative px-4 py-2.5 text-label-sm font-medium transition-colors",
+												"ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full",
 												activeTab === tab.key
-													? "text-text-primary"
-													: "text-text-secondary hover:text-text-primary",
+													? "bg-action-primary text-white"
+													: "bg-surface-secondary text-text-muted",
 											)}
 										>
-											{tab.label}
-											{tab.count > 0 && (
-												<span
-													className={clsx(
-														"ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-														activeTab === tab.key
-															? "bg-action-primary text-white"
-															: "bg-surface-secondary text-text-muted",
-													)}
-												>
-													{tab.count}
-												</span>
-											)}
-											{activeTab === tab.key && (
-												<span className="absolute bottom-0 left-4 right-4 h-0.5 bg-text-brand rounded-full" />
-											)}
-										</button>
+											{tab.count}
+										</span>
+									)}
+									{activeTab === tab.key && (
+										<span className="absolute bottom-0 left-4 right-4 h-0.5 bg-text-brand rounded-full" />
+									)}
+								</button>
+							))}
+						</div>
+
+						{/* Tab content */}
+						{activeTab === "saved" ? (
+							savedEvents.length > 0 ? (
+								<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+									{savedEvents.map((event) => (
+										<EventCard key={event.id} event={event} />
 									))}
 								</div>
-
-								{/* Event list or tab-empty state */}
-								{filteredOrders.length > 0 ? (
-									<div className="flex flex-col gap-4">
-										{filteredOrders.map((order) => (
-											<MyEventCard
-												key={order.id}
-												order={order}
-												eventDetails={eventDetailsMap.get(order.event.id) ?? null}
-												tab={activeTab}
-											/>
-										))}
-									</div>
-								) : (
-									<EmptyTabState tab={activeTab} />
-								)}
-							</>
+							) : (
+								<EmptyTabState tab="saved" />
+							)
+						) : hasAnyOrders ? (
+							filteredOrders.length > 0 ? (
+								<div className="flex flex-col gap-4">
+									{filteredOrders.map((order) => (
+										<MyEventCard
+											key={order.id}
+											order={order}
+											eventDetails={eventDetailsMap.get(order.event.id) ?? null}
+											tab={activeTab as "upcoming" | "past" | "cancelled"}
+										/>
+									))}
+								</div>
+							) : (
+								<EmptyTabState tab={activeTab} />
+							)
 						) : (
 							<EmptyEventsState />
 						)}
