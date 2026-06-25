@@ -11,76 +11,19 @@ import {
 	getReceivedIntros,
 	acceptIntro,
 	rejectIntro,
-	fetchConversationKeys,
-	uploadConversationKeys,
 	type ReceivedIntro,
 } from "@/lib/chatApi"
-import {
-	getOrCreateDeviceIdentity,
-	getMasterKey,
-	setConversationKey,
-	getConversationKey,
-} from "@/lib/deviceStore"
-import {
-	getSodium,
-	unb64,
-	unwrapDeviceKey,
-	unwrapMasterKey,
-	wrapKeyToMaster,
-	decryptMessage,
-} from "@/lib/e2ee"
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type IntroWithPlaintext = ReceivedIntro & { plaintext: string | null }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-async function resolveConversationKey(
-	communityId: string,
-	conversationId: string,
-	epoch: number,
-): Promise<Uint8Array | null> {
-	// 1. Check local cache
-	const cached = await getConversationKey(conversationId, epoch)
-	if (cached) return cached
-
-	try {
-		const { deviceId, publicKey, privateKey } = await getOrCreateDeviceIdentity()
-		const keys = await fetchConversationKeys(communityId, conversationId, deviceId)
-
-		let K: Uint8Array | null = null
-
-		if (keys.deviceKeys.length > 0) {
-			K = await unwrapDeviceKey(keys.deviceKeys[0].wrappedKey, publicKey, privateKey)
-		} else if (keys.masterKeys.length > 0) {
-			const MK = await getMasterKey()
-			if (MK) {
-				K = await unwrapMasterKey(keys.masterKeys[0].wrappedKey, MK)
-			}
-		}
-
-		if (K) {
-			await setConversationKey(conversationId, epoch, K)
-		}
-		return K
-	} catch {
-		return null
-	}
-}
 
 // ─── Intro card ───────────────────────────────────────────────────────────────
 
 function IntroCard({
 	intro,
 	communityId,
-	currentUserId,
 	onAccepted,
 	onRejected,
 }: {
-	intro: IntroWithPlaintext
+	intro: ReceivedIntro
 	communityId: string
-	currentUserId: string
 	onAccepted: (conversationId: string) => void
 	onRejected: (conversationId: string) => void
 }) {
@@ -92,18 +35,6 @@ function IntroCard({
 		setLoading("accept")
 		try {
 			await acceptIntro(communityId, intro.conversationId)
-
-			// Get K and upload own master wrap
-			const K = await resolveConversationKey(communityId, intro.conversationId, 1)
-			if (K) {
-				const MK = await getMasterKey()
-				if (MK) {
-					await uploadConversationKeys(communityId, intro.conversationId, {
-						masterWraps: [{ userId: currentUserId, epoch: 1, wrappedKey: await wrapKeyToMaster(K, MK) }],
-					})
-				}
-			}
-
 			toast.success(`Connected with ${fullName}!`)
 			onAccepted(intro.conversationId)
 		} catch {
@@ -149,12 +80,12 @@ function IntroCard({
 			</div>
 
 			{/* Message preview */}
-			{intro.plaintext !== null ? (
+			{intro.message?.content ? (
 				<p className="text-label-sm text-text-primary font-normal leading-relaxed line-clamp-3">
-					{intro.plaintext}
+					{intro.message.content}
 				</p>
 			) : (
-				<p className="text-label-sm text-text-muted italic">Unable to decrypt message.</p>
+				<p className="text-label-sm text-text-muted italic">No message.</p>
 			)}
 
 			{/* Shared interests */}
@@ -215,11 +146,10 @@ interface IntroInboxPanelProps {
 
 export function IntroInboxPanel({
 	communityId,
-	currentUserId,
 	onClose,
 	onAccepted,
 }: IntroInboxPanelProps) {
-	const [intros, setIntros] = useState<IntroWithPlaintext[]>([])
+	const [intros, setIntros] = useState<ReceivedIntro[]>([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 
@@ -227,28 +157,8 @@ export function IntroInboxPanel({
 		setLoading(true)
 		setError(null)
 		try {
-			await getSodium()
 			const raw = await getReceivedIntros(communityId)
-
-			// Decrypt each intro message
-			const withPlaintext: IntroWithPlaintext[] = await Promise.all(
-				raw.map(async (intro) => {
-					try {
-						const K = await resolveConversationKey(
-							communityId,
-							intro.conversationId,
-							intro.message.keyEpoch,
-						)
-						if (!K) return { ...intro, plaintext: null }
-						const plaintext = await decryptMessage(K, intro.message)
-						return { ...intro, plaintext }
-					} catch {
-						return { ...intro, plaintext: null }
-					}
-				}),
-			)
-
-			setIntros(withPlaintext)
+			setIntros(raw)
 		} catch {
 			setError("Failed to load intro requests.")
 		} finally {
@@ -329,7 +239,6 @@ export function IntroInboxPanel({
 							key={intro.conversationId}
 							intro={intro}
 							communityId={communityId}
-							currentUserId={currentUserId}
 							onAccepted={handleAccepted}
 							onRejected={handleRejected}
 						/>

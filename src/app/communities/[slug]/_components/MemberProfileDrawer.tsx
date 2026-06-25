@@ -6,9 +6,7 @@ import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import CloseSvg from "@/icons/outlined/close.svg"
-import DotsSvg from "@/icons/outlined/dots.svg"
 import VerifiedSvg from "@/icons/filled/verified-check.svg"
-import StarSvg from "@/icons/outlined/star.svg"
 import MapPointSvg from "@/icons/outlined/map-point.svg"
 import StarCircleSvg from "@/icons/outlined/star-circle.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
@@ -20,26 +18,8 @@ import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 import PlaneSvg from "@/icons/outlined/plane.svg"
 import LockSvg from "@/icons/outlined/lock.svg"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
-import { getOrCreateDeviceIdentity, getMasterKey, setConversationKey } from "@/lib/deviceStore"
-import {
-	getSodium,
-	b64,
-	unb64,
-	encryptMessage,
-	generateConversationKey,
-	wrapKeyToDevice,
-	wrapKeyToMaster,
-} from "@/lib/e2ee"
-import {
-	getMemberDeviceKeys,
-	sendIntro,
-	acceptIntro,
-	rejectIntro,
-	fetchConversationKeys,
-	uploadConversationKeys,
-} from "@/lib/chatApi"
-import { listMyDevices } from "@/lib/e2eeApi"
-import { E2EESetupModal, type E2EESetupMode } from "./E2EESetupModal"
+import { sendIntro, acceptIntro, rejectIntro } from "@/lib/chatApi"
+import { avatarColor } from "@/lib/avatarColor"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -75,10 +55,16 @@ export interface DrawerMember {
 	conversationId?: string
 }
 
-const ROLE_CONFIG: Record<MemberRole, { textClass: string; iconColor: "vibe" | "success" }> = {
-	"Top Contributor": { textClass: "text-violet-600", iconColor: "vibe" },
-	"New Member": { textClass: "text-violet-600", iconColor: "vibe" },
-	"Active Member": { textClass: "text-teal-600", iconColor: "success" },
+const ROLE_CONFIG: Record<MemberRole, { pillClass: string; dotClass: string }> = {
+	"Top Contributor": {
+		pillClass: "bg-violet-50 text-violet-700 border-violet-200",
+		dotClass: "bg-violet-500",
+	},
+	"New Member": {
+		pillClass: "bg-surface-page text-text-secondary border-border-default",
+		dotClass: "bg-gray-400",
+	},
+	"Active Member": { pillClass: "bg-teal-50 text-teal-700 border-teal-200", dotClass: "bg-teal-500" },
 }
 
 // ─── Role badge ───────────────────────────────────────────────────────────────
@@ -86,8 +72,9 @@ const ROLE_CONFIG: Record<MemberRole, { textClass: string; iconColor: "vibe" | "
 function RoleBadge({ role }: { role: MemberRole }) {
 	const config = ROLE_CONFIG[role]
 	return (
-		<span className={`flex items-center gap-1 text-[12px] font-semibold ${config.textClass}`}>
-			<Icon as={StarSvg} size="xs" color={config.iconColor} />
+		<span
+			className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${config.pillClass}`}
+		>
 			{role}
 		</span>
 	)
@@ -95,35 +82,25 @@ function RoleBadge({ role }: { role: MemberRole }) {
 
 // ─── Avatar fallback ──────────────────────────────────────────────────────────
 
-function AvatarFallback({ name, size }: { name: string; size: number }) {
-	const initial = name.trim()[0]?.toUpperCase() ?? "?"
+function AvatarFallback({
+	firstName,
+	lastName,
+	size,
+}: {
+	firstName: string
+	lastName: string
+	size: number
+}) {
+	const color = avatarColor(firstName)
+	const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase()
 	const sizeClass = `size-${size}`
 	return (
-		<div className={`${sizeClass} rounded-full bg-surface-brand-soft border border-border-default flex items-center justify-center`}>
-			<span className="text-sm font-bold text-text-brand">{initial}</span>
+		<div
+			className={`${sizeClass} rounded-full border flex items-center justify-center ${color.bg} ${color.border}`}
+		>
+			<span className={`text-sm font-bold ${color.text}`}>{initials}</span>
 		</div>
 	)
-}
-
-// ─── Device setup check ───────────────────────────────────────────────────────
-
-async function detectSetupMode(): Promise<E2EESetupMode | null> {
-	try {
-		const { deviceId } = await getOrCreateDeviceIdentity()
-		const devices = await listMyDevices()
-		const registered = devices.find(d => d.deviceId === deviceId && !d.revokedAt)
-		if (registered) return null // already set up
-		// Device not on server — check if backup exists
-		try {
-			const { fetchKeyBackup } = await import("@/lib/e2eeApi")
-			await fetchKeyBackup()
-			return "new-device"
-		} catch {
-			return "first-device"
-		}
-	} catch {
-		return "first-device"
-	}
 }
 
 // ─── Say Hi Modal ─────────────────────────────────────────────────────────────
@@ -152,57 +129,10 @@ function SayHiModal({
 		if (!message.trim()) return
 		setSending(true)
 		try {
-			await getSodium()
-
-			// Get local device identity
-			const { deviceId, publicKey: myPub, privateKey: myPriv } = await getOrCreateDeviceIdentity()
-
-			// Fetch recipient's devices and my own active devices
-			const [theirDevices, myDevices] = await Promise.all([
-				getMemberDeviceKeys(communityId, member.id),
-				listMyDevices(),
-			])
-
-			const myActiveDevices = myDevices.filter(d => !d.revokedAt)
-			if (!myActiveDevices.find(d => d.deviceId === deviceId)) {
-				toast.error("Device not registered. Please set up secure messaging first.")
-				setSending(false)
-				return
-			}
-
-			// Generate conversation key and encrypt the intro message
-			const K = await generateConversationKey()
-			const encPayload = await encryptMessage(K, message.trim())
-
-			// Wrap K to every device of both participants
-			const deviceWraps = await Promise.all([
-				...theirDevices.map(async d => ({
-					recipientUserId: member.id,
-					recipientDeviceId: d.deviceId,
-					epoch: 1,
-					wrappedKey: await wrapKeyToDevice(K, unb64(d.identityPublicKey)),
-				})),
-				...myActiveDevices.map(async d => ({
-					recipientUserId: currentUserId,
-					recipientDeviceId: d.deviceId,
-					epoch: 1,
-					wrappedKey: await wrapKeyToDevice(K, unb64(d.identityPublicKey)),
-				})),
-			])
-
-			// Wrap K under my master key for self-recovery
-			const MK = await getMasterKey()
-			const masterWraps = MK
-				? [{ userId: currentUserId, epoch: 1, wrappedKey: await wrapKeyToMaster(K, MK) }]
-				: []
-
 			const { conversationId } = await sendIntro(communityId, {
 				targetUserId: member.id,
-				message: { ...encPayload, messageType: "TEXT" as const },
-				keys: { deviceWraps, masterWraps },
+				content: message.trim(),
 			})
-
-			await setConversationKey(conversationId, 1, K)
 			toast.success(`Intro sent to ${member.name}!`)
 			onSuccess(conversationId)
 		} catch (err: unknown) {
@@ -247,10 +177,20 @@ function SayHiModal({
 						<div className="relative shrink-0">
 							{member.avatarUrl ? (
 								<div className="relative size-14 rounded-full overflow-hidden border border-border-default bg-surface-hover">
-									<Image src={member.avatarUrl} alt={member.name} fill sizes="56px" className="object-cover" />
+									<Image
+										src={member.avatarUrl}
+										alt={member.name}
+										fill
+										sizes="56px"
+										className="object-cover"
+									/>
 								</div>
 							) : (
-								<AvatarFallback name={member.name} size={14} />
+								<AvatarFallback
+									firstName={member.name.split(" ")[0] ?? member.name}
+									lastName={member.name.split(" ")[1] ?? ""}
+									size={14}
+								/>
 							)}
 							{member.online && (
 								<span className="absolute bottom-0.5 right-0.5 size-3 rounded-full bg-green-500 border-2 border-surface-card" />
@@ -258,7 +198,9 @@ function SayHiModal({
 						</div>
 						<div className="flex flex-col gap-0.5">
 							<div className="flex items-center gap-1.5">
-								<span className="text-body-md font-bold text-text-primary">{member.name}</span>
+								<span className="text-body-md font-bold text-text-primary">
+									{member.name}
+								</span>
 								{member.isVerified && <Icon as={VerifiedSvg} size="sm" color="brand" />}
 								<RoleBadge role={member.role} />
 							</div>
@@ -299,7 +241,9 @@ function SayHiModal({
 
 					{/* Intro section */}
 					<div className="flex flex-col gap-2">
-						<h3 className="text-body-md font-bold text-text-primary">Start a warm introduction</h3>
+						<h3 className="text-body-md font-bold text-text-primary">
+							Start a warm introduction
+						</h3>
 						<p className="text-label-sm text-text-secondary font-normal">
 							Introduce yourself and mention why you&apos;d like to connect.
 							<br />
@@ -332,7 +276,13 @@ function SayHiModal({
 						<div className="flex items-start gap-3">
 							<div className="relative size-10 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
 								{currentAvatar ? (
-									<Image src={currentAvatar} alt="You" fill sizes="40px" className="object-cover" />
+									<Image
+										src={currentAvatar}
+										alt="You"
+										fill
+										sizes="40px"
+										className="object-cover"
+									/>
 								) : (
 									<div className="w-full h-full flex items-center justify-center bg-surface-brand-soft">
 										<span className="text-xs font-bold text-text-brand">
@@ -374,12 +324,6 @@ function SayHiModal({
 							Cancel
 						</Button>
 					</div>
-
-					{/* E2EE note */}
-					<div className="flex items-center justify-center gap-1.5 text-[11px] text-text-muted">
-						<Icon as={LockSvg} size="xs" color="muted" />
-						End-to-end encrypted. Only you and {member.name} can read this.
-					</div>
 				</div>
 			</div>
 		</div>
@@ -402,17 +346,13 @@ export function MemberProfileDrawer({
 	onClose: () => void
 }) {
 	const [sayHiOpen, setSayHiOpen] = useState(false)
-	const [e2eeSetupMode, setE2eeSetupMode] = useState<E2EESetupMode | null>(null)
 	const [localDmStatus, setLocalDmStatus] = useState<DmStatus | null>(null)
-	const [pendingAction, setPendingAction] = useState<"sayhi" | null>(null)
 	const [actionLoading, setActionLoading] = useState(false)
 
 	// Reset local overrides when member changes
 	useEffect(() => {
 		setLocalDmStatus(null)
 		setSayHiOpen(false)
-		setE2eeSetupMode(null)
-		setPendingAction(null)
 	}, [member?.id])
 
 	if (!member) return null
@@ -420,27 +360,12 @@ export function MemberProfileDrawer({
 	const effectiveDmStatus = localDmStatus ?? member.dmStatus ?? "none"
 	const role = ROLE_CONFIG[member.role]
 
-	const handleSayHiClick = async () => {
+	const handleSayHiClick = () => {
 		if (!currentUserId) {
 			toast.error("Please log in to send an intro.")
 			return
 		}
-		// Check device setup
-		const mode = await detectSetupMode()
-		if (mode) {
-			setPendingAction("sayhi")
-			setE2eeSetupMode(mode)
-		} else {
-			setSayHiOpen(true)
-		}
-	}
-
-	const handleE2EESetupSuccess = () => {
-		setE2eeSetupMode(null)
-		if (pendingAction === "sayhi") {
-			setSayHiOpen(true)
-		}
-		setPendingAction(null)
+		setSayHiOpen(true)
 	}
 
 	const handleIntroSuccess = (conversationId: string) => {
@@ -451,25 +376,10 @@ export function MemberProfileDrawer({
 	}
 
 	const handleAcceptIntro = async () => {
-		if (!member.conversationId || !currentUserId) return
+		if (!member.conversationId) return
 		setActionLoading(true)
 		try {
 			await acceptIntro(communityId, member.conversationId)
-			// Upload own master wrap so future devices can recover K
-			const { deviceId } = await getOrCreateDeviceIdentity()
-			const keys = await fetchConversationKeys(communityId, member.conversationId, deviceId)
-			if (keys.deviceKeys.length > 0) {
-				const { unwrapDeviceKey, wrapKeyToMaster: wrapMaster } = await import("@/lib/e2ee")
-				const { publicKey, privateKey } = await getOrCreateDeviceIdentity()
-				const K = await unwrapDeviceKey(keys.deviceKeys[0].wrappedKey, publicKey, privateKey)
-				await setConversationKey(member.conversationId, 1, K)
-				const MK = await getMasterKey()
-				if (MK) {
-					await uploadConversationKeys(communityId, member.conversationId, {
-						masterWraps: [{ userId: currentUserId, epoch: 1, wrappedKey: await wrapMaster(K, MK) }],
-					})
-				}
-			}
 			setLocalDmStatus("connected")
 			toast.success("Intro accepted! You can now chat.")
 		} catch {
@@ -519,25 +429,44 @@ export function MemberProfileDrawer({
 
 					<div className="px-6 pb-8 flex flex-col gap-5">
 						{/* Avatar + name row */}
-						<div className="flex flex-col items-start gap-3">
-							<div className="relative">
+						<div className="flex items-start gap-4">
+							<div className="relative shrink-0">
 								{member.avatarUrl ? (
 									<div className="relative size-20 rounded-full overflow-hidden border-2 border-surface-hover bg-surface-hover">
-										<Image src={member.avatarUrl} alt={member.name} fill sizes="80px" className="object-cover" />
+										<Image
+											src={member.avatarUrl}
+											alt={member.name}
+											fill
+											sizes="80px"
+											className="object-cover"
+										/>
 									</div>
 								) : (
-									<AvatarFallback name={member.name} size={20} />
+									<AvatarFallback
+										firstName={member.name.split(" ")[0] ?? member.name}
+										lastName={member.name.split(" ")[1] ?? ""}
+										size={20}
+									/>
 								)}
 								{member.online && (
 									<span className="absolute bottom-1 right-1 size-4 rounded-full bg-green-500 border-2 border-surface-card" />
 								)}
 							</div>
 
-							<div className="w-full flex items-start justify-between gap-2">
-								<div className="flex flex-col gap-1">
+							<div className="flex-1 min-w-0 flex items-start justify-between gap-2">
+								<div className="flex flex-col gap-1 min-w-0">
 									<div className="flex items-center gap-1.5">
-										<h2 className="text-body-xl font-bold text-text-primary">{member.name}</h2>
-										{member.isVerified && <Icon as={VerifiedSvg} size="sm" color="brand" />}
+										<h2 className="text-body-xl font-bold text-text-primary truncate">
+											{member.name}
+										</h2>
+										{member.isVerified && (
+											<Icon
+												as={VerifiedSvg}
+												size="sm"
+												color="brand"
+												className="shrink-0"
+											/>
+										)}
 									</div>
 									<RoleBadge role={member.role} />
 									<div className="flex items-center gap-1.5 mt-1 text-label-sm text-text-secondary">
@@ -551,21 +480,19 @@ export function MemberProfileDrawer({
 										</div>
 									)}
 								</div>
-								<button
-									type="button"
-									className="text-text-muted hover:text-text-primary transition-colors mt-0.5 shrink-0"
-								>
-									<Icon as={DotsSvg} size="sm" color="muted" />
-								</button>
 							</div>
 						</div>
 
-						<div className="h-px bg-border-default" />
+						{(member.sharedInterests?.length ||
+							member.sharedExperiences?.length ||
+							member.communityActivity) && <div className="h-px bg-border-default" />}
 
 						{/* Shared interests */}
 						{member.sharedInterests && member.sharedInterests.length > 0 && (
 							<div className="flex flex-col gap-3">
-								<p className="text-body-md font-semibold text-text-primary">Shared interests</p>
+								<p className="text-body-md font-semibold text-text-primary">
+									Shared interests
+								</p>
 								<div className="flex flex-wrap gap-1.5">
 									{member.sharedInterests.map(interest => (
 										<span
@@ -582,14 +509,24 @@ export function MemberProfileDrawer({
 						{/* Shared experiences */}
 						{member.sharedExperiences && member.sharedExperiences.length > 0 && (
 							<div className="flex flex-col gap-3">
-								<p className="text-body-md font-semibold text-text-primary">Shared experiences</p>
+								<p className="text-body-md font-semibold text-text-primary">
+									Shared experiences
+								</p>
 								<div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
 									{member.sharedExperiences.map(exp => (
 										<div key={exp.id} className="shrink-0 w-36 flex flex-col gap-1.5">
 											<div className="relative h-22 rounded-action overflow-hidden bg-surface-hover">
-												<Image src={exp.imageUrl} alt={exp.title} fill sizes="144px" className="object-cover" />
+												<Image
+													src={exp.imageUrl}
+													alt={exp.title}
+													fill
+													sizes="144px"
+													className="object-cover"
+												/>
 											</div>
-											<p className="text-label-sm font-bold text-text-primary leading-snug">{exp.title}</p>
+											<p className="text-label-sm font-bold text-text-primary leading-snug">
+												{exp.title}
+											</p>
 											<p className="text-[11px] text-text-muted">{exp.date}</p>
 											<span className="self-start text-[11px] font-medium text-violet-600 bg-surface-vibe-soft border border-purple-200 rounded-full px-2.5 py-0.5">
 												{exp.status === "going" ? "Going" : "Interested"}
@@ -609,7 +546,9 @@ export function MemberProfileDrawer({
 						{/* Community activity */}
 						{member.communityActivity && (
 							<div className="flex flex-col gap-3">
-								<p className="text-body-md font-semibold text-text-primary">Community activity</p>
+								<p className="text-body-md font-semibold text-text-primary">
+									Community activity
+								</p>
 								<div className="flex flex-col gap-2.5">
 									<div className="flex items-center gap-3 text-label-sm text-text-secondary">
 										<Icon as={UserSvg} size="sm" color="secondary" />
@@ -631,22 +570,25 @@ export function MemberProfileDrawer({
 							</div>
 						)}
 
-						<div className="h-px bg-border-default" />
-
 						{/* Empty state — shown when no content sections are visible */}
-						{!member.sharedInterests?.length && !member.sharedExperiences?.length && !member.communityActivity && (
-							<div className="rounded-action border border-border-default bg-surface-page p-4 flex items-start gap-3">
-								<div className="size-8 rounded-full bg-surface-brand-soft flex items-center justify-center shrink-0 mt-0.5">
-									<Icon as={LockSvg} size="xs" color="brand" />
+						{!member.sharedInterests?.length &&
+							!member.sharedExperiences?.length &&
+							!member.communityActivity && (
+								<div className="rounded-action border border-border-default bg-surface-page p-4 flex items-start gap-3">
+									<div className="size-8 rounded-full bg-surface-brand-soft flex items-center justify-center shrink-0 mt-0.5">
+										<Icon as={LockSvg} size="xs" color="brand" />
+									</div>
+									<div className="flex flex-col gap-0.5">
+										<p className="text-label-sm font-semibold text-text-primary">
+											Private profile
+										</p>
+										<p className="text-[11px] text-text-secondary font-normal leading-snug">
+											This member keeps their profile private. Send them an intro — they
+											can choose to share more once connected.
+										</p>
+									</div>
 								</div>
-								<div className="flex flex-col gap-0.5">
-									<p className="text-label-sm font-semibold text-text-primary">Private profile</p>
-									<p className="text-[11px] text-text-secondary font-normal leading-snug">
-										This member keeps their profile private. Send them an intro — they can choose to share more once connected.
-									</p>
-								</div>
-							</div>
-						)}
+							)}
 
 						{/* Actions */}
 						<div className="flex flex-col gap-3">
@@ -715,7 +657,9 @@ export function MemberProfileDrawer({
 										radius="pill"
 										leftIcon={<Icon as={ChatSvg} size="sm" color="inverse" />}
 										className="w-full"
-										onClick={() => toast("Open the Chat tab to continue your conversation.")}
+										onClick={() =>
+											toast("Open the Chat tab to continue your conversation.")
+										}
 									>
 										Message
 									</Button>
@@ -726,7 +670,12 @@ export function MemberProfileDrawer({
 						{/* Privacy notice + community guidelines */}
 						<div className="rounded-action bg-surface-vibe-soft border border-purple-100 p-4 flex flex-col gap-3">
 							<div className="flex items-start gap-3">
-								<Icon as={ShieldCheckSvg} size="sm" color="vibe" className="mt-0.5 shrink-0" />
+								<Icon
+									as={ShieldCheckSvg}
+									size="sm"
+									color="vibe"
+									className="mt-0.5 shrink-0"
+								/>
 								<p className="text-label-sm text-text-secondary font-normal leading-snug">
 									Only information chosen by the member is shown. You can always report or
 									block if something feels off.
@@ -736,7 +685,9 @@ export function MemberProfileDrawer({
 							<div className="h-px bg-purple-100 ml-7" />
 
 							<div className="ml-7 flex flex-col gap-2">
-								<p className="text-label-sm font-semibold text-text-primary">Community guidelines</p>
+								<p className="text-label-sm font-semibold text-text-primary">
+									Community guidelines
+								</p>
 								<ul className="flex flex-col gap-1.5">
 									{[
 										"Be respectful and kind to every member",
@@ -745,7 +696,10 @@ export function MemberProfileDrawer({
 										"Harassment or hate speech will not be tolerated",
 										"Report anything that feels unsafe or off",
 									].map(rule => (
-										<li key={rule} className="flex items-start gap-2 text-[11px] text-text-secondary font-normal leading-snug">
+										<li
+											key={rule}
+											className="flex items-start gap-2 text-[11px] text-text-secondary font-normal leading-snug"
+										>
 											<span className="mt-1 size-1 rounded-full bg-violet-400 shrink-0" />
 											{rule}
 										</li>
@@ -765,15 +719,6 @@ export function MemberProfileDrawer({
 					currentUserId={currentUserId}
 					onClose={() => setSayHiOpen(false)}
 					onSuccess={handleIntroSuccess}
-				/>
-			)}
-
-			{/* E2EE setup modal */}
-			{e2eeSetupMode && (
-				<E2EESetupModal
-					mode={e2eeSetupMode}
-					onSuccess={handleE2EESetupSuccess}
-					onClose={() => { setE2eeSetupMode(null); setPendingAction(null) }}
 				/>
 			)}
 		</>

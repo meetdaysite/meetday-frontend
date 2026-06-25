@@ -67,11 +67,10 @@ export type DmMessage = {
 	id: string
 	conversationId: string
 	senderId: string
-	ciphertext: string
-	nonce: string
-	keyEpoch: number
+	content: string | null
 	messageType: "TEXT" | "IMAGE"
 	mediaKey: string | null
+	mediaUrl: string | null
 	mediaSizeBytes: number | null
 	deletedAt: string | null
 	createdAt: string
@@ -79,47 +78,19 @@ export type DmMessage = {
 	sender: ChatMessageSender
 }
 
-export type DecryptedDmMessage = DmMessage & { plaintext: string | null }
-
 export type DmConversation = {
 	id: string
 	communityId: string
 	other: { id: string; firstName: string; lastName: string; avatarUrl: string | null }
 	lastMessageAt: string | null
+	lastMessagePreview: string | null
 	unreadCount: number
-}
-
-export type MemberDeviceKey = {
-	deviceId: string
-	identityPublicKey: string
-	signingPublicKey: string | null
-	label: string | null
-}
-
-export type DeviceWrap = {
-	recipientUserId: string
-	recipientDeviceId: string
-	epoch: number
-	wrappedKey: string
-}
-
-export type MasterWrap = {
-	userId: string
-	epoch: number
-	wrappedKey: string
-}
-
-export type IntroMessage = {
-	ciphertext: string
-	nonce: string
-	keyEpoch: number
-	messageType: "TEXT"
 }
 
 export type ReceivedIntro = {
 	conversationId: string
 	from: { id: string; firstName: string; lastName: string; avatarUrl: string | null }
-	message: DmMessage
+	message: DmMessage | null
 	sentAt: string
 	sharedInterests?: { count: number; tags: Array<{ id: string; name: string }> }
 }
@@ -128,11 +99,6 @@ export type SentIntro = {
 	conversationId: string
 	to: { id: string; firstName: string; lastName: string; avatarUrl: string | null }
 	sentAt: string
-}
-
-export type ConversationKeys = {
-	deviceKeys: Array<{ epoch: number; wrappedKey: string }>
-	masterKeys: Array<{ epoch: number; wrappedKey: string }>
 }
 
 export type DmMessagesResponse = {
@@ -265,24 +231,12 @@ export async function getDMMessages(
 	return data.data
 }
 
-// ─── E2EE DM endpoints ───────────────────────────────────────────────────────
-
-export async function getMemberDeviceKeys(
-	communityId: string,
-	userId: string,
-): Promise<MemberDeviceKey[]> {
-	const { data } = await apiClient.get<{ success: boolean; data: MemberDeviceKey[] }>(
-		`/communities/${communityId}/members/${userId}/keys`,
-	)
-	return data.data
-}
-
 export async function sendIntro(
 	communityId: string,
 	payload: {
 		targetUserId: string
-		message: IntroMessage
-		keys: { deviceWraps: DeviceWrap[]; masterWraps: MasterWrap[] }
+		content: string
+		messageType?: "TEXT" | "IMAGE"
 	},
 ): Promise<{ conversationId: string; message: DmMessage }> {
 	const { data } = await apiClient.post<{
@@ -318,29 +272,6 @@ export async function acceptIntro(
 
 export async function rejectIntro(communityId: string, conversationId: string): Promise<void> {
 	await apiClient.post(`/communities/${communityId}/dms/intros/${conversationId}/reject`)
-}
-
-export async function uploadConversationKeys(
-	communityId: string,
-	conversationId: string,
-	payload: { deviceWraps?: DeviceWrap[]; masterWraps?: MasterWrap[] },
-): Promise<void> {
-	await apiClient.post(
-		`/communities/${communityId}/dms/${conversationId}/keys`,
-		payload,
-	)
-}
-
-export async function fetchConversationKeys(
-	communityId: string,
-	conversationId: string,
-	deviceId: string,
-): Promise<ConversationKeys> {
-	const { data } = await apiClient.get<{ success: boolean; data: ConversationKeys }>(
-		`/communities/${communityId}/dms/${conversationId}/keys`,
-		{ params: { deviceId } },
-	)
-	return data.data
 }
 
 // ─── Reaction aggregation helper ──────────────────────────────────────────────

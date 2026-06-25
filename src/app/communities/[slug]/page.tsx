@@ -238,7 +238,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 	// Fetch current user's role from members list — community detail members array may be partial
 	useEffect(() => {
 		if (!profileId || !apiData || apiData === "loading" || !apiData.isMember) return
-		getCommunityMembers(apiData.id, { limit: 500 })
+		getCommunityMembers(apiData.id, { limit: 100 })
 			.then(res => {
 				const me = res.data.find(m => m.userId === profileId)
 				setCurrentUserRole((me?.role as CommunityRole) ?? null)

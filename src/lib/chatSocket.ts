@@ -301,7 +301,7 @@ export const chatSocket = {
 	sendDM(
 		communityId: string,
 		conversationId: string,
-		payload: { ciphertext: string; nonce: string; keyEpoch: number; messageType?: "TEXT" | "IMAGE"; mediaKey?: string; mediaSizeBytes?: number },
+		payload: { content?: string; messageType?: "TEXT" | "IMAGE"; mediaKey?: string; mediaSizeBytes?: number },
 	) {
 		console.debug("[chatSocket] → send-dm, connected:", socket?.connected, "convId:", conversationId)
 		if (!socket?.connected) return
