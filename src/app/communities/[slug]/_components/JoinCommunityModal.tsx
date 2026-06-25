@@ -100,14 +100,6 @@ export function JoinCommunityModal({ community, open, onClose, onJoin }: JoinCom
 		return () => { document.body.style.overflow = "" }
 	}, [open])
 
-	// Reset state when modal opens
-	useEffect(() => {
-		if (open) {
-			setVisibility("EVENT_ATTENDEES_ONLY")
-			setIsSubmitting(false)
-		}
-	}, [open])
-
 	if (!open) return null
 
 	const handleJoin = async () => {

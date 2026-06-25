@@ -729,7 +729,7 @@ function PopularPostsCard({ communityId }: { communityId: string }) {
 	const [loading, setLoading] = useState(true)
 
 	useEffect(() => {
-		setLoading(true)
+		void Promise.resolve().then(() => setLoading(true))
 		getCommunityPopularPosts(communityId, { windowDays, limit: 5 })
 			.then(setPosts)
 			.catch(() => setPosts([]))
@@ -942,7 +942,7 @@ function TrendingTopicsCard({ communityId }: { communityId: string }) {
 			</div>
 
 			<div className="flex flex-col gap-2.5">
-				{visible.map((t, i) => (
+				{visible.map((t, _i) => (
 					<div key={t.topic} className="flex items-center gap-3">
 						<Icon as={FireSvg} size="sm" color="brand" className="shrink-0" />
 						<span className="flex-1 text-label-sm font-normal text-text-primary truncate">

@@ -220,7 +220,7 @@ export function ScanManual({ sessionData, token, onResult, onBack }: Props) {
 	)
 }
 
-function maskBookingId(id: string): string {
+function _maskBookingId(id: string): string {
 	if (id.length <= 8) return id
 	return `${id.slice(0, 4)}-****`
 }
@@ -282,7 +282,7 @@ function CheckBadgeIcon({ className }: { className?: string }) {
 		</svg>
 	)
 }
-function XBadgeIcon({ className }: { className?: string }) {
+function _XBadgeIcon({ className }: { className?: string }) {
 	return (
 		<svg width="9" height="9" viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
 			<path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />

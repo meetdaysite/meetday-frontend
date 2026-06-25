@@ -168,7 +168,7 @@ export function IntroInboxPanel({
 	}, [communityId])
 
 	useEffect(() => {
-		loadIntros()
+		void Promise.resolve().then(loadIntros)
 	}, [loadIntros])
 
 	const handleAccepted = (conversationId: string) => {

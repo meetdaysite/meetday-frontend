@@ -26,11 +26,7 @@ type AppState =
 	| { screen: "TICKET_INVALID"; message?: string }
 
 export default function ScanPage() {
-	const [token, setToken] = useState("")
-
-	useEffect(() => {
-		setToken(new URLSearchParams(window.location.search).get("token") ?? "")
-	}, [])
+	const [token] = useState(() => new URLSearchParams(window.location.search).get("token") ?? "")
 	const [sessionData, setSessionData] = useState<VerifySessionResponse | null>(null)
 	const [state, setState] = useState<AppState>({ screen: "VALIDATING" })
 	const [debugLines, setDebugLines] = useState<string[]>([])

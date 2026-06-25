@@ -12,7 +12,7 @@ import ChatSvg from "@/icons/outlined/chat.svg"
 import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 import AltArrowUpSvg from "@/icons/outlined/alt-arrow-up.svg"
 import { getCommunityMembers, getCommunityMemberDetail } from "@/lib/api"
-import type { CommunityMember, MemberBadge, MemberDetailCard } from "@/lib/api"
+import type { CommunityMember, MemberBadge, MemberDetailCard, CommunityRole } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import { MemberProfileDrawer } from "./MemberProfileDrawer"
 import type { DrawerMember } from "./MemberProfileDrawer"
@@ -24,15 +24,15 @@ const SHOW_FEATURED_MEMBERS = false
 
 // ─── API role config ───────────────────────────────────────────────────────────
 
-type ApiRole = "OWNER" | "ADMIN" | "MEMBER"
-
-const API_ROLE_CONFIG: Record<ApiRole, { label: string; pillClass: string; dotClass: string }> = {
+const API_ROLE_CONFIG: Record<CommunityRole, { label: string; pillClass: string; dotClass: string }> = {
 	OWNER: {
 		label: "Owner",
 		pillClass: "bg-violet-50 text-violet-700 border-violet-200",
 		dotClass: "bg-violet-500",
 	},
-	ADMIN: { label: "Admin", pillClass: "bg-teal-50 text-teal-700 border-teal-200", dotClass: "bg-teal-500" },
+	MANAGER: { label: "Manager", pillClass: "bg-amber-50 text-amber-700 border-amber-200", dotClass: "bg-amber-500" },
+	HOST: { label: "Host", pillClass: "bg-blue-50 text-blue-700 border-blue-200", dotClass: "bg-blue-500" },
+	MODERATOR: { label: "Moderator", pillClass: "bg-teal-50 text-teal-700 border-teal-200", dotClass: "bg-teal-500" },
 	MEMBER: {
 		label: "Member",
 		pillClass: "bg-surface-page text-text-secondary border-border-default",
@@ -40,7 +40,7 @@ const API_ROLE_CONFIG: Record<ApiRole, { label: string; pillClass: string; dotCl
 	},
 }
 
-function ApiRoleBadge({ role }: { role: ApiRole }) {
+function ApiRoleBadge({ role }: { role: CommunityRole }) {
 	const config = API_ROLE_CONFIG[role] ?? API_ROLE_CONFIG.MEMBER
 	return (
 		<span
@@ -265,8 +265,7 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 	}
 
 	useEffect(() => {
-		setLoading(true)
-		setError(null)
+		void Promise.resolve().then(() => { setLoading(true); setError(null) })
 		getCommunityMembers(communityId, { page: 1, limit: LIMIT })
 			.then(res => {
 				setMembers(res.data)

@@ -208,7 +208,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 	const profileId = useAttendeeProfileStore(s => s.profile?.id ?? null)
 
 	const [apiData, setApiData] = useState<CommunityDetailResponse | null | "loading">("loading")
-	const [isMember, setIsMember] = useState(false)
+	const [isMemberOverride, setIsMemberOverride] = useState<boolean | null>(null)
 	const [currentUserRole, setCurrentUserRole] = useState<CommunityRole | null>(null)
 	const [activeTab, setActiveTab] = useState<TabKey>("overview")
 	const [announcementUnreadCount, setAnnouncementUnreadCount] = useState(0)
@@ -221,12 +221,6 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 		if (authLoading) return
 		getCommunityBySlug(slug).then(res => setApiData(res))
 	}, [slug, authLoading])
-
-	useEffect(() => {
-		if (apiData && apiData !== "loading") {
-			setIsMember(apiData.isMember)
-		}
-	}, [apiData])
 
 	useEffect(() => {
 		if (!user || !apiData || apiData === "loading" || !apiData.isMember) return
@@ -250,6 +244,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 	if (!apiData) notFound()
 
 	const isLoggedIn = !!user
+	const isMember = isMemberOverride ?? apiData.isMember
 
 	const community: CommunityDetails = {
 		id: apiData.id,
@@ -280,7 +275,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 
 	const handleLeave = async () => {
 		await leaveCommunity(apiData.id)
-		setIsMember(false)
+		setIsMemberOverride(false)
 		setLeaveModalOpen(false)
 	}
 
@@ -288,7 +283,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 		const res = await joinCommunity(apiData.id, profileVisibility)
 		setJoinModalOpen(false)
 		if (res.status === "ACTIVE") {
-			setIsMember(true)
+			setIsMemberOverride(true)
 			setSuccessModalOpen(true)
 		} else {
 			setPendingModalOpen(true)

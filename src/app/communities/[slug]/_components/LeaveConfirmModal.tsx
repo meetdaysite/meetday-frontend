@@ -19,7 +19,6 @@ export function LeaveConfirmModal({ communityName, open, onClose, onConfirm }: L
 	useEffect(() => {
 		if (open) {
 			document.body.style.overflow = "hidden"
-			setIsSubmitting(false)
 		}
 		return () => { document.body.style.overflow = "" }
 	}, [open])

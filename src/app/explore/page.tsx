@@ -60,7 +60,7 @@ export default function ExploreEventsPage() {
 	}
 
 	useEffect(() => {
-		fetchEvents()
+		void Promise.resolve().then(fetchEvents)
 	}, [])
 
 	return (

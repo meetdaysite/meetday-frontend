@@ -348,12 +348,12 @@ export function AnnouncementsTabContent({ communityId }: { communityId: string }
 	}, [communityId])
 
 	useEffect(() => {
-		fetchAll()
+		void Promise.resolve().then(fetchAll)
 	}, [fetchAll])
 
 	useEffect(() => {
 		if (view === "saved" && !savedLoaded) {
-			fetchSaved()
+			void Promise.resolve().then(fetchSaved)
 		}
 	}, [view, savedLoaded, fetchSaved])
 

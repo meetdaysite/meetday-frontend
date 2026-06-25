@@ -586,7 +586,7 @@ export function ChatTabContent({
 					communityId={communityId}
 					currentUserId={backendUserId ?? ""}
 					onClose={() => setIntroInboxOpen(false)}
-					onAccepted={(conversationId) => {
+					onAccepted={(_conversationId) => {
 						setIntroInboxOpen(false)
 						// Refresh DM list so accepted conversation appears
 						getDMConversations(communityId)

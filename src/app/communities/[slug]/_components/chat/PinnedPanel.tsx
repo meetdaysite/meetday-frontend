@@ -46,7 +46,7 @@ export function PinnedPanel({
 	const isMod = canModerate(currentUserRole)
 
 	useEffect(() => {
-		setLoading(true)
+		void Promise.resolve().then(() => setLoading(true))
 		getPinnedMessages(communityId, channelId)
 			.then(setMessages)
 			.finally(() => setLoading(false))

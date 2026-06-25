@@ -111,7 +111,7 @@ const MAX_INTRO_CHARS = 250
 function SayHiModal({
 	member,
 	communityId,
-	currentUserId,
+	currentUserId: _currentUserId,
 	onClose,
 	onSuccess,
 }: {
@@ -221,7 +221,7 @@ function SayHiModal({
 					{/* Common interests */}
 					{member.sharedInterests && member.sharedInterests.length > 0 && (
 						<div className="flex items-start gap-3 bg-surface-vibe-soft border border-purple-100 rounded-action p-3">
-							<Icon as={StarSvg} size="sm" color="vibe" className="mt-0.5 shrink-0" />
+							<Icon as={StarCircleSvg} size="sm" color="vibe" className="mt-0.5 shrink-0" />
 							<div className="flex flex-col gap-2">
 								<p className="text-label-sm font-semibold text-text-primary">
 									You both have {member.sharedInterests.length} things in common
@@ -348,18 +348,21 @@ export function MemberProfileDrawer({
 }) {
 	const [sayHiOpen, setSayHiOpen] = useState(false)
 	const [localDmStatus, setLocalDmStatus] = useState<DmStatus | null>(null)
+	const [localConversationId, setLocalConversationId] = useState<string | null>(null)
 	const [actionLoading, setActionLoading] = useState(false)
 
 	// Reset local overrides when member changes
 	useEffect(() => {
-		setLocalDmStatus(null)
-		setSayHiOpen(false)
+		void Promise.resolve().then(() => {
+			setLocalDmStatus(null)
+			setSayHiOpen(false)
+			setLocalConversationId(null)
+		})
 	}, [member?.id])
 
 	if (!member) return null
 
 	const effectiveDmStatus = localDmStatus ?? member.dmStatus ?? "none"
-	const role = ROLE_CONFIG[member.role]
 
 	const handleSayHiClick = () => {
 		if (!currentUserId) {
@@ -372,15 +375,16 @@ export function MemberProfileDrawer({
 	const handleIntroSuccess = (conversationId: string) => {
 		setSayHiOpen(false)
 		setLocalDmStatus("intro_sent")
-		// store conversationId for future use if needed
-		member.conversationId = conversationId
+		setLocalConversationId(conversationId)
 	}
 
+	const activeConversationId = localConversationId ?? member.conversationId
+
 	const handleAcceptIntro = async () => {
-		if (!member.conversationId) return
+		if (!activeConversationId) return
 		setActionLoading(true)
 		try {
-			await acceptIntro(communityId, member.conversationId)
+			await acceptIntro(communityId, activeConversationId)
 			setLocalDmStatus("connected")
 			toast.success("Intro accepted! You can now chat.")
 		} catch (err) {
@@ -391,10 +395,10 @@ export function MemberProfileDrawer({
 	}
 
 	const handleRejectIntro = async () => {
-		if (!member.conversationId) return
+		if (!activeConversationId) return
 		setActionLoading(true)
 		try {
-			await rejectIntro(communityId, member.conversationId)
+			await rejectIntro(communityId, activeConversationId)
 			setLocalDmStatus("none")
 		} catch (err) {
 			toast.error(getApiErrorMessage(err))

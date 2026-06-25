@@ -128,7 +128,7 @@ export function PostDetailModal({ postId, communityId, currentUserRole, onClose 
 
 	// Fetch post
 	useEffect(() => {
-		setLoading(true)
+		void Promise.resolve().then(() => setLoading(true))
 		getCommunityFeedPost(communityId, postId)
 			.then(p => {
 				setPost(p)
@@ -172,7 +172,7 @@ export function PostDetailModal({ postId, communityId, currentUserRole, onClose 
 	)
 
 	useEffect(() => {
-		if (post) loadComments()
+		if (post) void Promise.resolve().then(() => loadComments())
 	}, [post, loadComments])
 
 	// Auto-focus input
@@ -671,7 +671,7 @@ export function PostDetailModal({ postId, communityId, currentUserRole, onClose 
 																<p className="text-[11px] font-semibold text-text-primary">
 																	{comment.author.name}
 																</p>
-																<p className="text-label-sm text-text-primary leading-snug break-words">
+																<p className="text-label-sm text-text-primary leading-snug wrap-break-word">
 																	{comment.content}
 																</p>
 															</div>

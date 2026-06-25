@@ -357,7 +357,7 @@ export const useChatStore = create<ChatState & ChatActions>((set, get) => ({
 		}))
 	},
 
-	receiveNewDM(conversationId, message, currentUserId) {
+	receiveNewDM(conversationId, message, _currentUserId) {
 		set(s => {
 			const existing = s.dmMessages[conversationId] ?? []
 			if (existing.some(m => m.id === message.id)) return s

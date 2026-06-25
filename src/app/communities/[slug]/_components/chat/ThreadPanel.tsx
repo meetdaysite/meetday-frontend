@@ -55,7 +55,7 @@ export function ThreadPanel({
 	}, [communityId, channelId, parentMessage.id])
 
 	useEffect(() => {
-		setLoading(true)
+		void Promise.resolve().then(() => setLoading(true))
 		loadReplies().then(res => {
 			setReplies(res.messages)
 			setNextCursor(res.nextCursor)

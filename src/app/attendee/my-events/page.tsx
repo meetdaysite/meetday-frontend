@@ -653,6 +653,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 
 function MyEventsPageInner() {
 	const { authLoading, user } = useAuthStore()
+	const router = useRouter()
 	const [orders, setOrders] = useState<MyOrderListItem[] | null>(null)
 	const [eventDetailsMap, setEventDetailsMap] = useState<Map<string, PublicEventDetails | null>>(
 		new Map(),

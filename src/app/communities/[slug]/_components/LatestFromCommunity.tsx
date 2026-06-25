@@ -42,7 +42,7 @@ interface LatestFromCommunityProps {
 	isMember: boolean
 }
 
-export function LatestFromCommunity({ communityName, isMember }: LatestFromCommunityProps) {
+export function LatestFromCommunity({ communityName: _communityName, isMember }: LatestFromCommunityProps) {
 	return (
 		<div className="rounded-panel bg-surface-card border border-border-default p-5">
 			<div className="flex items-center justify-between gap-2 mb-4">

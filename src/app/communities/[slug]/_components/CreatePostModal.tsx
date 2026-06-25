@@ -61,10 +61,12 @@ export function CreatePostModal({ open, communityId, onClose, onPosted }: Create
 
 	useEffect(() => {
 		if (!open) {
-			setContent("")
-			setImageFiles([])
-			setImagePreviews([])
-			setIsSubmitting(false)
+			void Promise.resolve().then(() => {
+				setContent("")
+				setImageFiles([])
+				setImagePreviews([])
+				setIsSubmitting(false)
+			})
 		}
 	}, [open])
 

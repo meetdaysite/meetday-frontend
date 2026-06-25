@@ -69,7 +69,7 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 				processingRef.current = false
 			}
 		},
-		[scanning, token, onResult],
+		[scanning, token, onResult, onSessionExpired],
 	)
 
 	useEffect(() => {

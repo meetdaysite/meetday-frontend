@@ -51,8 +51,7 @@ export function ExperiencesTabContent({ communitySlug }: { communitySlug: string
 		getCommunityEvents(communitySlug, { page: pageNum, limit: LIMIT })
 
 	useEffect(() => {
-		setLoading(true)
-		setError(null)
+		void Promise.resolve().then(() => { setLoading(true); setError(null) })
 		fetchPage(1)
 			.then(res => {
 				setEvents(res.data.map(toExploreEvent))

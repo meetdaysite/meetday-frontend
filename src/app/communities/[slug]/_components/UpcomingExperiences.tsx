@@ -50,8 +50,7 @@ export function UpcomingExperiences({
 	const [error, setError] = useState(false)
 
 	useEffect(() => {
-		setLoading(true)
-		setError(false)
+		void Promise.resolve().then(() => { setLoading(true); setError(false) })
 		getCommunityEvents(communitySlug, { upcoming: true, limit: 8 })
 			.then(res => setEvents(res.data.map(toExploreEvent)))
 			.catch(() => setError(true))
