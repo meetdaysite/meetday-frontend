@@ -8,3 +8,5 @@ docker-compose.yml
 .dockerignore
 designs
 plans
+.env.local
+.env*.local
