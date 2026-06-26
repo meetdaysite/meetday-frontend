@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { verifySession } from "@/lib/scannerApi"
 import type { VerifySessionResponse, ScanResult } from "@/lib/scannerApi"
 // import { ScanDesktopGate } from "./_components/ScanDesktopGate"
@@ -25,8 +26,9 @@ type AppState =
 	| { screen: "DUPLICATE"; result: Extract<ScanResult, { status: "DUPLICATE" }> }
 	| { screen: "TICKET_INVALID"; message?: string }
 
-export default function ScanPage() {
-	const [token] = useState(() => new URLSearchParams(window.location.search).get("token") ?? "")
+function ScanPageInner() {
+	const searchParams = useSearchParams()
+	const token = searchParams.get("token") ?? ""
 	const [sessionData, setSessionData] = useState<VerifySessionResponse | null>(null)
 	const [state, setState] = useState<AppState>({ screen: "VALIDATING" })
 	const [debugLines, setDebugLines] = useState<string[]>([])
@@ -164,6 +166,14 @@ export default function ScanPage() {
 				/>
 			)
 	}
+}
+
+export default function ScanPage() {
+	return (
+		<Suspense fallback={<ValidatingScreen />}>
+			<ScanPageInner />
+		</Suspense>
+	)
 }
 
 function LoadErrorScreen({ onRetry }: { onRetry: () => void }) {
