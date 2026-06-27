@@ -244,17 +244,17 @@ function CrowdPulseCard({ eventId }: { eventId: string }) {
 							</div>
 							<div className="h-3 rounded-full bg-neutral-100 overflow-hidden">
 								<div
-									className={`h-full rounded-full transition-all duration-500 ${barCls} ${pulse.isEstimate ? "opacity-60" : ""}`}
-									style={{ width: fill !== null ? `${fill}%` : pulse.isEstimate ? "40%" : "0%" }}
+									className={`h-full rounded-full transition-all duration-500 ${barCls} ${pulse!.isEstimate ? "opacity-60" : ""}`}
+									style={{ width: fill !== null ? `${fill}%` : pulse!.isEstimate ? "40%" : "0%" }}
 								/>
 							</div>
 						</div>
 					))}
 
 					<p className="text-caption text-text-muted text-center mt-0.5 italic">
-						{pulse.isEstimate
+						{pulse!.isEstimate
 							? "The vibe is still cooking — check back as more people join!"
-							: `Based on ${pulse.totalAttendees.toLocaleString()} attendee${pulse.totalAttendees !== 1 ? "s" : ""}`
+							: `Based on ${pulse!.totalAttendees.toLocaleString()} attendee${pulse!.totalAttendees !== 1 ? "s" : ""}`
 						}
 					</p>
 				</div>
