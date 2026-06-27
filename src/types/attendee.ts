@@ -36,6 +36,27 @@ export interface SavedEventsResponse {
 	limit: number
 }
 
+// ─── Vibe match (POST /events/:id/vibe-match) ───────────────────────────────
+
+export interface VibeMatchResponse {
+	score: number | null
+	label: string | null
+	summary: string | null
+}
+
+// ─── Crowd pulse (GET /events/:id/crowd-pulse) ───────────────────────────────
+
+export interface CrowdPulseResponse {
+	energyScore: number | null
+	socialScore: number | null
+	crowdStyle: string | null
+	energy: string | null
+	socialFriendliness: string | null
+	isEstimate: boolean
+	confidence: number
+	totalAttendees: number
+}
+
 // ─── Public event details (GET /events/:id/public) ───────────────────────────
 
 export interface PublicHostProfile {
@@ -96,7 +117,7 @@ export interface PublicEventDetails {
 	whatToExpect: string[]
 	whoShouldAttend: string[]
 	vibeSummary: string | null
-	crowdPulse: unknown | null
+	crowdPulse: CrowdPulseResponse | null
 	isFree: boolean
 	ageRestriction: string
 	specialInstructions: string | null

@@ -482,6 +482,23 @@ export async function unsaveEvent(eventId: string): Promise<void> {
 	await apiClient.delete(`/events/${eventId}/save`)
 }
 
+import type { VibeMatchResponse, CrowdPulseResponse } from "@/types/attendee"
+
+export async function getEventVibeMatch(eventId: string): Promise<VibeMatchResponse> {
+	const { data } = await apiClient.post<{ success: boolean; data: VibeMatchResponse }>(
+		`/events/${eventId}/vibe-match`,
+		{},
+	)
+	return data.data
+}
+
+export async function getEventCrowdPulse(eventId: string): Promise<CrowdPulseResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: CrowdPulseResponse }>(
+		`/events/${eventId}/crowd-pulse`,
+	)
+	return data.data
+}
+
 // ─── Attendee profile ─────────────────────────────────────────────────────────
 
 import type { AttendeeProfile } from "@/types/attendee"
@@ -707,16 +724,25 @@ export async function joinCommunity(
 	return data.data
 }
 
-export async function leaveCommunity(communityId: string): Promise<void> {
-	await apiClient.delete(`/communities/${communityId}/leave`)
+export async function leaveCommunity(communityId: string): Promise<{ success: boolean }> {
+	const { data } = await apiClient.delete<{ success: boolean; data: { success: boolean } }>(
+		`/communities/${communityId}/leave`,
+	)
+	return data.data
 }
 
-export async function saveCommunity(communityId: string): Promise<void> {
-	await apiClient.post(`/communities/${communityId}/save`)
+export async function saveCommunity(communityId: string): Promise<{ saved: boolean }> {
+	const { data } = await apiClient.post<{ success: boolean; data: { saved: boolean } }>(
+		`/communities/${communityId}/save`,
+	)
+	return data.data
 }
 
-export async function unsaveCommunity(communityId: string): Promise<void> {
-	await apiClient.delete(`/communities/${communityId}/save`)
+export async function unsaveCommunity(communityId: string): Promise<{ saved: boolean }> {
+	const { data } = await apiClient.delete<{ success: boolean; data: { saved: boolean } }>(
+		`/communities/${communityId}/save`,
+	)
+	return data.data
 }
 
 export interface SavedCommunity extends PublicCommunity {
@@ -1274,6 +1300,503 @@ export async function generateEventDraft(prompt: string): Promise<CopilotDraft> 
 	const { data } = await apiClient.post<{ success: boolean; data: CopilotDraft }>(
 		"/events/copilot/generate-draft",
 		{ prompt },
+	)
+	return data.data
+}
+
+// ─── Host communities – overview ─────────────────────────────────────────────
+
+export type HostCommunityOverviewCommunity = {
+	id: string
+	slug: string
+	name: string
+	description: string
+	type: string
+	access: HostCommunityAccess
+	isVerified: boolean
+	primaryCity: string
+	communityCities: string[]
+	coverImageUrl: string
+	iconUrl: string
+	interestTags: { id: string; name: string; slug: string }[]
+	category: { id: string; name: string }
+}
+
+export type HostCommunityOverviewAudience = {
+	matchScore: number | null
+	matchLabel: "Great match!" | "High engagement" | null
+	matchDescription: string | null
+	memberCount: number
+	memberGrowthPct: number
+	topAgeGroup: { label: string; pct: number } | null
+	genderSplit: {
+		male: number
+		female: number
+		nonBinary: number
+		malePct: number
+		femalePct: number
+		nonBinaryPct: number
+	} | null
+	topCities: string[]
+	cityCount: number
+}
+
+export type HostCommunityRole = "OWNER" | "MANAGER" | "HOST" | "MODERATOR" | "MEMBER"
+
+export type HostCommunityOverviewHostContext = {
+	isMember: boolean
+	isPending: boolean
+	role: HostCommunityRole | null
+	permissions: {
+		canSubmitExperiences: boolean
+		canReplyToComments: boolean
+		canViewAnalytics: boolean
+		canReceiveUpdates: boolean
+	}
+}
+
+export type HostCommunityOverviewStats = {
+	totalViews: number
+	experiencesPublished: number
+	monthlyActiveMembers: number
+	avgEngagementRate: number
+}
+
+export type HostCommunityUpcomingExperience = {
+	id: string
+	title: string
+	eventDate: string
+	startTime: string
+	city: string
+	coverImageUrl: string
+	interestedCount: number
+}
+
+export type HostCommunityOverviewResponse = {
+	community: HostCommunityOverviewCommunity
+	audience: HostCommunityOverviewAudience
+	hostContext: HostCommunityOverviewHostContext
+	stats: HostCommunityOverviewStats
+	upcomingExperiences: HostCommunityUpcomingExperience[]
+}
+
+export async function getHostCommunityOverview(communityId: string): Promise<HostCommunityOverviewResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: HostCommunityOverviewResponse }>(
+		`/communities/${communityId}/host/overview`,
+	)
+	return data.data
+}
+
+// ─── Host communities – feed ─────────────────────────────────────────────────
+
+export async function getHostCommunityFeedPosts(
+	communityId: string,
+	params?: FeedPostsParams,
+): Promise<FeedPostsResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: FeedPostsResponse }>(
+		`/communities/${communityId}/host/feed/posts`,
+		{ params },
+	)
+	return data.data
+}
+
+// ─── Host communities – event attachment ─────────────────────────────────────
+
+export type AddHostCommunityEventResponse = {
+	success: boolean
+	communityId: string
+	eventId: string
+}
+
+export async function addHostCommunityEvent(
+	communityId: string,
+	eventId: string,
+): Promise<AddHostCommunityEventResponse> {
+	const { data } = await apiClient.post<{ success: boolean; data: AddHostCommunityEventResponse }>(
+		`/communities/${communityId}/host/events`,
+		{ eventId },
+	)
+	return data.data
+}
+
+// ─── Host communities – feed sidebar ─────────────────────────────────────────
+
+export type HostCommunityFeedSidebarResponse = {
+	about: {
+		description: string
+		interestTags: { id: string; name: string; slug: string }[]
+	}
+	stats: {
+		membersCount: number
+		experiencesThisMonth: number
+		monthlyViews: number
+		monthlyComments: number
+		monthlyShares: number
+		audienceMatchPct: number | null
+	}
+	upcomingExperiences: HostCommunityUpcomingExperience[]
+	trendingDiscussions: {
+		id: string
+		content: string
+		category: FeedPostCategory
+		commentCount: number
+	}[]
+}
+
+export async function getHostCommunityFeedSidebar(communityId: string): Promise<HostCommunityFeedSidebarResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: HostCommunityFeedSidebarResponse }>(
+		`/communities/${communityId}/host/feed/sidebar`,
+	)
+	return data.data
+}
+
+// ─── Host communities – eligible events ──────────────────────────────────────
+
+export type HostCommunityEligibleEvent = {
+	id: string
+	title: string
+	eventDate: string
+	city: string
+	coverImageUrl: string
+	category: { id: string; name: string }
+}
+
+export type HostCommunityEligibleEventsParams = {
+	search?: string
+	page?: number
+	limit?: number
+}
+
+export type HostCommunityEligibleEventsResponse = {
+	data: HostCommunityEligibleEvent[]
+	total: number
+	page: number
+	limit: number
+}
+
+export async function getHostCommunityEligibleEvents(
+	communityId: string,
+	params?: HostCommunityEligibleEventsParams,
+): Promise<HostCommunityEligibleEventsResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: HostCommunityEligibleEventsResponse }>(
+		`/communities/${communityId}/host/eligible-events`,
+		{ params },
+	)
+	return data.data
+}
+
+// ─── Host communities – experiences ──────────────────────────────────────────
+
+export type HostCommunityExperienceSource = "MANUAL" | "AUTO"
+
+export type HostCommunityExperience = {
+	id: string
+	title: string
+	description: string
+	eventDate: string
+	startTime: string
+	city: string
+	coverImageUrl: string
+	communityEventId: string
+	addedAt: string
+	source: HostCommunityExperienceSource
+	stats: {
+		views: number
+		interestedCount: number
+		goingCount: number
+	}
+}
+
+export type HostCommunityExperiencesParams = {
+	page?: number
+	limit?: number
+}
+
+export type HostCommunityExperiencesResponse = {
+	data: HostCommunityExperience[]
+	total: number
+	page: number
+	limit: number
+}
+
+export async function getHostCommunityExperiences(
+	communityId: string,
+	params?: HostCommunityExperiencesParams,
+): Promise<HostCommunityExperiencesResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: HostCommunityExperiencesResponse }>(
+		`/communities/${communityId}/host/experiences`,
+		{ params },
+	)
+	return data.data
+}
+
+// ─── Host communities – announcements ────────────────────────────────────────
+
+export type HostAnnouncementStatus = "DRAFT" | "SCHEDULED" | "PUBLISHED"
+
+export type HostCommunityAnnouncement = {
+	id: string
+	communityId: string
+	authorId: string
+	authorRole: string
+	category: "EVENT_DROP" | "EVENT_REMINDER" | "COMMUNITY_UPDATE" | "COMMUNITY_REMINDER"
+	title: string
+	body: string
+	imageKey: string | null
+	imageUrl: string | null
+	status: HostAnnouncementStatus
+	scheduledAt: string | null
+	isPinned: boolean
+	pinnedAt: string | null
+	likeCount: number
+	bookmarkCount: number
+	reachCount: number
+	publishedAt: string | null
+	deletedAt: string | null
+	createdAt: string
+	updatedAt: string
+	author: {
+		id: string
+		name: string
+		avatarUrl: string | null
+		isBrand: boolean
+	}
+	likedByMe: boolean
+	bookmarkedByMe: boolean
+}
+
+export type HostCommunityAnnouncementsParams = {
+	status?: HostAnnouncementStatus
+	page?: number
+	limit?: number
+}
+
+export type HostCommunityAnnouncementsResponse = {
+	items: HostCommunityAnnouncement[]
+	total: number
+	page: number
+	limit: number
+	totalPages: number
+}
+
+export type HostAnnouncementStats = {
+	published: number
+	scheduled: number
+	drafts: number
+	totalReach: {
+		value: number
+		changePercent: number | null
+		windowDays: number
+	}
+}
+
+export async function getHostCommunityAnnouncementStats(
+	communityId: string,
+): Promise<HostAnnouncementStats> {
+	const { data } = await apiClient.get<{ success: boolean; data: HostAnnouncementStats }>(
+		`/communities/${communityId}/host/announcements/stats`,
+	)
+	return data.data
+}
+
+export type CreateHostAnnouncementPayload = {
+	category: "EVENT_DROP" | "EVENT_REMINDER" | "COMMUNITY_UPDATE" | "COMMUNITY_REMINDER"
+	title: string
+	body: string
+	imageKey?: string | null
+	status: HostAnnouncementStatus
+	scheduledAt?: string | null
+}
+
+export async function createHostCommunityAnnouncement(
+	communityId: string,
+	payload: CreateHostAnnouncementPayload,
+): Promise<HostCommunityAnnouncement> {
+	const { data } = await apiClient.post<{ success: boolean; data: HostCommunityAnnouncement }>(
+		`/communities/${communityId}/host/announcements`,
+		payload,
+	)
+	return data.data
+}
+
+export async function pinHostCommunityAnnouncement(
+	communityId: string,
+	announcementId: string,
+): Promise<HostCommunityAnnouncement> {
+	const { data } = await apiClient.post<{ success: boolean; data: HostCommunityAnnouncement }>(
+		`/communities/${communityId}/host/announcements/${announcementId}/pin`,
+	)
+	return data.data
+}
+
+export async function unpinHostCommunityAnnouncement(
+	communityId: string,
+	announcementId: string,
+): Promise<HostCommunityAnnouncement> {
+	const { data } = await apiClient.delete<{ success: boolean; data: HostCommunityAnnouncement }>(
+		`/communities/${communityId}/host/announcements/${announcementId}/pin`,
+	)
+	return data.data
+}
+
+export async function deleteHostCommunityAnnouncement(
+	communityId: string,
+	announcementId: string,
+): Promise<{ success: boolean }> {
+	const { data } = await apiClient.delete<{ success: boolean; data: { success: boolean } }>(
+		`/communities/${communityId}/host/announcements/${announcementId}`,
+	)
+	return data.data
+}
+
+export type UpdateHostAnnouncementPayload = Partial<CreateHostAnnouncementPayload>
+
+export async function updateHostCommunityAnnouncement(
+	communityId: string,
+	announcementId: string,
+	payload: UpdateHostAnnouncementPayload,
+): Promise<HostCommunityAnnouncement> {
+	const { data } = await apiClient.patch<{ success: boolean; data: HostCommunityAnnouncement }>(
+		`/communities/${communityId}/host/announcements/${announcementId}`,
+		payload,
+	)
+	return data.data
+}
+
+export async function getHostCommunityAnnouncements(
+	communityId: string,
+	params?: HostCommunityAnnouncementsParams,
+): Promise<HostCommunityAnnouncementsResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: HostCommunityAnnouncementsResponse }>(
+		`/communities/${communityId}/host/announcements`,
+		{ params },
+	)
+	return data.data
+}
+
+// ─── Host communities – audience ─────────────────────────────────────────────
+
+export type AudienceAgeRange = "UNDER_18" | "AGE_18_24" | "AGE_25_34" | "AGE_35_44" | "AGE_45_54" | "AGE_55_PLUS"
+
+export type HostCommunityAudienceStats = {
+	totalMembers: number
+	totalMemberGrowthPct: number
+	newMembersThisMonth: number
+	newMemberGrowthPct: number
+	engagementRate: number
+	engagementRateDelta: number
+	avgExperienceRating: number
+	avgExperienceRatingDelta: number
+}
+
+export type HostCommunityAudienceDemographics = {
+	ageDistribution: {
+		range: AudienceAgeRange
+		label: string
+		count: number
+		pct: number
+	}[]
+	genderSplit: {
+		male: number
+		female: number
+		nonBinary: number
+		malePct: number
+		femalePct: number
+		nonBinaryPct: number
+	}
+}
+
+export type HostCommunityAudienceResponse = {
+	stats: HostCommunityAudienceStats
+	demographics: HostCommunityAudienceDemographics
+	topCities: { city: string; count: number; pct: number }[]
+	interests: { id: string; name: string; slug: string; memberPct: number }[]
+	activity: {
+		eventViews: { total: number; growthPct: number }
+		comments: { total: number; growthPct: number }
+		shares: { total: number; growthPct: number }
+	}
+	highlights: string[]
+}
+
+export async function getHostCommunityAudience(communityId: string): Promise<HostCommunityAudienceResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: HostCommunityAudienceResponse }>(
+		`/communities/${communityId}/host/audience`,
+	)
+	return data.data
+}
+
+// ─── Host communities – activity ─────────────────────────────────────────────
+
+export type HostCommunityActivity = {
+	communitiesJoined: number
+	accessRequests: number
+	pendingReviews: number
+	experiencesInCommunities: number
+	totalCommunityViews: number
+}
+
+export async function getHostCommunityActivity(): Promise<HostCommunityActivity> {
+	const { data } = await apiClient.get<{ success: boolean; data: HostCommunityActivity }>(
+		"/communities/host/activity",
+	)
+	return data.data
+}
+
+// ─── Host communities – browse ────────────────────────────────────────────────
+
+export type HostCommunityAudienceSize = "SMALL" | "MEDIUM" | "LARGE" | "VERY_LARGE"
+export type HostCommunityAccess = "PUBLIC" | "APPROVAL_REQUIRED" | "INVITE_ONLY"
+export type HostCommunityBrowseTab = "ALL" | "PUBLIC" | "APPROVAL_REQUIRED" | "INVITE_ONLY" | "MY_COMMUNITIES"
+
+export type HostBrowseCommunitiesParams = {
+	search?: string
+	categoryId?: string
+	city?: string
+	audienceSize?: HostCommunityAudienceSize
+	access?: HostCommunityAccess
+	tab?: HostCommunityBrowseTab
+	page?: number
+	limit?: number
+}
+
+export type HostBrowseCommunity = {
+	id: string
+	slug: string
+	name: string
+	description: string
+	type: string
+	access: HostCommunityAccess
+	primaryCity: string
+	communityCities: string[]
+	coverImageUrl: string
+	iconUrl: string
+	memberCount: number
+	experienceCount: number
+	category: { id: string; name: string }
+	isVerified: boolean
+	experiencesThisMonth: number
+	avgHostRating: number | null
+	matchScore: number | null
+	matchLabel: "Great match!" | "High engagement" | null
+	isMember: boolean
+	isPending: boolean
+}
+
+export type HostBrowseCommunitiesResponse = {
+	data: HostBrowseCommunity[]
+	total: number
+	page: number
+	limit: number
+	totalPages: number
+}
+
+export async function getHostBrowseCommunities(
+	params?: HostBrowseCommunitiesParams,
+): Promise<HostBrowseCommunitiesResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: HostBrowseCommunitiesResponse }>(
+		"/communities/host/browse",
+		{ params },
 	)
 	return data.data
 }

@@ -56,7 +56,7 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, className, communityName }: EventCardProps) {
-	const isFree = event.startingPrice === 0
+	const isFree = event.startingPrice === 0 || event.startingPrice == null
 
 	return (
 		<Link

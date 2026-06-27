@@ -359,16 +359,11 @@ export default function ProfilePage() {
 						{/* Subscription */}
 						{profile && (
 							<SectionCard icon={<Icon as={CardSvg} size="md" color="brand" />} title="Subscription">
-								<div className="flex items-center justify-between gap-4 bg-red-50 border border-red-100 rounded-xl px-4 py-3.5">
-									<div>
-										<p className="text-label-sm font-semibold text-text-primary">{planLabel}</p>
-										<p className="text-caption text-text-tertiary mt-0.5">
-											{profile.currentPlan ?? "No active plan"}
-										</p>
-									</div>
-									<Button variant="secondary" size="sm" radius="pill" className="shrink-0">
-										Upgrade
-									</Button>
+								<div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3.5">
+									<p className="text-label-sm font-semibold text-text-primary">{planLabel}</p>
+									<p className="text-caption text-text-tertiary mt-0.5">
+										{profile.currentPlan ?? "No active plan"}
+									</p>
 								</div>
 							</SectionCard>
 						)}
