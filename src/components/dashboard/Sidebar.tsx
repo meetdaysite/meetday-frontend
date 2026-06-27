@@ -14,6 +14,8 @@ import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
 import ClipboardListSvg from "@/icons/outlined/clipboard-list.svg"
 import UsersGroup2Svg from "@/icons/outlined/users-group-2.svg"
+import UsersGroupOutSvg from "@/icons/outlined/users-group.svg"
+import UsersGroupFillSvg from "@/icons/filled/users-group.svg"
 import MessageSvg from "@/icons/outlined/message.svg"
 import CashOutOutSvg from "@/icons/outlined/cash-out.svg"
 import Chart2OutSvg from "@/icons/outlined/chart-2.svg"
@@ -30,11 +32,12 @@ type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 const NAV_ITEMS: { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; dot?: boolean }[] = [
 	{ label: "Dashboard", href: "/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "My Experiences", href: "/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg },
-	{ label: "Registrations", href: "/dashboard/registrations", outlined: ClipboardListSvg, filled: ClipboardListSvg },
-	{ label: "Attendees", href: "/dashboard/attendees", outlined: UsersGroup2Svg, filled: UsersGroup2Svg },
-	{ label: "Messages", href: "/dashboard/messages", outlined: MessageSvg, filled: MessageSvg, dot: true },
-	{ label: "Payouts", href: "/dashboard/payouts", outlined: CashOutOutSvg, filled: CashOutFillSvg },
-	{ label: "Insights", href: "/dashboard/insights", outlined: Chart2OutSvg, filled: Chart2FillSvg },
+	// { label: "Registrations", href: "/dashboard/registrations", outlined: ClipboardListSvg, filled: ClipboardListSvg },
+	// { label: "Attendees", href: "/dashboard/attendees", outlined: UsersGroup2Svg, filled: UsersGroup2Svg },
+	{ label: "Communities", href: "/dashboard/communities", outlined: UsersGroupOutSvg, filled: UsersGroupFillSvg },
+	// { label: "Messages", href: "/dashboard/messages", outlined: MessageSvg, filled: MessageSvg, dot: true },
+	// { label: "Payouts", href: "/dashboard/payouts", outlined: CashOutOutSvg, filled: CashOutFillSvg },
+	// { label: "Insights", href: "/dashboard/insights", outlined: Chart2OutSvg, filled: Chart2FillSvg },
 	{ label: "Profile", href: "/dashboard/profile", outlined: UserSvg, filled: UserSvg },
 ]
 
@@ -101,7 +104,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 				})}
 			</nav>
 
-			<div className="px-4 pb-6 mt-4 flex flex-col gap-4">
+			{/* <div className="px-4 pb-6 mt-4 flex flex-col gap-4">
 				<div className="bg-surface-brand-soft border border-border-brand rounded-action p-4">
 					<p className="text-label-sm font-semibold text-text-brand flex items-center gap-1.5">
 						<span className="size-2 rounded-full bg-red-500 shrink-0" />
@@ -127,7 +130,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 					</div>
 					<Icon as={GiftSvg} size="lg" color="warning" className="shrink-0 mt-0.5" />
 				</div>
-			</div>
+			</div> */}
 		</div>
 	)
 }

@@ -1,3 +1,6 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Icon } from "@/components/ui/Icon"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
@@ -5,7 +8,9 @@ import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
 import MapPointSvg from "@/icons/outlined/map-point.svg"
 import UserSvg from "@/icons/outlined/user.svg"
 import StarCircleSvg from "@/icons/filled/star-circle.svg"
-import type { PublicEventDetails } from "@/types/attendee"
+import type { PublicEventDetails, VibeMatchResponse } from "@/types/attendee"
+import { useAuthStore } from "@/store/authStore"
+import { getEventVibeMatch } from "@/lib/api"
 
 function formatEventDate(dateStr: string): string {
 	return new Date(dateStr).toLocaleDateString("en-IN", {
@@ -19,6 +24,17 @@ function formatEventDate(dateStr: string): string {
 export function EventPreviewBar({ event }: { event: PublicEventDetails }) {
 	const cover = event.media.find(m => m.type === "COVER")
 	const categoryLabel = event.category.name.toUpperCase()
+	const { user, authLoading } = useAuthStore()
+	const [match, setMatch] = useState<VibeMatchResponse | null>(null)
+
+	useEffect(() => {
+		if (authLoading || !user) return
+		getEventVibeMatch(event.id)
+			.then(setMatch)
+			.catch(() => {})
+	}, [event.id, authLoading, user])
+
+	const showVibe = !!user && match !== null
 
 	return (
 		<div className="rounded-action bg-surface-card border border-border-default p-4 flex gap-5">
@@ -85,15 +101,23 @@ export function EventPreviewBar({ event }: { event: PublicEventDetails }) {
 				</div>
 			</div>
 
-			{/* Vibe match */}
-			<div className="hidden md:flex flex-col items-center justify-center gap-1.5 shrink-0 w-30 rounded-action bg-blue-50 border border-blue-100 p-3 text-center">
-				<div className="flex gap-2 items-center justify-center">
-					<Icon as={StarCircleSvg} size="lg" color="vibe" />
-					<p className="text-heading-sm font-extrabold text-text-vibe leading-none">95%</p>
+			{/* Vibe match — only shown when authenticated and data is available */}
+			{showVibe && (
+				<div className="hidden md:flex flex-col items-center justify-center gap-1.5 shrink-0 w-30 rounded-action bg-blue-50 border border-blue-100 p-3 text-center">
+					<div className="flex gap-2 items-center justify-center">
+						<Icon as={StarCircleSvg} size="lg" color="vibe" />
+						<p className="text-heading-sm font-extrabold text-text-vibe leading-none">
+							{match.score !== null ? `${match.score}%` : "—"}
+						</p>
+					</div>
+					<p className="text-label-sm font-bold text-text-vibe">
+						{match.label ?? "Vibe match"}
+					</p>
+					{match.summary && (
+						<p className="text-[10px] text-text-vibe leading-tight">{match.summary}</p>
+					)}
 				</div>
-				<p className="text-label-sm font-bold text-text-vibe">Vibe match</p>
-				<p className="text-[10px] text-text-vibe leading-tight">You and 24 others love this vibe</p>
-			</div>
+			)}
 		</div>
 	)
 }

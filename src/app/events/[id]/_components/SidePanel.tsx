@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/Button"
@@ -10,14 +11,36 @@ import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
 import EyeSvg from "@/icons/outlined/eye-open.svg"
 import BoltSvg from "@/icons/outlined/bolt.svg"
 import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
-import type { PublicEventDetails, PublicRefundPolicy } from "@/types/attendee"
+import type { PublicEventDetails, PublicRefundPolicy, VibeMatchResponse, CrowdPulseResponse } from "@/types/attendee"
 import { useAuthStore } from "@/store/authStore"
+import { getEventVibeMatch, getEventCrowdPulse } from "@/lib/api"
+
+// crowdStyle → bar fill % as specified by the API contract
+const CROWD_STYLE_FILL: Record<string, number> = {
+	"Party Energy": 80,
+	"Trendy & Social": 65,
+	"Laid-back & Chill": 35,
+	"Mixed Crowd": 50,
+}
 
 // ─── Vibe Match ───────────────────────────────────────────────────────────────
 
-function VibeMatchCard({ vibeSummary }: { vibeSummary: string | null }) {
+function VibeMatchCard({ eventId }: { eventId: string }) {
 	const router = useRouter()
-	const user = useAuthStore(s => s.user)
+	const { user, authLoading } = useAuthStore()
+	const [match, setMatch] = useState<VibeMatchResponse | null>(null)
+	const [fetching, setFetching] = useState(false)
+
+	useEffect(() => {
+		if (authLoading || !user) return
+		setFetching(true)
+		getEventVibeMatch(eventId)
+			.then(setMatch)
+			.catch(() => {})
+			.finally(() => setFetching(false))
+	}, [eventId, authLoading, user])
+
+	const isLoading = authLoading || fetching
 
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
@@ -26,10 +49,36 @@ function VibeMatchCard({ vibeSummary }: { vibeSummary: string | null }) {
 				<span className="text-body-md font-medium text-text-primary">Your Vibe Match</span>
 			</div>
 
-			{vibeSummary ? (
-				<p className="text-body-sm text-text-secondary leading-relaxed">{vibeSummary}</p>
+			{isLoading ? (
+				<div className="flex flex-col gap-3 animate-pulse">
+					<div className="flex items-baseline gap-2">
+						<div className="h-9 w-16 bg-neutral-200 rounded" />
+						<div className="h-4 w-20 bg-neutral-100 rounded" />
+					</div>
+					<div className="h-2 rounded-full bg-neutral-200" />
+					<div className="h-12 rounded-badge bg-neutral-100" />
+				</div>
+			) : match ? (
+				<div className="flex flex-col gap-3">
+					<div className="flex items-baseline gap-2">
+						<span className="text-3xl font-extrabold text-text-vibe">
+							{match.score !== null ? `${match.score}%` : "—"}
+						</span>
+						<span className="text-label-sm text-text-muted">
+							{match.label ?? "match score"}
+						</span>
+					</div>
+					<div className="h-2 rounded-full bg-neutral-100 overflow-hidden">
+						<div
+							className="h-full rounded-full bg-text-vibe transition-all duration-500"
+							style={{ width: `${match.score ?? 0}%` }}
+						/>
+					</div>
+					{match.summary && (
+						<p className="text-body-sm text-text-secondary leading-relaxed">{match.summary}</p>
+					)}
+				</div>
 			) : user ? (
-				// Authenticated but no vibe data yet
 				<div className="flex flex-col gap-3">
 					<div className="flex items-baseline gap-2">
 						<span className="text-3xl font-extrabold text-text-muted">—</span>
@@ -45,7 +94,6 @@ function VibeMatchCard({ vibeSummary }: { vibeSummary: string | null }) {
 					</div>
 				</div>
 			) : (
-				// Unauthenticated
 				<div className="flex flex-col gap-3">
 					<div className="flex items-baseline gap-2">
 						<span className="text-3xl font-extrabold text-text-muted">—</span>
@@ -75,20 +123,14 @@ function VibeMatchCard({ vibeSummary }: { vibeSummary: string | null }) {
 
 // ─── Community Access ─────────────────────────────────────────────────────────
 
-// TODO: Replace with real type once community API is integrated
-interface SidePanelCommunity {
-	name: string
-	description: string
-}
-
+// TODO: Accept `community` prop and only render when event.community is not null
 // TODO: Remove mock and derive from event.community once GET /api/events/[id] returns community data
-const MOCK_COMMUNITY: SidePanelCommunity = {
+const MOCK_COMMUNITY = {
 	name: "Meetday Nightlife Circle",
 	description:
 		"Join the public community to discover more nightlife experiences, meet people with similar energy and return to future rooms",
 }
 
-// TODO: Accept `community` prop and only render when event.community is not null
 function CommunityAccessCard() {
 	const community = MOCK_COMMUNITY
 
@@ -137,21 +179,88 @@ function CommunityAccessCard() {
 
 // ─── Crowd Pulse ──────────────────────────────────────────────────────────────
 
-const CROWD_DIMS = ["Energy", "Crowd style", "Social friendliness"]
+function CrowdPulseCard({ eventId }: { eventId: string }) {
+	const [pulse, setPulse] = useState<CrowdPulseResponse | null>(null)
+	const [loading, setLoading] = useState(true)
 
-function CrowdPulseCard({ crowdPulse }: { crowdPulse: unknown }) {
+	useEffect(() => {
+		getEventCrowdPulse(eventId)
+			.then(setPulse)
+			.catch(() => {})
+			.finally(() => setLoading(false))
+	}, [eventId])
+
+	const dims = pulse
+		? [
+			{
+				label: "Energy",
+				value: pulse.energy,
+				fill: pulse.energyScore,
+				barCls: "bg-gradient-to-r from-orange-400 to-red-500",
+				textCls: "text-red-500",
+			},
+			{
+				label: "Crowd style",
+				value: pulse.crowdStyle,
+				fill: pulse.crowdStyle != null ? (CROWD_STYLE_FILL[pulse.crowdStyle] ?? 50) : null,
+				barCls: "bg-gradient-to-r from-violet-400 to-purple-600",
+				textCls: "text-purple-600",
+			},
+			{
+				label: "Social friendliness",
+				value: pulse.socialFriendliness,
+				fill: pulse.socialScore,
+				barCls: "bg-gradient-to-r from-blue-400 to-indigo-500",
+				textCls: "text-blue-500",
+			},
+		]
+		: null
+
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center gap-2 mb-4">
-				<Icon as={PulseSvg} size="md" color="muted" />
+				<Icon as={PulseSvg} size="md" color={!loading && pulse ? "primary" : "muted"} />
 				<span className="text-body-md font-medium text-text-primary">Crowd Pulse</span>
 			</div>
 
-			{crowdPulse ? (
-				<p className="text-body-sm text-text-secondary">Data available.</p>
+			{loading ? (
+				<div className="flex flex-col gap-3.5 animate-pulse">
+					{["Energy", "Crowd style", "Social friendliness"].map(dim => (
+						<div key={dim} className="flex flex-col gap-1.5">
+							<div className="h-3 w-28 bg-neutral-200 rounded" />
+							<div className="h-1.5 rounded-full bg-neutral-200" />
+						</div>
+					))}
+				</div>
+			) : dims ? (
+				<div className="flex flex-col gap-3.5">
+					{dims.map(({ label, value, fill, barCls, textCls }) => (
+						<div key={label} className="flex flex-col gap-1.5">
+							<div className="flex items-center justify-between">
+								<span className="text-label-sm text-text-muted">{label}</span>
+								{value && (
+									<span className={`text-label-sm font-semibold ${textCls}`}>{value}</span>
+								)}
+							</div>
+							<div className="h-3 rounded-full bg-neutral-100 overflow-hidden">
+								<div
+									className={`h-full rounded-full transition-all duration-500 ${barCls} ${pulse!.isEstimate ? "opacity-60" : ""}`}
+									style={{ width: fill !== null ? `${fill}%` : pulse!.isEstimate ? "40%" : "0%" }}
+								/>
+							</div>
+						</div>
+					))}
+
+					<p className="text-caption text-text-muted text-center mt-0.5 italic">
+						{pulse!.isEstimate
+							? "The vibe is still cooking — check back as more people join!"
+							: `Based on ${pulse!.totalAttendees.toLocaleString()} attendee${pulse!.totalAttendees !== 1 ? "s" : ""}`
+						}
+					</p>
+				</div>
 			) : (
 				<div className="flex flex-col gap-3.5">
-					{CROWD_DIMS.map(dim => (
+					{["Energy", "Crowd style", "Social friendliness"].map(dim => (
 						<div key={dim} className="flex flex-col gap-1.5">
 							<span className="text-label-sm text-text-muted">{dim}</span>
 							<div className="h-1.5 rounded-full bg-neutral-100" />
@@ -206,10 +315,10 @@ function RefundCard({ policy }: { policy: PublicRefundPolicy }) {
 export function SidePanel({ event }: { event: PublicEventDetails }) {
 	return (
 		<>
-			<VibeMatchCard vibeSummary={event.vibeSummary} />
+			<VibeMatchCard eventId={event.id} />
 			{/* TODO: Replace `true` with `!!event.community` once API returns community data */}
 			{true && <CommunityAccessCard />}
-			<CrowdPulseCard crowdPulse={event.crowdPulse} />
+			<CrowdPulseCard eventId={event.id} />
 			{event.refundPolicy && <RefundCard policy={event.refundPolicy} />}
 		</>
 	)
