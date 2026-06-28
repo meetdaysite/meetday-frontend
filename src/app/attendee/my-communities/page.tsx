@@ -171,6 +171,7 @@ function RightPanel({ recommendations }: { recommendations: PublicCommunity[] })
 				</div>
 			)}
 
+			{/* Invite — commented until invite feature is live
 			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
@@ -188,6 +189,7 @@ function RightPanel({ recommendations }: { recommendations: PublicCommunity[] })
 					Invite friends
 				</Button>
 			</div>
+			*/}
 		</>
 	)
 }

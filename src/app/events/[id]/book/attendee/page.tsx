@@ -195,9 +195,11 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 									Add friends to your booking list and make memories together.
 								</p>
 							</div>
+							{/* Invite — commented until invite feature is live
 							<Button variant="secondary" size="sm" radius="md" disabled>
 								Invite friends
 							</Button>
+							*/}
 						</div>
 
 						{/* Terms */}

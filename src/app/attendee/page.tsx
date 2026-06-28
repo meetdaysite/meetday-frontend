@@ -155,11 +155,13 @@ export default function AttendeeLandingPage() {
 								label="Vibe-based matching"
 								sublabel="Find people who feel like you."
 							/>
+							{/* Invite — commented until invite feature is live
 							<TrustBadge
 								icon={<Icon as ={GiftSvg} size="sm" color="brand"/>}
 								label="Earn rewards"
 								sublabel="Invite friends, get credits."
 							/>
+							*/}
 						</div>
 					</div>
 				</section>

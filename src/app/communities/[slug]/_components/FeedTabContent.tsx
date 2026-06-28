@@ -7,8 +7,6 @@ import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import GalleryWideSvg from "@/icons/outlined/gallery-wide.svg"
 import Chart2Svg from "@/icons/outlined/chart-2.svg"
-import UsersGroup2Svg from "@/icons/outlined/users-group-2.svg"
-import DotsSvg from "@/icons/outlined/dots.svg"
 import PlaneSvg from "@/icons/outlined/plane.svg"
 import SmileCircleSvg from "@/icons/outlined/smile-circle.svg"
 import ChatDotsSvg from "@/icons/outlined/chat-dots.svg"
@@ -103,20 +101,6 @@ const POST_ACTIONS = [
 		iconColor: "secondary" as const,
 		iconClass: "text-orange-500",
 		key: "poll",
-	},
-	{
-		icon: UsersGroup2Svg,
-		label: "Event Buddy",
-		iconBg: "bg-purple-100",
-		iconColor: "vibe" as const,
-		key: "buddy",
-	},
-	{
-		icon: DotsSvg,
-		label: "More",
-		iconBg: "bg-surface-hover",
-		iconColor: "secondary" as const,
-		key: "more",
 	},
 ]
 

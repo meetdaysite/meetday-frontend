@@ -20,7 +20,6 @@ import GiftSvg from "@/icons/outlined/gift.svg"
 import MapPointSvg from "@/icons/outlined/map-point.svg"
 import UserSvg from "@/icons/outlined/user.svg"
 import { getPublicEventDetails } from "@/lib/api"
-import { downloadICS, generateICSContent } from "@/lib/icsUtils"
 import { getFullOrderDetail } from "@/lib/ordersApi"
 import { useAuthStore } from "@/store/authStore"
 import type { PublicEventDetails } from "@/types/attendee"
@@ -40,17 +39,6 @@ function formatEventDate(isoDate: string): string {
 		month: "short",
 		year: "numeric",
 	})
-}
-
-function to24hr(time12: string): string {
-	const parts = time12.trim().split(" ")
-	if (parts.length < 2) return time12
-	const [timePart, period] = parts
-	const [hStr, mStr] = timePart.split(":")
-	let hour = parseInt(hStr, 10)
-	if (period.toUpperCase() === "PM" && hour !== 12) hour += 12
-	if (period.toUpperCase() === "AM" && hour === 12) hour = 0
-	return `${hour.toString().padStart(2, "0")}:${mStr}`
 }
 
 function copyToClipboard(text: string) {
@@ -160,20 +148,6 @@ function TicketPageContent({
 		copyToClipboard(order.bookingId)
 		setCopied(true)
 		setTimeout(() => setCopied(false), 2000)
-	}
-
-	const handleAddToCalendar = () => {
-		const ev = order.event
-		const dateOnly = ev.eventDate.slice(0, 10)
-		const content = generateICSContent({
-			title: ev.title,
-			date: dateOnly,
-			startTime: to24hr(ev.startTime),
-			endTime: to24hr(ev.endTime),
-			venueName: ev.venueName,
-			fullAddress: ev.fullAddress,
-		})
-		downloadICS(`${ev.title.replace(/\s+/g, "-")}.ics`, content)
 	}
 
 	const ev = order.event
@@ -311,15 +285,6 @@ function TicketPageContent({
 							>
 								Download
 							</Button>
-							<Button
-								variant="primary"
-								size="md"
-								radius="md"
-								leftIcon={<Icon as={CalendarSvg} size="sm" color="inherit" />}
-								onClick={handleAddToCalendar}
-							>
-								Add to Calendar
-							</Button>
 							{order.status === "CONFIRMED" && new Date(order.event.eventDate) < new Date() && (
 								<Link href={`/events/${order.eventId}/review?orderId=${order.id}`}>
 									<Button
@@ -388,7 +353,7 @@ function TicketPageContent({
 							</div>
 						</div>
 
-						{/* Invite friend, get rewarded */}
+						{/* Invite friend, get rewarded — commented until invite feature is live
 						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 							<div className="flex items-center gap-3">
 								<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
@@ -414,6 +379,7 @@ function TicketPageContent({
 								</button>
 							</div>
 						</div>
+						*/}
 
 						{/* Refund reference */}
 						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">

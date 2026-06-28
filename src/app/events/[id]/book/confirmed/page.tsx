@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/Button"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
 import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
-import CalendarSvg from "@/icons/outlined/calendar.svg"
 import TicketSvg from "@/icons/filled/ticket.svg"
 import CopySvg from "@/icons/outlined/copy.svg"
 import InfoCircleSvg from "@/icons/filled/info-circle.svg"
@@ -20,7 +19,6 @@ import { getPublicEventDetails } from "@/lib/api"
 import { getOrderDetail } from "@/lib/ordersApi"
 import { useBookingStore } from "@/store/bookingStore"
 import { useAuthStore } from "@/store/authStore"
-import { generateICSContent, downloadICS } from "@/lib/icsUtils"
 import type { PublicEventDetails } from "@/types/attendee"
 import type { OrderDetail } from "@/types/order"
 import { EventPreviewBar } from "../_components/EventPreviewBar"
@@ -92,19 +90,6 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 		copyToClipboard(bookingRef)
 		setCopied(true)
 		setTimeout(() => setCopied(false), 2000)
-	}
-
-	const handleAddToCalendar = () => {
-		const content = generateICSContent({
-			title: event.title,
-			date: event.eventDate,
-			startTime: event.startTime,
-			endTime: event.endTime,
-			venueName: event.venueName,
-			fullAddress: event.fullAddress,
-			description: event.description,
-		})
-		downloadICS(`${event.title.replace(/\s+/g, "-")}.ics`, content)
 	}
 
 	return (
@@ -252,15 +237,6 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 									View my ticket
 								</Button>
 							</Link>
-								<Button
-									variant="secondary"
-									size="md"
-									radius="md"
-									leftIcon={<Icon as={CalendarSvg} size="sm" color="inherit" />}
-									onClick={handleAddToCalendar}
-								>
-									Add to calendar
-								</Button>
 							</div>
 
 							{/* Secure note */}

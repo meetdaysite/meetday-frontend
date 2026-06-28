@@ -82,7 +82,7 @@ export function ConfirmedRightPanel() {
 				</div>
 			</div>
 
-			{/* Invite friend, get rewarded */}
+			{/* Invite friend, get rewarded — commented until invite feature is live
 			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
@@ -102,6 +102,7 @@ export function ConfirmedRightPanel() {
 					</Button>
 				</div>
 			</div>
+			*/}
 		</div>
 	)
 }

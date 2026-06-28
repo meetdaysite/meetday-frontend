@@ -19,7 +19,6 @@ import CopySvg from "@/icons/outlined/copy.svg"
 import GiftSvg from "@/icons/outlined/gift.svg"
 import { getMyOrders } from "@/lib/ordersApi"
 import { getPublicEventDetails, getPublicEvents, getSavedEvents } from "@/lib/api"
-import { downloadICS, generateICSContent } from "@/lib/icsUtils"
 import { useAuthStore } from "@/store/authStore"
 import { EventCard } from "@/components/attendee/EventCard"
 import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
@@ -48,17 +47,6 @@ function formatEventDate(isoDate: string): string {
 function formatOrderAmount(amount: string): string {
 	const n = parseFloat(amount)
 	return isNaN(n) ? "₹0" : `₹${Math.round(n).toLocaleString("en-IN")}`
-}
-
-function to24hr(time12: string): string {
-	const parts = time12.trim().split(" ")
-	if (parts.length < 2) return time12
-	const [timePart, period] = parts
-	const [hStr, mStr] = timePart.split(":")
-	let hour = parseInt(hStr, 10)
-	if (period.toUpperCase() === "PM" && hour !== 12) hour += 12
-	if (period.toUpperCase() === "AM" && hour === 12) hour = 0
-	return `${hour.toString().padStart(2, "0")}:${mStr}`
 }
 
 function copyToClipboard(text: string) {
@@ -177,19 +165,6 @@ function MyEventCard({
 		copyToClipboard(bookingRef)
 		setCopied(true)
 		setTimeout(() => setCopied(false), 2000)
-	}
-
-	const handleAddToCalendar = (e: React.MouseEvent) => {
-		e.stopPropagation()
-		const content = generateICSContent({
-			title: ev.title,
-			date: ev.eventDate.slice(0, 10),
-			startTime: to24hr(ev.startTime),
-			endTime: to24hr(ev.startTime),
-			venueName: ev.venueName,
-			fullAddress: ev.venueName,
-		})
-		downloadICS(`${ev.title.replace(/\s+/g, "-")}.ics`, content)
 	}
 
 	return (
@@ -335,21 +310,11 @@ function MyEventCard({
 
 			{/* Bottom bar */}
 			{isUpcoming && order.status === "CONFIRMED" && (
-				<div className="flex items-center justify-between px-5 py-2.5 bg-green-50 border-t border-green-100">
-					<div className="flex items-center gap-2">
-						<Icon as={CheckCircleSvg} size="sm" color="success" />
-						<span className="text-label-sm font-medium text-icon-success">
-							{"You're all set! Show your QR code at the venue entry."}
-						</span>
-					</div>
-					<button
-						type="button"
-						onClick={handleAddToCalendar}
-						className="inline-flex items-center gap-1.5 text-label-sm font-medium text-text-brand hover:underline shrink-0"
-					>
-						<Icon as={CalendarSvg} size="sm" color="brand" />
-						Add to Calendar
-					</button>
+				<div className="flex items-center gap-2 px-5 py-2.5 bg-green-50 border-t border-green-100">
+					<Icon as={CheckCircleSvg} size="sm" color="success" />
+					<span className="text-label-sm font-medium text-icon-success">
+						{"You're all set! Show your QR code at the venue entry."}
+					</span>
 				</div>
 			)}
 		</div>
@@ -485,7 +450,7 @@ function EmptyEventsState() {
 				</div>
 			</div>
 
-			{/* Going with friends */}
+			{/* Going with friends — commented until invite feature is live
 			<div className="rounded-action border border-border-default bg-surface-card p-4 flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<AvatarStack />
@@ -501,6 +466,7 @@ function EmptyEventsState() {
 					Invite friends
 				</Button>
 			</div>
+			*/}
 		</div>
 	)
 }
@@ -531,7 +497,7 @@ function WithEventsRightPanel() {
 				</button>
 			</div>
 
-			{/* Invite */}
+			{/* Invite — commented until invite feature is live
 			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
@@ -549,6 +515,7 @@ function WithEventsRightPanel() {
 					Invite friends
 				</Button>
 			</div>
+			*/}
 
 			{/* Refund */}
 			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
@@ -640,7 +607,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 				</div>
 			)}
 
-			{/* Invite */}
+			{/* Invite — commented until invite feature is live
 			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
@@ -658,6 +625,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 					Invite friends
 				</Button>
 			</div>
+			*/}
 		</>
 	)
 }

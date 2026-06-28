@@ -611,6 +611,7 @@ export function MemberProfileDrawer({
 										>
 											Say Hi
 										</Button>
+										{/* Invite to Event — commented until invite feature is live
 										<Button
 											variant="secondary"
 											size="md"
@@ -620,6 +621,7 @@ export function MemberProfileDrawer({
 										>
 											Invite to Event
 										</Button>
+										*/}
 									</>
 								)}
 

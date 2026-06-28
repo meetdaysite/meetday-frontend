@@ -24,8 +24,9 @@ import HeartsFilledSvg from "@/icons/filled/hearts.svg"
 import HeartSvg from "@/icons/outlined/heart.svg"
 import FireSvg from "@/icons/outlined/fire.svg"
 import { avatarColor } from "@/lib/avatarColor"
-import { getCommunityStats, getCommunityHosts, getCommunityMembers, getCommunityEvents, getCommunityTrendingTopics, getCommunityPopularPosts, getCommunityBookmarkedPosts } from "@/lib/api"
-import type { CommunityStats, CommunityHost, CommunityMember, CommunityEvent, TrendingTopic, FeedPost } from "@/lib/api"
+import { getCommunityStats, getCommunityHosts, getCommunityMembers, getCommunityEvents, getCommunityTrendingTopics, getCommunityPopularPosts, getCommunityBookmarkedPosts, getCategories, getInterests, getSavedEvents } from "@/lib/api"
+import type { CommunityStats, CommunityHost, CommunityMember, CommunityEvent, TrendingTopic, FeedPost, Category, Interest } from "@/lib/api"
+import type { SavedEvent } from "@/types/attendee"
 
 // ─── Shared host avatar helper ─────────────────────────────────────────────────
 
@@ -244,26 +245,40 @@ function CommunityGuidelinesCard() {
 
 // ─── Experiences: Filter Card ─────────────────────────────────────────────────
 
-// TODO: Replace with real filter options from GET /api/experiences/filters
 const DATE_FILTER_OPTIONS = ["All", "This Week", "This Month", "Next Month"]
-const TYPE_FILTER_OPTIONS = ["All", "Rooftop", "Club", "Live", "Festival"]
-const GENRE_OPTIONS = ["All Genres", "Electronic", "Hip-Hop", "Jazz", "Classical", "Afrobeats"]
 const SORT_OPTIONS = ["Date: Soonest", "Date: Latest", "Popularity", "Price: Low to High"]
 
-function ExperiencesFilterCard() {
-	const [selectedDate, setSelectedDate] = useState("All")
-	const [selectedType, setSelectedType] = useState("All")
-	const [selectedGenre, setSelectedGenre] = useState("All Genres")
-	const [selectedSort, setSelectedSort] = useState("Date: Soonest")
+export type ExperienceFilters = {
+	date: string
+	categoryId: string
+	interestSlug: string
+	sort: string
+}
 
-	const hasActiveFilters =
-		selectedDate !== "All" || selectedType !== "All" || selectedGenre !== "All Genres"
+export const DEFAULT_EXPERIENCE_FILTERS: ExperienceFilters = {
+	date: "All",
+	categoryId: "",
+	interestSlug: "",
+	sort: "Date: Soonest",
+}
 
-	const clearAll = () => {
-		setSelectedDate("All")
-		setSelectedType("All")
-		setSelectedGenre("All Genres")
-	}
+function ExperiencesFilterCard({
+	filters,
+	onChange,
+}: {
+	filters: ExperienceFilters
+	onChange: (f: ExperienceFilters) => void
+}) {
+	const [categories, setCategories] = useState<Category[]>([])
+	const [interests, setInterests] = useState<Interest[]>([])
+
+	useEffect(() => {
+		getCategories().then(setCategories).catch(() => {})
+		getInterests().then(setInterests).catch(() => {})
+	}, [])
+
+	const hasActiveFilters = filters.date !== "All" || !!filters.categoryId || !!filters.interestSlug
+	const clearAll = () => onChange({ ...filters, date: "All", categoryId: "", interestSlug: "" })
 
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
@@ -287,9 +302,9 @@ function ExperiencesFilterCard() {
 						<button
 							key={opt}
 							type="button"
-							onClick={() => setSelectedDate(opt)}
+							onClick={() => onChange({ ...filters, date: opt })}
 							className={`px-3 py-1 rounded-full text-[12px] font-medium border transition-colors ${
-								selectedDate === opt
+								filters.date === opt
 									? "bg-action-primary text-white border-action-primary"
 									: "bg-transparent text-text-secondary border-border-default hover:border-border-focus"
 							}`}
@@ -301,35 +316,38 @@ function ExperiencesFilterCard() {
 			</div>
 
 			<div className="mb-4">
-				<p className="text-label-sm font-medium text-text-secondary mb-2">Experience type</p>
-				<div className="flex flex-wrap gap-1.5">
-					{TYPE_FILTER_OPTIONS.map(opt => (
-						<button
-							key={opt}
-							type="button"
-							onClick={() => setSelectedType(opt)}
-							className={`px-3 py-1 rounded-full text-[12px] font-medium border transition-colors ${
-								selectedType === opt
-									? "bg-action-primary text-white border-action-primary"
-									: "bg-transparent text-text-secondary border-border-default hover:border-border-focus"
-							}`}
-						>
-							{opt}
-						</button>
-					))}
-				</div>
-			</div>
-
-			<div className="mb-4">
-				<p className="text-label-sm font-medium text-text-secondary mb-2">Music genre</p>
+				<p className="text-label-sm font-medium text-text-secondary mb-2">Category</p>
 				<div className="relative">
 					<select
-						value={selectedGenre}
-						onChange={e => setSelectedGenre(e.target.value)}
+						value={filters.categoryId}
+						onChange={e => onChange({ ...filters, categoryId: e.target.value })}
 						className="w-full px-3 py-2.5 pr-8 rounded-action border border-border-default bg-surface-page text-label-sm text-text-primary appearance-none cursor-pointer focus:outline-none focus:border-border-focus"
 					>
-						{GENRE_OPTIONS.map(g => (
-							<option key={g}>{g}</option>
+						<option value="">All categories</option>
+						{categories.map(c => (
+							<option key={c.id} value={c.id}>{c.name}</option>
+						))}
+					</select>
+					<Icon
+						as={AltArrowDownSvg}
+						size="sm"
+						color="secondary"
+						className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+					/>
+				</div>
+			</div>
+
+			<div className="mb-4">
+				<p className="text-label-sm font-medium text-text-secondary mb-2">Interest</p>
+				<div className="relative">
+					<select
+						value={filters.interestSlug}
+						onChange={e => onChange({ ...filters, interestSlug: e.target.value })}
+						className="w-full px-3 py-2.5 pr-8 rounded-action border border-border-default bg-surface-page text-label-sm text-text-primary appearance-none cursor-pointer focus:outline-none focus:border-border-focus"
+					>
+						<option value="">All interests</option>
+						{interests.map(i => (
+							<option key={i.slug} value={i.slug}>{i.name}</option>
 						))}
 					</select>
 					<Icon
@@ -345,8 +363,8 @@ function ExperiencesFilterCard() {
 				<p className="text-label-sm font-medium text-text-secondary mb-2">Sort by</p>
 				<div className="relative">
 					<select
-						value={selectedSort}
-						onChange={e => setSelectedSort(e.target.value)}
+						value={filters.sort}
+						onChange={e => onChange({ ...filters, sort: e.target.value })}
 						className="w-full px-3 py-2.5 pr-8 rounded-action border border-border-default bg-surface-page text-label-sm text-text-primary appearance-none cursor-pointer focus:outline-none focus:border-border-focus"
 					>
 						{SORT_OPTIONS.map(s => (
@@ -367,25 +385,23 @@ function ExperiencesFilterCard() {
 
 // ─── Experiences: Saved Experiences Card ──────────────────────────────────────
 
-// TODO: Replace with real saved events from GET /api/users/me/saved-events?communityId=[id]
-const MOCK_SAVED_EXPERIENCES = [
-	{
-		id: "se1",
-		name: "After Hours",
-		coverUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=80&h=80&fit=crop",
-		date: "Sat, 31 May",
-		time: "9:00 PM",
-	},
-]
-
 function SavedExperiencesCard() {
+	const [events, setEvents] = useState<SavedEvent[]>([])
+	const [loading, setLoading] = useState(true)
+
+	useEffect(() => {
+		getSavedEvents({ limit: 3 })
+			.then(res => setEvents(res.data))
+			.catch(() => {})
+			.finally(() => setLoading(false))
+	}, [])
+
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Saved experiences</span>
-				{/* TODO: Link to /attendee/saved-events once page is built */}
 				<Link
-					href="#"
+					href="/attendee/my-events"
 					className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0"
 				>
 					View all
@@ -393,30 +409,46 @@ function SavedExperiencesCard() {
 				</Link>
 			</div>
 
-			<div className="flex flex-col gap-3">
-				{MOCK_SAVED_EXPERIENCES.map(event => (
-					<div key={event.id} className="flex items-center gap-3">
-						<div className="relative size-12 rounded-action overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-							<Image
-								src={event.coverUrl}
-								alt={event.name}
-								fill
-								sizes="48px"
-								className="object-cover"
-							/>
+			{loading ? (
+				<div className="flex flex-col gap-3">
+					{Array.from({ length: 2 }).map((_, i) => (
+						<div key={i} className="flex items-center gap-3">
+							<div className="size-12 rounded-action bg-surface-hover animate-pulse shrink-0" />
+							<div className="flex-1 flex flex-col gap-1.5">
+								<div className="h-3 w-3/4 bg-surface-hover animate-pulse rounded" />
+								<div className="h-2.5 w-1/2 bg-surface-hover animate-pulse rounded" />
+							</div>
 						</div>
-						<div className="flex-1 min-w-0">
-							<p className="text-label-sm font-semibold text-text-primary truncate">
-								{event.name}
-							</p>
-							<p className="text-[11px] text-text-secondary mt-0.5">
-								{event.date} · {event.time}
-							</p>
+					))}
+				</div>
+			) : events.length === 0 ? (
+				<p className="text-label-sm text-text-secondary">No saved experiences yet.</p>
+			) : (
+				<div className="flex flex-col gap-3">
+					{events.map(event => (
+						<div key={event.id} className="flex items-center gap-3">
+							<div className="relative size-12 rounded-action overflow-hidden shrink-0 border border-border-default bg-surface-hover">
+								<Image
+									src={event.coverImageUrl}
+									alt={event.title}
+									fill
+									sizes="48px"
+									className="object-cover"
+								/>
+							</div>
+							<div className="flex-1 min-w-0">
+								<p className="text-label-sm font-semibold text-text-primary truncate">
+									{event.title}
+								</p>
+								<p className="text-[11px] text-text-secondary mt-0.5">
+									{event.eventDate} · {event.startTime}
+								</p>
+							</div>
+							<Icon as={BookmarkSvg} size="sm" color="brand" />
 						</div>
-						<Icon as={BookmarkSvg} size="sm" color="brand" />
-					</div>
-				))}
-			</div>
+					))}
+				</div>
+			)}
 		</div>
 	)
 }
@@ -635,40 +667,57 @@ function MembersTopHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
 
 // ─── Members: New Members Card ────────────────────────────────────────────────
 
-// TODO: Replace with real data from GET /api/communities/[id]/members?sort=newest&limit=3
-const MOCK_NEW_MEMBERS = [
-	{ id: "nm1", name: "Vikram", avatarUrl: "https://i.pravatar.cc/40?img=13", joinedAgo: "2 days ago" },
-	{ id: "nm2", name: "Tanya", avatarUrl: "https://i.pravatar.cc/40?img=4", joinedAgo: "3 days ago" },
-	{ id: "nm3", name: "Rohan", avatarUrl: "https://i.pravatar.cc/40?img=17", joinedAgo: "4 days ago" },
-]
+function joinedAgo(iso: string): string {
+	const diff = Date.now() - new Date(iso).getTime()
+	const days = Math.floor(diff / 86400000)
+	if (days < 1) return "today"
+	if (days === 1) return "yesterday"
+	if (days < 7) return `${days} days ago`
+	const weeks = Math.floor(days / 7)
+	if (weeks === 1) return "1 week ago"
+	if (weeks < 5) return `${weeks} weeks ago`
+	return `${Math.floor(days / 30)} months ago`
+}
 
-function NewMembersCard() {
+function NewMembersCard({ communityId }: { communityId: string }) {
+	const [members, setMembers] = useState<CommunityMember[]>([])
+
+	useEffect(() => {
+		getCommunityMembers(communityId, { sort: "newest", limit: 10 })
+			.then(res => setMembers(res.data))
+			.catch(() => {})
+	}, [communityId])
+
+	if (members.length === 0) return null
+
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
-			<div className="flex items-center justify-between gap-2 mb-4">
+			<div className="mb-4">
 				<span className="text-body-md font-semibold text-text-primary">New members</span>
-				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
-					View all
-					<Icon as={ArrowRightSvg} size="xs" color="brand" />
-				</Link>
 			</div>
 
 			<div className="flex flex-col gap-3">
-				{MOCK_NEW_MEMBERS.map(member => (
-					<div key={member.id} className="flex items-center gap-3">
-						<div className="relative shrink-0">
-							<div className="relative size-9 rounded-full overflow-hidden border border-border-default bg-surface-hover">
-								<Image src={member.avatarUrl} alt={member.name} fill sizes="36px" className="object-cover" />
+				{members.map(member => {
+					const fullName = `${member.firstName} ${member.lastName}`
+					const color = avatarColor(fullName)
+					return (
+						<div key={member.userId} className="flex items-center gap-3">
+							{member.avatarUrl ? (
+								<div className="relative size-9 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
+									<Image src={member.avatarUrl} alt={fullName} fill sizes="36px" className="object-cover" />
+								</div>
+							) : (
+								<div className={`size-9 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold ${color.bg} ${color.text}`}>
+									{fullName.slice(0, 2).toUpperCase()}
+								</div>
+							)}
+							<div className="flex-1 min-w-0">
+								<p className="text-label-sm font-semibold text-text-primary truncate">{fullName}</p>
+								<p className="text-[11px] text-text-secondary">Joined {joinedAgo(member.joinedAt)}</p>
 							</div>
-							<span className="absolute bottom-0 right-0 size-2.5 rounded-full bg-green-500 border-2 border-surface-card" />
 						</div>
-						<div className="flex-1 min-w-0">
-							<p className="text-label-sm font-semibold text-text-primary">{member.name}</p>
-							<p className="text-[11px] text-text-secondary">Joined {member.joinedAgo}</p>
-						</div>
-						<Icon as={ArrowRightSvg} size="sm" color="primary" />
-					</div>
-				))}
+					)
+				})}
 			</div>
 		</div>
 	)
@@ -967,6 +1016,8 @@ export function CommunitySidePanel({
 	communitySlug,
 	communityId,
 	onTabChange,
+	experienceFilters,
+	onExperienceFilterChange,
 }: {
 	activeTab: string
 	isMember: boolean
@@ -974,6 +1025,8 @@ export function CommunitySidePanel({
 	communitySlug: string
 	communityId: string
 	onTabChange?: (tab: string) => void
+	experienceFilters?: ExperienceFilters
+	onExperienceFilterChange?: (f: ExperienceFilters) => void
 }) {
 	const [stats, setStats] = useState<CommunityStats | null>(null)
 	const [hosts, setHosts] = useState<CommunityHost[] | null>(null)
@@ -985,9 +1038,10 @@ export function CommunitySidePanel({
 	}, [communitySlug, isMember])
 
 	if (activeTab === "experiences") {
+		const filters = experienceFilters ?? DEFAULT_EXPERIENCE_FILTERS
 		return (
 			<>
-				<ExperiencesFilterCard />
+				<ExperiencesFilterCard filters={filters} onChange={onExperienceFilterChange ?? (() => {})} />
 				<SavedExperiencesCard />
 				<ExperiencesCommunityHostsCard hosts={hosts} />
 			</>
@@ -1008,7 +1062,7 @@ export function CommunitySidePanel({
 			<>
 				<MembersCommunityAtAGlanceCard stats={stats} />
 				<MembersTopHostsCard hosts={hosts} />
-				<NewMembersCard />
+				<NewMembersCard communityId={communityId} />
 			</>
 		)
 	}

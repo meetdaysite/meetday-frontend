@@ -23,6 +23,8 @@ import { ExperiencesTabContent } from "./_components/ExperiencesTabContent"
 import { LatestFromCommunity } from "./_components/LatestFromCommunity"
 import { JoinCommunityBanner } from "./_components/JoinCommunityBanner"
 import { CommunitySidePanel } from "./_components/CommunitySidePanel"
+import type { ExperienceFilters } from "./_components/CommunitySidePanel"
+import { DEFAULT_EXPERIENCE_FILTERS } from "./_components/CommunitySidePanel"
 import { ChatTabContent } from "./_components/ChatTabContent"
 import { AnnouncementsTabContent } from "./_components/AnnouncementsTabContent"
 import { FeedTabContent } from "./_components/FeedTabContent"
@@ -116,6 +118,7 @@ function TabContent({
 	currentUserRole,
 	onJoinClick,
 	onTabChange,
+	experienceFilters,
 }: {
 	activeTab: TabKey
 	visibleTabs: Tab[]
@@ -126,6 +129,7 @@ function TabContent({
 	currentUserRole: CommunityRole | null
 	onJoinClick: () => void
 	onTabChange: (tab: TabKey) => void
+	experienceFilters: ExperienceFilters
 }) {
 	const tab = visibleTabs.find(t => t.key === activeTab)!
 	const isLocked = tab.requiresAuth && (!isLoggedIn || !isMember)
@@ -146,12 +150,12 @@ function TabContent({
 			<>
 				<WhatToDoCard isMember={isMember} onTabChange={onTabChange} />
 				<UpcomingExperiences communitySlug={community.slug} onViewAll={() => onTabChange("experiences")} />
-				<LatestFromCommunity communityName={community.name} isMember={isMember} />
+				<LatestFromCommunity communityId={community.id} isMember={isMember} onViewAll={() => onTabChange("feed")} />
 			</>
 		)
 	}
 
-	if (activeTab === "experiences") return <ExperiencesTabContent communitySlug={community.slug} />
+	if (activeTab === "experiences") return <ExperiencesTabContent communitySlug={community.slug} filters={experienceFilters} />
 
 	if (activeTab === "chat") return (
 		<ChatTabContent
@@ -211,6 +215,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 	const [isMemberOverride, setIsMemberOverride] = useState<boolean | null>(null)
 	const [currentUserRole, setCurrentUserRole] = useState<CommunityRole | null>(null)
 	const [activeTab, setActiveTab] = useState<TabKey>("overview")
+	const [experienceFilters, setExperienceFilters] = useState<ExperienceFilters>(DEFAULT_EXPERIENCE_FILTERS)
 	const [announcementUnreadCount, setAnnouncementUnreadCount] = useState(0)
 	const [joinModalOpen, setJoinModalOpen] = useState(false)
 	const [successModalOpen, setSuccessModalOpen] = useState(false)
@@ -362,6 +367,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 							currentUserRole={currentUserRole}
 							onJoinClick={openJoinModal}
 							onTabChange={setActiveTab}
+							experienceFilters={experienceFilters}
 						/>
 
 						{/* Join banner — hidden once member or tab is already locked */}
@@ -383,6 +389,8 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 							communitySlug={community.slug}
 							communityId={community.id}
 							onTabChange={tab => setActiveTab(tab as TabKey)}
+							experienceFilters={experienceFilters}
+							onExperienceFilterChange={setExperienceFilters}
 						/>
 					</aside>
 				</div>
