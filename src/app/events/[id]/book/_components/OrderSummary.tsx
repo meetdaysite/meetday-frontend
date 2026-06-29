@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button"
 import ShieldCheckSvg from "@/icons/outlined/shield-check.svg"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
 import TicketSvg from "@/icons/filled/ticket.svg"
-import InfoCircleSvg from "@/icons/filled/info-circle.svg"
+import InfoCircleSvg from "@/icons/outlined/info-circle.svg"
 import HeadphonesSvg from "@/icons/filled/headphones.svg"
 import type { PublicTicket } from "@/types/attendee"
 
@@ -87,8 +87,8 @@ export function OrderSummary({
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<span className="text-title-md font-bold text-text-primary">Order Summary</span>
-				<div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-badge bg-surface-brand-soft">
-					<span className="text-label-sm font-medium text-text-brand">
+				<div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-badge bg-surface-info-soft border border-blue-200">
+					<span className="text-label-sm font-medium text-text-info">
 						{totalTickets} Ticket{totalTickets !== 1 ? "s" : ""}
 					</span>
 				</div>
@@ -101,17 +101,17 @@ export function OrderSummary({
 				) : (
 					lineItems.map((item) => (
 						<div key={item.label} className="flex items-start gap-2.5">
-							<div className="size-8 rounded-action bg-red-50 flex items-center justify-center shrink-0">
-								<Icon as={TicketSvg} size="sm" color="primary" />
+							<div className="size-8 rounded-badge bg-red-50 flex items-center justify-center shrink-0 border border-red-200">
+								<Icon as={TicketSvg} size="sm" color="brand" />
 							</div>
-							<div className="flex-1 min-w-0">
+							<div className="flex-1 min-w-0 leading-tight">
 								<div className="flex items-start justify-between gap-2">
 									<span className="text-label-sm font-medium text-text-primary leading-snug">{item.label}</span>
 									<span className="text-label-sm font-semibold text-text-primary shrink-0">
 										{formatINR(item.unitPrice * item.qty)}
 									</span>
 								</div>
-								<span className="text-caption text-text-muted">
+								<span className="text-caption font-medium text-text-secondary">
 									{item.qty} × {formatINR(item.unitPrice)}
 								</span>
 							</div>
@@ -137,14 +137,14 @@ export function OrderSummary({
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-1">
 						<span className="text-label-sm text-text-secondary">Platform Fee</span>
-						<Icon as={InfoCircleSvg} size="sm" color="muted" />
+						<Icon as={InfoCircleSvg} size="xs" color="secondary" />
 					</div>
 					<span className="text-label-sm text-text-primary">{formatINR(PLATFORM_FEE)}</span>
 				</div>
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-1">
 						<span className="text-label-sm text-text-secondary">Taxes & Fees</span>
-						<Icon as={InfoCircleSvg} size="sm" color="muted" />
+						<Icon as={InfoCircleSvg} size="xs" color="secondary" />
 					</div>
 					<span className="text-label-sm text-text-primary">{formatINR(tax)}</span>
 				</div>

@@ -7,7 +7,6 @@ import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import { Checkbox } from "@/components/ui/Checkbox"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
-import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
 import { useBookingStore } from "@/store/bookingStore"
 import { createOrder, getOrderDetail, initiatePayment, verifyPayment } from "@/lib/ordersApi"
 import { getApiErrorMessage } from "@/lib/errors"
@@ -48,13 +47,13 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 		document.head.appendChild(script)
 	}, [])
 
-	const selectedTickets = event.tickets.filter((t) => (quantities[t.id] ?? 0) > 0)
+	const selectedTickets = event.tickets.filter(t => (quantities[t.id] ?? 0) > 0)
 	const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0)
 
 	// Build flat list of all attendee slots; slot at globalIndex 0 is the primary (logged-in user)
 	const allSlots: { ticketId: string; ticketName: string; slotIndex: number; globalIndex: number }[] = []
 	let globalIndex = 0
-	selectedTickets.forEach((ticket) => {
+	selectedTickets.forEach(ticket => {
 		const qty = quantities[ticket.id] ?? 0
 		for (let i = 0; i < qty; i++) {
 			allSlots.push({ ticketId: ticket.id, ticketName: ticket.name, slotIndex: i, globalIndex })
@@ -63,7 +62,7 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 	})
 
 	// Only additional attendees (not the primary) need details
-	const additionalSlots = allSlots.filter((s) => s.globalIndex > 0)
+	const additionalSlots = allSlots.filter(s => s.globalIndex > 0)
 
 	const isFormValid = additionalSlots.every(({ ticketId, slotIndex }) => {
 		const slot = attendeesByTicket[ticketId]?.[slotIndex]
@@ -77,14 +76,14 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 
 		try {
 			const firstTicketId = selectedTickets[0]?.id
-			const items = selectedTickets.map((ticket) => {
+			const items = selectedTickets.map(ticket => {
 				const slots = attendeesByTicket[ticket.id] ?? []
 				// Primary attendee (first slot of the first ticket) is excluded from groupAttendees
 				const additionalSlots = ticket.id === firstTicketId ? slots.slice(1) : slots
 				return {
 					ticketId: ticket.id,
 					quantity: quantities[ticket.id],
-					groupAttendees: additionalSlots.map((slot) => ({
+					groupAttendees: additionalSlots.map(slot => ({
 						fullName: slot.fullName,
 						email: slot.email,
 					})),
@@ -108,7 +107,7 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 				order_id: razorpayOrderId,
 				name: "Meetday",
 				description: "Event Ticket",
-				handler: async (response) => {
+				handler: async response => {
 					try {
 						await verifyPayment({
 							razorpayOrderId: response.razorpay_order_id,
@@ -131,7 +130,7 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 				},
 			})
 
-			rzp.on("payment.failed", (response) => {
+			rzp.on("payment.failed", response => {
 				setSubmitError(`Payment failed: ${response.error.description}`)
 				setSubmitting(false)
 			})
@@ -159,7 +158,9 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 						</Link>
 
 						<div>
-							<h1 className="text-heading-md font-extrabold text-text-primary">Attendee details</h1>
+							<h1 className="text-heading-md font-extrabold text-text-primary">
+								Attendee details
+							</h1>
 							<p className="text-body-sm text-text-secondary mt-1">
 								{additionalSlots.length > 0
 									? "Enter details for the additional people joining this event."
@@ -177,43 +178,28 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 								slot={attendeesByTicket[ticketId]?.[slotIndex] ?? { fullName: "", email: "" }}
 								displayNumber={gIdx + 1}
 								ticketName={ticketName}
-								onChange={(data) => {
-									const current = attendeesByTicket[ticketId]?.[slotIndex] ?? { fullName: "", email: "" }
+								onChange={data => {
+									const current = attendeesByTicket[ticketId]?.[slotIndex] ?? {
+										fullName: "",
+										email: "",
+									}
 									setAttendeeSlot(ticketId, slotIndex, { ...current, ...data })
 								}}
 							/>
 						))}
 
-						{/* Going with friends */}
-						<div className="rounded-action border border-border-default bg-surface-card p-4 flex items-center gap-3">
-							<div className="size-9 rounded-action bg-surface-vibe-soft flex items-center justify-center shrink-0">
-								<Icon as={UsersGroupSvg} size="md" color="vibe" />
-							</div>
-							<div className="flex-1 min-w-0">
-								<p className="text-label-sm font-semibold text-text-primary">Going with friends?</p>
-								<p className="text-caption text-text-muted leading-snug">
-									Add friends to your booking list and make memories together.
-								</p>
-							</div>
-							{/* Invite — commented until invite feature is live
-							<Button variant="secondary" size="sm" radius="md" disabled>
-								Invite friends
-							</Button>
-							*/}
-						</div>
-
 						{/* Terms */}
 						<div className="flex flex-col gap-2">
-							<Checkbox
-								checked={agreedToTerms}
-								onChange={(v) => setAgreedToTerms(v)}
-								label=""
-							/>
+							<Checkbox checked={agreedToTerms} onChange={v => setAgreedToTerms(v)} label="" />
 							<p className="-mt-7 ml-7 text-label-sm text-text-secondary leading-snug">
 								I agree to the{" "}
-								<span className="text-text-brand cursor-pointer hover:underline">Terms of Service</span>
-								{" "}and{" "}
-								<span className="text-text-brand cursor-pointer hover:underline">Privacy Policy</span>
+								<span className="text-text-brand cursor-pointer hover:underline">
+									Terms of Service
+								</span>{" "}
+								and{" "}
+								<span className="text-text-brand cursor-pointer hover:underline">
+									Privacy Policy
+								</span>
 							</p>
 							<p className="text-caption text-text-muted ml-7">
 								Tickets will be shown to the Primary attendee after payment.
@@ -265,7 +251,7 @@ export default function AttendeeDetailsPage({ params }: PageProps) {
 	const [event, setEvent] = useState<PublicEventDetails | null>(null)
 
 	useEffect(() => {
-		getPublicEventDetails(id).then((e) => {
+		getPublicEventDetails(id).then(e => {
 			if (e) setEvent(e)
 		})
 	}, [id])
