@@ -43,6 +43,7 @@ import { getApiErrorMessage } from "@/lib/errors"
 import { useAuthStore } from "@/store/authStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import { avatarColor } from "@/lib/avatarColor"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -849,13 +850,7 @@ function PostCard({
 					{commentsLoading && comments.length === 0 ? (
 						<div className="flex flex-col gap-2.5">
 							{[1, 2].map(i => (
-								<div key={i} className="flex gap-2 animate-pulse">
-									<div className="size-7 rounded-full bg-surface-hover shrink-0" />
-									<div className="flex-1 flex flex-col gap-1.5">
-										<div className="h-2.5 w-24 bg-surface-hover rounded" />
-										<div className="h-3 w-3/4 bg-surface-hover rounded" />
-									</div>
-								</div>
+								<Skeleton.ListItem key={i} avatarSize="xs" />
 							))}
 						</div>
 					) : comments.length === 0 ? (
@@ -964,26 +959,6 @@ function PostCard({
 	)
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-function PostSkeleton() {
-	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-4 flex flex-col gap-3 animate-pulse">
-			<div className="flex items-center gap-2.5">
-				<div className="size-10 rounded-full bg-surface-hover shrink-0" />
-				<div className="flex flex-col gap-1.5 flex-1">
-					<div className="h-3 w-28 bg-surface-hover rounded" />
-					<div className="h-2.5 w-16 bg-surface-hover rounded" />
-				</div>
-			</div>
-			<div className="flex flex-col gap-1.5">
-				<div className="h-3 w-full bg-surface-hover rounded" />
-				<div className="h-3 w-4/5 bg-surface-hover rounded" />
-			</div>
-		</div>
-	)
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function FeedTabContent({
@@ -1044,8 +1019,8 @@ export function FeedTabContent({
 
 			{loading ? (
 				<>
-					<PostSkeleton />
-					<PostSkeleton />
+					<Skeleton.Post />
+					<Skeleton.Post />
 				</>
 			) : posts.length === 0 ? (
 				<div className="rounded-panel bg-surface-card border border-border-default p-10 flex flex-col items-center gap-2 text-center">

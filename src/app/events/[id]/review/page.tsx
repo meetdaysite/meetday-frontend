@@ -30,6 +30,7 @@ import { getReviewHighlights, submitReview, uploadReviewPhoto } from "@/lib/revi
 import { useAuthStore } from "@/store/authStore"
 import type { ReviewHighlight } from "@/types/review"
 import type { PublicEventDetails } from "@/types/attendee"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 interface PageProps {
 	params: Promise<{ id: string }>
@@ -729,11 +730,7 @@ function ReviewPageInner({ id }: { id: string }) {
 	}, [id, authLoading])
 
 	if (loading) {
-		return (
-			<main className="flex-1 flex items-center justify-center py-24">
-				<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-			</main>
-		)
+		return <Skeleton.Page />
 	}
 
 	if (error || !event) {

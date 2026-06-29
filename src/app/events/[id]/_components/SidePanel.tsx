@@ -14,6 +14,7 @@ import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
 import type { PublicEventDetails, PublicRefundPolicy, VibeMatchResponse, CrowdPulseResponse } from "@/types/attendee"
 import { useAuthStore } from "@/store/authStore"
 import { getEventVibeMatch, getEventCrowdPulse } from "@/lib/api"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // crowdStyle → bar fill % as specified by the API contract
 const CROWD_STYLE_FILL: Record<string, number> = {
@@ -50,13 +51,13 @@ function VibeMatchCard({ eventId }: { eventId: string }) {
 			</div>
 
 			{isLoading ? (
-				<div className="flex flex-col gap-3 animate-pulse">
+				<div className="flex flex-col gap-3">
 					<div className="flex items-baseline gap-2">
-						<div className="h-9 w-16 bg-neutral-200 rounded" />
-						<div className="h-4 w-20 bg-neutral-100 rounded" />
+						<Skeleton.Block className="h-9 w-16" />
+						<Skeleton.Text className="w-20" />
 					</div>
-					<div className="h-2 rounded-full bg-neutral-200" />
-					<div className="h-12 rounded-badge bg-neutral-100" />
+					<Skeleton.Block className="h-2 rounded-full" />
+					<Skeleton.Block className="h-12 rounded-badge" />
 				</div>
 			) : match ? (
 				<div className="flex flex-col gap-3">
@@ -224,11 +225,11 @@ function CrowdPulseCard({ eventId }: { eventId: string }) {
 			</div>
 
 			{loading ? (
-				<div className="flex flex-col gap-3.5 animate-pulse">
+				<div className="flex flex-col gap-3.5">
 					{["Energy", "Crowd style", "Social friendliness"].map(dim => (
 						<div key={dim} className="flex flex-col gap-1.5">
-							<div className="h-3 w-28 bg-neutral-200 rounded" />
-							<div className="h-1.5 rounded-full bg-neutral-200" />
+							<Skeleton.Text className="w-28" />
+							<Skeleton.Block className="h-1.5 rounded-full" />
 						</div>
 					))}
 				</div>

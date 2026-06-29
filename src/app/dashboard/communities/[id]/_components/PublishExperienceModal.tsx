@@ -16,6 +16,7 @@ import PlaneSvg from "@/icons/outlined/plane.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import MapPointSvg from "@/icons/outlined/map-point.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -64,13 +65,21 @@ export function PublishExperienceModal({
 	const [submitError, setSubmitError] = useState<string | null>(null)
 	const searchRef = useRef<HTMLInputElement>(null)
 
-	// Fetch events when modal opens
-	useEffect(() => {
-		if (!open) return
+	// Reset form state when modal opens (derived state pattern — no effect needed)
+	const [prevOpen, setPrevOpen] = useState(open)
+	if (!prevOpen && open) {
+		setPrevOpen(true)
 		setSearch("")
 		setStatusFilter("ALL")
 		setSelectedId(null)
 		setSubmitError(null)
+	} else if (prevOpen && !open) {
+		setPrevOpen(false)
+	}
+
+	// Fetch events when modal opens
+	useEffect(() => {
+		if (!open) return
 		let cancelled = false
 		async function load() {
 			setLoading(true)
@@ -167,7 +176,7 @@ export function PublishExperienceModal({
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 							placeholder="Search by title or city…"
-							className="w-full h-[var(--size-action-md)] pl-9 pr-4 rounded-action border border-border-default bg-surface-page text-label-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-action-primary/30 focus:border-action-primary transition-colors"
+							className="w-full h-(--size-action-md) pl-9 pr-4 rounded-action border border-border-default bg-surface-page text-label-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-action-primary/30 focus:border-action-primary transition-colors"
 						/>
 					</div>
 
@@ -194,15 +203,7 @@ export function PublishExperienceModal({
 					{loading ? (
 						<>
 							{Array.from({ length: 4 }).map((_, i) => (
-								<div key={i} className="flex items-center gap-3 p-3 rounded-action border border-border-default animate-pulse">
-									<div className="size-4 rounded-full bg-neutral-200 shrink-0" />
-									<div className="w-12 h-12 rounded-action bg-neutral-200 shrink-0" />
-									<div className="flex-1 flex flex-col gap-1.5">
-										<div className="h-4 w-2/3 bg-neutral-200 rounded" />
-										<div className="h-3 w-1/2 bg-neutral-100 rounded" />
-									</div>
-									<div className="h-5 w-20 bg-neutral-100 rounded-full" />
-								</div>
+								<Skeleton.EventListItem key={i} />
 							))}
 						</>
 					) : fetchError ? (

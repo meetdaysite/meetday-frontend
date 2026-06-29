@@ -22,6 +22,7 @@ import CalendarSvg from "@/icons/outlined/calendar.svg"
 import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
 import { toast } from "sonner"
 import { getApiErrorMessage } from "@/lib/errors"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -373,10 +374,10 @@ export default function MyEventsPage() {
 							)}
 						>
 							{Array.from({ length: 6 }).map((_, i) => (
-								<div
+								<Skeleton.Block
 									key={i}
 									className={clsx(
-										"bg-surface-card border border-border-default rounded-action animate-pulse",
+										"bg-surface-card border border-border-default rounded-action",
 										viewMode === "grid" ? "h-64" : "h-28",
 									)}
 								/>

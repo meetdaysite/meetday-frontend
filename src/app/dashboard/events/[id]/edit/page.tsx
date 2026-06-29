@@ -8,6 +8,7 @@ import { Dropdown } from "@/components/ui/Dropdown"
 import { Icon } from "@/components/ui/Icon"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { getMyEventDetail, updateEventDraft, submitEventForReview, getCategories, type Category } from "@/lib/api"
+import { Skeleton } from "@/components/ui/Skeleton"
 import { getApiErrorMessage } from "@/lib/errors"
 import { uploadEventMedia } from "@/lib/uploadMedia"
 import {
@@ -280,13 +281,13 @@ export default function EditEventPage() {
 				<div className="flex-1 px-6 lg:px-10 py-8 bg-surface-page">
 					<div className="max-w-4xl mx-auto flex flex-col gap-5">
 						{Array.from({ length: 5 }).map((_, i) => (
-							<div key={i} className="border border-border-default rounded-action bg-surface-card overflow-hidden animate-pulse">
+							<div key={i} className="border border-border-default rounded-action bg-surface-card overflow-hidden">
 								<div className="px-6 py-4 border-b border-border-default">
-									<div className="h-4 w-32 bg-surface-card-muted rounded" />
+									<Skeleton.Text className="w-32" />
 								</div>
 								<div className="p-6 flex flex-col gap-4">
-									<div className="h-10 bg-surface-card-muted rounded-input" />
-									<div className="h-10 bg-surface-card-muted rounded-input" />
+									<Skeleton.Block className="h-10 rounded-input" />
+									<Skeleton.Block className="h-10 rounded-input" />
 								</div>
 							</div>
 						))}

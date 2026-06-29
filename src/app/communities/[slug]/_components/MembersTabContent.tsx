@@ -14,6 +14,7 @@ import { getApiErrorMessage } from "@/lib/errors"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import type { DrawerMember } from "./MemberProfileDrawer"
 import { MemberProfileDrawer } from "./MemberProfileDrawer"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Feature flags ─────────────────────────────────────────────────────────────
 // Set SHOW_FEATURED_MEMBERS to true once the featured members API endpoint is available
@@ -133,13 +134,13 @@ function ApiMemberCard({
 
 function MemberCardSkeleton() {
 	return (
-		<div className="flex items-center gap-3 px-3 py-2.5 rounded-action border border-border-default bg-surface-page animate-pulse">
-			<div className="size-9 rounded-full bg-surface-hover shrink-0" />
+		<div className="flex items-center gap-3 px-3 py-2.5 rounded-action border border-border-default bg-surface-page">
+			<Skeleton.Avatar size="sm" className="size-9" />
 			<div className="flex flex-col gap-1.5 flex-1">
-				<div className="h-3 w-24 bg-surface-hover rounded" />
-				<div className="h-4 w-14 bg-surface-hover rounded-full" />
+				<Skeleton.Text className="w-24" />
+				<Skeleton.Block className="h-4 w-14 rounded-full" />
 			</div>
-			<div className="h-6 w-16 bg-surface-hover rounded-full shrink-0" />
+			<Skeleton.Block className="h-6 w-16 rounded-full shrink-0" />
 		</div>
 	)
 }

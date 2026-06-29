@@ -5,6 +5,7 @@ import { useRouter, notFound } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
+import { Skeleton } from "@/components/ui/Skeleton"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import LockSvg from "@/icons/outlined/lock.svg"
 import BoltSvg from "@/icons/outlined/bolt.svg"
@@ -191,19 +192,19 @@ function CommunityPageSkeleton() {
 	return (
 		<main className="flex-1 py-6 md:py-8 pb-12">
 			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
-				<div className="h-4 w-36 bg-surface-hover rounded animate-pulse mb-6" />
+				<Skeleton.Text className="w-36 mb-6" />
 				<div className="flex gap-8 items-start">
 					<div className="flex-1 min-w-0 flex flex-col gap-5">
-						<div className="h-64 rounded-panel bg-surface-hover animate-pulse" />
+						<Skeleton.Block className="h-64 rounded-panel" />
 						<div className="flex gap-1">
 							{Array.from({ length: 4 }).map((_, i) => (
-								<div key={i} className="h-9 w-24 rounded-full bg-surface-hover animate-pulse" />
+								<Skeleton.Block key={i} className="h-9 w-24 rounded-full" />
 							))}
 						</div>
-						<div className="h-48 rounded-panel bg-surface-hover animate-pulse" />
+						<Skeleton.Block className="h-48 rounded-panel" />
 					</div>
 					<div className="hidden lg:flex flex-col gap-4 w-100 shrink-0">
-						<div className="h-72 rounded-panel bg-surface-hover animate-pulse" />
+						<Skeleton.Block className="h-72 rounded-panel" />
 					</div>
 				</div>
 			</div>

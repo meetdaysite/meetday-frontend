@@ -111,7 +111,7 @@ export const useExploreStore = create<ExploreStore>((set, get) => ({
 	events: [],
 	total: 0,
 	page: 1,
-	loading: false,
+	loading: true,
 	loadingMore: false,
 	error: null,
 	filters: { ...DEFAULT_FILTERS },

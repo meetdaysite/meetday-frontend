@@ -7,15 +7,12 @@ import { Dropdown } from "@/components/ui/Dropdown"
 import { Icon } from "@/components/ui/Icon"
 import { TextField } from "@/components/ui/TextField"
 import { useCommunitiesStore } from "@/store/communitiesStore"
+import { Skeleton } from "@/components/ui/Skeleton"
 import GpsSvg from "@/icons/outlined/gps.svg"
 import SearchSvg from "@/icons/outlined/search.svg"
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 
 const SKELETON_COUNT = 12
-
-function SkeletonCard() {
-	return <div className="aspect-3/4 rounded-2xl bg-surface-hover animate-pulse" />
-}
 
 export default function CommunitiesPage() {
 	const filters = useCommunitiesStore(s => s.filters)
@@ -137,7 +134,7 @@ export default function CommunitiesPage() {
 				{loading ? (
 					<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mt-6">
 						{Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-							<SkeletonCard key={i} />
+							<Skeleton.Card key={i} />
 						))}
 					</div>
 				) : error ? (

@@ -15,7 +15,7 @@ type DashboardStore = {
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
 	data: null,
 	period: "THIS_MONTH",
-	isLoading: false,
+	isLoading: true,
 	error: null,
 
 	fetchDashboard: async (period) => {

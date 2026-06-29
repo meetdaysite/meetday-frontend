@@ -1,40 +1,40 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import clsx from "clsx"
-import { Button } from "@/components/ui/Button"
-import { Icon } from "@/components/ui/Icon"
-import { Dropdown } from "@/components/ui/Dropdown"
-import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { CommunityGuidelinesCard } from "@/components/communities/CommunityGuidelinesCard"
+import { Button } from "@/components/ui/Button"
+import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
+import { Dropdown } from "@/components/ui/Dropdown"
+import { Icon } from "@/components/ui/Icon"
+import { Skeleton } from "@/components/ui/Skeleton"
 import {
+	getCategories,
 	getHostBrowseCommunities,
 	getHostCommunityActivity,
-	getCategories,
-	type HostBrowseCommunity,
-	type HostCommunityActivity,
-	type HostBrowseCommunitiesParams,
-	type HostCommunityBrowseTab,
-	type HostCommunityAudienceSize,
-	type HostCommunityAccess,
 	type Category,
+	type HostBrowseCommunitiesParams,
+	type HostBrowseCommunity,
+	type HostCommunityAccess,
+	type HostCommunityActivity,
+	type HostCommunityAudienceSize,
+	type HostCommunityBrowseTab,
 } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
+import clsx from "clsx"
+import Image from "next/image"
+import Link from "next/link"
+import { useEffect, useRef, useState } from "react"
 
-import SearchSvg from "@/icons/outlined/search.svg"
-import CloseSvg from "@/icons/outlined/close.svg"
+import VerifiedSvg from "@/icons/filled/verified-check.svg"
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
-import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
-import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
-import MapPointSvg from "@/icons/outlined/map-point.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
-import StarSvg from "@/icons/outlined/star.svg"
-import LockSvg from "@/icons/outlined/lock.svg"
 import CheckSvg from "@/icons/outlined/check.svg"
-import VerifiedSvg from "@/icons/filled/verified-check.svg"
+import CloseSvg from "@/icons/outlined/close.svg"
+import LockSvg from "@/icons/outlined/lock.svg"
+import MapPointSvg from "@/icons/outlined/map-point.svg"
+import SearchSvg from "@/icons/outlined/search.svg"
+import StarSvg from "@/icons/outlined/star.svg"
+import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -122,40 +122,31 @@ function buildPageNumbers(current: number, total: number): (number | "…")[] {
 
 function CommunityCardSkeleton() {
 	return (
-		<div className="flex rounded-card border border-border-default bg-surface-card overflow-hidden h-33 animate-pulse">
-			<div className="w-44 shrink-0 bg-neutral-200" />
+		<div className="flex rounded-card border border-border-default bg-red-400 overflow-hidden h-33">
+			<Skeleton.Block className="w-44 shrink-0 rounded-none" />
 			<div className="flex-1 p-5 flex flex-col justify-between gap-2">
 				<div className="flex items-start justify-between gap-6">
 					<div className="flex flex-col gap-2 flex-1">
 						<div className="flex items-center gap-2">
-							<div className="h-5 w-44 bg-neutral-200 rounded" />
-							<div className="h-4 w-4 bg-neutral-200 rounded-full" />
+							<Skeleton.Text className="h-5 w-44" />
+							<Skeleton.Avatar size="xs" className="size-4" />
 						</div>
-						<div className="h-3.5 w-full max-w-sm bg-neutral-100 rounded" />
-						<div className="h-3.5 w-3/4 bg-neutral-100 rounded" />
+						<Skeleton.Text className="h-3.5 w-full max-w-sm" />
+						<Skeleton.Text className="h-3.5 w-3/4" />
 					</div>
 					<div className="shrink-0 flex flex-col items-end gap-1.5">
-						<div className="h-6 w-28 bg-neutral-100 rounded-full" />
-						<div className="h-3 w-32 bg-neutral-100 rounded" />
+						<Skeleton.Text className="h-6 w-28 rounded-full" />
+						<Skeleton.Text className="h-3 w-32" />
 					</div>
 				</div>
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-6">
-						<div className="h-3.5 w-32 bg-neutral-100 rounded" />
-						<div className="h-3.5 w-24 bg-neutral-100 rounded" />
+						<Skeleton.Text className="h-3.5 w-32" />
+						<Skeleton.Text className="h-3.5 w-24" />
 					</div>
-					<div className="h-8 w-32 bg-neutral-200 rounded-action" />
+					<Skeleton.Block className="h-8 w-32 rounded-action" />
 				</div>
 			</div>
-		</div>
-	)
-}
-
-function ActivityRowSkeleton() {
-	return (
-		<div className="flex items-center justify-between py-2.5 border-b border-border-default last:border-0">
-			<div className="h-3.5 w-36 bg-neutral-200 rounded animate-pulse" />
-			<div className="h-4 w-8 bg-neutral-100 rounded animate-pulse" />
 		</div>
 	)
 }
@@ -382,7 +373,7 @@ function ActivityCard({ loading, activity }: { loading: boolean; activity: HostC
 			{loading ? (
 				<div>
 					{Array.from({ length: 5 }).map((_, i) => (
-						<ActivityRowSkeleton key={i} />
+						<Skeleton.Row key={i} />
 					))}
 				</div>
 			) : activity ? (

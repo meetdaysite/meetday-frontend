@@ -27,6 +27,7 @@ import { avatarColor } from "@/lib/avatarColor"
 import { getCommunityStats, getCommunityHosts, getCommunityMembers, getCommunityEvents, getCommunityTrendingTopics, getCommunityPopularPosts, getCommunityBookmarkedPosts, getCategories, getInterests, getSavedEvents } from "@/lib/api"
 import type { CommunityStats, CommunityHost, CommunityMember, CommunityEvent, TrendingTopic, FeedPost, Category, Interest } from "@/lib/api"
 import type { SavedEvent } from "@/types/attendee"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Shared host avatar helper ─────────────────────────────────────────────────
 
@@ -412,13 +413,7 @@ function SavedExperiencesCard() {
 			{loading ? (
 				<div className="flex flex-col gap-3">
 					{Array.from({ length: 2 }).map((_, i) => (
-						<div key={i} className="flex items-center gap-3">
-							<div className="size-12 rounded-action bg-surface-hover animate-pulse shrink-0" />
-							<div className="flex-1 flex flex-col gap-1.5">
-								<div className="h-3 w-3/4 bg-surface-hover animate-pulse rounded" />
-								<div className="h-2.5 w-1/2 bg-surface-hover animate-pulse rounded" />
-							</div>
-						</div>
+						<Skeleton.SavedItem key={i} />
 					))}
 				</div>
 			) : events.length === 0 ? (
@@ -812,14 +807,7 @@ function PopularPostsCard({ communityId }: { communityId: string }) {
 			{loading ? (
 				<div className="flex flex-col gap-3">
 					{[1, 2, 3].map(i => (
-						<div key={i} className="flex gap-2.5 animate-pulse">
-							<div className="size-8 rounded-full bg-surface-hover shrink-0" />
-							<div className="flex-1 flex flex-col gap-1.5">
-								<div className="h-2.5 w-20 bg-surface-hover rounded" />
-								<div className="h-3 w-full bg-surface-hover rounded" />
-								<div className="h-2.5 w-16 bg-surface-hover rounded" />
-							</div>
-						</div>
+						<Skeleton.ListItem key={i} lines={3} />
 					))}
 				</div>
 			) : posts.length === 0 ? (
@@ -909,13 +897,7 @@ function SavedPostsCard({ communityId }: { communityId: string }) {
 			{loading ? (
 				<div className="flex flex-col gap-3">
 					{[1, 2].map(i => (
-						<div key={i} className="flex gap-2.5 animate-pulse">
-							<div className="size-7 rounded-full bg-surface-hover shrink-0" />
-							<div className="flex-1 flex flex-col gap-1.5">
-								<div className="h-2.5 w-20 bg-surface-hover rounded" />
-								<div className="h-3 w-full bg-surface-hover rounded" />
-							</div>
-						</div>
+						<Skeleton.ListItem key={i} avatarSize="xs" />
 					))}
 				</div>
 			) : (

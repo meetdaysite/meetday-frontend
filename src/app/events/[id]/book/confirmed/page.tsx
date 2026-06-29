@@ -22,6 +22,7 @@ import { useAuthStore } from "@/store/authStore"
 import type { PublicEventDetails } from "@/types/attendee"
 import type { OrderDetail } from "@/types/order"
 import { EventPreviewBar } from "../_components/EventPreviewBar"
+import { Skeleton } from "@/components/ui/Skeleton"
 import { TicketQRDisplay } from "../_components/TicketQRDisplay"
 import { ConfirmedRightPanel } from "../_components/ConfirmedRightPanel"
 
@@ -319,11 +320,7 @@ function ConfirmedPageInner({ id }: { id: string }) {
 	}, [id, orderId, confirmedOrder, setConfirmedOrder, authLoading])
 
 	if (loading || !event || !order) {
-		return (
-			<main className="flex-1 flex items-center justify-center py-24">
-				<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-			</main>
-		)
+		return <Skeleton.Page />
 	}
 
 	return <ConfirmedContent event={event} order={order} />

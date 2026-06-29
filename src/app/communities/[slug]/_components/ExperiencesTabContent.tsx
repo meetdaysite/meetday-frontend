@@ -11,6 +11,7 @@ import { getApiErrorMessage } from "@/lib/errors"
 import type { ExploreEvent } from "@/types/attendee"
 import type { ExperienceFilters } from "./CommunitySidePanel"
 import { DEFAULT_EXPERIENCE_FILTERS } from "./CommunitySidePanel"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Mapper ───────────────────────────────────────────────────────────────────
 
@@ -67,14 +68,6 @@ function applyDateAndSort(events: CommunityEvent[], filters: ExperienceFilters):
 		sorted.sort((a, b) => a.minPrice - b.minPrice)
 	}
 	return sorted
-}
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-function EventCardSkeleton() {
-	return (
-		<div className="rounded-2xl bg-surface-hover animate-pulse aspect-3/4 border border-border-default" />
-	)
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -159,7 +152,7 @@ export function ExperiencesTabContent({
 
 			{loading ? (
 				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-					{Array.from({ length: 8 }).map((_, i) => <EventCardSkeleton key={i} />)}
+					{Array.from({ length: 8 }).map((_, i) => <Skeleton.Card key={i} />)}
 				</div>
 			) : error ? (
 				<div className="py-8 flex flex-col items-center gap-3 text-center">

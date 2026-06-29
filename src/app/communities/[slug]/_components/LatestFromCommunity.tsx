@@ -8,6 +8,7 @@ import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 import { avatarColor } from "@/lib/avatarColor"
 import { getCommunityFeedPosts } from "@/lib/api"
 import type { FeedPost } from "@/lib/api"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 function timeAgo(iso: string): string {
 	const diff = Date.now() - new Date(iso).getTime()
@@ -28,12 +29,12 @@ function postPreview(post: FeedPost): string {
 
 function PostCardSkeleton() {
 	return (
-		<div className="flex flex-col gap-2 p-3 rounded-action border border-border-default bg-surface-page animate-pulse">
-			<div className="size-9 rounded-full bg-surface-hover shrink-0" />
+		<div className="flex flex-col gap-2 p-3 rounded-action border border-border-default bg-surface-page">
+			<Skeleton.Avatar size="sm" className="size-9" />
 			<div className="flex flex-col gap-1.5">
-				<div className="h-3 w-2/3 bg-surface-hover rounded" />
-				<div className="h-2.5 w-full bg-surface-hover rounded" />
-				<div className="h-2.5 w-4/5 bg-surface-hover rounded" />
+				<Skeleton.Text className="w-2/3" />
+				<Skeleton.Text className="w-full" />
+				<Skeleton.Text className="w-4/5" />
 			</div>
 		</div>
 	)

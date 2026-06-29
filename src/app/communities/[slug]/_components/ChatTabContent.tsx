@@ -35,6 +35,7 @@ import { PinnedPanel } from "./chat/PinnedPanel"
 import { ThreadPanel } from "./chat/ThreadPanel"
 import { DMThread } from "./chat/DMThread"
 import { IntroInboxPanel } from "./IntroInboxPanel"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 
@@ -554,22 +555,22 @@ export function ChatTabContent({
 		return (
 			<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex h-155">
 				<aside className="w-60 shrink-0 border-r border-border-default flex flex-col bg-surface-page p-4 gap-3">
-					<div className="h-2.5 w-14 bg-surface-hover rounded animate-pulse" />
+					<Skeleton.Text className="w-14" />
 					{Array.from({ length: 4 }).map((_, i) => (
-						<div key={i} className="h-7 rounded-action bg-surface-hover animate-pulse" />
+						<Skeleton.Block key={i} className="h-7" />
 					))}
-					<div className="mt-4 h-2.5 w-14 bg-surface-hover rounded animate-pulse" />
+					<Skeleton.Text className="mt-4 w-14" />
 					{Array.from({ length: 3 }).map((_, i) => (
-						<div key={i} className="h-7 rounded-action bg-surface-hover animate-pulse" />
+						<Skeleton.Block key={i} className="h-7" />
 					))}
 				</aside>
 				<div className="flex-1 flex flex-col">
 					<div className="h-14 border-b border-border-default shrink-0 px-5 flex items-center gap-3">
-						<div className="h-4 w-28 bg-surface-hover rounded animate-pulse" />
+						<Skeleton.Text className="w-28" />
 					</div>
 					<div className="flex-1" />
 					<div className="h-16 border-t border-border-default shrink-0 px-5 flex items-center">
-						<div className="h-9 w-full bg-surface-hover rounded-full animate-pulse" />
+						<Skeleton.Block className="h-9 w-full rounded-full" />
 					</div>
 				</div>
 			</div>

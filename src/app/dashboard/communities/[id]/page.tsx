@@ -44,6 +44,7 @@ import {
 } from "recharts"
 import { getApiErrorMessage } from "@/lib/errors"
 import { PublishExperienceModal } from "./_components/PublishExperienceModal"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
@@ -637,24 +638,24 @@ function LoadingSkeleton() {
 		<div className="flex flex-col min-h-screen">
 			<DashboardTopBar />
 			<div className="flex-1 bg-surface-page px-4 sm:px-6 lg:px-8 py-6">
-				<div className="h-4 w-36 bg-neutral-200 rounded animate-pulse mb-5" />
-				<div className="rounded-panel h-60 bg-neutral-200 animate-pulse mb-1" />
-				<div className="h-11 bg-neutral-100 animate-pulse mb-6 rounded" />
+				<Skeleton.Text className="w-36 mb-5" />
+				<Skeleton.Block className="rounded-panel h-60 mb-1" />
+				<Skeleton.Block className="h-11 mb-6" />
 				<div className="flex gap-6 items-start">
 					<div className="flex-1 min-w-0 flex flex-col gap-6">
-						<div className="h-36 rounded-panel bg-neutral-100 animate-pulse" />
+						<Skeleton.Block className="h-36 rounded-panel" />
 						<div className="grid grid-cols-2 gap-4">
 							{Array.from({ length: 4 }).map((_, i) => (
-								<div key={i} className="h-28 rounded-panel bg-neutral-100 animate-pulse" />
+								<Skeleton.Block key={i} className="h-28 rounded-panel" />
 							))}
 						</div>
-						<div className="h-72 rounded-panel bg-neutral-100 animate-pulse" />
+						<Skeleton.Block className="h-72 rounded-panel" />
 					</div>
 					<div className="w-100 shrink-0 flex flex-col gap-4">
-						<div className="h-36 rounded-panel bg-neutral-100 animate-pulse" />
-						<div className="h-24 rounded-panel bg-neutral-100 animate-pulse" />
-						<div className="h-40 rounded-panel bg-neutral-100 animate-pulse" />
-						<div className="h-44 rounded-panel bg-neutral-100 animate-pulse" />
+						<Skeleton.Block className="h-36 rounded-panel" />
+						<Skeleton.Block className="h-24 rounded-panel" />
+						<Skeleton.Block className="h-40 rounded-panel" />
+						<Skeleton.Block className="h-44 rounded-panel" />
 					</div>
 				</div>
 			</div>
@@ -675,20 +676,20 @@ export default function HostCommunityDetailPage() {
 
 	// Audience tab state (lazy-loaded)
 	const [audienceData, setAudienceData] = useState<HostCommunityAudienceResponse | null>(null)
-	const [audienceLoading, setAudienceLoading] = useState(false)
+	const [audienceLoading, setAudienceLoading] = useState(true)
 	const [audienceError, setAudienceError] = useState<string | null>(null)
 	const audienceFetched = useRef(false)
 
 	// Experiences tab state (re-fetches on page change)
 	const [expData, setExpData] = useState<HostCommunityExperiencesResponse | null>(null)
-	const [expLoading, setExpLoading] = useState(false)
+	const [expLoading, setExpLoading] = useState(true)
 	const [expError, setExpError] = useState<string | null>(null)
 	const [expPage, setExpPage] = useState(1)
 	const [openDropdownId, setOpenDropdownId] = useState<string | null>(null)
 
 	// Sidebar data (lazy-loaded once, shared across tabs that use it)
 	const [sidebarData, setSidebarData] = useState<HostCommunityFeedSidebarResponse | null>(null)
-	const [sidebarLoading, setSidebarLoading] = useState(false)
+	const [sidebarLoading, setSidebarLoading] = useState(true)
 	const sidebarFetched = useRef(false)
 
 	// Modal state
@@ -701,10 +702,10 @@ export default function HostCommunityDetailPage() {
 	const [annTotalPages, setAnnTotalPages] = useState(1)
 	const [annPage, setAnnPage] = useState(1)
 	const [annStatus, setAnnStatus] = useState<HostAnnouncementStatus | undefined>(undefined)
-	const [annLoading, setAnnLoading] = useState(false)
+	const [annLoading, setAnnLoading] = useState(true)
 	const [annError, setAnnError] = useState<string | null>(null)
 	const [annStats, setAnnStats] = useState<HostAnnouncementStats | null>(null)
-	const [annStatsLoading, setAnnStatsLoading] = useState(false)
+	const [annStatsLoading, setAnnStatsLoading] = useState(true)
 	const annStatsFetched = useRef(false)
 	const [annDropdownId, setAnnDropdownId] = useState<string | null>(null)
 	const [annNow] = useState(() => Date.now())
@@ -1354,24 +1355,21 @@ export default function HostCommunityDetailPage() {
 								<div className="flex-1 min-w-0 flex flex-col gap-6">
 									<div className="grid grid-cols-4 gap-4">
 										{Array.from({ length: 4 }).map((_, i) => (
-											<div
-												key={i}
-												className="h-28 rounded-panel bg-neutral-100 animate-pulse"
-											/>
+											<Skeleton.Block key={i} className="h-28 rounded-panel" />
 										))}
 									</div>
 									<div className="grid grid-cols-2 gap-4">
-										<div className="h-64 rounded-panel bg-neutral-100 animate-pulse" />
-										<div className="h-64 rounded-panel bg-neutral-100 animate-pulse" />
+										<Skeleton.Block className="h-64 rounded-panel" />
+										<Skeleton.Block className="h-64 rounded-panel" />
 									</div>
-									<div className="h-48 rounded-panel bg-neutral-100 animate-pulse" />
-									<div className="h-32 rounded-panel bg-neutral-100 animate-pulse" />
-									<div className="h-32 rounded-panel bg-neutral-100 animate-pulse" />
+									<Skeleton.Block className="h-48 rounded-panel" />
+									<Skeleton.Block className="h-32 rounded-panel" />
+									<Skeleton.Block className="h-32 rounded-panel" />
 								</div>
 								<div className="w-100 shrink-0 flex flex-col gap-4">
-									<div className="h-40 rounded-panel bg-neutral-100 animate-pulse" />
-									<div className="h-40 rounded-panel bg-neutral-100 animate-pulse" />
-									<div className="h-24 rounded-panel bg-neutral-100 animate-pulse" />
+									<Skeleton.Block className="h-40 rounded-panel" />
+									<Skeleton.Block className="h-40 rounded-panel" />
+									<Skeleton.Block className="h-24 rounded-panel" />
 								</div>
 							</div>
 						)}
@@ -1916,22 +1914,19 @@ export default function HostCommunityDetailPage() {
 								{expLoading && (
 									<div className="flex flex-col gap-4">
 										{Array.from({ length: 4 }).map((_, i) => (
-											<div
-												key={i}
-												className="flex rounded-card border border-border-default bg-surface-card overflow-hidden h-36 animate-pulse"
-											>
-												<div className="w-44 shrink-0 bg-neutral-200" />
+											<div key={i} className="flex rounded-card border border-border-default bg-surface-card overflow-hidden h-36">
+												<Skeleton.Block className="w-44 shrink-0 rounded-none" />
 												<div className="flex-1 p-5 flex flex-col gap-2.5">
-													<div className="h-5 w-2/3 bg-neutral-200 rounded" />
-													<div className="h-3.5 w-full bg-neutral-100 rounded" />
-													<div className="h-3.5 w-4/5 bg-neutral-100 rounded" />
+													<Skeleton.Text className="h-5 w-2/3" />
+													<Skeleton.Text className="w-full" />
+													<Skeleton.Text className="w-4/5" />
 													<div className="mt-auto flex justify-between items-center">
 														<div className="flex gap-4">
-															<div className="h-3 w-16 bg-neutral-100 rounded" />
-															<div className="h-3 w-16 bg-neutral-100 rounded" />
-															<div className="h-3 w-14 bg-neutral-100 rounded" />
+															<Skeleton.Text className="w-16" />
+															<Skeleton.Text className="w-16" />
+															<Skeleton.Text className="w-14" />
 														</div>
-														<div className="h-8 w-24 bg-neutral-200 rounded-action" />
+														<Skeleton.Block className="h-8 w-24 rounded-action" />
 													</div>
 												</div>
 											</div>
@@ -2064,10 +2059,7 @@ export default function HostCommunityDetailPage() {
 									{sidebarLoading ? (
 										<div className="flex flex-col gap-2.5">
 											{Array.from({ length: 6 }).map((_, i) => (
-												<div key={i} className="flex justify-between">
-													<div className="h-3.5 w-36 bg-neutral-100 rounded animate-pulse" />
-													<div className="h-3.5 w-12 bg-neutral-100 rounded animate-pulse" />
-												</div>
+												<Skeleton.Row key={i} />
 											))}
 										</div>
 									) : sidebarData ? (
@@ -2284,10 +2276,7 @@ export default function HostCommunityDetailPage() {
 									{sidebarLoading ? (
 										<div className="flex flex-col gap-2.5">
 											{Array.from({ length: 5 }).map((_, i) => (
-												<div key={i} className="flex justify-between">
-													<div className="h-3.5 w-36 bg-neutral-100 rounded animate-pulse" />
-													<div className="h-3.5 w-12 bg-neutral-100 rounded animate-pulse" />
-												</div>
+												<Skeleton.Row key={i} />
 											))}
 										</div>
 									) : sidebarData ? (
@@ -2347,7 +2336,7 @@ export default function HostCommunityDetailPage() {
 								<div className="grid grid-cols-4 gap-3">
 									{annStatsLoading || !annStats ? (
 										Array.from({ length: 4 }).map((_, i) => (
-											<div key={i} className="rounded-panel bg-surface-card border border-border-default p-4 h-24 animate-pulse" />
+											<Skeleton.Block key={i} className="rounded-panel bg-surface-card border border-border-default p-4 h-24" />
 										))
 									) : (
 										<>
@@ -2412,14 +2401,7 @@ export default function HostCommunityDetailPage() {
 								{annLoading && (
 									<div className="flex flex-col gap-3">
 										{Array.from({ length: 3 }).map((_, i) => (
-											<div key={i} className="flex rounded-panel border border-border-default bg-surface-card overflow-hidden h-32 animate-pulse">
-												<div className="w-36 shrink-0 bg-neutral-200" />
-												<div className="flex-1 p-4 flex flex-col gap-2">
-													<div className="h-4 w-24 bg-neutral-200 rounded" />
-													<div className="h-5 w-2/3 bg-neutral-200 rounded" />
-													<div className="h-3.5 w-full bg-neutral-100 rounded" />
-												</div>
-											</div>
+											<Skeleton.Announcement key={i} />
 										))}
 									</div>
 								)}
@@ -2570,10 +2552,7 @@ export default function HostCommunityDetailPage() {
 									{sidebarLoading ? (
 										<div className="flex flex-col gap-2.5">
 											{Array.from({ length: 4 }).map((_, i) => (
-												<div key={i} className="flex justify-between">
-													<div className="h-3.5 w-36 bg-neutral-100 rounded animate-pulse" />
-													<div className="h-3.5 w-12 bg-neutral-100 rounded animate-pulse" />
-												</div>
+												<Skeleton.Row key={i} />
 											))}
 										</div>
 									) : sidebarData ? (
