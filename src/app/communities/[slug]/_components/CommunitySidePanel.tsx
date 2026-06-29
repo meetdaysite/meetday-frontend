@@ -246,21 +246,35 @@ function CommunityGuidelinesCard() {
 
 // ─── Experiences: Filter Card ─────────────────────────────────────────────────
 
-const DATE_FILTER_OPTIONS = ["All", "This Week", "This Month", "Next Month"]
-const SORT_OPTIONS = ["Date: Soonest", "Date: Latest", "Popularity", "Price: Low to High"]
+const DATE_FILTER_OPTIONS = [
+	{ label: "All", value: "" },
+	{ label: "This Week", value: "this_week" },
+	{ label: "This Month", value: "this_month" },
+	{ label: "Next Month", value: "next_month" },
+]
+
+
+const SORT_OPTIONS: { label: string; sortBy: string; sortOrder: string }[] = [
+	{ label: "Date: Soonest", sortBy: "date", sortOrder: "asc" },
+	{ label: "Date: Latest", sortBy: "date", sortOrder: "desc" },
+	{ label: "Price: Low to High", sortBy: "price", sortOrder: "asc" },
+	{ label: "Price: High to Low", sortBy: "price", sortOrder: "desc" },
+]
 
 export type ExperienceFilters = {
-	date: string
+	dateFilter: string
 	categoryId: string
-	interestSlug: string
-	sort: string
+	interestSlugs: string[]
+	sortBy: string
+	sortOrder: string
 }
 
 export const DEFAULT_EXPERIENCE_FILTERS: ExperienceFilters = {
-	date: "All",
+	dateFilter: "",
 	categoryId: "",
-	interestSlug: "",
-	sort: "Date: Soonest",
+	interestSlugs: [],
+	sortBy: "date",
+	sortOrder: "asc",
 }
 
 function ExperiencesFilterCard({
@@ -278,8 +292,24 @@ function ExperiencesFilterCard({
 		getInterests().then(setInterests).catch(() => {})
 	}, [])
 
-	const hasActiveFilters = filters.date !== "All" || !!filters.categoryId || !!filters.interestSlug
-	const clearAll = () => onChange({ ...filters, date: "All", categoryId: "", interestSlug: "" })
+	const hasActiveFilters =
+		!!filters.dateFilter ||
+		!!filters.categoryId ||
+		filters.interestSlugs.length > 0
+
+	const clearAll = () =>
+		onChange({ ...filters, dateFilter: "", categoryId: "", interestSlugs: [] })
+
+	const currentSortLabel =
+		SORT_OPTIONS.find(s => s.sortBy === filters.sortBy && s.sortOrder === filters.sortOrder)?.label ??
+		SORT_OPTIONS[0].label
+
+	const toggleInterestSlug = (slug: string) => {
+		const next = filters.interestSlugs.includes(slug)
+			? filters.interestSlugs.filter(s => s !== slug)
+			: [...filters.interestSlugs, slug]
+		onChange({ ...filters, interestSlugs: next })
+	}
 
 	return (
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
@@ -296,26 +326,28 @@ function ExperiencesFilterCard({
 				)}
 			</div>
 
+			{/* Date */}
 			<div className="mb-4">
 				<p className="text-label-sm font-medium text-text-secondary mb-2">Date</p>
 				<div className="flex flex-wrap gap-1.5">
 					{DATE_FILTER_OPTIONS.map(opt => (
 						<button
-							key={opt}
+							key={opt.value}
 							type="button"
-							onClick={() => onChange({ ...filters, date: opt })}
+							onClick={() => onChange({ ...filters, dateFilter: opt.value })}
 							className={`px-3 py-1 rounded-full text-[12px] font-medium border transition-colors ${
-								filters.date === opt
+								filters.dateFilter === opt.value
 									? "bg-action-primary text-white border-action-primary"
 									: "bg-transparent text-text-secondary border-border-default hover:border-border-focus"
 							}`}
 						>
-							{opt}
+							{opt.label}
 						</button>
 					))}
 				</div>
 			</div>
 
+			{/* Category */}
 			<div className="mb-4">
 				<p className="text-label-sm font-medium text-text-secondary mb-2">Category</p>
 				<div className="relative">
@@ -338,38 +370,43 @@ function ExperiencesFilterCard({
 				</div>
 			</div>
 
-			<div className="mb-4">
-				<p className="text-label-sm font-medium text-text-secondary mb-2">Interest</p>
-				<div className="relative">
-					<select
-						value={filters.interestSlug}
-						onChange={e => onChange({ ...filters, interestSlug: e.target.value })}
-						className="w-full px-3 py-2.5 pr-8 rounded-action border border-border-default bg-surface-page text-label-sm text-text-primary appearance-none cursor-pointer focus:outline-none focus:border-border-focus"
-					>
-						<option value="">All interests</option>
+			{/* Interests (multi-select pills) */}
+			{interests.length > 0 && (
+				<div className="mb-4">
+					<p className="text-label-sm font-medium text-text-secondary mb-2">Interests</p>
+					<div className="flex flex-wrap gap-1.5">
 						{interests.map(i => (
-							<option key={i.slug} value={i.slug}>{i.name}</option>
+							<button
+								key={i.slug}
+								type="button"
+								onClick={() => toggleInterestSlug(i.slug)}
+								className={`px-3 py-1 rounded-full text-[12px] font-medium border transition-colors ${
+									filters.interestSlugs.includes(i.slug)
+										? "bg-action-primary text-white border-action-primary"
+										: "bg-transparent text-text-secondary border-border-default hover:border-border-focus"
+								}`}
+							>
+								{i.name}
+							</button>
 						))}
-					</select>
-					<Icon
-						as={AltArrowDownSvg}
-						size="sm"
-						color="secondary"
-						className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
-					/>
+					</div>
 				</div>
-			</div>
+			)}
 
+			{/* Sort by */}
 			<div>
 				<p className="text-label-sm font-medium text-text-secondary mb-2">Sort by</p>
 				<div className="relative">
 					<select
-						value={filters.sort}
-						onChange={e => onChange({ ...filters, sort: e.target.value })}
+						value={currentSortLabel}
+						onChange={e => {
+							const opt = SORT_OPTIONS.find(s => s.label === e.target.value)
+							if (opt) onChange({ ...filters, sortBy: opt.sortBy, sortOrder: opt.sortOrder })
+						}}
 						className="w-full px-3 py-2.5 pr-8 rounded-action border border-border-default bg-surface-page text-label-sm text-text-primary appearance-none cursor-pointer focus:outline-none focus:border-border-focus"
 					>
 						{SORT_OPTIONS.map(s => (
-							<option key={s}>{s}</option>
+							<option key={s.label}>{s.label}</option>
 						))}
 					</select>
 					<Icon

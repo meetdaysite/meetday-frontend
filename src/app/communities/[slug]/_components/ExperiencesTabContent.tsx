@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
@@ -30,46 +30,6 @@ function toExploreEvent(e: CommunityEvent): ExploreEvent {
 	}
 }
 
-// ─── Client-side date filter + sort ──────────────────────────────────────────
-
-function passesDateFilter(eventDate: string, filter: string): boolean {
-	if (filter === "All") return true
-	const now = new Date()
-	const d = new Date(eventDate)
-	if (filter === "This Week") {
-		const start = new Date(now)
-		start.setDate(now.getDate() - now.getDay())
-		start.setHours(0, 0, 0, 0)
-		const end = new Date(start)
-		end.setDate(start.getDate() + 6)
-		end.setHours(23, 59, 59, 999)
-		return d >= start && d <= end
-	}
-	if (filter === "This Month") {
-		return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-	}
-	if (filter === "Next Month") {
-		const nm = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-		return d.getMonth() === nm.getMonth() && d.getFullYear() === nm.getFullYear()
-	}
-	return true
-}
-
-function applyDateAndSort(events: CommunityEvent[], filters: ExperienceFilters): CommunityEvent[] {
-	const filtered = events.filter(e => passesDateFilter(e.eventDate, filters.date))
-	const sorted = [...filtered]
-	if (filters.sort === "Date: Latest") {
-		sorted.sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime())
-	} else if (filters.sort === "Date: Soonest") {
-		sorted.sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
-	} else if (filters.sort === "Popularity") {
-		sorted.sort((a, b) => b.attendeeCount - a.attendeeCount)
-	} else if (filters.sort === "Price: Low to High") {
-		sorted.sort((a, b) => a.minPrice - b.minPrice)
-	}
-	return sorted
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const LIMIT = 20
@@ -81,47 +41,43 @@ export function ExperiencesTabContent({
 	communitySlug: string
 	filters?: ExperienceFilters
 }) {
-	const [rawEvents, setRawEvents] = useState<CommunityEvent[]>([])
+	const [events, setEvents] = useState<ExploreEvent[]>([])
 	const [total, setTotal] = useState(0)
 	const [page, setPage] = useState(1)
 	const [loading, setLoading] = useState(true)
 	const [loadingMore, setLoadingMore] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 
-	const serverParams = {
+	const buildParams = (pageNum: number) => ({
+		page: pageNum,
+		limit: LIMIT,
+		dateFilter: filters.dateFilter || undefined,
 		categoryId: filters.categoryId || undefined,
-		interestSlug: filters.interestSlug || undefined,
-	}
+		interestSlugs: filters.interestSlugs.length > 0 ? filters.interestSlugs : undefined,
+		sortBy: filters.sortBy || undefined,
+		sortOrder: filters.sortOrder || undefined,
+	})
 
-	const fetchPage = (pageNum: number) =>
-		getCommunityEvents(communitySlug, { page: pageNum, limit: LIMIT, ...serverParams })
-
-	// Re-fetch from page 1 whenever community or server-side filters change
 	useEffect(() => {
 		setLoading(true)
 		setError(null)
-		getCommunityEvents(communitySlug, {
-			page: 1,
-			limit: LIMIT,
-			categoryId: filters.categoryId || undefined,
-			interestSlug: filters.interestSlug || undefined,
-		})
+		getCommunityEvents(communitySlug, buildParams(1))
 			.then(res => {
-				setRawEvents(res.data)
+				setEvents(res.data.map(toExploreEvent))
 				setTotal(res.total)
 				setPage(1)
 			})
 			.catch((err) => setError(getApiErrorMessage(err)))
 			.finally(() => setLoading(false))
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [communitySlug, filters.categoryId, filters.interestSlug])
+	}, [communitySlug, filters.dateFilter, filters.categoryId, filters.interestSlugs.join(","), filters.sortBy, filters.sortOrder])
 
 	const handleLoadMore = () => {
 		const next = page + 1
 		setLoadingMore(true)
-		fetchPage(next)
+		getCommunityEvents(communitySlug, buildParams(next))
 			.then(res => {
-				setRawEvents(prev => [...prev, ...res.data])
+				setEvents(prev => [...prev, ...res.data.map(toExploreEvent)])
 				setTotal(res.total)
 				setPage(next)
 			})
@@ -129,13 +85,11 @@ export function ExperiencesTabContent({
 			.finally(() => setLoadingMore(false))
 	}
 
-	const displayEvents = useMemo<ExploreEvent[]>(
-		() => applyDateAndSort(rawEvents, filters).map(toExploreEvent),
-		[rawEvents, filters],
-	)
-
-	const hasMore = rawEvents.length < total
-	const hasDateFilter = filters.date !== "All"
+	const hasMore = events.length < total
+	const hasActiveFilters =
+		!!filters.dateFilter ||
+		!!filters.categoryId ||
+		filters.interestSlugs.length > 0
 
 	return (
 		<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-5">
@@ -143,9 +97,7 @@ export function ExperiencesTabContent({
 				<p className="text-body-md font-semibold text-text-primary">All experiences from this community</p>
 				{!loading && total > 0 && (
 					<p className="text-label-sm text-text-secondary font-normal mt-0.5">
-						{hasDateFilter
-							? `${displayEvents.length} of ${total} experience${total === 1 ? "" : "s"}`
-							: `${total} experience${total === 1 ? "" : "s"}`}
+						{`${total} experience${total === 1 ? "" : "s"}`}
 					</p>
 				)}
 			</div>
@@ -163,8 +115,8 @@ export function ExperiencesTabContent({
 						onClick={() => {
 							setLoading(true)
 							setError(null)
-							fetchPage(1)
-								.then(res => { setRawEvents(res.data); setTotal(res.total); setPage(1) })
+							getCommunityEvents(communitySlug, buildParams(1))
+								.then(res => { setEvents(res.data.map(toExploreEvent)); setTotal(res.total); setPage(1) })
 								.catch((err) => setError(getApiErrorMessage(err)))
 								.finally(() => setLoading(false))
 						}}
@@ -172,10 +124,10 @@ export function ExperiencesTabContent({
 						Retry
 					</Button>
 				</div>
-			) : displayEvents.length === 0 ? (
+			) : events.length === 0 ? (
 				<div className="py-8 text-center">
 					<p className="text-label-sm text-text-secondary">
-						{filters.categoryId || filters.interestSlug || hasDateFilter
+						{hasActiveFilters
 							? "No experiences match the selected filters."
 							: "No experiences from this community yet."}
 					</p>
@@ -183,7 +135,7 @@ export function ExperiencesTabContent({
 			) : (
 				<>
 					<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-						{displayEvents.map(event => (
+						{events.map(event => (
 							<EventCard key={event.id} event={event} />
 						))}
 					</div>
