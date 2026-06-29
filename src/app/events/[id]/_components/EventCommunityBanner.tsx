@@ -10,6 +10,7 @@ import EyeSvg from "@/icons/outlined/eye-open.svg"
 // TODO: Replace with real type once community API is integrated
 interface EventCommunity {
 	id: string
+	slug: string
 	name: string
 	description: string
 	memberCount: number
@@ -28,6 +29,7 @@ function fmtCount(n: number): string {
 // TODO: Remove mock and derive from event.community once the API returns community data
 const MOCK_COMMUNITY: EventCommunity = {
 	id: "mock-community-1",
+	slug: "meetday-nightlife-circle",
 	name: "Meetday Nightlife Circle",
 	description:
 		"A Public Meetday community for music lovers, rooftop regulars, late-night explorers, and people who enjoy high-energy IRL experiences.",
@@ -106,9 +108,8 @@ export function EventCommunityBanner() {
 				</div>
 
 				{/* CTA */}
-				{/* TODO: Replace "meetday-music-nights" with community.id once API returns community data */}
 				<div className="shrink-0 flex flex-col justify-end">
-					<Link href={`/communities/${community.id}`}>
+					<Link href={`/communities/${community.slug}`}>
 						<Button
 							variant="primary"
 							size="sm"

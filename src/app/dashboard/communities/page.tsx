@@ -224,18 +224,22 @@ function CommunityCTA({ community }: { community: HostBrowseCommunity }) {
 
 	if (community.access === "PUBLIC") {
 		return (
-			<Button variant="primary" size="sm" radius="md" className="whitespace-nowrap">
-				Join Community
-			</Button>
+			<Link href={`/communities/${community.slug}`}>
+				<Button variant="primary" size="sm" radius="md" className="whitespace-nowrap">
+					Join Community
+				</Button>
+			</Link>
 		)
 	}
 
 	if (community.access === "APPROVAL_REQUIRED") {
 		return (
-			<Button variant="primary" size="sm" radius="md" className="whitespace-nowrap">
-				<Icon as={LockSvg} size="xs" color="inherit" />
-				Request Access
-			</Button>
+			<Link href={`/communities/${community.slug}`}>
+				<Button variant="primary" size="sm" radius="md" className="whitespace-nowrap">
+					<Icon as={LockSvg} size="xs" color="inherit" />
+					Request Access
+				</Button>
+			</Link>
 		)
 	}
 

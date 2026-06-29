@@ -339,12 +339,14 @@ export function MemberProfileDrawer({
 	currentUserId,
 	detailLoading = false,
 	onClose,
+	onOpenDM,
 }: {
 	member: DrawerMember | null
 	communityId: string
 	currentUserId: string | null
 	detailLoading?: boolean
 	onClose: () => void
+	onOpenDM?: (conversationId: string) => void
 }) {
 	const [sayHiOpen, setSayHiOpen] = useState(false)
 	const [localDmStatus, setLocalDmStatus] = useState<DmStatus | null>(null)
@@ -664,9 +666,14 @@ export function MemberProfileDrawer({
 										radius="pill"
 										leftIcon={<Icon as={ChatSvg} size="sm" color="inverse" />}
 										className="w-full"
-										onClick={() =>
-											toast("Open the Chat tab to continue your conversation.")
-										}
+										onClick={() => {
+											if (activeConversationId && onOpenDM) {
+												onOpenDM(activeConversationId)
+												onClose()
+											} else {
+												toast("Open the Chat tab to continue your conversation.")
+											}
+										}}
 									>
 										Message
 									</Button>

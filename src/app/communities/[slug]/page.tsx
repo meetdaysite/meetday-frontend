@@ -1,8 +1,7 @@
 "use client"
 
 import { use, useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { notFound } from "next/navigation"
+import { useRouter, notFound } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
@@ -13,6 +12,7 @@ import { Button } from "@/components/ui/Button"
 import { useAuthStore } from "@/store/authStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import { getCommunityBySlug, joinCommunity, leaveCommunity, getAnnouncementUnreadCount, markAnnouncementsRead, getCommunityMembers } from "@/lib/api"
+import { getTotalUnreadDMCount } from "@/lib/chatApi"
 import { getApiErrorMessage } from "@/lib/errors"
 import type { CommunityDetailResponse, ProfileVisibility, CommunityRole } from "@/lib/api"
 import { CommunityHero } from "./_components/CommunityHero"
@@ -119,6 +119,9 @@ function TabContent({
 	onJoinClick,
 	onTabChange,
 	experienceFilters,
+	pendingDmConversationId,
+	onPendingDmHandled,
+	onOpenDM,
 }: {
 	activeTab: TabKey
 	visibleTabs: Tab[]
@@ -130,6 +133,9 @@ function TabContent({
 	onJoinClick: () => void
 	onTabChange: (tab: TabKey) => void
 	experienceFilters: ExperienceFilters
+	pendingDmConversationId: string | null
+	onPendingDmHandled: () => void
+	onOpenDM: (conversationId: string) => void
 }) {
 	const tab = visibleTabs.find(t => t.key === activeTab)!
 	const isLocked = tab.requiresAuth && (!isLoggedIn || !isMember)
@@ -148,7 +154,7 @@ function TabContent({
 	if (activeTab === "overview") {
 		return (
 			<>
-				<WhatToDoCard isMember={isMember} onTabChange={onTabChange} />
+				<WhatToDoCard isMember={isMember} onTabChange={onTabChange} onJoinClick={onJoinClick} />
 				<UpcomingExperiences communitySlug={community.slug} onViewAll={() => onTabChange("experiences")} />
 				<LatestFromCommunity communityId={community.id} isMember={isMember} onViewAll={() => onTabChange("feed")} />
 			</>
@@ -163,11 +169,14 @@ function TabContent({
 			communityId={community.id}
 			currentUserId={currentUserId}
 			currentUserRole={currentUserRole}
+			pendingDmConversationId={pendingDmConversationId}
+			onPendingDmHandled={onPendingDmHandled}
+			onGoToMembers={() => onTabChange("members")}
 		/>
 	)
 	if (activeTab === "announcements") return <AnnouncementsTabContent communityId={community.id} />
 	if (activeTab === "feed") return <FeedTabContent communityId={community.id} currentUserRole={currentUserRole} />
-	if (activeTab === "members") return <MembersTabContent communityId={community.id} />
+	if (activeTab === "members") return <MembersTabContent communityId={community.id} onOpenDM={onOpenDM} />
 
 	return (
 		<div className="rounded-panel bg-surface-card border border-border-default p-10 flex items-center justify-center">
@@ -207,6 +216,7 @@ function CommunityPageSkeleton() {
 export default function CommunityDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
 	const { slug } = use(params)
 
+	const router = useRouter()
 	const user = useAuthStore(s => s.user)
 	const authLoading = useAuthStore(s => s.authLoading)
 	const profileId = useAttendeeProfileStore(s => s.profile?.id ?? null)
@@ -217,6 +227,8 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 	const [activeTab, setActiveTab] = useState<TabKey>("overview")
 	const [experienceFilters, setExperienceFilters] = useState<ExperienceFilters>(DEFAULT_EXPERIENCE_FILTERS)
 	const [announcementUnreadCount, setAnnouncementUnreadCount] = useState(0)
+	const [chatDMUnreadCount, setChatDMUnreadCount] = useState(0)
+	const [pendingDmConversationId, setPendingDmConversationId] = useState<string | null>(null)
 	const [joinModalOpen, setJoinModalOpen] = useState(false)
 	const [successModalOpen, setSuccessModalOpen] = useState(false)
 	const [pendingModalOpen, setPendingModalOpen] = useState(false)
@@ -231,6 +243,9 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 		if (!user || !apiData || apiData === "loading" || !apiData.isMember) return
 		getAnnouncementUnreadCount(apiData.id)
 			.then(count => setAnnouncementUnreadCount(count))
+			.catch(() => {/* silent */})
+		getTotalUnreadDMCount(apiData.id)
+			.then(count => setChatDMUnreadCount(count))
 			.catch(() => {/* silent */})
 	}, [user, apiData])
 
@@ -276,7 +291,13 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 	const activeTabDef = visibleTabs.find(t => t.key === safeActiveTab)!
 	const isActiveTabLocked = activeTabDef.requiresAuth && (!isLoggedIn || !isMember)
 
-	const openJoinModal = () => setJoinModalOpen(true)
+	const openJoinModal = () => {
+		if (!isLoggedIn) {
+			router.push(`/attendee/login?redirect=${encodeURIComponent(window.location.pathname)}`)
+			return
+		}
+		setJoinModalOpen(true)
+	}
 
 	const handleLeave = async () => {
 		await leaveCommunity(apiData.id)
@@ -318,7 +339,8 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 							{visibleTabs.map(tab => {
 								const locked = tab.requiresAuth && (!isLoggedIn || !isMember)
 								const isActive = safeActiveTab === tab.key
-								const showUnreadBadge = tab.key === "announcements" && !locked && announcementUnreadCount > 0
+								const showAnnouncementBadge = tab.key === "announcements" && !locked && announcementUnreadCount > 0
+								const showChatBadge = tab.key === "chat" && !locked && chatDMUnreadCount > 0
 
 								return (
 									<button
@@ -326,6 +348,9 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 										type="button"
 										onClick={() => {
 											setActiveTab(tab.key)
+											if (tab.key === "chat" && chatDMUnreadCount > 0) {
+												setChatDMUnreadCount(0)
+											}
 											if (tab.key === "announcements" && announcementUnreadCount > 0) {
 												setAnnouncementUnreadCount(0)
 												markAnnouncementsRead(apiData.id).catch(() => {/* silent */})
@@ -343,10 +368,13 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 												<Icon as={LockSvg} size="xs" color="info" className="size-2" />
 											</span>
 										)}
-										{showUnreadBadge && (
+										{showAnnouncementBadge && (
 											<span className="flex items-center justify-center min-w-4 h-4 px-1 text-[10px] font-bold bg-action-primary text-text-inverse rounded-full leading-none">
 												{announcementUnreadCount > 99 ? "99+" : announcementUnreadCount}
 											</span>
+										)}
+										{showChatBadge && (
+											<span className="size-2 rounded-full bg-action-primary shrink-0" />
 										)}
 										{isActive && (
 											<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-text-brand rounded-full" />
@@ -368,6 +396,12 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 							onJoinClick={openJoinModal}
 							onTabChange={setActiveTab}
 							experienceFilters={experienceFilters}
+							pendingDmConversationId={pendingDmConversationId}
+							onPendingDmHandled={() => setPendingDmConversationId(null)}
+							onOpenDM={(conversationId) => {
+								setPendingDmConversationId(conversationId)
+								setActiveTab("chat")
+							}}
 						/>
 
 						{/* Join banner — hidden once member or tab is already locked */}

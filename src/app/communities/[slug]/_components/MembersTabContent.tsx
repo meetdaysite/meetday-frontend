@@ -173,7 +173,7 @@ function mapDetailToDrawer(d: MemberDetailCard): DrawerMember {
 
 const LIMIT = 20
 
-export function MembersTabContent({ communityId }: { communityId: string }) {
+export function MembersTabContent({ communityId, onOpenDM }: { communityId: string; onOpenDM?: (conversationId: string) => void }) {
 	const backendUserId = useAttendeeProfileStore(s => s.profile?.id ?? null)
 
 	const [activeFilter, setActiveFilter] = useState("all")
@@ -438,6 +438,7 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 					setSelectedMember(null)
 					setDrawerLoading(false)
 				}}
+				onOpenDM={onOpenDM}
 			/>
 		</>
 	)

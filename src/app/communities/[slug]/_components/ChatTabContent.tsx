@@ -11,12 +11,14 @@ import {
 	getDMConversations,
 	getDMMessages,
 	getTotalUnreadDMCount,
+	getReceivedIntros,
 	dismissWelcomeBanner,
 	pinMessage,
 	unpinMessage as unpinMessageApi,
 	deleteChannelMessage,
 } from "@/lib/chatApi"
 import { chatSocket } from "@/lib/chatSocket"
+import { auth } from "@/lib/firebase"
 import { useChatStore } from "@/store/chatStore"
 import { aggregateRawReactions } from "@/lib/chatApi"
 import type { CommunityRole } from "@/lib/api"
@@ -56,6 +58,9 @@ interface ChatTabContentProps {
 	communityId: string
 	currentUserId: string | null
 	currentUserRole: CommunityRole | null
+	pendingDmConversationId?: string | null
+	onPendingDmHandled?: () => void
+	onGoToMembers?: () => void
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -65,6 +70,9 @@ export function ChatTabContent({
 	communityId,
 	currentUserId,
 	currentUserRole,
+	pendingDmConversationId,
+	onPendingDmHandled,
+	onGoToMembers,
 }: ChatTabContentProps) {
 	const store = useChatStore()
 	const isMod = canModerate(currentUserRole)
@@ -134,10 +142,11 @@ export function ChatTabContent({
 				setChatLoading(false)
 
 				// Non-critical — load in parallel, ignore individual failures
-				const [presenceResult, conversationsResult, unreadResult] = await Promise.allSettled([
+				const [presenceResult, conversationsResult, unreadResult, introsResult] = await Promise.allSettled([
 					getCommunityPresence(communityId),
 					getDMConversations(communityId),
 					getTotalUnreadDMCount(communityId),
+					getReceivedIntros(communityId),
 				])
 				if (aborted) return
 
@@ -158,6 +167,10 @@ export function ChatTabContent({
 					store.setTotalUnreadDMs(unreadResult.value)
 				} else {
 					console.debug("[chat] init — unread count failed:", unreadResult.reason)
+				}
+				if (introsResult.status === "fulfilled") {
+					console.debug("[chat] init — pending intros:", introsResult.value.length)
+					setIntroBadgeCount(introsResult.value.length)
 				}
 
 				const firstChannel = channels[0]
@@ -463,15 +476,41 @@ export function ChatTabContent({
 	}, [communityId])
 
 	const handleNewDM = useCallback(() => {
-		// Opening a new DM requires picking a member — will be wired to MemberProfileDrawer
-		// For now this is a no-op placeholder
-		toast("Select a member from the Members tab to start a DM.")
-	}, [])
+		if (onGoToMembers) {
+			onGoToMembers()
+		} else {
+			toast("Go to the Members tab to start a direct message.")
+		}
+	}, [onGoToMembers])
 
 	const handleDMBack = useCallback(() => {
 		store.setChatView("channel")
 		store.setActiveDMConversation(null)
 	}, [store])
+
+	// ── Proactive Firebase token refresh ──────────────────────────────────────
+
+	useEffect(() => {
+		const unsubscribe = auth.onIdTokenChanged(async (user) => {
+			if (!user) {
+				chatSocket.disconnect()
+				return
+			}
+			const newToken = await user.getIdToken()
+			chatSocket.updateToken(newToken)
+		})
+		return unsubscribe
+	}, [])
+
+	// ── Open pending DM (from Members tab "Message" button) ───────────────────
+
+	useEffect(() => {
+		if (!pendingDmConversationId || chatLoading) return
+		const conv = store.dmConversations.find(c => c.id === pendingDmConversationId)
+		if (!conv) return
+		handleDMSelect(conv)
+		onPendingDmHandled?.()
+	}, [pendingDmConversationId, chatLoading, store.dmConversations, handleDMSelect, onPendingDmHandled])
 
 	const handleDMTypingStart = useCallback(() => {
 		const convId = useChatStore.getState().activeDmConversationId
