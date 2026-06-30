@@ -37,7 +37,7 @@ type EventStore = {
 export const useEventStore = create<EventStore>((set) => ({
 	events: [],
 	eventsTotal: 0,
-	eventsLoading: false,
+	eventsLoading: true,
 	eventsError: null,
 
 	currentEvent: null,

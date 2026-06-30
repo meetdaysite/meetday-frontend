@@ -24,8 +24,10 @@ import HeartsFilledSvg from "@/icons/filled/hearts.svg"
 import HeartSvg from "@/icons/outlined/heart.svg"
 import FireSvg from "@/icons/outlined/fire.svg"
 import { avatarColor } from "@/lib/avatarColor"
-import { getCommunityStats, getCommunityHosts, getCommunityMembers, getCommunityEvents, getCommunityTrendingTopics, getCommunityPopularPosts, getCommunityBookmarkedPosts } from "@/lib/api"
-import type { CommunityStats, CommunityHost, CommunityMember, CommunityEvent, TrendingTopic, FeedPost } from "@/lib/api"
+import { getCommunityStats, getCommunityHosts, getCommunityMembers, getCommunityEvents, getCommunityTrendingTopics, getCommunityPopularPosts, getCommunityBookmarkedPosts, getCategories, getInterests, getSavedEvents } from "@/lib/api"
+import type { CommunityStats, CommunityHost, CommunityMember, CommunityEvent, TrendingTopic, FeedPost, Category, Interest } from "@/lib/api"
+import type { SavedEvent } from "@/types/attendee"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Shared host avatar helper ─────────────────────────────────────────────────
 
@@ -74,7 +76,7 @@ const WHY_JOIN_ITEMS = [
 
 function WhyJoinCard({ isMember, onJoinClick }: { isMember: boolean; onJoinClick: () => void }) {
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">
 					{isMember ? "What you have access to" : "Why join this community?"}
@@ -128,7 +130,7 @@ function PeopleInCommunityCard({ isMember, communityId }: { isMember: boolean; c
 	const overflow = total > 12 ? total - 12 : 0
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<div className="flex items-center gap-2">
 					<span className="text-body-md font-semibold text-text-primary">
@@ -179,7 +181,7 @@ function TrustedHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
 	if (!hosts || hosts.length === 0) return null
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Trusted hosts</span>
 				{/* TODO: Link to /communities/[slug]/hosts once sub-page is built */}
@@ -223,7 +225,7 @@ const MOCK_GUIDELINES = [
 
 function CommunityGuidelinesCard() {
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Community guidelines</span>
 			</div>
@@ -244,29 +246,73 @@ function CommunityGuidelinesCard() {
 
 // ─── Experiences: Filter Card ─────────────────────────────────────────────────
 
-// TODO: Replace with real filter options from GET /api/experiences/filters
-const DATE_FILTER_OPTIONS = ["All", "This Week", "This Month", "Next Month"]
-const TYPE_FILTER_OPTIONS = ["All", "Rooftop", "Club", "Live", "Festival"]
-const GENRE_OPTIONS = ["All Genres", "Electronic", "Hip-Hop", "Jazz", "Classical", "Afrobeats"]
-const SORT_OPTIONS = ["Date: Soonest", "Date: Latest", "Popularity", "Price: Low to High"]
+const DATE_FILTER_OPTIONS = [
+	{ label: "All", value: "" },
+	{ label: "This Week", value: "this_week" },
+	{ label: "This Month", value: "this_month" },
+	{ label: "Next Month", value: "next_month" },
+]
 
-function ExperiencesFilterCard() {
-	const [selectedDate, setSelectedDate] = useState("All")
-	const [selectedType, setSelectedType] = useState("All")
-	const [selectedGenre, setSelectedGenre] = useState("All Genres")
-	const [selectedSort, setSelectedSort] = useState("Date: Soonest")
+
+const SORT_OPTIONS: { label: string; sortBy: string; sortOrder: string }[] = [
+	{ label: "Date: Soonest", sortBy: "date", sortOrder: "asc" },
+	{ label: "Date: Latest", sortBy: "date", sortOrder: "desc" },
+	{ label: "Price: Low to High", sortBy: "price", sortOrder: "asc" },
+	{ label: "Price: High to Low", sortBy: "price", sortOrder: "desc" },
+]
+
+export type ExperienceFilters = {
+	dateFilter: string
+	categoryId: string
+	interestSlugs: string[]
+	sortBy: string
+	sortOrder: string
+}
+
+export const DEFAULT_EXPERIENCE_FILTERS: ExperienceFilters = {
+	dateFilter: "",
+	categoryId: "",
+	interestSlugs: [],
+	sortBy: "date",
+	sortOrder: "asc",
+}
+
+function ExperiencesFilterCard({
+	filters,
+	onChange,
+}: {
+	filters: ExperienceFilters
+	onChange: (f: ExperienceFilters) => void
+}) {
+	const [categories, setCategories] = useState<Category[]>([])
+	const [interests, setInterests] = useState<Interest[]>([])
+
+	useEffect(() => {
+		getCategories().then(setCategories).catch(() => {})
+		getInterests().then(setInterests).catch(() => {})
+	}, [])
 
 	const hasActiveFilters =
-		selectedDate !== "All" || selectedType !== "All" || selectedGenre !== "All Genres"
+		!!filters.dateFilter ||
+		!!filters.categoryId ||
+		filters.interestSlugs.length > 0
 
-	const clearAll = () => {
-		setSelectedDate("All")
-		setSelectedType("All")
-		setSelectedGenre("All Genres")
+	const clearAll = () =>
+		onChange({ ...filters, dateFilter: "", categoryId: "", interestSlugs: [] })
+
+	const currentSortLabel =
+		SORT_OPTIONS.find(s => s.sortBy === filters.sortBy && s.sortOrder === filters.sortOrder)?.label ??
+		SORT_OPTIONS[0].label
+
+	const toggleInterestSlug = (slug: string) => {
+		const next = filters.interestSlugs.includes(slug)
+			? filters.interestSlugs.filter(s => s !== slug)
+			: [...filters.interestSlugs, slug]
+		onChange({ ...filters, interestSlugs: next })
 	}
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Filter experiences</span>
 				{hasActiveFilters && (
@@ -280,56 +326,39 @@ function ExperiencesFilterCard() {
 				)}
 			</div>
 
+			{/* Date */}
 			<div className="mb-4">
 				<p className="text-label-sm font-medium text-text-secondary mb-2">Date</p>
 				<div className="flex flex-wrap gap-1.5">
 					{DATE_FILTER_OPTIONS.map(opt => (
 						<button
-							key={opt}
+							key={opt.value}
 							type="button"
-							onClick={() => setSelectedDate(opt)}
+							onClick={() => onChange({ ...filters, dateFilter: opt.value })}
 							className={`px-3 py-1 rounded-full text-[12px] font-medium border transition-colors ${
-								selectedDate === opt
+								filters.dateFilter === opt.value
 									? "bg-action-primary text-white border-action-primary"
 									: "bg-transparent text-text-secondary border-border-default hover:border-border-focus"
 							}`}
 						>
-							{opt}
+							{opt.label}
 						</button>
 					))}
 				</div>
 			</div>
 
+			{/* Category */}
 			<div className="mb-4">
-				<p className="text-label-sm font-medium text-text-secondary mb-2">Experience type</p>
-				<div className="flex flex-wrap gap-1.5">
-					{TYPE_FILTER_OPTIONS.map(opt => (
-						<button
-							key={opt}
-							type="button"
-							onClick={() => setSelectedType(opt)}
-							className={`px-3 py-1 rounded-full text-[12px] font-medium border transition-colors ${
-								selectedType === opt
-									? "bg-action-primary text-white border-action-primary"
-									: "bg-transparent text-text-secondary border-border-default hover:border-border-focus"
-							}`}
-						>
-							{opt}
-						</button>
-					))}
-				</div>
-			</div>
-
-			<div className="mb-4">
-				<p className="text-label-sm font-medium text-text-secondary mb-2">Music genre</p>
+				<p className="text-label-sm font-medium text-text-secondary mb-2">Category</p>
 				<div className="relative">
 					<select
-						value={selectedGenre}
-						onChange={e => setSelectedGenre(e.target.value)}
+						value={filters.categoryId}
+						onChange={e => onChange({ ...filters, categoryId: e.target.value })}
 						className="w-full px-3 py-2.5 pr-8 rounded-action border border-border-default bg-surface-page text-label-sm text-text-primary appearance-none cursor-pointer focus:outline-none focus:border-border-focus"
 					>
-						{GENRE_OPTIONS.map(g => (
-							<option key={g}>{g}</option>
+						<option value="">All categories</option>
+						{categories.map(c => (
+							<option key={c.id} value={c.id}>{c.name}</option>
 						))}
 					</select>
 					<Icon
@@ -341,16 +370,43 @@ function ExperiencesFilterCard() {
 				</div>
 			</div>
 
+			{/* Interests (multi-select pills) */}
+			{interests.length > 0 && (
+				<div className="mb-4">
+					<p className="text-label-sm font-medium text-text-secondary mb-2">Interests</p>
+					<div className="flex flex-wrap gap-1.5">
+						{interests.map(i => (
+							<button
+								key={i.slug}
+								type="button"
+								onClick={() => toggleInterestSlug(i.slug)}
+								className={`px-3 py-1 rounded-full text-[12px] font-medium border transition-colors ${
+									filters.interestSlugs.includes(i.slug)
+										? "bg-action-primary text-white border-action-primary"
+										: "bg-transparent text-text-secondary border-border-default hover:border-border-focus"
+								}`}
+							>
+								{i.name}
+							</button>
+						))}
+					</div>
+				</div>
+			)}
+
+			{/* Sort by */}
 			<div>
 				<p className="text-label-sm font-medium text-text-secondary mb-2">Sort by</p>
 				<div className="relative">
 					<select
-						value={selectedSort}
-						onChange={e => setSelectedSort(e.target.value)}
+						value={currentSortLabel}
+						onChange={e => {
+							const opt = SORT_OPTIONS.find(s => s.label === e.target.value)
+							if (opt) onChange({ ...filters, sortBy: opt.sortBy, sortOrder: opt.sortOrder })
+						}}
 						className="w-full px-3 py-2.5 pr-8 rounded-action border border-border-default bg-surface-page text-label-sm text-text-primary appearance-none cursor-pointer focus:outline-none focus:border-border-focus"
 					>
 						{SORT_OPTIONS.map(s => (
-							<option key={s}>{s}</option>
+							<option key={s.label}>{s.label}</option>
 						))}
 					</select>
 					<Icon
@@ -367,25 +423,23 @@ function ExperiencesFilterCard() {
 
 // ─── Experiences: Saved Experiences Card ──────────────────────────────────────
 
-// TODO: Replace with real saved events from GET /api/users/me/saved-events?communityId=[id]
-const MOCK_SAVED_EXPERIENCES = [
-	{
-		id: "se1",
-		name: "After Hours",
-		coverUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=80&h=80&fit=crop",
-		date: "Sat, 31 May",
-		time: "9:00 PM",
-	},
-]
-
 function SavedExperiencesCard() {
+	const [events, setEvents] = useState<SavedEvent[]>([])
+	const [loading, setLoading] = useState(true)
+
+	useEffect(() => {
+		getSavedEvents({ limit: 3 })
+			.then(res => setEvents(res.data))
+			.catch(() => {})
+			.finally(() => setLoading(false))
+	}, [])
+
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Saved experiences</span>
-				{/* TODO: Link to /attendee/saved-events once page is built */}
 				<Link
-					href="#"
+					href="/attendee/my-events"
 					className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0"
 				>
 					View all
@@ -393,30 +447,40 @@ function SavedExperiencesCard() {
 				</Link>
 			</div>
 
-			<div className="flex flex-col gap-3">
-				{MOCK_SAVED_EXPERIENCES.map(event => (
-					<div key={event.id} className="flex items-center gap-3">
-						<div className="relative size-12 rounded-action overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-							<Image
-								src={event.coverUrl}
-								alt={event.name}
-								fill
-								sizes="48px"
-								className="object-cover"
-							/>
+			{loading ? (
+				<div className="flex flex-col gap-3">
+					{Array.from({ length: 2 }).map((_, i) => (
+						<Skeleton.SavedItem key={i} />
+					))}
+				</div>
+			) : events.length === 0 ? (
+				<p className="text-label-sm text-text-secondary">No saved experiences yet.</p>
+			) : (
+				<div className="flex flex-col gap-3">
+					{events.map(event => (
+						<div key={event.id} className="flex items-center gap-3">
+							<div className="relative size-12 rounded-action overflow-hidden shrink-0 border border-border-default bg-surface-hover">
+								<Image
+									src={event.coverImageUrl}
+									alt={event.title}
+									fill
+									sizes="48px"
+									className="object-cover"
+								/>
+							</div>
+							<div className="flex-1 min-w-0">
+								<p className="text-label-sm font-semibold text-text-primary truncate">
+									{event.title}
+								</p>
+								<p className="text-[11px] text-text-secondary mt-0.5">
+									{event.eventDate} · {event.startTime}
+								</p>
+							</div>
+							<Icon as={BookmarkSvg} size="sm" color="brand" />
 						</div>
-						<div className="flex-1 min-w-0">
-							<p className="text-label-sm font-semibold text-text-primary truncate">
-								{event.name}
-							</p>
-							<p className="text-[11px] text-text-secondary mt-0.5">
-								{event.date} · {event.time}
-							</p>
-						</div>
-						<Icon as={BookmarkSvg} size="sm" color="brand" />
-					</div>
-				))}
-			</div>
+					))}
+				</div>
+			)}
 		</div>
 	)
 }
@@ -434,7 +498,7 @@ function ExperiencesCommunityHostsCard({ hosts }: { hosts: CommunityHost[] | nul
 	if (!hosts || hosts.length === 0) return null
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Community hosts</span>
 				{/* TODO: Link to /communities/[slug]/hosts once sub-page is built */}
@@ -497,7 +561,7 @@ function ChatUpcomingExperiencesCard({ communitySlug, onViewAll }: { communitySl
 	}, [communitySlug])
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">
 					Upcoming Experiences
@@ -571,7 +635,7 @@ function MembersCommunityAtAGlanceCard({ stats }: { stats: CommunityStats | null
 	]
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Community at a glance</span>
 			</div>
@@ -602,7 +666,7 @@ function MembersTopHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
 	if (!hosts || hosts.length === 0) return null
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Top hosts</span>
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
@@ -635,40 +699,57 @@ function MembersTopHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
 
 // ─── Members: New Members Card ────────────────────────────────────────────────
 
-// TODO: Replace with real data from GET /api/communities/[id]/members?sort=newest&limit=3
-const MOCK_NEW_MEMBERS = [
-	{ id: "nm1", name: "Vikram", avatarUrl: "https://i.pravatar.cc/40?img=13", joinedAgo: "2 days ago" },
-	{ id: "nm2", name: "Tanya", avatarUrl: "https://i.pravatar.cc/40?img=4", joinedAgo: "3 days ago" },
-	{ id: "nm3", name: "Rohan", avatarUrl: "https://i.pravatar.cc/40?img=17", joinedAgo: "4 days ago" },
-]
+function joinedAgo(iso: string): string {
+	const diff = Date.now() - new Date(iso).getTime()
+	const days = Math.floor(diff / 86400000)
+	if (days < 1) return "today"
+	if (days === 1) return "yesterday"
+	if (days < 7) return `${days} days ago`
+	const weeks = Math.floor(days / 7)
+	if (weeks === 1) return "1 week ago"
+	if (weeks < 5) return `${weeks} weeks ago`
+	return `${Math.floor(days / 30)} months ago`
+}
 
-function NewMembersCard() {
+function NewMembersCard({ communityId }: { communityId: string }) {
+	const [members, setMembers] = useState<CommunityMember[]>([])
+
+	useEffect(() => {
+		getCommunityMembers(communityId, { sort: "newest", limit: 10 })
+			.then(res => setMembers(res.data))
+			.catch(() => {})
+	}, [communityId])
+
+	if (members.length === 0) return null
+
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
-			<div className="flex items-center justify-between gap-2 mb-4">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
+			<div className="mb-4">
 				<span className="text-body-md font-semibold text-text-primary">New members</span>
-				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
-					View all
-					<Icon as={ArrowRightSvg} size="xs" color="brand" />
-				</Link>
 			</div>
 
 			<div className="flex flex-col gap-3">
-				{MOCK_NEW_MEMBERS.map(member => (
-					<div key={member.id} className="flex items-center gap-3">
-						<div className="relative shrink-0">
-							<div className="relative size-9 rounded-full overflow-hidden border border-border-default bg-surface-hover">
-								<Image src={member.avatarUrl} alt={member.name} fill sizes="36px" className="object-cover" />
+				{members.map(member => {
+					const fullName = `${member.firstName} ${member.lastName}`
+					const color = avatarColor(fullName)
+					return (
+						<div key={member.userId} className="flex items-center gap-3">
+							{member.avatarUrl ? (
+								<div className="relative size-9 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
+									<Image src={member.avatarUrl} alt={fullName} fill sizes="36px" className="object-cover" />
+								</div>
+							) : (
+								<div className={`size-9 rounded-full shrink-0 flex items-center justify-center text-[11px] font-bold ${color.bg} ${color.text}`}>
+									{fullName.slice(0, 2).toUpperCase()}
+								</div>
+							)}
+							<div className="flex-1 min-w-0">
+								<p className="text-label-sm font-semibold text-text-primary truncate">{fullName}</p>
+								<p className="text-[11px] text-text-secondary">Joined {joinedAgo(member.joinedAt)}</p>
 							</div>
-							<span className="absolute bottom-0 right-0 size-2.5 rounded-full bg-green-500 border-2 border-surface-card" />
 						</div>
-						<div className="flex-1 min-w-0">
-							<p className="text-label-sm font-semibold text-text-primary">{member.name}</p>
-							<p className="text-[11px] text-text-secondary">Joined {member.joinedAgo}</p>
-						</div>
-						<Icon as={ArrowRightSvg} size="sm" color="primary" />
-					</div>
-				))}
+					)
+				})}
 			</div>
 		</div>
 	)
@@ -682,7 +763,7 @@ function AnnouncementsTrustedHostsCard({ hosts }: { hosts: CommunityHost[] | nul
 	if (!visible || visible.length === 0) return null
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Trusted hosts</span>
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
@@ -737,7 +818,7 @@ function PopularPostsCard({ communityId }: { communityId: string }) {
 	}, [communityId, windowDays])
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			{/* Header */}
 			<div className="flex items-center justify-between gap-2 mb-3">
 				<span className="text-body-md font-semibold text-text-primary">Popular Posts</span>
@@ -763,14 +844,7 @@ function PopularPostsCard({ communityId }: { communityId: string }) {
 			{loading ? (
 				<div className="flex flex-col gap-3">
 					{[1, 2, 3].map(i => (
-						<div key={i} className="flex gap-2.5 animate-pulse">
-							<div className="size-8 rounded-full bg-surface-hover shrink-0" />
-							<div className="flex-1 flex flex-col gap-1.5">
-								<div className="h-2.5 w-20 bg-surface-hover rounded" />
-								<div className="h-3 w-full bg-surface-hover rounded" />
-								<div className="h-2.5 w-16 bg-surface-hover rounded" />
-							</div>
-						</div>
+						<Skeleton.ListItem key={i} lines={3} />
 					))}
 				</div>
 			) : posts.length === 0 ? (
@@ -846,7 +920,7 @@ function SavedPostsCard({ communityId }: { communityId: string }) {
 	if (!loading && posts.length === 0) return null
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-3">
 				<div className="flex items-center gap-2">
 					<Icon as={BookmarkSvg} size="sm" color="brand" />
@@ -860,13 +934,7 @@ function SavedPostsCard({ communityId }: { communityId: string }) {
 			{loading ? (
 				<div className="flex flex-col gap-3">
 					{[1, 2].map(i => (
-						<div key={i} className="flex gap-2.5 animate-pulse">
-							<div className="size-7 rounded-full bg-surface-hover shrink-0" />
-							<div className="flex-1 flex flex-col gap-1.5">
-								<div className="h-2.5 w-20 bg-surface-hover rounded" />
-								<div className="h-3 w-full bg-surface-hover rounded" />
-							</div>
-						</div>
+						<Skeleton.ListItem key={i} avatarSize="xs" />
 					))}
 				</div>
 			) : (
@@ -926,7 +994,7 @@ function TrendingTopicsCard({ communityId }: { communityId: string }) {
 	const hasMore = topics.length > TOPICS_PREVIEW
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Trending Topics</span>
 				{hasMore && (
@@ -967,6 +1035,8 @@ export function CommunitySidePanel({
 	communitySlug,
 	communityId,
 	onTabChange,
+	experienceFilters,
+	onExperienceFilterChange,
 }: {
 	activeTab: string
 	isMember: boolean
@@ -974,6 +1044,8 @@ export function CommunitySidePanel({
 	communitySlug: string
 	communityId: string
 	onTabChange?: (tab: string) => void
+	experienceFilters?: ExperienceFilters
+	onExperienceFilterChange?: (f: ExperienceFilters) => void
 }) {
 	const [stats, setStats] = useState<CommunityStats | null>(null)
 	const [hosts, setHosts] = useState<CommunityHost[] | null>(null)
@@ -985,9 +1057,10 @@ export function CommunitySidePanel({
 	}, [communitySlug, isMember])
 
 	if (activeTab === "experiences") {
+		const filters = experienceFilters ?? DEFAULT_EXPERIENCE_FILTERS
 		return (
 			<>
-				<ExperiencesFilterCard />
+				<ExperiencesFilterCard filters={filters} onChange={onExperienceFilterChange ?? (() => {})} />
 				<SavedExperiencesCard />
 				<ExperiencesCommunityHostsCard hosts={hosts} />
 			</>
@@ -1008,7 +1081,7 @@ export function CommunitySidePanel({
 			<>
 				<MembersCommunityAtAGlanceCard stats={stats} />
 				<MembersTopHostsCard hosts={hosts} />
-				<NewMembersCard />
+				<NewMembersCard communityId={communityId} />
 			</>
 		)
 	}

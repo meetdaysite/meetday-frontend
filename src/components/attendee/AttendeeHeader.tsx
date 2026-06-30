@@ -133,14 +133,15 @@ export function AttendeeHeader() {
 							</button>
 
 							{dropdownOpen && (
-								<div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-border-default bg-surface-canvas shadow-floating py-1.5 z-50">
-									<button
-										className="w-full flex items-center gap-2.5 px-3.5 py-2 text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-card-muted transition-colors opacity-50 cursor-not-allowed"
-										disabled
+								<div className="absolute right-0 top-full mt-2 w-44 rounded-panel border border-border-default bg-surface-canvas shadow-floating py-1.5 z-50">
+									<Link
+										href="/attendee/profile"
+										onClick={() => setDropdownOpen(false)}
+										className="w-full flex items-center gap-2.5 px-3.5 py-2 text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-card-muted transition-colors"
 									>
 										<UserIcon />
 										Profile
-									</button>
+									</Link>
 									<div className="my-1 border-t border-border-default" />
 									<button
 										onClick={handleSignOut}

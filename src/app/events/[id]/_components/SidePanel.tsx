@@ -11,9 +11,10 @@ import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
 import EyeSvg from "@/icons/outlined/eye-open.svg"
 import BoltSvg from "@/icons/outlined/bolt.svg"
 import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
-import type { PublicEventDetails, PublicRefundPolicy, VibeMatchResponse, CrowdPulseResponse } from "@/types/attendee"
+import type { PublicEventDetails, PublicEventCommunity, PublicRefundPolicy, VibeMatchResponse, CrowdPulseResponse } from "@/types/attendee"
 import { useAuthStore } from "@/store/authStore"
 import { getEventVibeMatch, getEventCrowdPulse } from "@/lib/api"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // crowdStyle → bar fill % as specified by the API contract
 const CROWD_STYLE_FILL: Record<string, number> = {
@@ -43,20 +44,20 @@ function VibeMatchCard({ eventId }: { eventId: string }) {
 	const isLoading = authLoading || fetching
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center gap-2 mb-4">
 				<Icon as={StarCircleSvg} size="md" color="vibe" />
 				<span className="text-body-md font-medium text-text-primary">Your Vibe Match</span>
 			</div>
 
 			{isLoading ? (
-				<div className="flex flex-col gap-3 animate-pulse">
+				<div className="flex flex-col gap-3">
 					<div className="flex items-baseline gap-2">
-						<div className="h-9 w-16 bg-neutral-200 rounded" />
-						<div className="h-4 w-20 bg-neutral-100 rounded" />
+						<Skeleton.Block className="h-9 w-16" />
+						<Skeleton.Text className="w-20" />
 					</div>
-					<div className="h-2 rounded-full bg-neutral-200" />
-					<div className="h-12 rounded-badge bg-neutral-100" />
+					<Skeleton.Block className="h-2 rounded-full" />
+					<Skeleton.Block className="h-12 rounded-badge" />
 				</div>
 			) : match ? (
 				<div className="flex flex-col gap-3">
@@ -123,19 +124,9 @@ function VibeMatchCard({ eventId }: { eventId: string }) {
 
 // ─── Community Access ─────────────────────────────────────────────────────────
 
-// TODO: Accept `community` prop and only render when event.community is not null
-// TODO: Remove mock and derive from event.community once GET /api/events/[id] returns community data
-const MOCK_COMMUNITY = {
-	name: "Meetday Nightlife Circle",
-	description:
-		"Join the public community to discover more nightlife experiences, meet people with similar energy and return to future rooms",
-}
-
-function CommunityAccessCard() {
-	const community = MOCK_COMMUNITY
-
+function CommunityAccessCard({ community }: { community: PublicEventCommunity }) {
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default flex flex-col gap-3">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md flex flex-col gap-3">
 			<div className="grid grid-cols-[auto_1fr] gap-3 items-start">
 				<Icon as={UsersGroupSvg} size="2xl" color="brand" />
 				<div className="flex flex-col">
@@ -150,7 +141,7 @@ function CommunityAccessCard() {
 			<p className="text-label-sm text-text-secondary font-normal">{community.description}</p>
 
 			<div className="flex gap-2 mt-1">
-				{/* TODO: Wire up join action via POST /api/communities/[id]/join */}
+				{/* TODO: Wire up join action via POST /api/communities/[slug]/join */}
 				<Button
 					variant="primary"
 					size="sm"
@@ -160,8 +151,7 @@ function CommunityAccessCard() {
 				>
 					Join Community
 				</Button>
-				{/* TODO: Replace "meetday-music-nights" with community.id once API returns community data */}
-				<Link href="/communities/meetday-music-nights" className="flex-1">
+				<Link href={`/communities/${community.slug}`} className="flex-1">
 					<Button
 						variant="primary"
 						size="sm"
@@ -217,18 +207,18 @@ function CrowdPulseCard({ eventId }: { eventId: string }) {
 		: null
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center gap-2 mb-4">
 				<Icon as={PulseSvg} size="md" color={!loading && pulse ? "primary" : "muted"} />
 				<span className="text-body-md font-medium text-text-primary">Crowd Pulse</span>
 			</div>
 
 			{loading ? (
-				<div className="flex flex-col gap-3.5 animate-pulse">
+				<div className="flex flex-col gap-3.5">
 					{["Energy", "Crowd style", "Social friendliness"].map(dim => (
 						<div key={dim} className="flex flex-col gap-1.5">
-							<div className="h-3 w-28 bg-neutral-200 rounded" />
-							<div className="h-1.5 rounded-full bg-neutral-200" />
+							<Skeleton.Text className="w-28" />
+							<Skeleton.Block className="h-1.5 rounded-full" />
 						</div>
 					))}
 				</div>
@@ -293,7 +283,7 @@ function RefundCard({ policy }: { policy: PublicRefundPolicy }) {
 	const destination = policy.refundTo === "ORIGINAL_PAYMENT" ? "to original payment method" : "as credits"
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center gap-2 mb-3">
 				<Icon
 					as={ShieldCheckSvg}
@@ -313,11 +303,12 @@ function RefundCard({ policy }: { policy: PublicRefundPolicy }) {
 // ─── Composed panel ───────────────────────────────────────────────────────────
 
 export function SidePanel({ event }: { event: PublicEventDetails }) {
+	const primaryCommunity = event.communities?.[0] ?? null
+
 	return (
 		<>
 			<VibeMatchCard eventId={event.id} />
-			{/* TODO: Replace `true` with `!!event.community` once API returns community data */}
-			{true && <CommunityAccessCard />}
+			{primaryCommunity && <CommunityAccessCard community={primaryCommunity} />}
 			<CrowdPulseCard eventId={event.id} />
 			{event.refundPolicy && <RefundCard policy={event.refundPolicy} />}
 		</>

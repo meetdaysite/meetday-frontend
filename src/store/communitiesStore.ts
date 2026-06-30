@@ -38,7 +38,7 @@ export const useCommunitiesStore = create<CommunitiesStore>((set, get) => ({
 	communities: [],
 	total: 0,
 	page: 1,
-	loading: false,
+	loading: true,
 	loadingMore: false,
 	error: null,
 	filters: { ...DEFAULT_FILTERS },

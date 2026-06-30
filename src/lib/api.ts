@@ -798,7 +798,7 @@ export type CommunityMembersResponse = {
 
 export async function getCommunityMembers(
 	communityId: string,
-	params?: { page?: number; limit?: number },
+	params?: { page?: number; limit?: number; filter?: string; sort?: string; search?: string },
 ): Promise<CommunityMembersResponse> {
 	const { data } = await apiClient.get<{ success: boolean; data: CommunityMembersResponse }>(
 		`/communities/${communityId}/members`,
@@ -914,7 +914,17 @@ export async function getCommunityHosts(slug: string): Promise<CommunityHost[]> 
 
 export async function getCommunityEvents(
 	slug: string,
-	params?: { upcoming?: boolean; page?: number; limit?: number },
+	params?: {
+		upcoming?: boolean
+		page?: number
+		limit?: number
+		dateFilter?: string
+		eventType?: string
+		categoryId?: string
+		interestSlugs?: string[]
+		sortBy?: string
+		sortOrder?: string
+	},
 ): Promise<CommunityEventsResponse> {
 	const { data } = await apiClient.get<{ success: boolean; data: CommunityEventsResponse }>(
 		`/communities/${slug}/events`,

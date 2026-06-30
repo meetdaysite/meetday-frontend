@@ -22,6 +22,7 @@ import {
 } from "@/lib/api"
 import type { CommunityAnnouncement } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -146,7 +147,7 @@ function AnnouncementCard({
 	}, [])
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default flex gap-4 p-4 relative">
+		<div className="rounded-panel bg-surface-card border border-border-default shadow-md flex gap-4 p-4 relative">
 			{/* Cover image */}
 			<div className="w-32 shrink-0 rounded-action overflow-hidden self-stretch min-h-27.5">
 				{announcement.coverImageUrl ? (
@@ -280,22 +281,6 @@ function AnnouncementCard({
 	)
 }
 
-// ─── Loading skeleton ─────────────────────────────────────────────────────────
-
-function AnnouncementSkeleton() {
-	return (
-		<div className="rounded-panel bg-surface-card border border-border-default flex gap-4 p-4 animate-pulse">
-			<div className="w-32 shrink-0 rounded-action bg-surface-hover min-h-27.5" />
-			<div className="flex-1 flex flex-col gap-2">
-				<div className="h-4 w-24 bg-surface-hover rounded" />
-				<div className="h-5 w-3/4 bg-surface-hover rounded" />
-				<div className="h-4 w-full bg-surface-hover rounded" />
-				<div className="h-4 w-5/6 bg-surface-hover rounded" />
-			</div>
-		</div>
-	)
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function AnnouncementsTabContent({ communityId }: { communityId: string }) {
@@ -397,7 +382,7 @@ export function AnnouncementsTabContent({ communityId }: { communityId: string }
 	const loadingMore = isAllView ? allLoadingMore : savedLoadingMore
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4">
+		<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4 shadow-md">
 			{/* Header */}
 			<div className="flex items-start justify-between gap-4">
 				<div>
@@ -462,9 +447,9 @@ export function AnnouncementsTabContent({ communityId }: { communityId: string }
 			<div className="flex flex-col gap-3">
 				{loading ? (
 					<>
-						<AnnouncementSkeleton />
-						<AnnouncementSkeleton />
-						<AnnouncementSkeleton />
+						<Skeleton.Announcement />
+						<Skeleton.Announcement />
+						<Skeleton.Announcement />
 					</>
 				) : error ? (
 					<div className="py-8 text-center text-label-sm text-text-secondary">{error}</div>

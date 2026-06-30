@@ -24,6 +24,7 @@ import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
 import PlaneSvg from "@/icons/outlined/plane.svg"
 import PenSvg from "@/icons/outlined/pen.svg"
 import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
@@ -755,25 +756,22 @@ function DetailSkeleton() {
 		<div className="flex flex-col min-h-screen">
 			<DashboardTopBar />
 			<div className="flex-1 bg-surface-page px-4 sm:px-6 lg:px-8 py-6">
-				<div className="h-4 w-32 rounded bg-surface-card-muted animate-pulse mb-5" />
-				<div className="w-full aspect-3/1 min-h-36 rounded-action bg-surface-card-muted animate-pulse mb-5" />
+				<Skeleton.Text className="w-32 mb-5" />
+				<Skeleton.Block className="w-full aspect-3/1 min-h-36 mb-5" />
 				<div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
 					{[0, 1, 2].map(i => (
-						<div key={i} className="h-20 rounded-action bg-surface-card-muted animate-pulse" />
+						<Skeleton.Block key={i} className="h-20" />
 					))}
 				</div>
 				<div className="grid grid-cols-1 lg:grid-cols-[1fr_288px] gap-6">
 					<div className="flex flex-col gap-6">
 						{[0, 1].map(i => (
-							<div
-								key={i}
-								className="h-40 rounded-action bg-surface-card-muted animate-pulse"
-							/>
+							<Skeleton.Block key={i} className="h-40" />
 						))}
 					</div>
 					<div className="flex flex-col gap-4">
-						<div className="h-48 rounded-action bg-surface-card-muted animate-pulse" />
-						<div className="h-40 rounded-action bg-surface-card-muted animate-pulse" />
+						<Skeleton.Block className="h-48" />
+						<Skeleton.Block className="h-40" />
 					</div>
 				</div>
 			</div>
@@ -874,7 +872,7 @@ function AttendeesSection({
 			{loading && !data && (
 				<div className="flex flex-col gap-2">
 					{[0, 1, 2].map(i => (
-						<div key={i} className="h-14 rounded-action bg-surface-card-muted animate-pulse" />
+						<Skeleton.Block key={i} className="h-14" />
 					))}
 				</div>
 			)}

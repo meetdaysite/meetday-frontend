@@ -84,7 +84,7 @@ export function CommunityHero({
 	}
 
 	return (
-		<div className="rounded-panel overflow-hidden bg-neutral-950 border border-neutral-800 relative min-h-64">
+		<div className="rounded-panel overflow-hidden bg-neutral-950 border border-neutral-800 relative min-h-64 shadow-md">
 			{/* Full background cover image */}
 			<Image
 				src={community.coverImageUrl}

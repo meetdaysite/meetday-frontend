@@ -22,6 +22,7 @@ import CalendarSvg from "@/icons/outlined/calendar.svg"
 import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
 import { toast } from "sonner"
 import { getApiErrorMessage } from "@/lib/errors"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -373,10 +374,10 @@ export default function MyEventsPage() {
 							)}
 						>
 							{Array.from({ length: 6 }).map((_, i) => (
-								<div
+								<Skeleton.Block
 									key={i}
 									className={clsx(
-										"bg-surface-card border border-border-default rounded-action animate-pulse",
+										"bg-surface-card border border-border-default rounded-action",
 										viewMode === "grid" ? "h-64" : "h-28",
 									)}
 								/>
@@ -434,9 +435,16 @@ export default function MyEventsPage() {
 					{/* Infinite scroll sentinel */}
 					<div ref={sentinelRef} className="h-1" />
 					{isLoadingMore && (
-						<div className="flex justify-center py-8">
-							<LoaderSpinner />
-						</div>
+						viewMode === "grid" ? (
+							<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5 py-4">
+								{[...Array(3)].map((_, i) => <Skeleton.Card key={i} />)}
+							</div>
+						) : (
+							<div className="flex flex-col gap-3 py-4">
+								<Skeleton.Announcement />
+								<Skeleton.Announcement />
+							</div>
+						)
 					)}
 					{!hasMore && filteredEvents.length > 0 && (
 						<p className="text-center text-caption text-text-muted py-8">

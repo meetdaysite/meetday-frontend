@@ -11,12 +11,14 @@ import {
 	getDMConversations,
 	getDMMessages,
 	getTotalUnreadDMCount,
+	getReceivedIntros,
 	dismissWelcomeBanner,
 	pinMessage,
 	unpinMessage as unpinMessageApi,
 	deleteChannelMessage,
 } from "@/lib/chatApi"
 import { chatSocket } from "@/lib/chatSocket"
+import { auth } from "@/lib/firebase"
 import { useChatStore } from "@/store/chatStore"
 import { aggregateRawReactions } from "@/lib/chatApi"
 import type { CommunityRole } from "@/lib/api"
@@ -33,6 +35,7 @@ import { PinnedPanel } from "./chat/PinnedPanel"
 import { ThreadPanel } from "./chat/ThreadPanel"
 import { DMThread } from "./chat/DMThread"
 import { IntroInboxPanel } from "./IntroInboxPanel"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 
@@ -56,6 +59,9 @@ interface ChatTabContentProps {
 	communityId: string
 	currentUserId: string | null
 	currentUserRole: CommunityRole | null
+	pendingDmConversationId?: string | null
+	onPendingDmHandled?: () => void
+	onGoToMembers?: () => void
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -65,6 +71,9 @@ export function ChatTabContent({
 	communityId,
 	currentUserId,
 	currentUserRole,
+	pendingDmConversationId,
+	onPendingDmHandled,
+	onGoToMembers,
 }: ChatTabContentProps) {
 	const store = useChatStore()
 	const isMod = canModerate(currentUserRole)
@@ -134,10 +143,11 @@ export function ChatTabContent({
 				setChatLoading(false)
 
 				// Non-critical — load in parallel, ignore individual failures
-				const [presenceResult, conversationsResult, unreadResult] = await Promise.allSettled([
+				const [presenceResult, conversationsResult, unreadResult, introsResult] = await Promise.allSettled([
 					getCommunityPresence(communityId),
 					getDMConversations(communityId),
 					getTotalUnreadDMCount(communityId),
+					getReceivedIntros(communityId),
 				])
 				if (aborted) return
 
@@ -158,6 +168,10 @@ export function ChatTabContent({
 					store.setTotalUnreadDMs(unreadResult.value)
 				} else {
 					console.debug("[chat] init — unread count failed:", unreadResult.reason)
+				}
+				if (introsResult.status === "fulfilled") {
+					console.debug("[chat] init — pending intros:", introsResult.value.length)
+					setIntroBadgeCount(introsResult.value.length)
 				}
 
 				const firstChannel = channels[0]
@@ -463,15 +477,41 @@ export function ChatTabContent({
 	}, [communityId])
 
 	const handleNewDM = useCallback(() => {
-		// Opening a new DM requires picking a member — will be wired to MemberProfileDrawer
-		// For now this is a no-op placeholder
-		toast("Select a member from the Members tab to start a DM.")
-	}, [])
+		if (onGoToMembers) {
+			onGoToMembers()
+		} else {
+			toast("Go to the Members tab to start a direct message.")
+		}
+	}, [onGoToMembers])
 
 	const handleDMBack = useCallback(() => {
 		store.setChatView("channel")
 		store.setActiveDMConversation(null)
 	}, [store])
+
+	// ── Proactive Firebase token refresh ──────────────────────────────────────
+
+	useEffect(() => {
+		const unsubscribe = auth.onIdTokenChanged(async (user) => {
+			if (!user) {
+				chatSocket.disconnect()
+				return
+			}
+			const newToken = await user.getIdToken()
+			chatSocket.updateToken(newToken)
+		})
+		return unsubscribe
+	}, [])
+
+	// ── Open pending DM (from Members tab "Message" button) ───────────────────
+
+	useEffect(() => {
+		if (!pendingDmConversationId || chatLoading) return
+		const conv = store.dmConversations.find(c => c.id === pendingDmConversationId)
+		if (!conv) return
+		handleDMSelect(conv)
+		onPendingDmHandled?.()
+	}, [pendingDmConversationId, chatLoading, store.dmConversations, handleDMSelect, onPendingDmHandled])
 
 	const handleDMTypingStart = useCallback(() => {
 		const convId = useChatStore.getState().activeDmConversationId
@@ -515,22 +555,22 @@ export function ChatTabContent({
 		return (
 			<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex h-155">
 				<aside className="w-60 shrink-0 border-r border-border-default flex flex-col bg-surface-page p-4 gap-3">
-					<div className="h-2.5 w-14 bg-surface-hover rounded animate-pulse" />
+					<Skeleton.Text className="w-14" />
 					{Array.from({ length: 4 }).map((_, i) => (
-						<div key={i} className="h-7 rounded-action bg-surface-hover animate-pulse" />
+						<Skeleton.Block key={i} className="h-7" />
 					))}
-					<div className="mt-4 h-2.5 w-14 bg-surface-hover rounded animate-pulse" />
+					<Skeleton.Text className="mt-4 w-14" />
 					{Array.from({ length: 3 }).map((_, i) => (
-						<div key={i} className="h-7 rounded-action bg-surface-hover animate-pulse" />
+						<Skeleton.Block key={i} className="h-7" />
 					))}
 				</aside>
 				<div className="flex-1 flex flex-col">
 					<div className="h-14 border-b border-border-default shrink-0 px-5 flex items-center gap-3">
-						<div className="h-4 w-28 bg-surface-hover rounded animate-pulse" />
+						<Skeleton.Text className="w-28" />
 					</div>
 					<div className="flex-1" />
 					<div className="h-16 border-t border-border-default shrink-0 px-5 flex items-center">
-						<div className="h-9 w-full bg-surface-hover rounded-full animate-pulse" />
+						<Skeleton.Block className="h-9 w-full rounded-full" />
 					</div>
 				</div>
 			</div>
@@ -538,7 +578,7 @@ export function ChatTabContent({
 	}
 
 	return (
-		<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex h-155">
+		<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex h-155 shadow-md">
 			{/* ── Left sidebar ── */}
 			<aside className="w-60 shrink-0 border-r border-gray-200 flex flex-col bg-gray-50 overflow-y-auto no-scrollbar">
 				<ChannelList

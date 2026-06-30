@@ -1,16 +1,15 @@
 ﻿"use client"
 
-import { useEffect } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/Button"
+import { Icon } from "@/components/ui/Icon"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 import ShieldCheckSvg from "@/icons/outlined/shield-check.svg"
 import UserGroupSvg from "@/icons/outlined/users-group.svg"
-import GiftSvg from "@/icons/outlined/gift.svg"
-import { Icon } from "@/components/ui/Icon"
-import { Button } from "@/components/ui/Button"
 import { useAuthStore } from "@/store/authStore"
+import Image from "next/image"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 
 // ---------------------------------------------------------------------------
 // Trust badge chip
@@ -155,11 +154,13 @@ export default function AttendeeLandingPage() {
 								label="Vibe-based matching"
 								sublabel="Find people who feel like you."
 							/>
+							{/* Invite — commented until invite feature is live
 							<TrustBadge
 								icon={<Icon as ={GiftSvg} size="sm" color="brand"/>}
 								label="Earn rewards"
 								sublabel="Invite friends, get credits."
 							/>
+							*/}
 						</div>
 					</div>
 				</section>

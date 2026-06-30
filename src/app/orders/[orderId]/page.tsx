@@ -3,24 +3,23 @@
 import { TicketQRDisplay } from "@/app/events/[id]/book/_components/TicketQRDisplay"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
+import { Skeleton } from "@/components/ui/Skeleton"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
 import HeadphonesSvg from "@/icons/filled/headphones.svg"
 import LockSvg from "@/icons/filled/lock.svg"
 import RocketSvg from "@/icons/filled/rocket.svg"
 import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
+import SmileCircleSvg from "@/icons/filled/smile-circle.svg"
 import StarCircleSvg from "@/icons/filled/star-circle.svg"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
-import SmileCircleSvg from "@/icons/filled/smile-circle.svg"
 import ArrowDownSvg from "@/icons/outlined/arrow-down.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 
 import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
 import CopySvg from "@/icons/outlined/copy.svg"
-import GiftSvg from "@/icons/outlined/gift.svg"
 import MapPointSvg from "@/icons/outlined/map-point.svg"
 import UserSvg from "@/icons/outlined/user.svg"
 import { getPublicEventDetails } from "@/lib/api"
-import { downloadICS, generateICSContent } from "@/lib/icsUtils"
 import { getFullOrderDetail } from "@/lib/ordersApi"
 import { useAuthStore } from "@/store/authStore"
 import type { PublicEventDetails } from "@/types/attendee"
@@ -40,17 +39,6 @@ function formatEventDate(isoDate: string): string {
 		month: "short",
 		year: "numeric",
 	})
-}
-
-function to24hr(time12: string): string {
-	const parts = time12.trim().split(" ")
-	if (parts.length < 2) return time12
-	const [timePart, period] = parts
-	const [hStr, mStr] = timePart.split(":")
-	let hour = parseInt(hStr, 10)
-	if (period.toUpperCase() === "PM" && hour !== 12) hour += 12
-	if (period.toUpperCase() === "AM" && hour === 12) hour = 0
-	return `${hour.toString().padStart(2, "0")}:${mStr}`
 }
 
 function copyToClipboard(text: string) {
@@ -115,29 +103,6 @@ const TRUST_ITEMS = [
 	},
 ]
 
-function AvatarStack({ count = 4 }: { count?: number }) {
-	const gradients = [
-		"from-purple-400 to-pink-400",
-		"from-blue-400 to-cyan-400",
-		"from-green-400 to-teal-400",
-		"from-orange-400 to-red-400",
-	]
-	return (
-		<div className="flex items-center gap-1.5">
-			<div className="flex -space-x-2">
-				{[...Array(count)].map((_, i) => (
-					<div
-						key={i}
-						className={`size-7 rounded-full bg-linear-to-br ${gradients[i % gradients.length]} border-2 border-surface-card`}
-						style={{ zIndex: count - i }}
-					/>
-				))}
-			</div>
-			<span className="text-caption text-text-muted">+24</span>
-		</div>
-	)
-}
-
 function TicketPageContent({
 	order,
 	eventDetails,
@@ -162,20 +127,6 @@ function TicketPageContent({
 		setTimeout(() => setCopied(false), 2000)
 	}
 
-	const handleAddToCalendar = () => {
-		const ev = order.event
-		const dateOnly = ev.eventDate.slice(0, 10)
-		const content = generateICSContent({
-			title: ev.title,
-			date: dateOnly,
-			startTime: to24hr(ev.startTime),
-			endTime: to24hr(ev.endTime),
-			venueName: ev.venueName,
-			fullAddress: ev.fullAddress,
-		})
-		downloadICS(`${ev.title.replace(/\s+/g, "-")}.ics`, content)
-	}
-
 	const ev = order.event
 
 	return (
@@ -198,7 +149,7 @@ function TicketPageContent({
 					{/* ── Left column ── */}
 					<div className="flex-1 min-w-0 flex flex-col gap-5">
 						{/* Physical ticket card */}
-						<div className="rounded-action overflow-hidden border border-border-default shadow-(--shadow-card) flex min-h-72">
+						<div className="rounded-panel overflow-hidden border border-border-default flex min-h-72 shadow-md">
 							{/* Left: event image + details */}
 							<div className="relative flex-1 bg-neutral-900">
 								{coverImageUrl && (
@@ -302,7 +253,7 @@ function TicketPageContent({
 						</div>
 
 						{/* Action buttons */}
-						<div className="rounded-action border border-border-default bg-surface-card p-5 flex items-center justify-center flex-wrap gap-3">
+						<div className="rounded-panel border border-border-default bg-surface-card p-5 flex items-center justify-center flex-wrap gap-3 shadow-md">
 							<Button
 								variant="secondary"
 								size="md"
@@ -310,15 +261,6 @@ function TicketPageContent({
 								leftIcon={<Icon as={ArrowDownSvg} size="sm" color="inherit" />}
 							>
 								Download
-							</Button>
-							<Button
-								variant="primary"
-								size="md"
-								radius="md"
-								leftIcon={<Icon as={CalendarSvg} size="sm" color="inherit" />}
-								onClick={handleAddToCalendar}
-							>
-								Add to Calendar
 							</Button>
 							{order.status === "CONFIRMED" && new Date(order.event.eventDate) < new Date() && (
 								<Link href={`/events/${order.eventId}/review?orderId=${order.id}`}>
@@ -335,7 +277,7 @@ function TicketPageContent({
 						</div>
 
 						{/* Trust footer */}
-						<div className="rounded-action border border-border-default bg-surface-card p-5">
+						<div className="rounded-panel border border-border-default bg-surface-card p-5 shadow-md">
 							<div className="grid grid-cols-2 gap-6">
 								{TRUST_ITEMS.map((item) => (
 									<div key={item.title} className="flex gap-4 items-center">
@@ -364,7 +306,7 @@ function TicketPageContent({
 					{/* ── Right panel ── */}
 					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">
 						{/* Entry Instructions */}
-						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4">
+						<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
 							<div className="flex items-center gap-2">
 								<Icon as={RocketSvg} size="md" color="brand" />
 								<span className="text-title-md font-bold text-text-primary">Entry Instructions</span>
@@ -388,8 +330,8 @@ function TicketPageContent({
 							</div>
 						</div>
 
-						{/* Invite friend, get rewarded */}
-						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+						{/* Invite friend, get rewarded — commented until invite feature is live
+						<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 							<div className="flex items-center gap-3">
 								<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 									<Icon as={GiftSvg} size="md" color="info" />
@@ -414,28 +356,8 @@ function TicketPageContent({
 								</button>
 							</div>
 						</div>
+						*/}
 
-						{/* Refund reference */}
-						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
-							<div className="flex items-center gap-3">
-								<div className="size-9 rounded-full bg-surface-brand-soft flex items-center justify-center shrink-0">
-									<Icon as={ShieldCheckSvg} size="md" color="brand" />
-								</div>
-								<div>
-									<p className="text-body-sm font-bold text-text-primary">Refund reference</p>
-									<p className="text-caption text-text-muted leading-snug">
-										Cancel up to 24h before the event for a full credit. No hassle. No
-										questions.
-									</p>
-								</div>
-							</div>
-							<button
-								type="button"
-								className="text-label-sm text-text-brand hover:underline font-medium text-left"
-							>
-								View refund policy →
-							</button>
-						</div>
 					</aside>
 				</div>
 			</div>
@@ -467,11 +389,7 @@ function TicketPageInner({ orderId }: { orderId: string }) {
 	}, [orderId, authLoading])
 
 	if (loading) {
-		return (
-			<main className="flex-1 flex items-center justify-center py-24">
-				<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-			</main>
-		)
+		return <MyTicketPageSkeleton />
 	}
 
 	if (error || !order) {
@@ -496,16 +414,61 @@ function TicketPageInner({ orderId }: { orderId: string }) {
 	return <TicketPageContent order={order} eventDetails={eventDetails} />
 }
 
+function MyTicketPageSkeleton() {
+	return (
+		<main className="flex-1 py-6 md:py-8 pb-12">
+			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
+				<Skeleton.Text className="w-28 mb-4 animate-pulse" />
+				<div className="mb-6 flex flex-col gap-2">
+					<Skeleton.Text className="h-7 w-28" />
+					<Skeleton.Text className="w-48" />
+				</div>
+				<div className="flex gap-8 items-start">
+					<div className="flex-1 min-w-0 flex flex-col gap-5">
+						<div className="rounded-action overflow-hidden border border-border-default flex min-h-72 animate-pulse">
+							<div className="flex-1 bg-neutral-200" />
+							<div className="shrink-0 w-0 border-l-2 border-dashed border-gray-300/60 self-stretch" />
+							<div className="w-56 bg-white shrink-0 flex flex-col items-center justify-center gap-5 p-6">
+								<div className="w-full flex flex-col gap-1.5">
+									<Skeleton.Text className="w-20 h-3" />
+									<Skeleton.Text className="h-5 w-32" />
+								</div>
+								<Skeleton.Block className="size-40 rounded-action" />
+								<Skeleton.Block className="h-7 w-32 rounded-badge" />
+							</div>
+						</div>
+						<div className="rounded-action border border-border-default bg-surface-card p-5 flex items-center justify-center gap-3 animate-pulse">
+							<Skeleton.Block className="h-10 w-32 rounded-action" />
+							<Skeleton.Block className="h-10 w-36 rounded-action" />
+						</div>
+						<div className="rounded-action border border-border-default bg-surface-card p-5 animate-pulse">
+							<div className="grid grid-cols-2 gap-6">
+								{[...Array(4)].map((_, i) => (
+									<div key={i} className="flex gap-4 items-center">
+										<Skeleton.Block className="size-10 rounded-action shrink-0" />
+										<div className="flex flex-col gap-1.5 flex-1">
+											<Skeleton.Text className="w-24" />
+											<Skeleton.Text className="w-full" />
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
+					</div>
+					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0">
+						<Skeleton.Block className="h-56 rounded-panel" />
+						<Skeleton.Block className="h-36 rounded-panel" />
+					</aside>
+				</div>
+			</div>
+		</main>
+	)
+}
+
 export default function MyTicketPage({ params }: PageProps) {
 	const { orderId } = use(params)
 	return (
-		<Suspense
-			fallback={
-				<main className="flex-1 flex items-center justify-center py-24">
-					<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-				</main>
-			}
-		>
+		<Suspense fallback={<MyTicketPageSkeleton />}>
 			<TicketPageInner orderId={orderId} />
 		</Suspense>
 	)

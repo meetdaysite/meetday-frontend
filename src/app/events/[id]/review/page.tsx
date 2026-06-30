@@ -30,6 +30,7 @@ import { getReviewHighlights, submitReview, uploadReviewPhoto } from "@/lib/revi
 import { useAuthStore } from "@/store/authStore"
 import type { ReviewHighlight } from "@/types/review"
 import type { PublicEventDetails } from "@/types/attendee"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 interface PageProps {
 	params: Promise<{ id: string }>
@@ -630,7 +631,7 @@ function ReviewFormContent({
 					{/* ── Right panel ── */}
 					<aside className="hidden lg:flex flex-col gap-4 w-96 shrink-0 sticky top-20">
 						{/* Experience recap */}
-						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4">
+						<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
 							<div className="flex items-center gap-2">
 								<Icon as={StarCircleSvg} size="md" color="brand" />
 								<p className="text-title-md font-bold text-text-primary">Your experience recap</p>
@@ -658,12 +659,12 @@ function ReviewFormContent({
 						</div>
 
 						{/* Feedback progress */}
-						<div className="rounded-panel bg-surface-card border border-border-default p-5">
+						<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
 							<FeedbackProgress rating={rating} highlights={highlights} body={body} photos={photos} />
 						</div>
 
-						{/* Invite */}
-						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+						{/* Invite — commented until invite feature is live
+						<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 							<div className="flex items-center gap-3">
 								<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 									<Icon as={UsersGroup2Svg} size="md" color="info" />
@@ -680,9 +681,10 @@ function ReviewFormContent({
 								Invite friends
 							</Button>
 						</div>
+						*/}
 
 						{/* Host approval */}
-						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+						<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 							<div className="flex items-start gap-3">
 								<div className="size-9 rounded-full bg-surface-brand-soft flex items-center justify-center shrink-0">
 									<Icon as={ShieldCheckSvg} size="md" color="brand" />
@@ -728,11 +730,7 @@ function ReviewPageInner({ id }: { id: string }) {
 	}, [id, authLoading])
 
 	if (loading) {
-		return (
-			<main className="flex-1 flex items-center justify-center py-24">
-				<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-			</main>
-		)
+		return <ReviewPageSkeleton />
 	}
 
 	if (error || !event) {
@@ -762,16 +760,70 @@ function ReviewPageInner({ id }: { id: string }) {
 	return <ReviewFormContent eventId={id} orderId={orderId} event={event} highlightOptions={highlightOptions} />
 }
 
+function ReviewPageSkeleton() {
+	return (
+		<main className="flex-1 py-6 md:py-8 pb-12">
+			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
+				<div className="flex gap-6 items-start">
+					<div className="flex-1 min-w-0">
+						<div className="rounded-action border border-border-default bg-surface-card overflow-hidden divide-y divide-border-default animate-pulse">
+							<div className="flex gap-4 p-5">
+								<Skeleton.Block className="w-36 h-28 rounded-lg shrink-0" />
+								<div className="flex flex-col gap-2 flex-1">
+									<Skeleton.Text className="h-5 w-3/4" />
+									<Skeleton.Text className="w-40" />
+									<Skeleton.Text className="w-32" />
+									<Skeleton.Text className="w-36" />
+								</div>
+							</div>
+							<div className="p-5 flex flex-col gap-4">
+								<div className="flex items-center gap-2">
+									<Skeleton.Block className="size-5 rounded shrink-0" />
+									<Skeleton.Text className="w-48 h-5" />
+								</div>
+								<div className="pl-7 flex gap-2">
+									{[...Array(5)].map((_, i) => (
+										<Skeleton.Block key={i} className="size-7 rounded-action" />
+									))}
+								</div>
+							</div>
+							<div className="p-5 flex flex-col gap-4">
+								<div className="flex items-center gap-2">
+									<Skeleton.Block className="size-5 rounded shrink-0" />
+									<Skeleton.Text className="w-44 h-5" />
+								</div>
+								<div className="pl-7 flex flex-wrap gap-2">
+									{[...Array(6)].map((_, i) => (
+										<Skeleton.Block key={i} className="h-8 w-24 rounded-badge" />
+									))}
+								</div>
+							</div>
+							<div className="p-5 flex flex-col gap-4">
+								<div className="flex items-center gap-2">
+									<Skeleton.Block className="size-5 rounded shrink-0" />
+									<Skeleton.Text className="w-32 h-5" />
+								</div>
+								<Skeleton.Block className="ml-7 h-24 rounded-action" />
+							</div>
+							<div className="p-5">
+								<Skeleton.Block className="h-11 rounded-action" />
+							</div>
+						</div>
+					</div>
+					<aside className="hidden lg:flex flex-col gap-4 w-96 shrink-0">
+						<Skeleton.Block className="h-44 rounded-panel" />
+						<Skeleton.Block className="h-36 rounded-panel" />
+					</aside>
+				</div>
+			</div>
+		</main>
+	)
+}
+
 export default function ReviewPage({ params }: PageProps) {
 	const { id } = use(params)
 	return (
-		<Suspense
-			fallback={
-				<main className="flex-1 flex items-center justify-center py-24">
-					<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-				</main>
-			}
-		>
+		<Suspense fallback={<ReviewPageSkeleton />}>
 			<ReviewPageInner id={id} />
 		</Suspense>
 	)

@@ -1,30 +1,29 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import clsx from "clsx"
-import { Icon } from "@/components/ui/Icon"
+import { EventCard } from "@/components/attendee/EventCard"
 import { Button } from "@/components/ui/Button"
+import { Icon } from "@/components/ui/Icon"
+import { Skeleton } from "@/components/ui/Skeleton"
+import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
-import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
 import HeadphonesSvg from "@/icons/filled/headphones.svg"
-import TicketSvg from "@/icons/filled/ticket.svg"
+import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
 import SmileCircleSvg from "@/icons/filled/smile-circle.svg"
+import TicketSvg from "@/icons/filled/ticket.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
-import MapPointSvg from "@/icons/outlined/map-point.svg"
 import CopySvg from "@/icons/outlined/copy.svg"
-import GiftSvg from "@/icons/outlined/gift.svg"
-import { getMyOrders } from "@/lib/ordersApi"
+import MapPointSvg from "@/icons/outlined/map-point.svg"
 import { getPublicEventDetails, getPublicEvents, getSavedEvents } from "@/lib/api"
-import { downloadICS, generateICSContent } from "@/lib/icsUtils"
+import { getMyOrders } from "@/lib/ordersApi"
 import { useAuthStore } from "@/store/authStore"
-import { EventCard } from "@/components/attendee/EventCard"
-import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
+import type { ExploreEvent, PublicEventDetails, SavedEvent } from "@/types/attendee"
 import type { MyOrderListItem } from "@/types/order"
-import type { PublicEventDetails, ExploreEvent, SavedEvent } from "@/types/attendee"
+import clsx from "clsx"
+import Image from "next/image"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { Suspense, useEffect, useState } from "react"
 
 type Tab = "upcoming" | "past" | "cancelled" | "saved"
 
@@ -48,17 +47,6 @@ function formatEventDate(isoDate: string): string {
 function formatOrderAmount(amount: string): string {
 	const n = parseFloat(amount)
 	return isNaN(n) ? "₹0" : `₹${Math.round(n).toLocaleString("en-IN")}`
-}
-
-function to24hr(time12: string): string {
-	const parts = time12.trim().split(" ")
-	if (parts.length < 2) return time12
-	const [timePart, period] = parts
-	const [hStr, mStr] = timePart.split(":")
-	let hour = parseInt(hStr, 10)
-	if (period.toUpperCase() === "PM" && hour !== 12) hour += 12
-	if (period.toUpperCase() === "AM" && hour === 12) hour = 0
-	return `${hour.toString().padStart(2, "0")}:${mStr}`
 }
 
 function copyToClipboard(text: string) {
@@ -179,21 +167,8 @@ function MyEventCard({
 		setTimeout(() => setCopied(false), 2000)
 	}
 
-	const handleAddToCalendar = (e: React.MouseEvent) => {
-		e.stopPropagation()
-		const content = generateICSContent({
-			title: ev.title,
-			date: ev.eventDate.slice(0, 10),
-			startTime: to24hr(ev.startTime),
-			endTime: to24hr(ev.startTime),
-			venueName: ev.venueName,
-			fullAddress: ev.venueName,
-		})
-		downloadICS(`${ev.title.replace(/\s+/g, "-")}.ics`, content)
-	}
-
 	return (
-		<div className="rounded-action border border-border-default bg-surface-card overflow-hidden flex flex-col">
+		<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex flex-col shadow-md">
 			{/* Main row */}
 			<div className="flex min-h-44">
 				{/* Cover image */}
@@ -335,21 +310,11 @@ function MyEventCard({
 
 			{/* Bottom bar */}
 			{isUpcoming && order.status === "CONFIRMED" && (
-				<div className="flex items-center justify-between px-5 py-2.5 bg-green-50 border-t border-green-100">
-					<div className="flex items-center gap-2">
-						<Icon as={CheckCircleSvg} size="sm" color="success" />
-						<span className="text-label-sm font-medium text-icon-success">
-							{"You're all set! Show your QR code at the venue entry."}
-						</span>
-					</div>
-					<button
-						type="button"
-						onClick={handleAddToCalendar}
-						className="inline-flex items-center gap-1.5 text-label-sm font-medium text-text-brand hover:underline shrink-0"
-					>
-						<Icon as={CalendarSvg} size="sm" color="brand" />
-						Add to Calendar
-					</button>
+				<div className="flex items-center gap-2 px-5 py-2.5 bg-green-50 border-t border-green-100">
+					<Icon as={CheckCircleSvg} size="sm" color="success" />
+					<span className="text-label-sm font-medium text-icon-success">
+						{"You're all set! Show your QR code at the venue entry."}
+					</span>
 				</div>
 			)}
 		</div>
@@ -399,28 +364,6 @@ function EmptyTabState({ tab }: { tab: Tab }) {
 					</Button>
 				</Link>
 			)}
-		</div>
-	)
-}
-
-// ─── Full empty state (no orders at all) ─────────────────────────────────────
-
-function AvatarStack() {
-	const gradients = [
-		"from-purple-400 to-pink-400",
-		"from-blue-400 to-cyan-400",
-		"from-green-400 to-teal-400",
-		"from-orange-400 to-red-400",
-	]
-	return (
-		<div className="flex -space-x-2">
-			{gradients.map((g, i) => (
-				<div
-					key={i}
-					className={`size-8 rounded-full bg-linear-to-br ${g} border-2 border-surface-card`}
-					style={{ zIndex: 4 - i }}
-				/>
-			))}
 		</div>
 	)
 }
@@ -485,7 +428,7 @@ function EmptyEventsState() {
 				</div>
 			</div>
 
-			{/* Going with friends */}
+			{/* Going with friends — commented until invite feature is live
 			<div className="rounded-action border border-border-default bg-surface-card p-4 flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<AvatarStack />
@@ -501,6 +444,7 @@ function EmptyEventsState() {
 					Invite friends
 				</Button>
 			</div>
+			*/}
 		</div>
 	)
 }
@@ -511,7 +455,7 @@ function WithEventsRightPanel() {
 	return (
 		<>
 			{/* Need help */}
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
 						<Icon as={HeadphonesSvg} size="md" color="inherit" className="text-red-500" />
@@ -531,8 +475,8 @@ function WithEventsRightPanel() {
 				</button>
 			</div>
 
-			{/* Invite */}
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+			{/* Invite — commented until invite feature is live
+			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 						<Icon as={GiftSvg} size="md" color="info" />
@@ -549,27 +493,8 @@ function WithEventsRightPanel() {
 					Invite friends
 				</Button>
 			</div>
+			*/}
 
-			{/* Refund */}
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
-				<div className="flex items-center gap-3">
-					<div className="size-9 rounded-full bg-surface-brand-soft flex items-center justify-center shrink-0">
-						<Icon as={ShieldCheckSvg} size="md" color="brand" />
-					</div>
-					<div>
-						<p className="text-body-sm font-bold text-text-primary">Refund reference</p>
-						<p className="text-caption text-text-muted leading-snug">
-							Cancel up to 24h before the event for a full credit. No hassle. No questions.
-						</p>
-					</div>
-				</div>
-				<button
-					type="button"
-					className="text-label-sm text-text-brand hover:underline font-medium text-left"
-				>
-					View refund policy →
-				</button>
-			</div>
 		</>
 	)
 }
@@ -578,7 +503,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 	return (
 		<>
 			{/* Good vibes */}
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4">
+			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
 				<p className="text-title-md font-bold text-text-primary">Good vibes, great company</p>
 				<div className="grid grid-cols-3 gap-3">
 					{[
@@ -597,7 +522,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 
 			{/* Recommendations */}
 			{recommendations.length > 0 && (
-				<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+				<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 					<div className="flex items-center justify-between">
 						<p className="text-title-md font-bold text-text-primary">Recommended for you</p>
 						<Link
@@ -640,8 +565,8 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 				</div>
 			)}
 
-			{/* Invite */}
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+			{/* Invite — commented until invite feature is live
+			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 						<Icon as={GiftSvg} size="md" color="info" />
@@ -658,6 +583,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 					Invite friends
 				</Button>
 			</div>
+			*/}
 		</>
 	)
 }
@@ -706,11 +632,7 @@ function MyEventsPageInner() {
 	}, [authLoading])
 
 	if (authLoading || loading) {
-		return (
-			<main className="flex-1 flex items-center justify-center py-24">
-				<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-			</main>
-		)
+		return <MyEventsPageSkeleton />
 	}
 
 	if (!user) {
@@ -752,7 +674,7 @@ function MyEventsPageInner() {
 			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
 				{/* Page header */}
 				<div className="mb-6">
-					<h1 className="text-heading-md font-extrabold text-text-primary">My Events</h1>
+					<h1 className="text-heading-md font-extrabold text-text-primary">My Experiences</h1>
 					<p className="text-body-sm text-text-secondary mt-1">
 						All the events you&apos;ve booked or attended.
 					</p>
@@ -852,15 +774,37 @@ function MyEventsPageInner() {
 	)
 }
 
+function MyEventsPageSkeleton() {
+	return (
+		<main className="flex-1 py-6 md:py-8 pb-16">
+			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
+				<div className="mb-6 flex flex-col gap-2">
+					<Skeleton.Text className="h-7 w-36" />
+					<Skeleton.Text className="w-60" />
+				</div>
+				<div className="mb-6 flex items-center gap-3 flex-wrap">
+					{[...Array(4)].map((_, i) => (
+						<Skeleton.Block key={i} className="h-10 w-28 rounded-action" />
+					))}
+				</div>
+				<div className="flex gap-6 pb-2.5 border-b border-border-default mb-4">
+					{["w-20", "w-16", "w-24", "w-16"].map((w, i) => (
+						<Skeleton.Text key={i} className={`${w} h-4`} />
+					))}
+				</div>
+				<div className="flex flex-col gap-4">
+					<Skeleton.Announcement />
+					<Skeleton.Announcement />
+					<Skeleton.Announcement />
+				</div>
+			</div>
+		</main>
+	)
+}
+
 export default function MyEventsPage() {
 	return (
-		<Suspense
-			fallback={
-				<main className="flex-1 flex items-center justify-center py-24">
-					<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-				</main>
-			}
-		>
+		<Suspense fallback={<MyEventsPageSkeleton />}>
 			<MyEventsPageInner />
 		</Suspense>
 	)

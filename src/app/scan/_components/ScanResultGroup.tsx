@@ -57,7 +57,7 @@ export function ScanResultGroup({ result, sessionData, onScanNextMember, onFinis
 				</div>
 
 				{/* Group ticket card */}
-				<div className="border border-neutral-200 rounded-2xl p-4 flex flex-col gap-3">
+				<div className="border border-neutral-200 rounded-panel shadow-md p-4 flex flex-col gap-3">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-3">
 							<div className="size-10 rounded-xl bg-green-50 flex items-center justify-center">

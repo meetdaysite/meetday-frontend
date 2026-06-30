@@ -9,6 +9,7 @@ import { useDashboardStore } from "@/store/dashboardStore"
 import { useHostStore } from "@/store/hostStore"
 import type { ApiEventStatus } from "@/types/event"
 import type { DashboardPeriod } from "@/types/dashboard"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 import FileTextSvg from "@/icons/outlined/file-text.svg"
 import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
@@ -66,32 +67,6 @@ const EVENT_COLORS = ["bg-[#F97316]", "bg-[#6366F1]", "bg-[#10B981]", "bg-[#8B5C
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function StatSkeleton() {
-	return (
-		<div className="flex gap-4 items-center p-4 rounded-action border border-border-default bg-surface-card shadow-card animate-pulse">
-			<div className="size-10 rounded-badge bg-neutral-200 shrink-0" />
-			<div className="flex flex-col gap-2 flex-1">
-				<div className="h-5 w-8 bg-neutral-200 rounded" />
-				<div className="h-3 w-20 bg-neutral-100 rounded" />
-				<div className="h-3 w-24 bg-neutral-100 rounded" />
-			</div>
-		</div>
-	)
-}
-
-function OverviewSkeleton() {
-	return (
-		<div className="flex items-start gap-3 animate-pulse">
-			<div className="size-10 rounded-xl bg-neutral-200 shrink-0 mt-0.5" />
-			<div className="flex flex-col gap-2 flex-1">
-				<div className="h-3 w-20 bg-neutral-100 rounded" />
-				<div className="h-5 w-12 bg-neutral-200 rounded" />
-				<div className="h-3 w-16 bg-neutral-100 rounded" />
-			</div>
-		</div>
-	)
-}
-
 function DeltaBadge({ delta }: { delta: number | null }) {
 	if (delta === null) return <span className="text-caption text-text-muted">—</span>
 	const isPositive = delta >= 0
@@ -146,7 +121,7 @@ export default function DashboardPage() {
 				{/* Summary stats */}
 				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
 					{isLoading && !data
-						? Array.from({ length: 5 }).map((_, i) => <StatSkeleton key={i} />)
+						? Array.from({ length: 5 }).map((_, i) => <Skeleton.StatCard key={i} />)
 						: SUMMARY_CONFIG.map(({ status, countKey, label, subtitle, icon, iconColor, bg }) => (
 							<Link
 								key={status}
@@ -206,13 +181,13 @@ export default function DashboardPage() {
 						{isLoading && !data ? (
 							<div className="flex flex-col divide-y divide-border-default">
 								{Array.from({ length: 3 }).map((_, i) => (
-									<div key={i} className="flex items-center gap-4 px-5 py-4 animate-pulse">
-										<div className="size-10 rounded-image bg-neutral-200 shrink-0" />
+									<div key={i} className="flex items-center gap-4 px-5 py-4">
+										<Skeleton.Avatar size="md" className="rounded-image" />
 										<div className="flex-1 flex flex-col gap-2">
-											<div className="h-3.5 w-48 bg-neutral-200 rounded" />
-											<div className="h-3 w-32 bg-neutral-100 rounded" />
+											<Skeleton.Text className="w-48" />
+											<Skeleton.Text className="w-32" />
 										</div>
-										<div className="h-6 w-20 bg-neutral-100 rounded-badge" />
+										<Skeleton.Block className="h-6 w-20 rounded-badge" />
 									</div>
 								))}
 							</div>
@@ -311,7 +286,7 @@ export default function DashboardPage() {
 
 						<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 							{isLoading && !data ? (
-								Array.from({ length: 4 }).map((_, i) => <OverviewSkeleton key={i} />)
+								Array.from({ length: 4 }).map((_, i) => <Skeleton.OverviewItem key={i} />)
 							) : (
 								<>
 									<div className="flex items-start gap-3">

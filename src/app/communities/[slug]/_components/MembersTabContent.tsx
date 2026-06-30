@@ -1,22 +1,20 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import Image from "next/image"
-import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
+import { Icon } from "@/components/ui/Icon"
 import SearchSvg from "@/icons/outlined/search.svg"
-import WidgetsSvg from "@/icons/outlined/widgets.svg"
-// import MapPointSvg from "@/icons/outlined/map-point.svg"       // city — not in API
-// import CalendarSvg from "@/icons/outlined/calendar.svg"        // eventsAttended — not in API
-import ChatSvg from "@/icons/outlined/chat.svg"
+import Image from "next/image"
+import { useEffect, useState, useRef } from "react"
 import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 import AltArrowUpSvg from "@/icons/outlined/alt-arrow-up.svg"
-import { getCommunityMembers, getCommunityMemberDetail } from "@/lib/api"
-import type { CommunityMember, MemberBadge, MemberDetailCard, CommunityRole } from "@/lib/api"
+import ChatSvg from "@/icons/outlined/chat.svg"
+import type { CommunityMember, CommunityRole, MemberBadge, MemberDetailCard } from "@/lib/api"
+import { getCommunityMemberDetail, getCommunityMembers } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
-import { MemberProfileDrawer } from "./MemberProfileDrawer"
-import type { DrawerMember } from "./MemberProfileDrawer"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
+import type { DrawerMember } from "./MemberProfileDrawer"
+import { MemberProfileDrawer } from "./MemberProfileDrawer"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Feature flags ─────────────────────────────────────────────────────────────
 // Set SHOW_FEATURED_MEMBERS to true once the featured members API endpoint is available
@@ -24,31 +22,17 @@ const SHOW_FEATURED_MEMBERS = false
 
 // ─── API role config ───────────────────────────────────────────────────────────
 
-const API_ROLE_CONFIG: Record<CommunityRole, { label: string; pillClass: string; dotClass: string }> = {
-	OWNER: {
-		label: "Owner",
-		pillClass: "bg-violet-50 text-violet-700 border-violet-200",
-		dotClass: "bg-violet-500",
-	},
-	MANAGER: { label: "Manager", pillClass: "bg-amber-50 text-amber-700 border-amber-200", dotClass: "bg-amber-500" },
-	HOST: { label: "Host", pillClass: "bg-blue-50 text-blue-700 border-blue-200", dotClass: "bg-blue-500" },
-	MODERATOR: { label: "Moderator", pillClass: "bg-teal-50 text-teal-700 border-teal-200", dotClass: "bg-teal-500" },
-	MEMBER: {
-		label: "Member",
-		pillClass: "bg-surface-page text-text-secondary border-border-default",
-		dotClass: "bg-gray-400",
-	},
+const API_ROLE_CONFIG: Record<CommunityRole, { label: string; textClass: string }> = {
+	OWNER: { label: "Owner", textClass: "text-violet-600" },
+	MANAGER: { label: "Manager", textClass: "text-amber-600" },
+	HOST: { label: "Host", textClass: "text-blue-600" },
+	MODERATOR: { label: "Moderator", textClass: "text-teal-600" },
+	MEMBER: { label: "Member", textClass: "text-blue-600" },
 }
 
 function ApiRoleBadge({ role }: { role: CommunityRole }) {
 	const config = API_ROLE_CONFIG[role] ?? API_ROLE_CONFIG.MEMBER
-	return (
-		<span
-			className={`w-fit items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${config.pillClass}`}
-		>
-			{config.label}
-		</span>
-	)
+	return <span className={`text-[11px] font-normal text-text-secondary`}>{config.label}</span>
 }
 
 // ─── Avatar with initials fallback ────────────────────────────────────────────
@@ -89,47 +73,6 @@ function MemberAvatar({
 	)
 }
 
-// ─── Mock types & data for featured section (hidden behind SHOW_FEATURED_MEMBERS) ──
-
-// NOTE: These types and mock data are kept for when the featured members API is ready.
-// The featured section is hidden via SHOW_FEATURED_MEMBERS = false above.
-
-// import type { DrawerMember } from "./MemberProfileDrawer"
-// type MemberRole = "Top Contributor" | "New Member" | "Active Member"
-// interface Member extends DrawerMember {
-//   tags: string[]
-//   eventsAttended: number
-//   cardBg?: string
-// }
-// const MOCK_FEATURED_MEMBERS: Member[] = [
-//   { id: "f1", name: "Arjun", avatarUrl: "https://i.pravatar.cc/40?img=6", role: "Top Contributor",
-//     city: "Kolkata", tags: ["Techno", "Rooftop", "Late Nights"], eventsAttended: 8, online: true, cardBg: "bg-violet-50",
-//     isVerified: true, vibe: "Night Owl", sharedInterests: ["Tech House", "Rooftops", "Late Nights"],
-//     sharedExperiences: [
-//       { id: "e1", title: "Night Rituals", date: "May 23", imageUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=300&h=200&fit=crop", status: "going" },
-//       { id: "e2", title: "After Hours", date: "May 31", imageUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300&h=200&fit=crop", status: "going" },
-//     ], communityActivity: { joinedAgo: "2 months ago", experiencesAttended: 12, posts: 4, chatReplies: 28 } },
-//   { id: "f2", name: "Megha", avatarUrl: "https://i.pravatar.cc/40?img=5", role: "New Member",
-//     city: "Kolkata", tags: ["House", "Festivals", "Photography"], eventsAttended: 2, online: true, cardBg: "bg-emerald-50",
-//     vibe: "Weekend Warrior", sharedInterests: ["House", "Festivals"], sharedExperiences: [
-//       { id: "e1", title: "Night Rituals", date: "May 23", imageUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=300&h=200&fit=crop", status: "going" },
-//     ], communityActivity: { joinedAgo: "3 weeks ago", experiencesAttended: 2, posts: 1, chatReplies: 5 } },
-//   { id: "f3", name: "Rishav", avatarUrl: "https://i.pravatar.cc/40?img=17", role: "Top Contributor",
-//     city: "Kolkata", tags: ["Tech House", "Travel", "Coffee"], eventsAttended: 12, online: true, cardBg: "bg-orange-50",
-//     isVerified: true, vibe: "Night Owl", sharedInterests: ["Tech House", "Travel"], sharedExperiences: [
-//       { id: "e2", title: "After Hours", date: "May 31", imageUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300&h=200&fit=crop", status: "going" },
-//     ], communityActivity: { joinedAgo: "6 months ago", experiencesAttended: 18, posts: 12, chatReplies: 64 } },
-//   { id: "f4", name: "Ishita", avatarUrl: "https://i.pravatar.cc/40?img=4", role: "New Member",
-//     city: "Kolkata", tags: ["Indie", "Art", "Live Music"], eventsAttended: 1, cardBg: "bg-yellow-50",
-//     vibe: "Social Butterfly", sharedInterests: ["Live Music"],
-//     communityActivity: { joinedAgo: "1 week ago", experiencesAttended: 1, posts: 0, chatReplies: 3 } },
-//   { id: "f5", name: "Karan", avatarUrl: "https://i.pravatar.cc/40?img=11", role: "Active Member",
-//     city: "Kolkata", tags: ["Techno", "Cycling", "Workshops"], eventsAttended: 6, cardBg: "bg-purple-50",
-//     vibe: "Night Owl", sharedInterests: ["Techno"], sharedExperiences: [
-//       { id: "e3", title: "Neon Nights", date: "Jun 06", imageUrl: "https://images.unsplash.com/photo-1598387993441-a364f854cfbd?w=300&h=200&fit=crop", status: "going" },
-//     ], communityActivity: { joinedAgo: "1 month ago", experiencesAttended: 6, posts: 3, chatReplies: 19 } },
-// ]
-
 // ─── Filter / sort options ─────────────────────────────────────────────────────
 
 const FILTER_OPTIONS = [
@@ -141,8 +84,13 @@ const FILTER_OPTIONS = [
 	{ id: "hosts", label: "Hosts" },
 ]
 
-const SORT_OPTIONS = ["Recently Active", "Most Events", "New Members", "Alphabetical"] as const
-type SortOption = (typeof SORT_OPTIONS)[number]
+const SORT_OPTIONS = [
+	{ value: "recentlyActive", label: "Recently Active" },
+	{ value: "newest", label: "Newest" },
+	{ value: "mostActive", label: "Most Active" },
+	{ value: "alphabetical", label: "Alphabetical" },
+] as const
+type SortOption = (typeof SORT_OPTIONS)[number]["value"]
 
 // ─── Member list row ───────────────────────────────────────────────────────────
 
@@ -186,13 +134,13 @@ function ApiMemberCard({
 
 function MemberCardSkeleton() {
 	return (
-		<div className="flex items-center gap-3 px-3 py-2.5 rounded-action border border-border-default bg-surface-page animate-pulse">
-			<div className="size-9 rounded-full bg-surface-hover shrink-0" />
+		<div className="flex items-center gap-3 px-3 py-2.5 rounded-action border border-border-default bg-surface-page">
+			<Skeleton.Avatar size="sm" className="size-9" />
 			<div className="flex flex-col gap-1.5 flex-1">
-				<div className="h-3 w-24 bg-surface-hover rounded" />
-				<div className="h-4 w-14 bg-surface-hover rounded-full" />
+				<Skeleton.Text className="w-24" />
+				<Skeleton.Block className="h-4 w-14 rounded-full" />
 			</div>
-			<div className="h-6 w-16 bg-surface-hover rounded-full shrink-0" />
+			<Skeleton.Block className="h-6 w-16 rounded-full shrink-0" />
 		</div>
 	)
 }
@@ -226,12 +174,15 @@ function mapDetailToDrawer(d: MemberDetailCard): DrawerMember {
 
 const LIMIT = 20
 
-export function MembersTabContent({ communityId }: { communityId: string }) {
+export function MembersTabContent({ communityId, onOpenDM }: { communityId: string; onOpenDM?: (conversationId: string) => void }) {
 	const backendUserId = useAttendeeProfileStore(s => s.profile?.id ?? null)
 
 	const [activeFilter, setActiveFilter] = useState("all")
-	const [sort, setSort] = useState<SortOption>("Recently Active")
+	const [sort, setSort] = useState<SortOption>("recentlyActive")
 	const [sortOpen, setSortOpen] = useState(false)
+	const [search, setSearch] = useState("")
+	const [debouncedSearch, setDebouncedSearch] = useState("")
+	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
 	const [members, setMembers] = useState<CommunityMember[]>([])
 	const [total, setTotal] = useState(0)
@@ -265,27 +216,47 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 	}
 
 	useEffect(() => {
-		void Promise.resolve().then(() => { setLoading(true); setError(null) })
-		getCommunityMembers(communityId, { page: 1, limit: LIMIT })
+		if (debounceRef.current) clearTimeout(debounceRef.current)
+		debounceRef.current = setTimeout(() => setDebouncedSearch(search), 300)
+	}, [search])
+
+	useEffect(() => {
+		void Promise.resolve().then(() => {
+			setLoading(true)
+			setError(null)
+		})
+		getCommunityMembers(communityId, {
+			page: 1,
+			limit: LIMIT,
+			filter: activeFilter,
+			sort,
+			search: debouncedSearch || undefined,
+		})
 			.then(res => {
 				setMembers(res.data)
 				setTotal(res.total)
 				setPage(1)
 			})
-			.catch((err) => setError(getApiErrorMessage(err)))
+			.catch(err => setError(getApiErrorMessage(err)))
 			.finally(() => setLoading(false))
-	}, [communityId])
+	}, [communityId, activeFilter, sort, debouncedSearch])
 
 	const handleLoadMore = () => {
 		const nextPage = page + 1
 		setLoadingMore(true)
-		getCommunityMembers(communityId, { page: nextPage, limit: LIMIT })
+		getCommunityMembers(communityId, {
+			page: nextPage,
+			limit: LIMIT,
+			filter: activeFilter,
+			sort,
+			search: debouncedSearch || undefined,
+		})
 			.then(res => {
 				setMembers(prev => [...prev, ...res.data])
 				setTotal(res.total)
 				setPage(nextPage)
 			})
-			.catch((err) => setError(getApiErrorMessage(err)))
+			.catch(err => setError(getApiErrorMessage(err)))
 			.finally(() => setLoadingMore(false))
 	}
 
@@ -293,7 +264,7 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 
 	return (
 		<>
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-5">
+			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-5  shadow-md">
 				{/* Header */}
 				<div className="flex items-start justify-between gap-4">
 					<div>
@@ -307,24 +278,16 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 
 					{/* Search + Filters */}
 					<div className="flex items-center gap-2 shrink-0">
-						{/* TODO: Wire search to GET /api/communities/[id]/members?q=[query] once API supports it */}
 						<div className="flex items-center gap-2 px-3 py-2 rounded-action border border-border-default bg-surface-page w-64">
 							<Icon as={SearchSvg} size="sm" color="muted" />
 							<input
 								type="text"
+								value={search}
+								onChange={e => setSearch(e.target.value)}
 								placeholder="Search members by name or keyword..."
 								className="flex-1 text-[11px] text-text-primary placeholder:text-text-muted bg-transparent outline-none"
-								readOnly
 							/>
 						</div>
-						{/* TODO: Wire filters to open filters panel */}
-						<button
-							type="button"
-							className="flex items-center gap-2 px-3 py-2 rounded-action border border-border-default bg-surface-page text-label-sm text-text-primary font-medium hover:bg-surface-hover transition-colors"
-						>
-							<Icon as={WidgetsSvg} size="sm" color="secondary" />
-							Filters
-						</button>
 					</div>
 				</div>
 
@@ -354,7 +317,10 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 							onClick={() => setSortOpen(o => !o)}
 							className="flex items-center gap-1.5 text-label-sm text-text-secondary font-medium hover:text-text-primary transition-colors whitespace-nowrap"
 						>
-							Sort by: <span className="text-text-primary font-semibold">{sort}</span>
+							Sort by:{" "}
+							<span className="text-text-primary font-semibold">
+								{SORT_OPTIONS.find(o => o.value === sort)?.label}
+							</span>
 							<Icon
 								as={sortOpen ? AltArrowUpSvg : AltArrowDownSvg}
 								size="xs"
@@ -366,19 +332,19 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 							<div className="absolute right-0 top-full mt-1.5 w-44 rounded-action bg-surface-card border border-border-default shadow-md z-10 overflow-hidden">
 								{SORT_OPTIONS.map(opt => (
 									<button
-										key={opt}
+										key={opt.value}
 										type="button"
 										onClick={() => {
-											setSort(opt)
+											setSort(opt.value)
 											setSortOpen(false)
 										}}
 										className={`w-full px-3 py-2 text-left text-label-sm transition-colors ${
-											sort === opt
+											sort === opt.value
 												? "text-text-brand font-semibold bg-surface-brand-soft"
 												: "text-text-primary hover:bg-surface-hover"
 										}`}
 									>
-										{opt}
+										{opt.label}
 									</button>
 								))}
 							</div>
@@ -413,13 +379,18 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 								onClick={() => {
 									setLoading(true)
 									setError(null)
-									getCommunityMembers(communityId, { page: 1, limit: LIMIT })
+									getCommunityMembers(communityId, {
+										page: 1,
+										limit: LIMIT,
+										filter: activeFilter,
+										sort,
+									})
 										.then(res => {
 											setMembers(res.data)
 											setTotal(res.total)
 											setPage(1)
 										})
-										.catch((err) => setError(getApiErrorMessage(err)))
+										.catch(err => setError(getApiErrorMessage(err)))
 										.finally(() => setLoading(false))
 								}}
 							>
@@ -468,6 +439,7 @@ export function MembersTabContent({ communityId }: { communityId: string }) {
 					setSelectedMember(null)
 					setDrawerLoading(false)
 				}}
+				onOpenDM={onOpenDM}
 			/>
 		</>
 	)

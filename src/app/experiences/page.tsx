@@ -14,6 +14,7 @@ import SearchSvg from "@/icons/outlined/search.svg"
 import SuspensionBoltSvg from "@/icons/outlined/suspension-bolt.svg"
 import TagPriceSvg from "@/icons/outlined/tag-price.svg"
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ---------------------------------------------------------------------------
 // Static option lists
@@ -41,14 +42,6 @@ const SORT_OPTIONS = [
 	{ value: "price-asc", label: "Price: Low to High" },
 	{ value: "price-desc", label: "Price: High to Low" },
 ]
-
-// ---------------------------------------------------------------------------
-// Skeleton card
-// ---------------------------------------------------------------------------
-
-function SkeletonCard() {
-	return <div className="aspect-3/4 rounded-2xl bg-surface-hover animate-pulse" />
-}
 
 // ---------------------------------------------------------------------------
 // Page
@@ -227,7 +220,7 @@ export default function ExperiencesPage() {
 				{loading ? (
 					<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 mt-6">
 						{Array.from({ length: SKELETON_COUNT }).map((_, i) => (
-							<SkeletonCard key={i} />
+							<Skeleton.Card key={i} />
 						))}
 					</div>
 				) : error ? (

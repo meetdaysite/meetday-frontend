@@ -328,6 +328,14 @@ export const chatSocket = {
 		socket.emit("mark-dm-read", { conversationId })
 	},
 
+	updateToken(token: string) {
+		if (!socket) return
+		socket.auth = { token }
+		if (!socket.connected) {
+			socket.connect()
+		}
+	},
+
 	isConnected() {
 		return socket?.connected ?? false
 	},

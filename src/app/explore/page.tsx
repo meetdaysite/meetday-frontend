@@ -10,14 +10,7 @@ import type { PublicCommunity } from "@/lib/api"
 import type { ExploreEvent } from "@/types/attendee"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 import Link from "next/link"
-
-// ---------------------------------------------------------------------------
-// Skeleton card
-// ---------------------------------------------------------------------------
-
-function SkeletonCard() {
-	return <div className="aspect-3/4 rounded-2xl bg-surface-hover animate-pulse" />
-}
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ---------------------------------------------------------------------------
 // Page
@@ -103,7 +96,7 @@ export default function ExploreEventsPage() {
 							{communitiesLoading ? (
 								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
 									{Array.from({ length: 6 }).map((_, i) => (
-										<SkeletonCard key={i} />
+										<Skeleton.Card key={i} />
 									))}
 								</div>
 							) : communities.length === 0 ? null : (
@@ -131,7 +124,7 @@ export default function ExploreEventsPage() {
 							{eventsLoading ? (
 								<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
 									{Array.from({ length: 6 }).map((_, i) => (
-										<SkeletonCard key={i} />
+										<Skeleton.Card key={i} />
 									))}
 								</div>
 							) : eventsError ? (

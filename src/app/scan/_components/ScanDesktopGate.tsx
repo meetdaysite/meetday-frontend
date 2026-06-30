@@ -11,7 +11,7 @@ export function ScanDesktopGate() {
 						This scanner link is designed for mobile devices. Open it on your phone at the venue to start checking in attendees.
 					</p>
 				</div>
-				<div className="w-full p-4 bg-neutral-50 rounded-xl border border-neutral-200">
+				<div className="w-full p-4 bg-neutral-50 rounded-panel border border-neutral-200 shadow-md">
 					<p className="text-xs text-neutral-400 mb-2 font-medium uppercase tracking-wide">Current URL</p>
 					<p className="text-xs text-neutral-600 font-mono break-all select-all">
 						{typeof window !== "undefined" ? window.location.href : ""}

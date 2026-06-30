@@ -1,19 +1,19 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import clsx from "clsx"
-import { Icon } from "@/components/ui/Icon"
+import { CommunityCard } from "@/components/attendee/CommunityCard"
 import { Button } from "@/components/ui/Button"
+import { Icon } from "@/components/ui/Icon"
+import { Skeleton } from "@/components/ui/Skeleton"
 import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
 import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
-import GiftSvg from "@/icons/outlined/gift.svg"
-import { getJoinedCommunities, getSavedCommunities, getRecommendedCommunities } from "@/lib/api"
-import { CommunityCard } from "@/components/attendee/CommunityCard"
-import { useAuthStore } from "@/store/authStore"
 import type { PublicCommunity } from "@/lib/api"
+import { getJoinedCommunities, getSavedCommunities } from "@/lib/api"
+import { useAuthStore } from "@/store/authStore"
+import clsx from "clsx"
+import Image from "next/image"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { Suspense, useEffect, useState } from "react"
 
 type Tab = "joined" | "saved"
 
@@ -125,78 +125,11 @@ function EmptyCommunitiesState() {
 	)
 }
 
-// ─── Right panel ──────────────────────────────────────────────────────────────
-
-function RightPanel({ recommendations }: { recommendations: PublicCommunity[] }) {
-	return (
-		<>
-			{recommendations.length > 0 && (
-				<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
-					<div className="flex items-center justify-between">
-						<p className="text-title-md font-bold text-text-primary">Recommended for you</p>
-						<Link
-							href="/explore?view=communities"
-							className="text-label-sm text-text-brand hover:underline font-medium"
-						>
-							View all →
-						</Link>
-					</div>
-					<div className="flex flex-col gap-3">
-						{recommendations.map((c) => (
-							<Link
-								key={c.id}
-								href={`/communities/${c.slug}`}
-								className="flex gap-3 items-center group"
-							>
-								<div className="relative size-12 rounded-full overflow-hidden shrink-0 bg-neutral-200 border border-border-default">
-									<Image
-										src={c.iconUrl}
-										alt={c.name}
-										fill
-										sizes="48px"
-										className="object-cover group-hover:scale-105 transition-transform duration-300"
-									/>
-								</div>
-								<div className="flex-1 min-w-0">
-									<p className="text-label-sm font-semibold text-text-primary leading-tight truncate">
-										{c.name}
-									</p>
-									<p className="text-caption text-text-muted">
-										{c.memberCount.toLocaleString()} members
-									</p>
-								</div>
-							</Link>
-						))}
-					</div>
-				</div>
-			)}
-
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
-				<div className="flex items-center gap-3">
-					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-						<Icon as={GiftSvg} size="md" color="info" />
-					</div>
-					<div>
-						<p className="text-body-sm font-bold text-text-primary">Invite friend, get rewarded</p>
-						<p className="text-caption text-text-muted leading-snug">
-							Invite your crew and unlock Meetday rewards when they join.
-						</p>
-					</div>
-				</div>
-				<Button variant="secondary" size="sm" radius="pill">
-					<Icon as={GiftSvg} size="sm" color="inherit" className="mr-1.5" />
-					Invite friends
-				</Button>
-			</div>
-		</>
-	)
-}
-
 // ─── Community grid ───────────────────────────────────────────────────────────
 
 function CommunityGrid({ communities }: { communities: PublicCommunity[] }) {
 	return (
-		<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+		<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
 			{communities.map((c) => (
 				<CommunityCard key={c.id} community={c} />
 			))}
@@ -211,7 +144,6 @@ function MyCommunitiesPageInner() {
 	const router = useRouter()
 	const [joined, setJoined] = useState<PublicCommunity[]>([])
 	const [saved, setSaved] = useState<PublicCommunity[]>([])
-	const [recommendations, setRecommendations] = useState<PublicCommunity[]>([])
 	const [loading, setLoading] = useState(true)
 	const [activeTab, setActiveTab] = useState<Tab>("joined")
 
@@ -226,12 +158,6 @@ function MyCommunitiesPageInner() {
 				])
 				setJoined(joinedRes.data)
 				setSaved(savedRes.data)
-
-				if (joinedRes.data.length === 0) {
-					getRecommendedCommunities({ limit: 5 })
-						.then((res) => setRecommendations(res.data))
-						.catch(() => {})
-				}
 			} finally {
 				setLoading(false)
 			}
@@ -240,11 +166,7 @@ function MyCommunitiesPageInner() {
 	}, [authLoading])
 
 	if (authLoading || loading) {
-		return (
-			<main className="flex-1 flex items-center justify-center py-24">
-				<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-			</main>
-		)
+		return <MyCommunitiesPageSkeleton />
 	}
 
 	if (!user) {
@@ -279,11 +201,8 @@ function MyCommunitiesPageInner() {
 					</div>
 				)}
 
-				{/* Two-column layout */}
-				<div className="flex gap-8 items-start">
-					{/* Left */}
-					<div className="flex-1 min-w-0 flex flex-col gap-4">
-						{hasAny ? (
+				<div className="flex flex-col gap-4">
+					{hasAny ? (
 							<>
 								{/* Tabs */}
 								<div className="flex items-center gap-1 border-b border-border-default">
@@ -329,12 +248,32 @@ function MyCommunitiesPageInner() {
 						) : (
 							<EmptyCommunitiesState />
 						)}
-					</div>
+				</div>
+			</div>
+		</main>
+	)
+}
 
-					{/* Right sticky panel */}
-					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">
-						<RightPanel recommendations={recommendations} />
-					</aside>
+function MyCommunitiesPageSkeleton() {
+	return (
+		<main className="flex-1 py-6 md:py-8 pb-16">
+			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
+				<div className="mb-6 flex flex-col gap-2">
+					<Skeleton.Text className="h-7 w-44" />
+					<Skeleton.Text className="w-68" />
+				</div>
+				<div className="mb-6 flex items-center gap-3">
+					<Skeleton.Block className="h-10 w-24 rounded-action" />
+					<Skeleton.Block className="h-10 w-24 rounded-action" />
+				</div>
+				<div className="flex gap-6 pb-2.5 border-b border-border-default mb-4">
+					<Skeleton.Text className="w-16 h-4" />
+					<Skeleton.Text className="w-16 h-4" />
+				</div>
+				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+					{[...Array(8)].map((_, i) => (
+						<Skeleton.Card key={i} />
+					))}
 				</div>
 			</div>
 		</main>
@@ -343,13 +282,7 @@ function MyCommunitiesPageInner() {
 
 export default function MyCommunitiesPage() {
 	return (
-		<Suspense
-			fallback={
-				<main className="flex-1 flex items-center justify-center py-24">
-					<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-				</main>
-			}
-		>
+		<Suspense fallback={<MyCommunitiesPageSkeleton />}>
 			<MyCommunitiesPageInner />
 		</Suspense>
 	)

@@ -18,6 +18,7 @@ interface WhatToDoItem {
 	iconColor: React.ComponentPropsWithoutRef<typeof Icon>["color"]
 	buttonClassName: string
 	tabKey: TabKey
+	requiresMembership: boolean
 }
 
 const ITEMS: WhatToDoItem[] = [
@@ -32,6 +33,7 @@ const ITEMS: WhatToDoItem[] = [
 		iconColor: "success",
 		buttonClassName: "bg-emerald-600 text-white hover:bg-emerald-700 border-0",
 		tabKey: "experiences",
+		requiresMembership: false,
 	},
 	{
 		icon: ChatSvg,
@@ -44,6 +46,7 @@ const ITEMS: WhatToDoItem[] = [
 		iconColor: "vibe",
 		buttonClassName: "bg-violet-600 text-white hover:bg-violet-700 border-0",
 		tabKey: "chat",
+		requiresMembership: true,
 	},
 	{
 		icon: BellSvg,
@@ -57,18 +60,21 @@ const ITEMS: WhatToDoItem[] = [
 		iconColor: "info",
 		buttonClassName: "bg-blue-600 text-white hover:bg-blue-700 border-0",
 		tabKey: "announcements",
+		requiresMembership: true,
 	},
 ]
 
 export function WhatToDoCard({
 	isMember,
 	onTabChange,
+	onJoinClick,
 }: {
 	isMember: boolean
 	onTabChange: (tab: TabKey) => void
+	onJoinClick: () => void
 }) {
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-5">
+		<div className="rounded-panel bg-surface-card border border-border-default p-5 shadow-md">
 			<p className="text-body-md font-semibold text-text-primary">What do you want to do?</p>
 			<p className="text-label-sm text-text-secondary font-normal mt-0.5">
 				Discover what&apos;s inside this community.
@@ -106,7 +112,13 @@ export function WhatToDoCard({
 							radius="pill"
 							className={item.buttonClassName}
 							rightIcon={<Icon as={ArrowRightSvg} size="sm" color="inverse" />}
-							onClick={() => onTabChange(item.tabKey)}
+							onClick={() => {
+								if (item.requiresMembership && !isMember) {
+									onJoinClick()
+								} else {
+									onTabChange(item.tabKey)
+								}
+							}}
 						>
 							{isMember ? item.memberButtonLabel : item.buttonLabel}
 						</Button>

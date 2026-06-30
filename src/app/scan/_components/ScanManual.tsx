@@ -99,7 +99,7 @@ export function ScanManual({ sessionData, token, onResult, onBack }: Props) {
 				</div>
 
 				{/* Tabs */}
-				<div className="flex bg-neutral-100 rounded-xl p-1">
+				<div className="flex bg-neutral-100 rounded-panel p-1">
 					{(["bookingId", "ticketCode"] as TabType[]).map((t) => (
 						<button
 							key={t}
@@ -115,7 +115,7 @@ export function ScanManual({ sessionData, token, onResult, onBack }: Props) {
 
 				{/* Search input */}
 				<div className="flex flex-col gap-2">
-					<div className="flex items-center gap-2 px-3 py-3 border border-neutral-200 rounded-xl bg-neutral-50">
+					<div className="flex items-center gap-2 px-3 py-3 border border-neutral-200 rounded-panel bg-neutral-50">
 						<SearchIcon />
 						<input
 							type="text"
@@ -161,7 +161,7 @@ export function ScanManual({ sessionData, token, onResult, onBack }: Props) {
 									const cfg = derivedStatus(booking)
 									const canCheckIn = booking.remainingSeats > 0
 									return (
-										<div key={booking.bookingId} className="border border-neutral-200 rounded-xl overflow-hidden">
+										<div key={booking.bookingId} className="border border-neutral-200 rounded-panel shadow-md overflow-hidden">
 											<div className="flex items-center justify-between px-4 py-3">
 												<div className="flex items-center gap-3">
 													<div className="size-9 rounded-lg bg-neutral-100 flex items-center justify-center">

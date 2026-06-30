@@ -159,7 +159,7 @@ function SayHiModal({
 			<div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
 			{/* Sheet */}
-			<div className="relative w-full sm:max-w-md bg-surface-card rounded-t-2xl sm:rounded-2xl overflow-y-auto max-h-[92svh] no-scrollbar flex flex-col">
+			<div className="relative w-full sm:max-w-md bg-surface-card rounded-t-panel sm:rounded-panel overflow-y-auto max-h-[92svh] no-scrollbar flex flex-col">
 				<div className="p-6 flex flex-col gap-5">
 					{/* Header */}
 					<div className="flex items-center justify-between">
@@ -339,12 +339,14 @@ export function MemberProfileDrawer({
 	currentUserId,
 	detailLoading = false,
 	onClose,
+	onOpenDM,
 }: {
 	member: DrawerMember | null
 	communityId: string
 	currentUserId: string | null
 	detailLoading?: boolean
 	onClose: () => void
+	onOpenDM?: (conversationId: string) => void
 }) {
 	const [sayHiOpen, setSayHiOpen] = useState(false)
 	const [localDmStatus, setLocalDmStatus] = useState<DmStatus | null>(null)
@@ -611,6 +613,7 @@ export function MemberProfileDrawer({
 										>
 											Say Hi
 										</Button>
+										{/* Invite to Event — commented until invite feature is live
 										<Button
 											variant="secondary"
 											size="md"
@@ -620,6 +623,7 @@ export function MemberProfileDrawer({
 										>
 											Invite to Event
 										</Button>
+										*/}
 									</>
 								)}
 
@@ -662,9 +666,14 @@ export function MemberProfileDrawer({
 										radius="pill"
 										leftIcon={<Icon as={ChatSvg} size="sm" color="inverse" />}
 										className="w-full"
-										onClick={() =>
-											toast("Open the Chat tab to continue your conversation.")
-										}
+										onClick={() => {
+											if (activeConversationId && onOpenDM) {
+												onOpenDM(activeConversationId)
+												onClose()
+											} else {
+												toast("Open the Chat tab to continue your conversation.")
+											}
+										}}
 									>
 										Message
 									</Button>

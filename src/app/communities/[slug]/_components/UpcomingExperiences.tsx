@@ -7,6 +7,7 @@ import { EventCard } from "@/components/attendee/EventCard"
 import { getCommunityEvents } from "@/lib/api"
 import type { CommunityEvent } from "@/lib/api"
 import type { ExploreEvent } from "@/types/attendee"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Mapper ───────────────────────────────────────────────────────────────────
 // Fields present in API but not yet consumed by ExploreEvent / EventCard:
@@ -26,14 +27,6 @@ function toExploreEvent(e: CommunityEvent): ExploreEvent {
 		eventType: e.eventType ?? "UPCOMING",
 		category: { id: "city", name: e.city },
 	}
-}
-
-// ─── Skeleton card ────────────────────────────────────────────────────────────
-
-function EventCardSkeleton() {
-	return (
-		<div className="rounded-2xl bg-surface-hover animate-pulse aspect-3/4 border border-border-default" />
-	)
 }
 
 // ─── Upcoming strip (overview tab) ────────────────────────────────────────────
@@ -58,7 +51,7 @@ export function UpcomingExperiences({
 	}, [communitySlug])
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-5">
+		<div className="rounded-panel bg-surface-card border border-border-default p-5 shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<p className="text-body-md font-semibold text-text-primary">
 					Upcoming experiences from this community
@@ -75,7 +68,7 @@ export function UpcomingExperiences({
 
 			{loading ? (
 				<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-					{Array.from({ length: 5 }).map((_, i) => <EventCardSkeleton key={i} />)}
+					{Array.from({ length: 5 }).map((_, i) => <Skeleton.Card key={i} />)}
 				</div>
 			) : error ? (
 				<div className="py-6 text-center">
