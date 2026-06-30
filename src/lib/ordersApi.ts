@@ -1,6 +1,22 @@
 import apiClient from "./axios"
 import type { CreateOrderPayload, FullOrderDetail, MyOrderListItem, MyOrdersResponse, OrderDetail } from "@/types/order"
 
+export interface PricingConfig {
+	platformFeeRate: number
+	gstRate: number
+	platformFeeWaived: boolean
+	hostFeePromoApplied: boolean
+}
+
+export async function getPricingConfig(eventId: string): Promise<PricingConfig> {
+	const { data } = await apiClient.get<{ success: boolean; data: PricingConfig }>(`/events/${eventId}/pricing-config`)
+	return data.data
+}
+
+export async function confirmFreeOrder(orderId: string): Promise<void> {
+	await apiClient.post(`/orders/${orderId}/confirm-free`)
+}
+
 export async function createOrder(payload: CreateOrderPayload): Promise<OrderDetail> {
 	const { data } = await apiClient.post<{ success: boolean; data: OrderDetail }>("/orders", payload)
 	return data.data

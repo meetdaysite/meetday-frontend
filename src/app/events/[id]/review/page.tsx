@@ -730,7 +730,7 @@ function ReviewPageInner({ id }: { id: string }) {
 	}, [id, authLoading])
 
 	if (loading) {
-		return <Skeleton.Page />
+		return <ReviewPageSkeleton />
 	}
 
 	if (error || !event) {
@@ -760,16 +760,70 @@ function ReviewPageInner({ id }: { id: string }) {
 	return <ReviewFormContent eventId={id} orderId={orderId} event={event} highlightOptions={highlightOptions} />
 }
 
+function ReviewPageSkeleton() {
+	return (
+		<main className="flex-1 py-6 md:py-8 pb-12">
+			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
+				<div className="flex gap-6 items-start">
+					<div className="flex-1 min-w-0">
+						<div className="rounded-action border border-border-default bg-surface-card overflow-hidden divide-y divide-border-default animate-pulse">
+							<div className="flex gap-4 p-5">
+								<Skeleton.Block className="w-36 h-28 rounded-lg shrink-0" />
+								<div className="flex flex-col gap-2 flex-1">
+									<Skeleton.Text className="h-5 w-3/4" />
+									<Skeleton.Text className="w-40" />
+									<Skeleton.Text className="w-32" />
+									<Skeleton.Text className="w-36" />
+								</div>
+							</div>
+							<div className="p-5 flex flex-col gap-4">
+								<div className="flex items-center gap-2">
+									<Skeleton.Block className="size-5 rounded shrink-0" />
+									<Skeleton.Text className="w-48 h-5" />
+								</div>
+								<div className="pl-7 flex gap-2">
+									{[...Array(5)].map((_, i) => (
+										<Skeleton.Block key={i} className="size-7 rounded-action" />
+									))}
+								</div>
+							</div>
+							<div className="p-5 flex flex-col gap-4">
+								<div className="flex items-center gap-2">
+									<Skeleton.Block className="size-5 rounded shrink-0" />
+									<Skeleton.Text className="w-44 h-5" />
+								</div>
+								<div className="pl-7 flex flex-wrap gap-2">
+									{[...Array(6)].map((_, i) => (
+										<Skeleton.Block key={i} className="h-8 w-24 rounded-badge" />
+									))}
+								</div>
+							</div>
+							<div className="p-5 flex flex-col gap-4">
+								<div className="flex items-center gap-2">
+									<Skeleton.Block className="size-5 rounded shrink-0" />
+									<Skeleton.Text className="w-32 h-5" />
+								</div>
+								<Skeleton.Block className="ml-7 h-24 rounded-action" />
+							</div>
+							<div className="p-5">
+								<Skeleton.Block className="h-11 rounded-action" />
+							</div>
+						</div>
+					</div>
+					<aside className="hidden lg:flex flex-col gap-4 w-96 shrink-0">
+						<Skeleton.Block className="h-44 rounded-panel" />
+						<Skeleton.Block className="h-36 rounded-panel" />
+					</aside>
+				</div>
+			</div>
+		</main>
+	)
+}
+
 export default function ReviewPage({ params }: PageProps) {
 	const { id } = use(params)
 	return (
-		<Suspense
-			fallback={
-				<main className="flex-1 flex items-center justify-center py-24">
-					<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-				</main>
-			}
-		>
+		<Suspense fallback={<ReviewPageSkeleton />}>
 			<ReviewPageInner id={id} />
 		</Suspense>
 	)

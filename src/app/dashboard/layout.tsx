@@ -13,6 +13,7 @@ import { useNotificationStore } from "@/store/notificationStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import { getHostProfile } from "@/lib/api"
 import { Button } from "@/components/ui/Button"
+import { Skeleton } from "@/components/ui/Skeleton"
 
 function HamburgerIcon() {
 	return (
@@ -127,10 +128,32 @@ function UnderReviewScreen({
 
 function LoadingScreen() {
 	return (
-		<div className="min-h-screen flex items-center justify-center bg-surface-page">
-			<div className="flex flex-col items-center gap-4">
-				<div className="size-10 border-4 border-action-primary border-t-transparent rounded-full animate-spin" />
-				<p className="text-body-sm text-text-secondary">Loading your dashboard…</p>
+		<div className="min-h-screen flex bg-surface-page animate-pulse">
+			<aside className="hidden lg:flex flex-col w-60 shrink-0 border-r border-border-default p-4 gap-6">
+				<Skeleton.Block className="h-8 w-28" />
+				{[...Array(6)].map((_, i) => (
+					<div key={i} className="flex items-center gap-3 px-2">
+						<Skeleton.Block className="size-5 rounded shrink-0" />
+						<Skeleton.Text className="flex-1" />
+					</div>
+				))}
+			</aside>
+			<div className="flex-1 p-6 lg:p-8 flex flex-col gap-6">
+				<div className="flex flex-col gap-2">
+					<Skeleton.Text className="h-8 w-48" />
+					<Skeleton.Text className="w-72" />
+				</div>
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+					<Skeleton.StatCard />
+					<Skeleton.StatCard />
+					<Skeleton.StatCard />
+				</div>
+				<Skeleton.Block className="h-48 rounded-action" />
+				<div className="flex flex-col gap-3">
+					<Skeleton.Announcement />
+					<Skeleton.Announcement />
+					<Skeleton.Announcement />
+				</div>
 			</div>
 		</div>
 	)

@@ -104,18 +104,26 @@ export function TicketCard({ ticket, tierIndex, quantity, onQuantityChange }: Ti
 
 			{/* Price */}
 			<div className="shrink-0 flex flex-col items-end gap-1 px-10">
-				<p className="text-body-md font-extrabold text-text-brand">
-					₹{price.toLocaleString("en-IN")}
-				</p>
-				{originalPrice && discountPct && (
-					<div className="flex items-center gap-1.5">
-						<span className="text-label-sm text-text-muted line-through">
-							₹{originalPrice.toLocaleString("en-IN")}
-						</span>
-						<span className="text-[10px] font-bold text-action-primary bg-red-50 px-1.5 py-0.5 rounded-badge">
-							{discountPct}% OFF
-						</span>
-					</div>
+				{ticket.isFree ? (
+					<span className="text-body-md font-extrabold text-green-600 bg-green-50 px-2.5 py-0.5 rounded-badge border border-green-200">
+						Free
+					</span>
+				) : (
+					<>
+						<p className="text-body-md font-extrabold text-text-brand">
+							₹{price.toLocaleString("en-IN")}
+						</p>
+						{originalPrice && discountPct && (
+							<div className="flex items-center gap-1.5">
+								<span className="text-label-sm text-text-muted line-through">
+									₹{originalPrice.toLocaleString("en-IN")}
+								</span>
+								<span className="text-[10px] font-bold text-action-primary bg-red-50 px-1.5 py-0.5 rounded-badge">
+									{discountPct}% OFF
+								</span>
+							</div>
+						)}
+					</>
 				)}
 			</div>
 

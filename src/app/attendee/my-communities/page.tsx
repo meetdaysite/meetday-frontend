@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
+import { Skeleton } from "@/components/ui/Skeleton"
 import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
 import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
 import GiftSvg from "@/icons/outlined/gift.svg"
@@ -242,11 +243,7 @@ function MyCommunitiesPageInner() {
 	}, [authLoading])
 
 	if (authLoading || loading) {
-		return (
-			<main className="flex-1 flex items-center justify-center py-24">
-				<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-			</main>
-		)
+		return <MyCommunitiesPageSkeleton />
 	}
 
 	if (!user) {
@@ -343,15 +340,35 @@ function MyCommunitiesPageInner() {
 	)
 }
 
+function MyCommunitiesPageSkeleton() {
+	return (
+		<main className="flex-1 py-6 md:py-8 pb-16">
+			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
+				<div className="mb-6 flex flex-col gap-2">
+					<Skeleton.Text className="h-7 w-44" />
+					<Skeleton.Text className="w-68" />
+				</div>
+				<div className="mb-6 flex items-center gap-3">
+					<Skeleton.Block className="h-10 w-24 rounded-action" />
+					<Skeleton.Block className="h-10 w-24 rounded-action" />
+				</div>
+				<div className="flex gap-6 pb-2.5 border-b border-border-default mb-4">
+					<Skeleton.Text className="w-16 h-4" />
+					<Skeleton.Text className="w-16 h-4" />
+				</div>
+				<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+					{[...Array(8)].map((_, i) => (
+						<Skeleton.Card key={i} />
+					))}
+				</div>
+			</div>
+		</main>
+	)
+}
+
 export default function MyCommunitiesPage() {
 	return (
-		<Suspense
-			fallback={
-				<main className="flex-1 flex items-center justify-center py-24">
-					<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-				</main>
-			}
-		>
+		<Suspense fallback={<MyCommunitiesPageSkeleton />}>
 			<MyCommunitiesPageInner />
 		</Suspense>
 	)

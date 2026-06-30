@@ -435,9 +435,16 @@ export default function MyEventsPage() {
 					{/* Infinite scroll sentinel */}
 					<div ref={sentinelRef} className="h-1" />
 					{isLoadingMore && (
-						<div className="flex justify-center py-8">
-							<LoaderSpinner />
-						</div>
+						viewMode === "grid" ? (
+							<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5 py-4">
+								{[...Array(3)].map((_, i) => <Skeleton.Card key={i} />)}
+							</div>
+						) : (
+							<div className="flex flex-col gap-3 py-4">
+								<Skeleton.Announcement />
+								<Skeleton.Announcement />
+							</div>
+						)
 					)}
 					{!hasMore && filteredEvents.length > 0 && (
 						<p className="text-center text-caption text-text-muted py-8">

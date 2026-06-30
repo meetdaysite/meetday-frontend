@@ -24,6 +24,7 @@ import {
 import { useHostStore } from "@/store/hostStore"
 import { useAuthSessionStore } from "@/store/authSessionStore"
 import { Button } from "@/components/ui/Button"
+import { Skeleton } from "@/components/ui/Skeleton"
 import { TextField } from "@/components/ui/TextField"
 import { Dropdown } from "@/components/ui/Dropdown"
 import { Icon } from "@/components/ui/Icon"
@@ -1406,7 +1407,7 @@ export default function OnboardingPage() {
 			{loadingMessage && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
 					<div className="bg-surface-card rounded-action px-10 py-8 flex flex-col items-center gap-4 shadow-xl">
-						<div className="size-10 border-4 border-action-primary border-t-transparent rounded-full animate-spin" />
+						<Skeleton.Block className="size-10 rounded-full" />
 						<p className="text-body-sm font-semibold text-text-primary">{loadingMessage}</p>
 					</div>
 				</div>

@@ -6,12 +6,14 @@ import Link from "next/link"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import { Checkbox } from "@/components/ui/Checkbox"
+import { Skeleton } from "@/components/ui/Skeleton"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { useBookingStore } from "@/store/bookingStore"
-import { createOrder, getOrderDetail, initiatePayment, verifyPayment } from "@/lib/ordersApi"
+import { createOrder, confirmFreeOrder, getOrderDetail, initiatePayment, verifyPayment, getPricingConfig } from "@/lib/ordersApi"
 import { getApiErrorMessage } from "@/lib/errors"
 import { getPublicEventDetails } from "@/lib/api"
 import type { PublicEventDetails } from "@/types/attendee"
+import type { PricingConfig } from "@/lib/ordersApi"
 import { EventPreviewBar } from "../_components/EventPreviewBar"
 import { BookingStepBadge } from "../_components/BookingStepBadge"
 import { OrderSummary } from "../_components/OrderSummary"
@@ -21,7 +23,7 @@ interface PageProps {
 	params: Promise<{ id: string }>
 }
 
-function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
+function AttendeeDetailsContent({ event, pricingConfig }: { event: PublicEventDetails; pricingConfig: PricingConfig }) {
 	const router = useRouter()
 	const {
 		quantities,
@@ -49,6 +51,7 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 
 	const selectedTickets = event.tickets.filter(t => (quantities[t.id] ?? 0) > 0)
 	const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0)
+	const isPaidOrder = selectedTickets.some(t => !t.isFree)
 
 	// Build flat list of all attendee slots; slot at globalIndex 0 is the primary (logged-in user)
 	const allSlots: { ticketId: string; ticketName: string; slotIndex: number; globalIndex: number }[] = []
@@ -98,6 +101,14 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 
 			setPendingOrderId(order.id)
 
+			if (order.totalAmount === 0) {
+				await confirmFreeOrder(order.id)
+				const confirmed = await getOrderDetail(order.id)
+				setConfirmedOrder(confirmed)
+				router.push(`/events/${event.id}/book/confirmed?orderId=${order.id}`)
+				return
+			}
+
 			const { razorpayOrderId, amount, currency, keyId } = await initiatePayment(order.id)
 
 			const rzp = new window.Razorpay({
@@ -106,7 +117,7 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 				currency,
 				order_id: razorpayOrderId,
 				name: "Meetday",
-				description: "Event Ticket",
+				description: event.title,
 				handler: async response => {
 					try {
 						await verifyPayment({
@@ -223,7 +234,7 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 								onClick={handleSubmit}
 								disabled={!isFormValid || !agreedToTerms || submitting}
 							>
-								{submitting ? "Processing…" : "Continue to Payment"}
+								{submitting ? "Processing…" : isPaidOrder ? "Continue to Payment" : "Confirm Booking"}
 							</Button>
 						</div>
 					</div>
@@ -233,9 +244,10 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 						<OrderSummary
 							tickets={event.tickets}
 							quantities={quantities}
+							pricingConfig={pricingConfig}
 							promoDiscount={promoDiscount}
 							onContinue={handleSubmit}
-							continueLabel="Continue to Payment"
+							continueLabel={isPaidOrder ? "Continue to Payment" : "Confirm Booking"}
 							continueLoading={submitting}
 							continueDisabled={!isFormValid || !agreedToTerms}
 						/>
@@ -249,20 +261,60 @@ function AttendeeDetailsContent({ event }: { event: PublicEventDetails }) {
 export default function AttendeeDetailsPage({ params }: PageProps) {
 	const { id } = use(params)
 	const [event, setEvent] = useState<PublicEventDetails | null>(null)
+	const [pricingConfig, setPricingConfig] = useState<PricingConfig | null>(null)
 
 	useEffect(() => {
-		getPublicEventDetails(id).then(e => {
+		Promise.all([getPublicEventDetails(id), getPricingConfig(id)]).then(([e, pc]) => {
 			if (e) setEvent(e)
+			setPricingConfig(pc)
 		})
 	}, [id])
 
-	if (!event) {
+	if (!event || !pricingConfig) {
 		return (
-			<main className="flex-1 flex items-center justify-center py-24">
-				<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
+			<main className="flex-1 py-6 md:py-8 pb-12">
+				<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
+					<div className="flex gap-8 items-start">
+						<div className="flex-1 min-w-0 flex flex-col gap-5">
+							<Skeleton.Text className="w-44 animate-pulse" />
+							<div className="flex flex-col gap-2 animate-pulse">
+								<Skeleton.Text className="h-8 w-48" />
+								<Skeleton.Text className="w-64" />
+							</div>
+							<Skeleton.Block className="h-6 w-36 rounded-badge animate-pulse" />
+							<div className="rounded-action bg-surface-card border border-border-default p-4 flex gap-5 animate-pulse">
+								<Skeleton.Block className="w-40 rounded-action shrink-0 min-h-25" />
+								<div className="flex-1 flex flex-col gap-3 py-0.5">
+									<div className="flex flex-col gap-2">
+										<Skeleton.Text className="h-5 w-3/4" />
+										<Skeleton.Text className="w-1/2" />
+									</div>
+									<div className="h-px bg-border-default w-full" />
+									<Skeleton.Text className="w-36" />
+								</div>
+							</div>
+							<div className="rounded-action border border-border-default p-4 flex flex-col gap-4 animate-pulse">
+								<Skeleton.Text className="h-5 w-40" />
+								{[...Array(2)].map((_, i) => (
+									<div key={i} className="flex flex-col gap-1.5">
+										<Skeleton.Text className="w-20 h-4" />
+										<Skeleton.Block className="h-10 rounded-action" />
+									</div>
+								))}
+							</div>
+							<div className="flex gap-3 items-start animate-pulse">
+								<Skeleton.Block className="size-4 rounded shrink-0 mt-0.5" />
+								<Skeleton.Text className="w-56" />
+							</div>
+						</div>
+						<aside className="hidden lg:flex flex-col w-80 shrink-0">
+							<Skeleton.Block className="h-64 rounded-action" />
+						</aside>
+					</div>
+				</div>
 			</main>
 		)
 	}
 
-	return <AttendeeDetailsContent event={event} />
+	return <AttendeeDetailsContent event={event} pricingConfig={pricingConfig} />
 }

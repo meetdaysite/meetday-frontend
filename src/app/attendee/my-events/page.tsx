@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
+import { Skeleton } from "@/components/ui/Skeleton"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
 import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
 import HeadphonesSvg from "@/icons/filled/headphones.svg"
@@ -674,11 +675,7 @@ function MyEventsPageInner() {
 	}, [authLoading])
 
 	if (authLoading || loading) {
-		return (
-			<main className="flex-1 flex items-center justify-center py-24">
-				<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-			</main>
-		)
+		return <MyEventsPageSkeleton />
 	}
 
 	if (!user) {
@@ -820,15 +817,37 @@ function MyEventsPageInner() {
 	)
 }
 
+function MyEventsPageSkeleton() {
+	return (
+		<main className="flex-1 py-6 md:py-8 pb-16">
+			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
+				<div className="mb-6 flex flex-col gap-2">
+					<Skeleton.Text className="h-7 w-36" />
+					<Skeleton.Text className="w-60" />
+				</div>
+				<div className="mb-6 flex items-center gap-3 flex-wrap">
+					{[...Array(4)].map((_, i) => (
+						<Skeleton.Block key={i} className="h-10 w-28 rounded-action" />
+					))}
+				</div>
+				<div className="flex gap-6 pb-2.5 border-b border-border-default mb-4">
+					{["w-20", "w-16", "w-24", "w-16"].map((w, i) => (
+						<Skeleton.Text key={i} className={`${w} h-4`} />
+					))}
+				</div>
+				<div className="flex flex-col gap-4">
+					<Skeleton.Announcement />
+					<Skeleton.Announcement />
+					<Skeleton.Announcement />
+				</div>
+			</div>
+		</main>
+	)
+}
+
 export default function MyEventsPage() {
 	return (
-		<Suspense
-			fallback={
-				<main className="flex-1 flex items-center justify-center py-24">
-					<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-				</main>
-			}
-		>
+		<Suspense fallback={<MyEventsPageSkeleton />}>
 			<MyEventsPageInner />
 		</Suspense>
 	)

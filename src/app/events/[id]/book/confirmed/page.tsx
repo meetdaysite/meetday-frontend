@@ -326,16 +326,67 @@ function ConfirmedPageInner({ id }: { id: string }) {
 	return <ConfirmedContent event={event} order={order} />
 }
 
+function BookingConfirmedSkeleton() {
+	return (
+		<main className="flex-1 py-6 md:py-8 pb-12">
+			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
+				<Skeleton.Text className="w-28 mb-6 animate-pulse" />
+				<div className="flex gap-8 items-start">
+					<div className="flex-1 min-w-0 flex flex-col gap-6">
+						<div className="rounded-action border border-border-default bg-surface-card p-6 flex flex-col gap-6 animate-pulse">
+							<div className="flex flex-col items-center gap-4 py-2">
+								<Skeleton.Block className="size-16 rounded-full" />
+								<div className="flex flex-col items-center gap-2">
+									<Skeleton.Text className="h-6 w-56" />
+									<Skeleton.Text className="w-72" />
+								</div>
+								<Skeleton.Block className="h-8 w-48 rounded-badge" />
+							</div>
+							<div className="rounded-action border border-border-default p-4 flex gap-5">
+								<Skeleton.Block className="w-40 rounded-action shrink-0 min-h-25" />
+								<div className="flex-1 flex flex-col gap-2 py-0.5">
+									<Skeleton.Text className="h-5 w-3/4" />
+									<Skeleton.Text className="w-1/2" />
+									<Skeleton.Text className="w-2/3" />
+								</div>
+							</div>
+							<div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border-default border border-border-default rounded-action overflow-hidden">
+								{[...Array(3)].map((_, i) => (
+									<div key={i} className="p-5 flex flex-col gap-2">
+										<Skeleton.Text className="w-20 h-4" />
+										<Skeleton.Text className="h-5 w-28" />
+									</div>
+								))}
+							</div>
+							<div className="flex flex-col items-center gap-3">
+								<Skeleton.Block className="size-36 rounded-action" />
+								<Skeleton.Text className="w-28" />
+							</div>
+						</div>
+						<div className="rounded-action border border-border-default bg-surface-card p-5 animate-pulse">
+							<div className="grid grid-cols-2 gap-6">
+								{[...Array(4)].map((_, i) => (
+									<div key={i} className="flex gap-4 items-center">
+										<Skeleton.Block className="size-10 rounded-action shrink-0" />
+										<div className="flex flex-col gap-1.5 flex-1">
+											<Skeleton.Text className="w-24" />
+											<Skeleton.Text className="w-full" />
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+	)
+}
+
 export default function BookingConfirmedPage({ params }: PageProps) {
 	const { id } = use(params)
 	return (
-		<Suspense
-			fallback={
-				<main className="flex-1 flex items-center justify-center py-24">
-					<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-				</main>
-			}
-		>
+		<Suspense fallback={<BookingConfirmedSkeleton />}>
 			<ConfirmedPageInner id={id} />
 		</Suspense>
 	)

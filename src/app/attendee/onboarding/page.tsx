@@ -9,6 +9,7 @@ import { useAttendeeSessionStore } from "@/store/attendeeSessionStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import { useAuthStore } from "@/store/authStore"
 import { Button } from "@/components/ui/Button"
+import { Skeleton } from "@/components/ui/Skeleton"
 import { Icon } from "@/components/ui/Icon"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 import CheckSvg from "@/icons/outlined/check.svg"
@@ -357,8 +358,26 @@ function SwipeStepContent({ onDone }: SwipeStepProps) {
 
 	if (loading) {
 		return (
-			<div className="flex items-center justify-center h-full">
-				<div className="w-8 h-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
+			<div className="relative flex flex-col items-center justify-center h-full px-6 py-8 gap-6">
+				<div className="relative flex items-center justify-center w-full" style={{ height: "450px" }}>
+					<Skeleton.Block
+						className="absolute rounded-action"
+						style={{ width: "220px", height: "390px", right: "calc(50% - 130px)", transform: "rotate(5deg) translateX(40px)", zIndex: 1 }}
+					/>
+					<Skeleton.Block
+						className="absolute rounded-action"
+						style={{ width: "220px", height: "390px", left: "calc(50% - 130px)", transform: "rotate(-5deg) translateX(-40px)", zIndex: 1 }}
+					/>
+					<Skeleton.Block
+						className="relative rounded-action shadow-card"
+						style={{ width: "270px", height: "420px", zIndex: 2 }}
+					/>
+				</div>
+				<div className="flex gap-2">
+					{[...Array(5)].map((_, i) => (
+						<div key={i} className={`rounded-full bg-neutral-200 animate-pulse ${i === 2 ? "w-6 h-2" : "size-2"}`} />
+					))}
+				</div>
 			</div>
 		)
 	}

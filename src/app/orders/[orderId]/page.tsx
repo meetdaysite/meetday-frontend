@@ -3,6 +3,7 @@
 import { TicketQRDisplay } from "@/app/events/[id]/book/_components/TicketQRDisplay"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
+import { Skeleton } from "@/components/ui/Skeleton"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
 import HeadphonesSvg from "@/icons/filled/headphones.svg"
 import LockSvg from "@/icons/filled/lock.svg"
@@ -433,11 +434,7 @@ function TicketPageInner({ orderId }: { orderId: string }) {
 	}, [orderId, authLoading])
 
 	if (loading) {
-		return (
-			<main className="flex-1 flex items-center justify-center py-24">
-				<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-			</main>
-		)
+		return <MyTicketPageSkeleton />
 	}
 
 	if (error || !order) {
@@ -462,16 +459,61 @@ function TicketPageInner({ orderId }: { orderId: string }) {
 	return <TicketPageContent order={order} eventDetails={eventDetails} />
 }
 
+function MyTicketPageSkeleton() {
+	return (
+		<main className="flex-1 py-6 md:py-8 pb-12">
+			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
+				<Skeleton.Text className="w-28 mb-4 animate-pulse" />
+				<div className="mb-6 flex flex-col gap-2">
+					<Skeleton.Text className="h-7 w-28" />
+					<Skeleton.Text className="w-48" />
+				</div>
+				<div className="flex gap-8 items-start">
+					<div className="flex-1 min-w-0 flex flex-col gap-5">
+						<div className="rounded-action overflow-hidden border border-border-default flex min-h-72 animate-pulse">
+							<div className="flex-1 bg-neutral-200" />
+							<div className="shrink-0 w-0 border-l-2 border-dashed border-gray-300/60 self-stretch" />
+							<div className="w-56 bg-white shrink-0 flex flex-col items-center justify-center gap-5 p-6">
+								<div className="w-full flex flex-col gap-1.5">
+									<Skeleton.Text className="w-20 h-3" />
+									<Skeleton.Text className="h-5 w-32" />
+								</div>
+								<Skeleton.Block className="size-40 rounded-action" />
+								<Skeleton.Block className="h-7 w-32 rounded-badge" />
+							</div>
+						</div>
+						<div className="rounded-action border border-border-default bg-surface-card p-5 flex items-center justify-center gap-3 animate-pulse">
+							<Skeleton.Block className="h-10 w-32 rounded-action" />
+							<Skeleton.Block className="h-10 w-36 rounded-action" />
+						</div>
+						<div className="rounded-action border border-border-default bg-surface-card p-5 animate-pulse">
+							<div className="grid grid-cols-2 gap-6">
+								{[...Array(4)].map((_, i) => (
+									<div key={i} className="flex gap-4 items-center">
+										<Skeleton.Block className="size-10 rounded-action shrink-0" />
+										<div className="flex flex-col gap-1.5 flex-1">
+											<Skeleton.Text className="w-24" />
+											<Skeleton.Text className="w-full" />
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
+					</div>
+					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0">
+						<Skeleton.Block className="h-56 rounded-panel" />
+						<Skeleton.Block className="h-36 rounded-panel" />
+					</aside>
+				</div>
+			</div>
+		</main>
+	)
+}
+
 export default function MyTicketPage({ params }: PageProps) {
 	const { orderId } = use(params)
 	return (
-		<Suspense
-			fallback={
-				<main className="flex-1 flex items-center justify-center py-24">
-					<div className="size-8 rounded-full border-2 border-action-primary border-t-transparent animate-spin" />
-				</main>
-			}
-		>
+		<Suspense fallback={<MyTicketPageSkeleton />}>
 			<TicketPageInner orderId={orderId} />
 		</Suspense>
 	)

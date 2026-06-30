@@ -11,6 +11,7 @@ import type { PublicTicket } from "@/types/attendee"
 interface TicketSelectorProps {
 	tickets: PublicTicket[]
 	quantities: Record<string, number>
+	allFree: boolean
 	promoCode: string
 	promoApplied: boolean
 	promoError: string | null
@@ -23,6 +24,7 @@ interface TicketSelectorProps {
 export function TicketSelector({
 	tickets,
 	quantities,
+	allFree,
 	promoCode,
 	promoApplied,
 	promoError,
@@ -46,19 +48,26 @@ export function TicketSelector({
 
 			{/* Ticket cards */}
 			<div className="flex flex-col gap-3">
-				{tickets.map((ticket, index) => (
-					<TicketCard
-						key={ticket.id}
-						ticket={ticket}
-						tierIndex={index}
-						quantity={quantities[ticket.id] ?? 1}
-						onQuantityChange={(qty) => onQuantityChange(ticket.id, qty)}
-					/>
-				))}
+				{tickets.length === 0 ? (
+					<div className="rounded-action border border-border-default bg-surface-card p-6 flex flex-col items-center gap-2 text-center">
+						<p className="text-body-sm font-medium text-text-primary">Tickets coming soon</p>
+						<p className="text-label-sm text-text-muted">The organiser hasn&apos;t published ticket tiers yet. Check back shortly.</p>
+					</div>
+				) : (
+					tickets.map((ticket, index) => (
+						<TicketCard
+							key={ticket.id}
+							ticket={ticket}
+							tierIndex={index}
+							quantity={quantities[ticket.id] ?? 1}
+							onQuantityChange={(qty) => onQuantityChange(ticket.id, qty)}
+						/>
+					))
+				)}
 			</div>
 
-			{/* Promo code card */}
-			<div className="rounded-action border border-border-default bg-surface-card p-4 flex items-start gap-4">
+			{/* Promo code card — hidden for fully free events */}
+			{!allFree && <div className="rounded-action border border-border-default bg-surface-card p-4 flex items-start gap-4">
 				<div className="size-10 shrink-0 rounded-action bg-surface-brand-soft flex items-center justify-center">
 					<Icon as={TagPriceSvg} size="md" color="brand" />
 				</div>
@@ -97,7 +106,7 @@ export function TicketSelector({
 						</Button>
 					</div>
 				</div>
-			</div>
+			</div>}
 		</div>
 	)
 }

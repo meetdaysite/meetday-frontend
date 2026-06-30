@@ -72,6 +72,7 @@ export interface PublicTicket {
 	id: string
 	name: string
 	price: string
+	isFree: boolean
 	totalCapacity: number
 	maxPerPerson: number
 	description?: string
@@ -97,6 +98,20 @@ export interface PublicEventMedia {
 	type: "COVER" | "GALLERY" | "VIDEO"
 	order: number
 	createdAt: string
+}
+
+export interface PublicEventCommunity {
+	id: string
+	slug: string
+	name: string
+	description: string
+	type: string
+	access: "PUBLIC" | "PRIVATE"
+	city: string
+	memberCount: number
+	upcomingExperiencesCount: number
+	coverImageUrl: string
+	iconUrl: string
 }
 
 export interface PublicEventDetails {
@@ -126,6 +141,7 @@ export interface PublicEventDetails {
 	tickets: PublicTicket[]
 	refundPolicy: PublicRefundPolicy | null
 	media: PublicEventMedia[]
+	communities: PublicEventCommunity[]
 	startingPrice: number
 	reviewSummary: {
 		averageRating: number | null
