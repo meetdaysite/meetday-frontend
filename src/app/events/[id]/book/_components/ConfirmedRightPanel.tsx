@@ -1,9 +1,6 @@
-import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
 import RocketSvg from "@/icons/filled/rocket.svg"
-import GiftSvg from "@/icons/outlined/gift.svg"
-import MessageSvg from "@/icons/outlined/message.svg"
 
 const WHAT_HAPPENS = [
 	{
@@ -17,28 +14,6 @@ const WHAT_HAPPENS = [
 	},
 ]
 
-function AvatarStack({ count = 4, color: _color = "brand" }: { count?: number; color?: "brand" | "warning" }) {
-	const gradients = [
-		"from-purple-400 to-pink-400",
-		"from-blue-400 to-cyan-400",
-		"from-green-400 to-teal-400",
-		"from-orange-400 to-red-400",
-	]
-	return (
-		<div className="flex items-center gap-1.5">
-			<div className="flex -space-x-2">
-				{[...Array(count)].map((_, i) => (
-					<div
-						key={i}
-						className={`size-7 rounded-full bg-linear-to-br ${gradients[i % gradients.length]} border-2 border-surface-card`}
-						style={{ zIndex: count - i }}
-					/>
-				))}
-			</div>
-			<span className="text-caption text-text-muted">+24</span>
-		</div>
-	)
-}
 
 export function ConfirmedRightPanel() {
 	return (
@@ -61,28 +36,7 @@ export function ConfirmedRightPanel() {
 				</div>
 			</div>
 
-			{/* Join event chat */}
-			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
-				<div className="flex items-center gap-3">
-					<div className="size-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-						<Icon as={MessageSvg} size="md" color="primary" />
-					</div>
-					<div>
-						<p className="text-body-sm font-bold text-text-primary">Join event chat</p>
-						<p className="text-caption text-text-muted leading-snug">
-							Connect with other attendees, share plans and get hyped before the event.
-						</p>
-					</div>
-				</div>
-				<div className="flex items-center justify-between">
-					<AvatarStack />
-					<Button variant="secondary" size="sm" radius="md" className="text-text-brand border-border-brand">
-						Join the chat →
-					</Button>
-				</div>
-			</div>
-
-			{/* Invite friend, get rewarded — commented until invite feature is live
+{/* Invite friend, get rewarded — commented until invite feature is live
 			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">

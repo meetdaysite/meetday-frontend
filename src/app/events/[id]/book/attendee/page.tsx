@@ -101,7 +101,7 @@ function AttendeeDetailsContent({ event, pricingConfig }: { event: PublicEventDe
 
 			setPendingOrderId(order.id)
 
-			if (order.totalAmount === 0) {
+			if (parseFloat(String(order.totalAmount)) === 0) {
 				await confirmFreeOrder(order.id)
 				const confirmed = await getOrderDetail(order.id)
 				setConfirmedOrder(confirmed)

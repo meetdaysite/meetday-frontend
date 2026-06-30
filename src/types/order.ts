@@ -27,7 +27,7 @@ export interface OrderDetail {
 	status: OrderStatus
 	eventId: string
 	items: OrderItemDetail[]
-	totalAmount: number
+	totalAmount: string | number
 	platformFee: number
 	tax: number
 	couponCode?: string

@@ -109,7 +109,7 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 					{/* Left */}
 					<div className="flex-1 min-w-0 flex flex-col gap-6">
 						{/* ── Main confirmation card ── */}
-						<div className="rounded-action border border-border-default bg-surface-card p-6 flex flex-col gap-6">
+						<div className="rounded-panel border border-border-default bg-surface-card p-6 flex flex-col gap-6 shadow-md">
 							{/* Success hero */}
 							<div className="flex flex-col items-center text-center gap-4 py-2">
 								<div className="size-16 rounded-full bg-green-100 flex items-center justify-center">
@@ -187,7 +187,7 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 											height={13}
 										/>
 										<span className="text-caption font-semibold text-text-secondary">
-											{formatINR(order.totalAmount)}
+											{formatINR(parseFloat(String(order.totalAmount)))}
 										</span>
 									</div>
 								</div>
@@ -229,15 +229,15 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 							{/* Action buttons */}
 							<div className="flex flex-wrap justify-center gap-3">
 								<Link href={`/orders/${order.id}`}>
-								<Button
-									variant="primary"
-									size="md"
-									radius="md"
-									leftIcon={<Icon as={TicketSvg} size="sm" color="inherit" />}
-								>
-									View my ticket
-								</Button>
-							</Link>
+									<Button
+										variant="primary"
+										size="md"
+										radius="md"
+										leftIcon={<Icon as={TicketSvg} size="sm" color="inherit" />}
+									>
+										View my ticket
+									</Button>
+								</Link>
 							</div>
 
 							{/* Secure note */}
@@ -248,16 +248,20 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 								</span>
 							</div>
 						</div>
+					</div>
 
+					{/* Right */}
+					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">
+						<ConfirmedRightPanel />
 						{/* Trust footer card */}
-						<div className="rounded-action border border-border-default bg-surface-card p-5">
-							<div className="grid grid-cols-2 gap-6">
+						<div className="rounded-panel border border-border-default bg-surface-card p-5 shadow-md">
+							<div className="grid gap-6">
 								{TRUST_ITEMS.map(item => (
-									<div key={item.title} className="flex gap-4 items-center">
+									<div key={item.title} className="flex gap-3 items-start">
 										<div
-											className={`size-10 rounded-action ${item.iconBgColor} flex items-center justify-center`}
+											className={`size-9 rounded-action ${item.iconBgColor} flex items-center justify-center shrink-0`}
 										>
-											<Icon as={item.icon} size="lg" color={item.color} />
+											<Icon as={item.icon} size="md" color={item.color} />
 										</div>
 										<div>
 											<p className="text-label-sm font-semibold text-text-primary">
@@ -276,11 +280,6 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 								))}
 							</div>
 						</div>
-					</div>
-
-					{/* Right */}
-					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">
-						<ConfirmedRightPanel />
 					</aside>
 				</div>
 			</div>
