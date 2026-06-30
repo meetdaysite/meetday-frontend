@@ -1,3 +1,4 @@
+import type React from "react"
 import clsx from "clsx"
 
 // ─── Base atom ────────────────────────────────────────────────────────────────
@@ -162,8 +163,8 @@ Skeleton.SavedItem = function SkeletonSavedItem({ className }: { className?: str
 
 // ─── Generic block (full-width placeholder) ───────────────────────────────────
 
-Skeleton.Block = function SkeletonBlock({ className }: { className?: string }) {
-	return <div className={clsx("rounded-action bg-neutral-200 animate-pulse", className)} />
+Skeleton.Block = function SkeletonBlock({ className, style }: { className?: string; style?: React.CSSProperties }) {
+	return <div className={clsx("rounded-action bg-neutral-200 animate-pulse", className)} style={style} />
 }
 
 // ─── Row (label + value — for activity/stat rows) ─────────────────────────────
