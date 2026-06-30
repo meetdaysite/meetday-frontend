@@ -10,7 +10,9 @@ import { LogoutConfirmDialog } from "@/components/ui/LogoutConfirmDialog"
 import { useAuthStore } from "@/store/authStore"
 import { useHostStore } from "@/store/hostStore"
 import { useNotificationStore } from "@/store/notificationStore"
+import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import { getHostProfile } from "@/lib/api"
+import { Button } from "@/components/ui/Button"
 
 function HamburgerIcon() {
 	return (
@@ -172,7 +174,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 			.catch((e) => {
 				if (!cancelled) {
 					if (e instanceof ApiError && e.statusCode === 404) {
-						router.replace("/onboarding")
+						// If the signed-in user has an attendee profile they're not a host — send to their portal
+						const meProfile = useAttendeeProfileStore.getState().profile
+						if (meProfile?.attendeeProfile != null) {
+							router.replace("/attendee")
+						} else {
+							router.replace("/onboarding")
+						}
 					} else {
 						// Don't redirect to /login — the user is still authenticated in Firebase,
 						// which would cause an immediate bounce back to /dashboard and an infinite loop.
@@ -197,22 +205,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 	if (profileError) {
 		return (
-			<div className="min-h-screen flex items-center justify-center bg-surface-page px-4">
-				<div className="flex flex-col items-center gap-4 text-center">
-					<p className="text-body-sm text-text-secondary">Failed to load your profile. Please try again.</p>
-					<button
-						onClick={() => { setProfileError(false) }}
-						className="text-label-sm font-medium text-text-link hover:underline"
-					>
-						Retry
-					</button>
-					<button
-						onClick={handleSignOut}
-						className="text-label-sm font-medium text-text-secondary hover:text-text-primary transition-colors underline underline-offset-2"
-					>
-						Sign out
-					</button>
-				</div>
+			<div className="min-h-screen flex flex-col bg-surface-page overflow-hidden">
+				<header className="shrink-0 px-6 sm:px-10 lg:px-16 py-5">
+					<Image src="/assets/brand_logo.svg" alt="Meetday" width={120} height={32} className="h-8 w-auto" />
+				</header>
+				<main className="flex-1 flex items-center justify-center">
+					<div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-10 lg:gap-12 px-6 sm:px-10 lg:px-16 py-8">
+						<div className="w-full lg:w-3/5 flex items-center justify-center order-first lg:order-last">
+							<Image
+								src="/assets/errors/500.png"
+								alt="Failed to load profile"
+								width={800}
+								height={800}
+								priority
+								className="w-full h-auto"
+							/>
+						</div>
+						<div className="w-full lg:w-2/5 flex flex-col items-center lg:items-start gap-4 text-center lg:text-left">
+							<p className="text-[6rem] sm:text-[8rem] lg:text-[12rem] font-bold leading-none tracking-tight text-text-brand">
+								500
+							</p>
+							<div className="-mt-2">
+								<h1 className="text-heading-sm font-bold text-text-primary">Failed to load profile</h1>
+								<p className="text-body-sm text-text-secondary mt-2 max-w-sm">
+									We couldn&apos;t load your host profile. Check your connection and try again.
+								</p>
+							</div>
+							<div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mt-2">
+								<Button onClick={() => { setProfileError(false) }}>Try again</Button>
+								<button
+									onClick={handleSignOut}
+									className="inline-flex items-center gap-2 h-(--size-action-md) px-4 text-label-sm font-medium rounded-action bg-action-secondary text-action-secondary-text border border-action-secondary-border hover:bg-action-secondary-hover transition-colors duration-(--duration-120)"
+								>
+									Sign out
+								</button>
+							</div>
+						</div>
+					</div>
+				</main>
 			</div>
 		)
 	}

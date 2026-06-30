@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { AttendeeLayoutShell } from "@/components/attendee/AttendeeLayoutShell"
 
 export const metadata: Metadata = {
 	title: "Meetday — Find experiences that feel like you",
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 }
 
 export default function AttendeeLayout({ children }: { children: React.ReactNode }) {
-	return <>{children}</>
+	return <AttendeeLayoutShell>{children}</AttendeeLayoutShell>
 }
