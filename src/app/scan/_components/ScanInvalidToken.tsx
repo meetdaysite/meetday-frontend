@@ -15,7 +15,7 @@ export function ScanInvalidToken({ message }: { message?: string }) {
 							: "This scanner link is invalid or has already been deactivated. Contact your event host."}
 					</p>
 				</div>
-				<div className="flex items-center gap-2 px-4 py-3 bg-neutral-50 rounded-xl border border-neutral-200">
+				<div className="flex items-center gap-2 px-4 py-3 bg-neutral-50 rounded-panel border border-neutral-200 shadow-md">
 					<ShieldIcon />
 					<p className="text-xs text-neutral-500">Secure connection · Do not share this link</p>
 				</div>

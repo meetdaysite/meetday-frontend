@@ -67,7 +67,7 @@ export function TicketSelector({
 			</div>
 
 			{/* Promo code card — hidden for fully free events */}
-			{!allFree && <div className="rounded-action border border-border-default bg-surface-card p-4 flex items-start gap-4">
+			{!allFree && <div className="rounded-panel border border-border-default bg-surface-card p-4 flex items-start gap-4 shadow-md">
 				<div className="size-10 shrink-0 rounded-action bg-surface-brand-soft flex items-center justify-center">
 					<Icon as={TagPriceSvg} size="md" color="brand" />
 				</div>

@@ -58,7 +58,7 @@ export function LatestFromCommunity({ communityId, isMember, onViewAll }: Latest
 	}, [communityId])
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-5">
+		<div className="rounded-panel bg-surface-card border border-border-default p-5 shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<div className="flex items-center gap-2">
 					<p className="text-body-md font-semibold text-text-primary">Latest from community</p>

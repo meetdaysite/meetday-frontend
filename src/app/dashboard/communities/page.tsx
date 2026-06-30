@@ -362,7 +362,7 @@ function ActivityRow({ label, value }: { label: string; value: number | string }
 
 function ActivityCard({ loading, activity }: { loading: boolean; activity: HostCommunityActivity | null }) {
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center gap-2.5 mb-4">
 				<div className="size-8 rounded-badge bg-surface-vibe-soft flex items-center justify-center shrink-0">
 					<Icon as={UsersGroupSvg} size="sm" color="vibe" />
@@ -398,7 +398,7 @@ function ActivityCard({ loading, activity }: { loading: boolean; activity: HostC
 
 function FindCommunityCard() {
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<p className="text-body-md font-semibold text-text-primary">Find the right community</p>
 			<p className="text-label-sm text-text-secondary mt-1 mb-4 leading-snug">
 				Communities help you reach new audiences and grow your impact.

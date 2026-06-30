@@ -167,7 +167,7 @@ function ProfileSkeleton() {
 					<Skeleton.Block className="h-10 w-32 rounded-avatar shrink-0" />
 				</div>
 				<div className="flex flex-col lg:flex-row gap-5 lg:gap-8 items-start">
-					<div className="flex-1 rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4">
+					<div className="flex-1 rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
 						<Skeleton.Text className="w-16 h-4" />
 						<Skeleton.Text className="w-full" />
 						<Skeleton.Block className="h-11 w-full rounded-action" />

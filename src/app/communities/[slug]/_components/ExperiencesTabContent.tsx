@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useReducer, useEffect } from "react"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
@@ -12,6 +12,43 @@ import type { ExploreEvent } from "@/types/attendee"
 import type { ExperienceFilters } from "./CommunitySidePanel"
 import { DEFAULT_EXPERIENCE_FILTERS } from "./CommunitySidePanel"
 import { Skeleton } from "@/components/ui/Skeleton"
+
+type State = {
+	events: ExploreEvent[]
+	total: number
+	page: number
+	loading: boolean
+	loadingMore: boolean
+	error: string | null
+}
+
+type Action =
+	| { type: "FETCH_START" }
+	| { type: "FETCH_SUCCESS"; events: ExploreEvent[]; total: number }
+	| { type: "FETCH_ERROR"; error: string }
+	| { type: "LOAD_MORE_START" }
+	| { type: "LOAD_MORE_SUCCESS"; events: ExploreEvent[]; total: number; page: number }
+	| { type: "LOAD_MORE_ERROR"; error: string }
+
+const initialState: State = {
+	events: [],
+	total: 0,
+	page: 1,
+	loading: true,
+	loadingMore: false,
+	error: null,
+}
+
+function reducer(state: State, action: Action): State {
+	switch (action.type) {
+		case "FETCH_START":      return { ...state, loading: true, error: null }
+		case "FETCH_SUCCESS":    return { ...state, loading: false, events: action.events, total: action.total, page: 1 }
+		case "FETCH_ERROR":      return { ...state, loading: false, error: action.error }
+		case "LOAD_MORE_START":  return { ...state, loadingMore: true }
+		case "LOAD_MORE_SUCCESS": return { ...state, loadingMore: false, events: [...state.events, ...action.events], total: action.total, page: action.page }
+		case "LOAD_MORE_ERROR":  return { ...state, loadingMore: false, error: action.error }
+	}
+}
 
 // ─── Mapper ───────────────────────────────────────────────────────────────────
 
@@ -41,12 +78,7 @@ export function ExperiencesTabContent({
 	communitySlug: string
 	filters?: ExperienceFilters
 }) {
-	const [events, setEvents] = useState<ExploreEvent[]>([])
-	const [total, setTotal] = useState(0)
-	const [page, setPage] = useState(1)
-	const [loading, setLoading] = useState(true)
-	const [loadingMore, setLoadingMore] = useState(false)
-	const [error, setError] = useState<string | null>(null)
+	const [{ events, total, page, loading, loadingMore, error }, dispatch] = useReducer(reducer, initialState)
 
 	const buildParams = (pageNum: number) => ({
 		page: pageNum,
@@ -59,30 +91,19 @@ export function ExperiencesTabContent({
 	})
 
 	useEffect(() => {
-		setLoading(true)
-		setError(null)
+		dispatch({ type: "FETCH_START" })
 		getCommunityEvents(communitySlug, buildParams(1))
-			.then(res => {
-				setEvents(res.data.map(toExploreEvent))
-				setTotal(res.total)
-				setPage(1)
-			})
-			.catch((err) => setError(getApiErrorMessage(err)))
-			.finally(() => setLoading(false))
+			.then(res => dispatch({ type: "FETCH_SUCCESS", events: res.data.map(toExploreEvent), total: res.total }))
+			.catch((err) => dispatch({ type: "FETCH_ERROR", error: getApiErrorMessage(err) }))
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [communitySlug, filters.dateFilter, filters.categoryId, filters.interestSlugs.join(","), filters.sortBy, filters.sortOrder])
 
 	const handleLoadMore = () => {
 		const next = page + 1
-		setLoadingMore(true)
+		dispatch({ type: "LOAD_MORE_START" })
 		getCommunityEvents(communitySlug, buildParams(next))
-			.then(res => {
-				setEvents(prev => [...prev, ...res.data.map(toExploreEvent)])
-				setTotal(res.total)
-				setPage(next)
-			})
-			.catch((err) => setError(getApiErrorMessage(err)))
-			.finally(() => setLoadingMore(false))
+			.then(res => dispatch({ type: "LOAD_MORE_SUCCESS", events: res.data.map(toExploreEvent), total: res.total, page: next }))
+			.catch((err) => dispatch({ type: "LOAD_MORE_ERROR", error: getApiErrorMessage(err) }))
 	}
 
 	const hasMore = events.length < total
@@ -92,7 +113,7 @@ export function ExperiencesTabContent({
 		filters.interestSlugs.length > 0
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-5">
+		<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-5 shadow-md">
 			<div>
 				<p className="text-body-md font-semibold text-text-primary">All experiences from this community</p>
 				{!loading && total > 0 && (
@@ -113,12 +134,10 @@ export function ExperiencesTabContent({
 						variant="secondary"
 						size="sm"
 						onClick={() => {
-							setLoading(true)
-							setError(null)
+							dispatch({ type: "FETCH_START" })
 							getCommunityEvents(communitySlug, buildParams(1))
-								.then(res => { setEvents(res.data.map(toExploreEvent)); setTotal(res.total); setPage(1) })
-								.catch((err) => setError(getApiErrorMessage(err)))
-								.finally(() => setLoading(false))
+								.then(res => dispatch({ type: "FETCH_SUCCESS", events: res.data.map(toExploreEvent), total: res.total }))
+								.catch((err) => dispatch({ type: "FETCH_ERROR", error: getApiErrorMessage(err) }))
 						}}
 					>
 						Retry

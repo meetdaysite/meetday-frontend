@@ -225,7 +225,7 @@ function CreatePostCard({
 	}
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-4 flex flex-col gap-3">
+		<div className="rounded-panel bg-surface-card border border-border-default p-4 flex flex-col gap-3 shadow-md">
 			{/* Input row */}
 			<div className="flex items-start gap-3">
 				{/* Avatar */}
@@ -264,7 +264,7 @@ function CreatePostCard({
 						</div>
 					)}
 
-					<div className="flex items-end gap-2 px-4 py-2.5 rounded-2xl bg-surface-page border border-border-default transition-all">
+					<div className="flex items-end gap-2 px-4 py-2.5 rounded-panel bg-surface-page border border-border-default transition-all">
 						<textarea
 							ref={textareaRef}
 							rows={2}
@@ -621,340 +621,354 @@ function PostCard({
 
 	return (
 		<>
-		<div
-			ref={cardRef}
-			className="rounded-panel bg-surface-card border border-border-default p-4 flex flex-col gap-3"
-		>
-			{/* Clickable post body */}
-			<div className="flex flex-col gap-3 cursor-pointer" onClick={onOpenDetail}>
-
-			{/* Header */}
-			<div className="flex items-start justify-between gap-3">
-				<div className="flex items-center gap-2.5">
-					{(() => {
-						const authorInitials = post.author.name
-							.split(" ")
-							.map(n => n[0])
-							.slice(0, 2)
-							.join("")
-							.toUpperCase()
-						const authorColor = avatarColor(post.author.name)
-						return post.author.avatarUrl ? (
-							<div className="relative size-10 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-								<Image
-									src={post.author.avatarUrl}
-									alt={post.author.name}
-									fill
-									sizes="40px"
-									className="object-cover"
-								/>
-							</div>
-						) : (
-							<div
-								className={`size-10 rounded-full ${authorColor.bg} border ${authorColor.border} flex items-center justify-center shrink-0`}
-							>
-								<span className={`text-label-xs font-bold ${authorColor.text}`}>
-									{authorInitials}
-								</span>
-							</div>
-						)
-					})()}
-					<div>
-						<div className="flex items-center gap-1.5">
-							<span className="text-label-sm font-bold text-text-primary">
-								{post.author.name}
-							</span>
-							{post.author.badge && (
-								<span className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-avatar px-1.5 py-0.5">
-									{post.author.badge.replace(/_/g, " ")}
-								</span>
-							)}
-						</div>
-						<div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-							<span className="text-[11px] text-text-muted">{timeAgo(post.createdAt)}</span>
-							{pinned && (
-								<span className="flex items-center gap-1 text-[10px] font-semibold text-text-brand bg-surface-brand-soft border border-border-focus rounded-avatar px-1.5 py-0.5">
-									<Icon as={PinFilledSvg} size="xs" color="brand" />
-									Pinned
-								</span>
-							)}
-							{post.category !== "GENERAL" && CATEGORY_LABELS[post.category] && (
-								<span className="text-[10px] font-semibold bg-surface-vibe-soft text-violet-600 border border-purple-200 rounded-avatar px-2 py-0.5">
-									{CATEGORY_LABELS[post.category]}
-								</span>
-							)}
-							{post.topic && (
-								<span className="text-[10px] font-semibold bg-surface-hover text-text-secondary border border-border-default rounded-avatar px-2 py-0.5">
-									{post.topic}
-								</span>
-							)}
-							{post.event && (
-								<span className="text-[10px] font-semibold bg-green-50 text-green-700 border border-green-200 rounded-avatar px-2 py-0.5">
-									🎟 {post.event.title}
-								</span>
-							)}
-						</div>
-					</div>
-				</div>
-				{isAuthor && (
-					<button
-						type="button"
-						onClick={e => { e.stopPropagation(); setEditOpen(true) }}
-						className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors shrink-0"
-						title="Edit post"
-					>
-						<Icon as={PenSvg} size="sm" color="inherit" />
-					</button>
-				)}
-			</div>
-
-			{/* Content */}
-			{post.content && (
-				<p className="text-label-sm text-text-primary font-normal leading-relaxed">{post.content}</p>
-			)}
-
-			{/* Poll */}
-			{post.poll && (
-				<div className="flex flex-col gap-2">
-					{pollOptions.map(opt => {
-						const pct = totalVotes > 0 ? Math.round((opt.voteCount / totalVotes) * 100) : 0
-						const isVoted = myVote === opt.id
-						return (
-							<button
-								key={opt.id}
-								type="button"
-								onClick={e => { e.stopPropagation(); handlePollVote(opt.id) }}
-								className={`relative flex items-center gap-3 px-3 py-2 rounded-action border overflow-hidden bg-surface-page text-left transition-colors hover:border-border-focus ${isVoted ? "border-border-focus" : "border-border-default"}`}
-							>
-								<div
-									className="absolute inset-y-0 left-0 bg-surface-brand-soft transition-all duration-300"
-									style={{ width: `${pct}%` }}
-								/>
-								<span
-									className={`relative text-label-sm font-medium flex-1 ${isVoted ? "text-text-brand font-bold" : "text-text-primary"}`}
-								>
-									{opt.text}
-								</span>
-								<span
-									className={`relative text-[11px] font-medium shrink-0 ${isVoted ? "text-text-brand font-bold" : "text-text-primary"}`}
-								>
-									{pct}%
-								</span>
-							</button>
-						)
-					})}
-					<span className="text-[11px] text-text-muted">{totalVotes} votes</span>
-				</div>
-			)}
-
-			{/* Photos */}
-			<PostPhotoGrid urls={post.mediaUrls} />
-
-			</div>{/* end clickable body */}
-
-			{/* Actions */}
-			<div className="flex items-center justify-between gap-3 pt-2">
-				<div className="flex items-center gap-4">
-					<button
-						type="button"
-						onClick={handleReaction}
-						className={`flex items-center gap-1.5 text-label-sm font-medium transition-colors ${reacted ? "text-red-500" : "text-text-secondary hover:text-text-brand"}`}
-					>
-						<Icon as={reacted ? HeartFilledSvg : HeartSvg} size="sm" color="inherit" />
-						{reactionCount}
-					</button>
-					<button
-						type="button"
-						onClick={handleToggleComments}
-						className={`flex items-center gap-1.5 text-label-sm font-medium transition-colors ${commentsOpen ? "text-text-brand" : "text-text-secondary hover:text-text-brand"}`}
-					>
-						<Icon as={ChatDotsSvg} size="sm" color="inherit" />
-						{commentCount}
-					</button>
-				</div>
-
-				<div className="flex items-center gap-3">
-					<button
-						type="button"
-						onClick={handleBookmark}
-						className={`transition-colors ${bookmarked ? "text-text-brand" : "text-text-muted hover:text-text-brand"}`}
-					>
-						<Icon as={bookmarked ? BookmarkFilledSvg : BookmarkSvg} size="sm" color="inherit" />
-					</button>
-					{isMod && (
-						<button
-							type="button"
-							onClick={handlePin}
-							title={pinned ? "Unpin post" : "Pin post"}
-							className={`transition-colors ${pinned ? "text-text-brand" : "text-text-muted hover:text-text-brand"}`}
-						>
-							<Icon as={pinned ? PinFilledSvg : PinSvg} size="sm" color="inherit" />
-						</button>
-					)}
-				</div>
-			</div>
-			{/* Comments panel */}
-			{commentsOpen && (
-				<div className="border-t border-border-default pt-3 flex flex-col gap-3">
-					{/* Input */}
-					<div className="flex items-center gap-2">
-						{profile?.avatarUrl ? (
-							<div className="relative size-7 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-								<Image
-									src={profile.avatarUrl}
-									alt=""
-									fill
-									sizes="28px"
-									className="object-cover"
-								/>
-							</div>
-						) : (
-							<div
-								className={`size-7 rounded-full ${avatarColor(profile?.firstName ?? "?").bg} border ${avatarColor(profile?.firstName ?? "?").border} flex items-center justify-center shrink-0`}
-							>
-								<span
-									className={`text-[9px] font-bold ${avatarColor(profile?.firstName ?? "?").text}`}
-								>
-									{(profile?.firstName?.[0] ?? "").toUpperCase()}
-									{(profile?.lastName?.[0] ?? "").toUpperCase()}
-								</span>
-							</div>
-						)}
-						<div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-page border border-border-default focus-within:border-border-focus transition-colors">
-							<input
-								ref={commentInputRef}
-								type="text"
-								value={commentText}
-								onChange={e => setCommentText(e.target.value)}
-								onKeyDown={e => {
-									if (e.key === "Enter" && !e.shiftKey) {
-										e.preventDefault()
-										handleAddComment()
-									}
-								}}
-								placeholder="Write a comment…"
-								className="flex-1 text-label-sm text-text-primary placeholder:text-text-muted bg-transparent outline-none"
-							/>
-							<button
-								type="button"
-								onClick={handleAddComment}
-								disabled={!commentText.trim() || submittingComment}
-								className="size-6 rounded-full bg-action-primary flex items-center justify-center shrink-0 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-action-primary-hover transition-colors"
-							>
-								<Icon as={PlaneSvg} size="xs" color="inverse" />
-							</button>
-						</div>
-					</div>
-
-					{/* List */}
-					{commentsLoading && comments.length === 0 ? (
-						<div className="flex flex-col gap-2.5">
-							{[1, 2].map(i => (
-								<Skeleton.ListItem key={i} avatarSize="xs" />
-							))}
-						</div>
-					) : comments.length === 0 ? (
-						<p className="text-label-sm text-text-muted text-center py-2">
-							No comments yet. Be the first!
-						</p>
-					) : (
-						<div className="flex flex-col gap-2.5">
-							{comments.map(comment => {
-								const isOwn = comment.author.id === profileId
-								const canDelete = isOwn || isMod
-								const initials = comment.author.name
+			<div
+				ref={cardRef}
+				className="rounded-panel bg-surface-card border border-border-default p-4 flex flex-col gap-3 shadow-md"
+			>
+				{/* Clickable post body */}
+				<div className="flex flex-col gap-3 cursor-pointer" onClick={onOpenDetail}>
+					{/* Header */}
+					<div className="flex items-start justify-between gap-3">
+						<div className="flex items-center gap-2.5">
+							{(() => {
+								const authorInitials = post.author.name
 									.split(" ")
 									.map(n => n[0])
 									.slice(0, 2)
 									.join("")
 									.toUpperCase()
-								const color = avatarColor(comment.author.name)
-								return (
-									<div key={comment.id} className="flex items-start gap-2 group">
-										{comment.author.avatarUrl ? (
-											<div className="relative size-7 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
-												<Image
-													src={comment.author.avatarUrl}
-													alt={comment.author.name}
-													fill
-													sizes="28px"
-													className="object-cover"
-												/>
-											</div>
-										) : (
-											<div
-												className={`size-7 rounded-full ${color.bg} border ${color.border} flex items-center justify-center shrink-0`}
-											>
-												<span className={`text-[9px] font-bold ${color.text}`}>
-													{initials}
-												</span>
-											</div>
-										)}
-										<div className="flex-1 min-w-0">
-											<div className="inline-block bg-surface-hover rounded-2xl rounded-tl-sm px-1 max-w-full">
-												<div className="flex items-start gap-1.5">
-													<p className="text-[11px] font-semibold text-text-primary">
-														{comment.author.name}
-													</p>
-													<p className="text-[10px] text-text-muted ml-1">
-														{timeAgo(comment.createdAt)}
-													</p>
-												</div>
-												<p className="text-label-sm font-normal text-text-primary leading-snug wrap-break-word">
-													{comment.content}
-												</p>
-											</div>
-										</div>
-										{canDelete && (
-											<button
-												type="button"
-												onClick={() => setDeleteTargetCommentId(comment.id)}
-												className="opacity-0 group-hover:opacity-100 p-1 rounded text-text-muted hover:text-red-500 transition-all shrink-0 mt-1"
-												title="Delete comment"
-											>
-												<Icon as={TrashBinSvg} size="xs" color="inherit" />
-											</button>
-										)}
+								const authorColor = avatarColor(post.author.name)
+								return post.author.avatarUrl ? (
+									<div className="relative size-10 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
+										<Image
+											src={post.author.avatarUrl}
+											alt={post.author.name}
+											fill
+											sizes="40px"
+											className="object-cover"
+										/>
+									</div>
+								) : (
+									<div
+										className={`size-10 rounded-full ${authorColor.bg} border ${authorColor.border} flex items-center justify-center shrink-0`}
+									>
+										<span className={`text-label-xs font-bold ${authorColor.text}`}>
+											{authorInitials}
+										</span>
 									</div>
 								)
+							})()}
+							<div>
+								<div className="flex items-center gap-1.5">
+									<span className="text-label-sm font-bold text-text-primary">
+										{post.author.name}
+									</span>
+									{post.author.badge && (
+										<span className="text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-avatar px-1.5 py-0.5">
+											{post.author.badge.replace(/_/g, " ")}
+										</span>
+									)}
+								</div>
+								<div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+									<span className="text-[11px] text-text-muted">
+										{timeAgo(post.createdAt)}
+									</span>
+									{pinned && (
+										<span className="flex items-center gap-1 text-[10px] font-semibold text-text-brand bg-surface-brand-soft border border-border-focus rounded-avatar px-1.5 py-0.5">
+											<Icon as={PinFilledSvg} size="xs" color="brand" />
+											Pinned
+										</span>
+									)}
+									{post.category !== "GENERAL" && CATEGORY_LABELS[post.category] && (
+										<span className="text-[10px] font-semibold bg-surface-vibe-soft text-violet-600 border border-purple-200 rounded-avatar px-2 py-0.5">
+											{CATEGORY_LABELS[post.category]}
+										</span>
+									)}
+									{post.topic && (
+										<span className="text-[10px] font-semibold bg-surface-hover text-text-secondary border border-border-default rounded-avatar px-2 py-0.5">
+											{post.topic}
+										</span>
+									)}
+									{post.event && (
+										<span className="text-[10px] font-semibold bg-green-50 text-green-700 border border-green-200 rounded-avatar px-2 py-0.5">
+											🎟 {post.event.title}
+										</span>
+									)}
+								</div>
+							</div>
+						</div>
+						{isAuthor && (
+							<button
+								type="button"
+								onClick={e => {
+									e.stopPropagation()
+									setEditOpen(true)
+								}}
+								className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-surface-hover transition-colors shrink-0"
+								title="Edit post"
+							>
+								<Icon as={PenSvg} size="sm" color="inherit" />
+							</button>
+						)}
+					</div>
+
+					{/* Content */}
+					{post.content && (
+						<p className="text-label-sm text-text-primary font-normal leading-relaxed">
+							{post.content}
+						</p>
+					)}
+
+					{/* Poll */}
+					{post.poll && (
+						<div className="flex flex-col gap-2">
+							{pollOptions.map(opt => {
+								const pct =
+									totalVotes > 0 ? Math.round((opt.voteCount / totalVotes) * 100) : 0
+								const isVoted = myVote === opt.id
+								return (
+									<button
+										key={opt.id}
+										type="button"
+										onClick={e => {
+											e.stopPropagation()
+											handlePollVote(opt.id)
+										}}
+										className={`relative flex items-center gap-3 px-3 py-2 rounded-action border overflow-hidden bg-surface-page text-left transition-colors hover:border-border-focus ${isVoted ? "border-border-focus" : "border-border-default"}`}
+									>
+										<div
+											className="absolute inset-y-0 left-0 bg-surface-brand-soft transition-all duration-300"
+											style={{ width: `${pct}%` }}
+										/>
+										<span
+											className={`relative text-label-sm font-medium flex-1 ${isVoted ? "text-text-brand font-bold" : "text-text-primary"}`}
+										>
+											{opt.text}
+										</span>
+										<span
+											className={`relative text-[11px] font-medium shrink-0 ${isVoted ? "text-text-brand font-bold" : "text-text-primary"}`}
+										>
+											{pct}%
+										</span>
+									</button>
+								)
 							})}
-							{commentsNextCursor && (
-								<button
-									type="button"
-									onClick={() => loadComments(commentsNextCursor)}
-									disabled={commentsLoading}
-									className="text-label-sm text-text-brand hover:underline disabled:opacity-50 text-center"
-								>
-									{commentsLoading ? "Loading…" : "Load more comments"}
-								</button>
-							)}
+							<span className="text-[11px] text-text-muted">{totalVotes} votes</span>
 						</div>
 					)}
+
+					{/* Photos */}
+					<PostPhotoGrid urls={post.mediaUrls} />
 				</div>
-			)}
-		</div>
+				{/* end clickable body */}
 
-		<ConfirmDialog
-			open={deleteTargetCommentId !== null}
-			title="Delete comment?"
-			description="This will permanently remove your comment."
-			confirmLabel="Delete"
-			destructive
-			onClose={() => setDeleteTargetCommentId(null)}
-			onConfirm={async () => {
-				if (deleteTargetCommentId) await handleDeleteComment(deleteTargetCommentId)
-				setDeleteTargetCommentId(null)
-			}}
-		/>
+				{/* Actions */}
+				<div className="flex items-center justify-between gap-3 pt-2">
+					<div className="flex items-center gap-4">
+						<button
+							type="button"
+							onClick={handleReaction}
+							className={`flex items-center gap-1.5 text-label-sm font-medium transition-colors ${reacted ? "text-red-500" : "text-text-secondary hover:text-text-brand"}`}
+						>
+							<Icon as={reacted ? HeartFilledSvg : HeartSvg} size="sm" color="inherit" />
+							{reactionCount}
+						</button>
+						<button
+							type="button"
+							onClick={handleToggleComments}
+							className={`flex items-center gap-1.5 text-label-sm font-medium transition-colors ${commentsOpen ? "text-text-brand" : "text-text-secondary hover:text-text-brand"}`}
+						>
+							<Icon as={ChatDotsSvg} size="sm" color="inherit" />
+							{commentCount}
+						</button>
+					</div>
 
-		{editOpen && (
-			<EditPostModal
-				post={post}
-				communityId={communityId}
-				onClose={() => setEditOpen(false)}
-				onSaved={updated => setPost(updated)}
+					<div className="flex items-center gap-3">
+						<button
+							type="button"
+							onClick={handleBookmark}
+							className={`transition-colors ${bookmarked ? "text-text-brand" : "text-text-muted hover:text-text-brand"}`}
+						>
+							<Icon
+								as={bookmarked ? BookmarkFilledSvg : BookmarkSvg}
+								size="sm"
+								color="inherit"
+							/>
+						</button>
+						{isMod && (
+							<button
+								type="button"
+								onClick={handlePin}
+								title={pinned ? "Unpin post" : "Pin post"}
+								className={`transition-colors ${pinned ? "text-text-brand" : "text-text-muted hover:text-text-brand"}`}
+							>
+								<Icon as={pinned ? PinFilledSvg : PinSvg} size="sm" color="inherit" />
+							</button>
+						)}
+					</div>
+				</div>
+				{/* Comments panel */}
+				{commentsOpen && (
+					<div className="border-t border-border-default pt-3 flex flex-col gap-3">
+						{/* Input */}
+						<div className="flex items-center gap-2">
+							{profile?.avatarUrl ? (
+								<div className="relative size-7 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
+									<Image
+										src={profile.avatarUrl}
+										alt=""
+										fill
+										sizes="28px"
+										className="object-cover"
+									/>
+								</div>
+							) : (
+								<div
+									className={`size-7 rounded-full ${avatarColor(profile?.firstName ?? "?").bg} border ${avatarColor(profile?.firstName ?? "?").border} flex items-center justify-center shrink-0`}
+								>
+									<span
+										className={`text-[9px] font-bold ${avatarColor(profile?.firstName ?? "?").text}`}
+									>
+										{(profile?.firstName?.[0] ?? "").toUpperCase()}
+										{(profile?.lastName?.[0] ?? "").toUpperCase()}
+									</span>
+								</div>
+							)}
+							<div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-page border border-border-default focus-within:border-border-focus transition-colors">
+								<input
+									ref={commentInputRef}
+									type="text"
+									value={commentText}
+									onChange={e => setCommentText(e.target.value)}
+									onKeyDown={e => {
+										if (e.key === "Enter" && !e.shiftKey) {
+											e.preventDefault()
+											handleAddComment()
+										}
+									}}
+									placeholder="Write a comment…"
+									className="flex-1 text-label-sm text-text-primary placeholder:text-text-muted bg-transparent outline-none"
+								/>
+								<button
+									type="button"
+									onClick={handleAddComment}
+									disabled={!commentText.trim() || submittingComment}
+									className="size-6 rounded-full bg-action-primary flex items-center justify-center shrink-0 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-action-primary-hover transition-colors"
+								>
+									<Icon as={PlaneSvg} size="xs" color="inverse" />
+								</button>
+							</div>
+						</div>
+
+						{/* List */}
+						{commentsLoading && comments.length === 0 ? (
+							<div className="flex flex-col gap-2.5">
+								{[1, 2].map(i => (
+									<Skeleton.ListItem key={i} avatarSize="xs" />
+								))}
+							</div>
+						) : comments.length === 0 ? (
+							<p className="text-label-sm text-text-muted text-center py-2">
+								No comments yet. Be the first!
+							</p>
+						) : (
+							<div className="flex flex-col gap-2.5">
+								{comments.map(comment => {
+									const isOwn = comment.author.id === profileId
+									const canDelete = isOwn || isMod
+									const initials = comment.author.name
+										.split(" ")
+										.map(n => n[0])
+										.slice(0, 2)
+										.join("")
+										.toUpperCase()
+									const color = avatarColor(comment.author.name)
+									return (
+										<div key={comment.id} className="flex items-start gap-2 group">
+											{comment.author.avatarUrl ? (
+												<div className="relative size-7 rounded-full overflow-hidden shrink-0 border border-border-default bg-surface-hover">
+													<Image
+														src={comment.author.avatarUrl}
+														alt={comment.author.name}
+														fill
+														sizes="28px"
+														className="object-cover"
+													/>
+												</div>
+											) : (
+												<div
+													className={`size-7 rounded-full ${color.bg} border ${color.border} flex items-center justify-center shrink-0`}
+												>
+													<span className={`text-[9px] font-bold ${color.text}`}>
+														{initials}
+													</span>
+												</div>
+											)}
+											<div className="flex-1 min-w-0">
+												<div className="inline-block bg-surface-hover rounded-2xl rounded-tl-sm px-1 max-w-full">
+													<div className="flex items-start gap-1.5">
+														<p className="text-[11px] font-semibold text-text-primary">
+															{comment.author.name}
+														</p>
+														<p className="text-[10px] text-text-muted ml-1">
+															{timeAgo(comment.createdAt)}
+														</p>
+													</div>
+													<p className="text-label-sm font-normal text-text-primary leading-snug wrap-break-word">
+														{comment.content}
+													</p>
+												</div>
+											</div>
+											{canDelete && (
+												<button
+													type="button"
+													onClick={() => setDeleteTargetCommentId(comment.id)}
+													className="opacity-0 group-hover:opacity-100 p-1 rounded text-text-muted hover:text-red-500 transition-all shrink-0 mt-1"
+													title="Delete comment"
+												>
+													<Icon as={TrashBinSvg} size="xs" color="inherit" />
+												</button>
+											)}
+										</div>
+									)
+								})}
+								{commentsNextCursor && (
+									<button
+										type="button"
+										onClick={() => loadComments(commentsNextCursor)}
+										disabled={commentsLoading}
+										className="text-label-sm text-text-brand hover:underline disabled:opacity-50 text-center"
+									>
+										{commentsLoading ? "Loading…" : "Load more comments"}
+									</button>
+								)}
+							</div>
+						)}
+					</div>
+				)}
+			</div>
+
+			<ConfirmDialog
+				open={deleteTargetCommentId !== null}
+				title="Delete comment?"
+				description="This will permanently remove your comment."
+				confirmLabel="Delete"
+				destructive
+				onClose={() => setDeleteTargetCommentId(null)}
+				onConfirm={async () => {
+					if (deleteTargetCommentId) await handleDeleteComment(deleteTargetCommentId)
+					setDeleteTargetCommentId(null)
+				}}
 			/>
-		)}
+
+			{editOpen && (
+				<EditPostModal
+					post={post}
+					communityId={communityId}
+					onClose={() => setEditOpen(false)}
+					onSaved={updated => setPost(updated)}
+				/>
+			)}
 		</>
 	)
 }
@@ -999,7 +1013,9 @@ export function FeedTabContent({
 			if (!cancelled) setLoading(false)
 		}
 		run()
-		return () => { cancelled = true }
+		return () => {
+			cancelled = true
+		}
 	}, [loadPosts])
 
 	const handleLoadMore = async () => {
@@ -1023,7 +1039,7 @@ export function FeedTabContent({
 					<Skeleton.Post />
 				</>
 			) : posts.length === 0 ? (
-				<div className="rounded-panel bg-surface-card border border-border-default p-10 flex flex-col items-center gap-2 text-center">
+				<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-10 flex flex-col items-center gap-2 text-center">
 					<p className="text-body-md font-semibold text-text-primary">No posts yet</p>
 					<p className="text-label-sm text-text-muted font-normal">
 						Be the first to share something with the community!

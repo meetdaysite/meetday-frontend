@@ -217,7 +217,7 @@ function OptionCard({ label, image, selected, onSelect }: OptionCardProps) {
 			type="button"
 			onClick={onSelect}
 			className={clsx(
-				"relative flex flex-col items-center gap-3 rounded-lg border-2 bg-surface-canvas overflow-hidden",
+				"relative flex flex-col items-center gap-3 rounded-panel border-2 bg-surface-canvas overflow-hidden",
 				"px-3 pt-3 pb-4 cursor-pointer transition-all duration-(--duration-150)",
 				"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus bg-surface-card-muted",
 				selected
@@ -240,7 +240,7 @@ function OptionCard({ label, image, selected, onSelect }: OptionCardProps) {
 				</span>
 			)}
 			{/* Image */}
-			<div className="relative w-full aspect-square overflow-hidden rounded-lg">
+			<div className="relative w-full aspect-square overflow-hidden rounded-panel">
 				<Image src={image} alt="" fill className="object-cover object-top" aria-hidden />
 			</div>
 			{/* Label */}

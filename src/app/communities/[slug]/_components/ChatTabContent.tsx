@@ -578,7 +578,7 @@ export function ChatTabContent({
 	}
 
 	return (
-		<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex h-155">
+		<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex h-155 shadow-md">
 			{/* ── Left sidebar ── */}
 			<aside className="w-60 shrink-0 border-r border-gray-200 flex flex-col bg-gray-50 overflow-y-auto no-scrollbar">
 				<ChannelList

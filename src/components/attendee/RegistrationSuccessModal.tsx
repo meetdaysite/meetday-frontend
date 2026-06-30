@@ -53,7 +53,7 @@ export function RegistrationSuccessModal({ open, onClose }: Props) {
 			onClick={onClose}
 		>
 			<div
-				className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 flex flex-col gap-6"
+				className="bg-white rounded-panel shadow-2xl w-full max-w-md p-8 flex flex-col gap-6"
 				onClick={(e) => e.stopPropagation()}
 				role="dialog"
 				aria-modal="true"

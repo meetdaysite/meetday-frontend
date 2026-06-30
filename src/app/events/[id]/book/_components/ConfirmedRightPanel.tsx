@@ -44,7 +44,7 @@ export function ConfirmedRightPanel() {
 	return (
 		<div className="flex flex-col gap-4">
 			{/* What happens next */}
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4">
+			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
 				<div className="flex items-center gap-2">
 					<Icon as={RocketSvg} size="md" color="brand" />
 					<span className="text-title-md font-bold text-text-primary">What happens next?</span>
@@ -62,7 +62,7 @@ export function ConfirmedRightPanel() {
 			</div>
 
 			{/* Join event chat */}
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
 						<Icon as={MessageSvg} size="md" color="primary" />
@@ -83,7 +83,7 @@ export function ConfirmedRightPanel() {
 			</div>
 
 			{/* Invite friend, get rewarded — commented until invite feature is live
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 						<Icon as={GiftSvg} size="md" color="info" />

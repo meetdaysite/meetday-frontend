@@ -76,7 +76,7 @@ const WHY_JOIN_ITEMS = [
 
 function WhyJoinCard({ isMember, onJoinClick }: { isMember: boolean; onJoinClick: () => void }) {
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">
 					{isMember ? "What you have access to" : "Why join this community?"}
@@ -130,7 +130,7 @@ function PeopleInCommunityCard({ isMember, communityId }: { isMember: boolean; c
 	const overflow = total > 12 ? total - 12 : 0
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<div className="flex items-center gap-2">
 					<span className="text-body-md font-semibold text-text-primary">
@@ -181,7 +181,7 @@ function TrustedHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
 	if (!hosts || hosts.length === 0) return null
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Trusted hosts</span>
 				{/* TODO: Link to /communities/[slug]/hosts once sub-page is built */}
@@ -225,7 +225,7 @@ const MOCK_GUIDELINES = [
 
 function CommunityGuidelinesCard() {
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Community guidelines</span>
 			</div>
@@ -312,7 +312,7 @@ function ExperiencesFilterCard({
 	}
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Filter experiences</span>
 				{hasActiveFilters && (
@@ -435,7 +435,7 @@ function SavedExperiencesCard() {
 	}, [])
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Saved experiences</span>
 				<Link
@@ -498,7 +498,7 @@ function ExperiencesCommunityHostsCard({ hosts }: { hosts: CommunityHost[] | nul
 	if (!hosts || hosts.length === 0) return null
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Community hosts</span>
 				{/* TODO: Link to /communities/[slug]/hosts once sub-page is built */}
@@ -561,7 +561,7 @@ function ChatUpcomingExperiencesCard({ communitySlug, onViewAll }: { communitySl
 	}, [communitySlug])
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">
 					Upcoming Experiences
@@ -635,7 +635,7 @@ function MembersCommunityAtAGlanceCard({ stats }: { stats: CommunityStats | null
 	]
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Community at a glance</span>
 			</div>
@@ -666,7 +666,7 @@ function MembersTopHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
 	if (!hosts || hosts.length === 0) return null
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Top hosts</span>
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
@@ -723,7 +723,7 @@ function NewMembersCard({ communityId }: { communityId: string }) {
 	if (members.length === 0) return null
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="mb-4">
 				<span className="text-body-md font-semibold text-text-primary">New members</span>
 			</div>
@@ -763,7 +763,7 @@ function AnnouncementsTrustedHostsCard({ hosts }: { hosts: CommunityHost[] | nul
 	if (!visible || visible.length === 0) return null
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Trusted hosts</span>
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
@@ -818,7 +818,7 @@ function PopularPostsCard({ communityId }: { communityId: string }) {
 	}, [communityId, windowDays])
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			{/* Header */}
 			<div className="flex items-center justify-between gap-2 mb-3">
 				<span className="text-body-md font-semibold text-text-primary">Popular Posts</span>
@@ -920,7 +920,7 @@ function SavedPostsCard({ communityId }: { communityId: string }) {
 	if (!loading && posts.length === 0) return null
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-3">
 				<div className="flex items-center gap-2">
 					<Icon as={BookmarkSvg} size="sm" color="brand" />
@@ -994,7 +994,7 @@ function TrendingTopicsCard({ communityId }: { communityId: string }) {
 	const hasMore = topics.length > TOPICS_PREVIEW
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Trending Topics</span>
 				{hasMore && (

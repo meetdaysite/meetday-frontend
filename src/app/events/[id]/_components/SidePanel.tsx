@@ -44,7 +44,7 @@ function VibeMatchCard({ eventId }: { eventId: string }) {
 	const isLoading = authLoading || fetching
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center gap-2 mb-4">
 				<Icon as={StarCircleSvg} size="md" color="vibe" />
 				<span className="text-body-md font-medium text-text-primary">Your Vibe Match</span>
@@ -126,7 +126,7 @@ function VibeMatchCard({ eventId }: { eventId: string }) {
 
 function CommunityAccessCard({ community }: { community: PublicEventCommunity }) {
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default flex flex-col gap-3">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md flex flex-col gap-3">
 			<div className="grid grid-cols-[auto_1fr] gap-3 items-start">
 				<Icon as={UsersGroupSvg} size="2xl" color="brand" />
 				<div className="flex flex-col">
@@ -207,7 +207,7 @@ function CrowdPulseCard({ eventId }: { eventId: string }) {
 		: null
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center gap-2 mb-4">
 				<Icon as={PulseSvg} size="md" color={!loading && pulse ? "primary" : "muted"} />
 				<span className="text-body-md font-medium text-text-primary">Crowd Pulse</span>
@@ -283,7 +283,7 @@ function RefundCard({ policy }: { policy: PublicRefundPolicy }) {
 	const destination = policy.refundTo === "ORIGINAL_PAYMENT" ? "to original payment method" : "as credits"
 
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default">
+		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center gap-2 mb-3">
 				<Icon
 					as={ShieldCheckSvg}

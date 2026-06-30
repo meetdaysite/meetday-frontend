@@ -133,7 +133,7 @@ export function AttendeeHeader() {
 							</button>
 
 							{dropdownOpen && (
-								<div className="absolute right-0 top-full mt-2 w-44 rounded-xl border border-border-default bg-surface-canvas shadow-floating py-1.5 z-50">
+								<div className="absolute right-0 top-full mt-2 w-44 rounded-panel border border-border-default bg-surface-canvas shadow-floating py-1.5 z-50">
 									<Link
 										href="/attendee/profile"
 										onClick={() => setDropdownOpen(false)}

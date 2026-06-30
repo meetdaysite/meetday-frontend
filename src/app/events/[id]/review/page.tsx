@@ -631,7 +631,7 @@ function ReviewFormContent({
 					{/* ── Right panel ── */}
 					<aside className="hidden lg:flex flex-col gap-4 w-96 shrink-0 sticky top-20">
 						{/* Experience recap */}
-						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4">
+						<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
 							<div className="flex items-center gap-2">
 								<Icon as={StarCircleSvg} size="md" color="brand" />
 								<p className="text-title-md font-bold text-text-primary">Your experience recap</p>
@@ -659,12 +659,12 @@ function ReviewFormContent({
 						</div>
 
 						{/* Feedback progress */}
-						<div className="rounded-panel bg-surface-card border border-border-default p-5">
+						<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
 							<FeedbackProgress rating={rating} highlights={highlights} body={body} photos={photos} />
 						</div>
 
 						{/* Invite — commented until invite feature is live
-						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+						<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 							<div className="flex items-center gap-3">
 								<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 									<Icon as={UsersGroup2Svg} size="md" color="info" />
@@ -684,7 +684,7 @@ function ReviewFormContent({
 						*/}
 
 						{/* Host approval */}
-						<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+						<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 							<div className="flex items-start gap-3">
 								<div className="size-9 rounded-full bg-surface-brand-soft flex items-center justify-center shrink-0">
 									<Icon as={ShieldCheckSvg} size="md" color="brand" />

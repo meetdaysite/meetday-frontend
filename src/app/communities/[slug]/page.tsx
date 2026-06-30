@@ -79,7 +79,7 @@ function LockedTabContent({
 	}
 
 	return (
-		<div className="rounded-panel bg-surface-brand-soft border border-border-focus p-6 flex flex-col sm:flex-row items-center gap-4">
+		<div className="rounded-panel bg-surface-brand-soft border border-border-focus p-6 flex flex-col sm:flex-row items-center gap-4 shadow-md">
 			<div className="flex items-center justify-center size-12 rounded-full bg-action-primary shrink-0">
 				<Icon as={LockSvg} size="md" color="inverse" />
 			</div>
@@ -180,7 +180,7 @@ function TabContent({
 	if (activeTab === "members") return <MembersTabContent communityId={community.id} onOpenDM={onOpenDM} />
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-10 flex items-center justify-center">
+		<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-10 flex items-center justify-center">
 			<p className="text-body-sm text-text-muted">Content coming soon.</p>
 		</div>
 	)

@@ -1,30 +1,29 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import clsx from "clsx"
-import { Icon } from "@/components/ui/Icon"
+import { EventCard } from "@/components/attendee/EventCard"
 import { Button } from "@/components/ui/Button"
+import { Icon } from "@/components/ui/Icon"
 import { Skeleton } from "@/components/ui/Skeleton"
+import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
-import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
 import HeadphonesSvg from "@/icons/filled/headphones.svg"
-import TicketSvg from "@/icons/filled/ticket.svg"
+import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
 import SmileCircleSvg from "@/icons/filled/smile-circle.svg"
+import TicketSvg from "@/icons/filled/ticket.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
-import MapPointSvg from "@/icons/outlined/map-point.svg"
 import CopySvg from "@/icons/outlined/copy.svg"
-import GiftSvg from "@/icons/outlined/gift.svg"
-import { getMyOrders } from "@/lib/ordersApi"
+import MapPointSvg from "@/icons/outlined/map-point.svg"
 import { getPublicEventDetails, getPublicEvents, getSavedEvents } from "@/lib/api"
+import { getMyOrders } from "@/lib/ordersApi"
 import { useAuthStore } from "@/store/authStore"
-import { EventCard } from "@/components/attendee/EventCard"
-import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
+import type { ExploreEvent, PublicEventDetails, SavedEvent } from "@/types/attendee"
 import type { MyOrderListItem } from "@/types/order"
-import type { PublicEventDetails, ExploreEvent, SavedEvent } from "@/types/attendee"
+import clsx from "clsx"
+import Image from "next/image"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { Suspense, useEffect, useState } from "react"
 
 type Tab = "upcoming" | "past" | "cancelled" | "saved"
 
@@ -169,7 +168,7 @@ function MyEventCard({
 	}
 
 	return (
-		<div className="rounded-action border border-border-default bg-surface-card overflow-hidden flex flex-col">
+		<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex flex-col shadow-md">
 			{/* Main row */}
 			<div className="flex min-h-44">
 				{/* Cover image */}
@@ -369,28 +368,6 @@ function EmptyTabState({ tab }: { tab: Tab }) {
 	)
 }
 
-// ─── Full empty state (no orders at all) ─────────────────────────────────────
-
-function AvatarStack() {
-	const gradients = [
-		"from-purple-400 to-pink-400",
-		"from-blue-400 to-cyan-400",
-		"from-green-400 to-teal-400",
-		"from-orange-400 to-red-400",
-	]
-	return (
-		<div className="flex -space-x-2">
-			{gradients.map((g, i) => (
-				<div
-					key={i}
-					className={`size-8 rounded-full bg-linear-to-br ${g} border-2 border-surface-card`}
-					style={{ zIndex: 4 - i }}
-				/>
-			))}
-		</div>
-	)
-}
-
 function EmptyEventsState() {
 	const categories = ["Music", "Rooftop", "Wellness", "Art", "Networking", "Food"]
 	return (
@@ -478,7 +455,7 @@ function WithEventsRightPanel() {
 	return (
 		<>
 			{/* Need help */}
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
 						<Icon as={HeadphonesSvg} size="md" color="inherit" className="text-red-500" />
@@ -499,7 +476,7 @@ function WithEventsRightPanel() {
 			</div>
 
 			{/* Invite — commented until invite feature is live
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 						<Icon as={GiftSvg} size="md" color="info" />
@@ -518,26 +495,6 @@ function WithEventsRightPanel() {
 			</div>
 			*/}
 
-			{/* Refund */}
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
-				<div className="flex items-center gap-3">
-					<div className="size-9 rounded-full bg-surface-brand-soft flex items-center justify-center shrink-0">
-						<Icon as={ShieldCheckSvg} size="md" color="brand" />
-					</div>
-					<div>
-						<p className="text-body-sm font-bold text-text-primary">Refund reference</p>
-						<p className="text-caption text-text-muted leading-snug">
-							Cancel up to 24h before the event for a full credit. No hassle. No questions.
-						</p>
-					</div>
-				</div>
-				<button
-					type="button"
-					className="text-label-sm text-text-brand hover:underline font-medium text-left"
-				>
-					View refund policy →
-				</button>
-			</div>
 		</>
 	)
 }
@@ -546,7 +503,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 	return (
 		<>
 			{/* Good vibes */}
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4">
+			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
 				<p className="text-title-md font-bold text-text-primary">Good vibes, great company</p>
 				<div className="grid grid-cols-3 gap-3">
 					{[
@@ -565,7 +522,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 
 			{/* Recommendations */}
 			{recommendations.length > 0 && (
-				<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+				<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 					<div className="flex items-center justify-between">
 						<p className="text-title-md font-bold text-text-primary">Recommended for you</p>
 						<Link
@@ -609,7 +566,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 			)}
 
 			{/* Invite — commented until invite feature is live
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 						<Icon as={GiftSvg} size="md" color="info" />
@@ -717,7 +674,7 @@ function MyEventsPageInner() {
 			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
 				{/* Page header */}
 				<div className="mb-6">
-					<h1 className="text-heading-md font-extrabold text-text-primary">My Events</h1>
+					<h1 className="text-heading-md font-extrabold text-text-primary">My Experiences</h1>
 					<p className="text-body-sm text-text-secondary mt-1">
 						All the events you&apos;ve booked or attended.
 					</p>

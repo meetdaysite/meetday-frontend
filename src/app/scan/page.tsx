@@ -207,7 +207,7 @@ function ValidatingScreen({ debugLines, token }: { debugLines?: string[]; token?
 			<span className="text-2xl font-black text-red-600 tracking-tight">meetday</span>
 			<div className="size-8 rounded-full border-2 border-red-600 border-t-transparent animate-spin" />
 			<p className="text-[13px] text-neutral-400">Verifying your access…</p>
-			<div className="w-full max-w-sm bg-neutral-900 rounded-xl p-3 text-left">
+			<div className="w-full max-w-sm bg-neutral-900 rounded-panel shadow-md p-3 text-left">
 				<p className="text-[10px] font-mono text-yellow-400 mb-1">— debug —</p>
 				<p className="text-[10px] font-mono text-white break-all">
 					token: {token ? `${token.slice(0, 12)}…` : "(empty — no token in URL)"}

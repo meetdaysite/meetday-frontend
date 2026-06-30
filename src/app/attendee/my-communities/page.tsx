@@ -1,20 +1,19 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import clsx from "clsx"
-import { Icon } from "@/components/ui/Icon"
+import { CommunityCard } from "@/components/attendee/CommunityCard"
 import { Button } from "@/components/ui/Button"
+import { Icon } from "@/components/ui/Icon"
 import { Skeleton } from "@/components/ui/Skeleton"
 import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
 import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
-import GiftSvg from "@/icons/outlined/gift.svg"
-import { getJoinedCommunities, getSavedCommunities, getRecommendedCommunities } from "@/lib/api"
-import { CommunityCard } from "@/components/attendee/CommunityCard"
-import { useAuthStore } from "@/store/authStore"
 import type { PublicCommunity } from "@/lib/api"
+import { getJoinedCommunities, getRecommendedCommunities, getSavedCommunities } from "@/lib/api"
+import { useAuthStore } from "@/store/authStore"
+import clsx from "clsx"
+import Image from "next/image"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { Suspense, useEffect, useState } from "react"
 
 type Tab = "joined" | "saved"
 
@@ -132,7 +131,7 @@ function RightPanel({ recommendations }: { recommendations: PublicCommunity[] })
 	return (
 		<>
 			{recommendations.length > 0 && (
-				<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+				<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 					<div className="flex items-center justify-between">
 						<p className="text-title-md font-bold text-text-primary">Recommended for you</p>
 						<Link
@@ -173,7 +172,7 @@ function RightPanel({ recommendations }: { recommendations: PublicCommunity[] })
 			)}
 
 			{/* Invite — commented until invite feature is live
-			<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-3">
+			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 						<Icon as={GiftSvg} size="md" color="info" />
