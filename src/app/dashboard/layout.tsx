@@ -109,11 +109,11 @@ function UnderReviewScreen({
 					</div>
 				)}
 
-				<p className="text-body-sm text-text-secondary text-center">
-					{isPending
-						? "You'll receive an email once your account is approved."
-						: "Reach us at support@meetday.in for assistance."}
-				</p>
+				{isPending && (
+					<p className="text-body-sm text-text-secondary text-center">
+						You&apos;ll receive an email once your account is approved.
+					</p>
+				)}
 
 				<button
 					onClick={onSignOut}

@@ -22,6 +22,7 @@ import UserSvg from "@/icons/outlined/user.svg"
 import { getPublicEventDetails } from "@/lib/api"
 import { getFullOrderDetail } from "@/lib/ordersApi"
 import { useAuthStore } from "@/store/authStore"
+import { SupportTicketModal } from "@/components/attendee/SupportTicketModal"
 import type { PublicEventDetails } from "@/types/attendee"
 import type { FullOrderDetail } from "@/types/order"
 import Image from "next/image"
@@ -111,6 +112,7 @@ function TicketPageContent({
 	eventDetails: PublicEventDetails | null
 }) {
 	const [copied, setCopied] = useState(false)
+	const [supportOpen, setSupportOpen] = useState(false)
 
 	const firstItem = order.items[0]
 	const leadAttendee = firstItem?.attendees.find((a) => a.isLead) ?? firstItem?.attendees[0]
@@ -292,9 +294,13 @@ function TicketPageContent({
 											</p>
 											<p className="text-caption text-text-muted leading-snug">{item.body}</p>
 											{item.link && (
-												<span className="text-caption text-text-brand cursor-pointer hover:underline font-medium">
+												<button
+													type="button"
+													onClick={() => setSupportOpen(true)}
+													className="text-caption text-text-brand hover:underline font-medium bg-transparent border-0 p-0 cursor-pointer"
+												>
 													{item.link}
-												</span>
+												</button>
 											)}
 										</div>
 									</div>
@@ -302,6 +308,13 @@ function TicketPageContent({
 							</div>
 						</div>
 					</div>
+
+					<SupportTicketModal
+						open={supportOpen}
+						onClose={() => setSupportOpen(false)}
+						entityType="ORDER"
+						entityId={order.id}
+					/>
 
 					{/* ── Right panel ── */}
 					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">

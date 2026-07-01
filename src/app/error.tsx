@@ -46,8 +46,7 @@ export default function Error({
 						<div className="-mt-2">
 							<h1 className="text-heading-sm font-bold text-text-primary">Something went wrong</h1>
 							<p className="text-body-sm text-text-secondary mt-2 max-w-sm">
-								An unexpected error occurred on our end. If this keeps happening, reach us at{" "}
-								<span className="font-medium text-text-primary">support@meetday.in</span>.
+								An unexpected error occurred on our end. If this keeps happening, please try again later.
 							</p>
 						</div>
 

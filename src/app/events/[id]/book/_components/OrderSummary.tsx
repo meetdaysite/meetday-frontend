@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import ShieldCheckSvg from "@/icons/outlined/shield-check.svg"
@@ -7,6 +8,7 @@ import CheckCircleSvg from "@/icons/filled/check-circle.svg"
 import TicketSvg from "@/icons/filled/ticket.svg"
 import InfoCircleSvg from "@/icons/outlined/info-circle.svg"
 import HeadphonesSvg from "@/icons/filled/headphones.svg"
+import { SupportTicketModal } from "@/components/attendee/SupportTicketModal"
 import type { PublicTicket } from "@/types/attendee"
 import type { PricingConfig } from "@/lib/ordersApi"
 
@@ -26,6 +28,7 @@ interface OrderSummaryProps {
 	continueLoading?: boolean
 	continueLabel?: string
 	continueDisabled?: boolean
+	eventId?: string
 }
 
 function formatINR(amount: number): string {
@@ -73,7 +76,9 @@ export function OrderSummary({
 	continueLoading = false,
 	continueLabel = "Continue",
 	continueDisabled = false,
+	eventId,
 }: OrderSummaryProps) {
+	const [supportOpen, setSupportOpen] = useState(false)
 	const lineItems: LineItem[] = tickets
 		.filter((t) => (quantities[t.id] ?? 0) > 0)
 		.map((t) => ({
@@ -225,9 +230,22 @@ export function OrderSummary({
 			<div className="border-t border-border-default pt-3">
 				<p className="text-caption text-text-muted">
 					Need help?{" "}
-					<span className="text-text-brand cursor-pointer hover:underline font-medium">Contact support →</span>
+					<button
+						type="button"
+						onClick={() => setSupportOpen(true)}
+						className="text-text-brand hover:underline font-medium bg-transparent border-0 p-0 cursor-pointer"
+					>
+						Contact support →
+					</button>
 				</p>
 			</div>
+
+			<SupportTicketModal
+				open={supportOpen}
+				onClose={() => setSupportOpen(false)}
+				entityType={eventId ? "EVENT" : undefined}
+				entityId={eventId}
+			/>
 		</div>
 	)
 }

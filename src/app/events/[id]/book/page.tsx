@@ -112,6 +112,7 @@ function SelectTicketContent({ event, pricingConfig }: { event: PublicEventDetai
 							onContinue={handleContinue}
 							continueLabel="Continue"
 							continueDisabled={totalTickets === 0}
+							eventId={event.id}
 						/>
 					</aside>
 				</div>

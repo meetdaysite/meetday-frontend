@@ -250,6 +250,7 @@ function AttendeeDetailsContent({ event, pricingConfig }: { event: PublicEventDe
 							continueLabel={isPaidOrder ? "Continue to Payment" : "Confirm Booking"}
 							continueLoading={submitting}
 							continueDisabled={!isFormValid || !agreedToTerms}
+							eventId={event.id}
 						/>
 					</aside>
 				</div>

@@ -45,8 +45,7 @@ export default function GlobalError({
 							<div className="-mt-2">
 								<h1 className="text-heading-sm font-bold text-text-primary">Something went wrong</h1>
 								<p className="text-body-sm text-text-secondary mt-2 max-w-sm">
-									A critical error occurred. Please refresh the page or contact{" "}
-									<span className="font-medium text-text-primary">support@meetday.in</span>.
+									A critical error occurred. Please refresh the page and try again.
 								</p>
 							</div>
 

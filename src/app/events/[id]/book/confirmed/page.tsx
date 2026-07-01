@@ -25,6 +25,7 @@ import { EventPreviewBar } from "../_components/EventPreviewBar"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { TicketQRDisplay } from "../_components/TicketQRDisplay"
 import { ConfirmedRightPanel } from "../_components/ConfirmedRightPanel"
+import { SupportTicketModal } from "@/components/attendee/SupportTicketModal"
 
 interface PageProps {
 	params: Promise<{ id: string }>
@@ -79,6 +80,7 @@ const TRUST_ITEMS = [
 
 function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: OrderDetail }) {
 	const [copied, setCopied] = useState(false)
+	const [supportOpen, setSupportOpen] = useState(false)
 	const primaryEmail = order.items[0]?.groupAttendees?.[0]?.email ?? ""
 
 	const firstItem = order.items[0]
@@ -271,9 +273,13 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 												{item.body}
 											</p>
 											{item.link && (
-												<span className="text-caption text-text-brand cursor-pointer hover:underline font-medium">
+												<button
+													type="button"
+													onClick={() => setSupportOpen(true)}
+													className="text-caption text-text-brand hover:underline font-medium bg-transparent border-0 p-0 cursor-pointer"
+												>
 													{item.link}
-												</span>
+												</button>
 											)}
 										</div>
 									</div>
@@ -283,6 +289,13 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 					</aside>
 				</div>
 			</div>
+
+			<SupportTicketModal
+				open={supportOpen}
+				onClose={() => setSupportOpen(false)}
+				entityType="ORDER"
+				entityId={order.id}
+			/>
 		</main>
 	)
 }
