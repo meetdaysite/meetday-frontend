@@ -8,17 +8,12 @@ import { TextField } from "@/components/ui/TextField"
 import { Icon } from "@/components/ui/Icon"
 import CloseSvg from "@/icons/outlined/close.svg"
 import HeadphonesSvg from "@/icons/filled/headphones.svg"
-import { createSupportTicket, type SupportCategory, type SupportEntityType } from "@/lib/supportApi"
+import { createSupportTicket, CATEGORY_LABELS, type SupportCategory, type SupportEntityType } from "@/lib/supportApi"
 import { getApiErrorMessage } from "@/lib/errors"
 
-const CATEGORY_OPTIONS = [
-	{ value: "PAYMENT_ISSUE", label: "Payment Issue" },
-	{ value: "REFUND_REQUEST", label: "Refund Request" },
-	{ value: "EVENT_ISSUE", label: "Event Issue" },
-	{ value: "ACCOUNT_ISSUE", label: "Account Issue" },
-	{ value: "COMMUNITY_ISSUE", label: "Community Issue" },
-	{ value: "OTHER", label: "Other" },
-]
+const CATEGORY_OPTIONS = (Object.entries(CATEGORY_LABELS) as [SupportCategory, string][]).map(
+	([value, label]) => ({ value, label }),
+)
 
 interface SupportTicketModalProps {
 	open: boolean
@@ -122,7 +117,7 @@ export function SupportTicketModal({ open, onClose, entityType, entityId }: Supp
 						onChange={(e) => setSubject(e.target.value)}
 						size="md"
 						disabled={submitting}
-						maxLength={200}
+						maxLength={150}
 					/>
 
 					<div className="flex flex-col gap-1.5">

@@ -142,6 +142,14 @@ export function AttendeeHeader() {
 										<UserIcon />
 										Profile
 									</Link>
+									<Link
+										href="/attendee/support"
+										onClick={() => setDropdownOpen(false)}
+										className="w-full flex items-center gap-2.5 px-3.5 py-2 text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-card-muted transition-colors"
+									>
+										<TicketIcon />
+										Support Tickets
+									</Link>
 									<div className="my-1 border-t border-border-default" />
 									<button
 										onClick={handleSignOut}
@@ -211,6 +219,16 @@ export function AttendeeHeader() {
 						</Link>
 					))}
 
+					{user && (
+						<Link
+							href="/attendee/support"
+							className="px-3 py-2.5 text-body-md rounded-action transition-colors text-text-primary hover:bg-surface-card-muted"
+							onClick={() => setMobileOpen(false)}
+						>
+							Support Tickets
+						</Link>
+					)}
+
 					<div className="flex gap-3 mt-3 pt-3 border-t border-border-default">
 						{user ? (
 							<Button
@@ -244,7 +262,7 @@ export function AttendeeHeader() {
 					</div>
 				</div>
 			)}
-		</header>
+	</header>
 	)
 }
 
@@ -291,6 +309,15 @@ function LogoutIcon() {
 			<path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
 			<path d="M10 11l3-3-3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
 			<path d="M13 8H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+		</svg>
+	)
+}
+
+function TicketIcon() {
+	return (
+		<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+			<path d="M10.5 2H5.5A1.5 1.5 0 004 3.5v9A1.5 1.5 0 005.5 14h5A1.5 1.5 0 0012 12.5v-9A1.5 1.5 0 0010.5 2z" stroke="currentColor" strokeWidth="1.3" />
+			<path d="M6 5.5h4M6 8h4M6 10.5h2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
 		</svg>
 	)
 }
