@@ -37,7 +37,7 @@ export function JoinPendingModal({ community, open, onClose }: JoinPendingModalP
 			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
 			onClick={e => { if (e.target === e.currentTarget) onClose() }}
 		>
-			<div className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-md relative">
+			<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-md relative">
 
 				{/* Close button */}
 				<button

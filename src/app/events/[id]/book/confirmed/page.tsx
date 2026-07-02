@@ -111,7 +111,7 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 					{/* Left */}
 					<div className="flex-1 min-w-0 flex flex-col gap-6">
 						{/* ── Main confirmation card ── */}
-						<div className="rounded-panel border border-border-default bg-surface-card p-6 flex flex-col gap-6 shadow-md">
+						<div className="rounded-action border border-border-default bg-surface-card p-6 flex flex-col gap-6 shadow-md">
 							{/* Success hero */}
 							<div className="flex flex-col items-center text-center gap-4 py-2">
 								<div className="size-16 rounded-full bg-green-100 flex items-center justify-center">
@@ -256,7 +256,7 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">
 						<ConfirmedRightPanel />
 						{/* Trust footer card */}
-						<div className="rounded-panel border border-border-default bg-surface-card p-5 shadow-md">
+						<div className="rounded-action border border-border-default bg-surface-card p-5 shadow-md">
 							<div className="grid gap-6">
 								{TRUST_ITEMS.map(item => (
 									<div key={item.title} className="flex gap-3 items-start">

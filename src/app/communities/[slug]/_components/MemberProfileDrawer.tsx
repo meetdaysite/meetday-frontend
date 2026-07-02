@@ -159,7 +159,7 @@ function SayHiModal({
 			<div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
 			{/* Sheet */}
-			<div className="relative w-full sm:max-w-md bg-surface-card rounded-t-panel sm:rounded-panel overflow-y-auto max-h-[92svh] no-scrollbar flex flex-col">
+			<div className="relative w-full sm:max-w-md bg-surface-card rounded-t-panel sm:rounded-action overflow-y-auto max-h-[92svh] no-scrollbar flex flex-col">
 				<div className="p-6 flex flex-col gap-5">
 					{/* Header */}
 					<div className="flex items-center justify-between">

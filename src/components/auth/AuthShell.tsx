@@ -26,7 +26,7 @@ export function AuthShell({ children, phoneImage, pointsImage }: AuthShellProps)
 			{/* ── Right — phone + feature cards, fixed, hidden below lg ── */}
 			<div
 				className={[
-					"hidden lg:flex flex-1 items-center justify-center",
+					"hidden lg:flex shrink-0 lg:w-[46%] xl:w-[50%] items-center justify-center",
 					"gap-2 pl-1 pr-3",
 					"xl:gap-4 xl:pl-2 xl:pr-6",
 					"2xl:gap-6 2xl:pl-4 2xl:pr-8",

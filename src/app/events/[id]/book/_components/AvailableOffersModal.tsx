@@ -63,7 +63,7 @@ export function AvailableOffersModal({
 				if (e.target === e.currentTarget && !applyingCode) onClose()
 			}}
 		>
-			<div className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-sm relative">
+			<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-sm relative">
 				{/* Close */}
 				<button
 					type="button"

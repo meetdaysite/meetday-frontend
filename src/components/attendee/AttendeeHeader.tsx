@@ -26,7 +26,7 @@ const NAV_LINKS: NavLink[] = [
 	{ label: "My Communities", href: "/attendee/my-communities", requiresAuth: true },
 ]
 
-export function AttendeeHeader() {
+export function AttendeeHeader({ hideAuthButtons }: { hideAuthButtons?: boolean }) {
 	const [mobileOpen, setMobileOpen] = useState(false)
 	const [dropdownOpen, setDropdownOpen] = useState(false)
 	const dropdownRef = useRef<HTMLDivElement>(null)
@@ -133,7 +133,7 @@ export function AttendeeHeader() {
 							</button>
 
 							{dropdownOpen && (
-								<div className="absolute right-0 top-full mt-2 w-44 rounded-panel border border-border-default bg-surface-canvas shadow-floating py-1.5 z-50">
+								<div className="absolute right-0 top-full mt-2 w-44 rounded-action border border-border-default bg-surface-canvas shadow-floating py-1.5 z-50">
 									<Link
 										href="/attendee/profile"
 										onClick={() => setDropdownOpen(false)}
@@ -162,7 +162,7 @@ export function AttendeeHeader() {
 							)}
 						</div>
 						</>
-					) : (
+					) : !hideAuthButtons ? (
 						<>
 							<Button
 								variant="secondary"
@@ -183,7 +183,7 @@ export function AttendeeHeader() {
 								Sign up
 							</Button>
 						</>
-					)}
+					) : null}
 				</div>
 
 				{/* Mobile hamburger */}
@@ -239,7 +239,7 @@ export function AttendeeHeader() {
 							>
 								Log out
 							</Button>
-						) : (
+						) : !hideAuthButtons ? (
 							<>
 								<Button
 									variant="secondary"
@@ -258,7 +258,7 @@ export function AttendeeHeader() {
 									Sign up
 								</Button>
 							</>
-						)}
+						) : null}
 					</div>
 				</div>
 			)}

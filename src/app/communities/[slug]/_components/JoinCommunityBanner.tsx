@@ -24,7 +24,7 @@ export function JoinCommunityBanner({ communityName, isLoggedIn, onJoinClick }: 
 	}
 
 	return (
-		<div className="rounded-panel bg-surface-brand-soft border border-border-focus p-6 flex flex-col sm:flex-row items-center gap-4">
+		<div className="rounded-action bg-surface-brand-soft border border-border-focus p-6 flex flex-col sm:flex-row items-center gap-4">
 			<div className="flex items-center justify-center size-12 rounded-full bg-action-primary shrink-0">
 				<Icon as={UsersGroupSvg} size="md" color="inverse" />
 			</div>

@@ -151,7 +151,7 @@ function TicketPageContent({
 					{/* ── Left column ── */}
 					<div className="flex-1 min-w-0 flex flex-col gap-5">
 						{/* Physical ticket card */}
-						<div className="rounded-panel overflow-hidden border border-border-default flex min-h-72 shadow-md">
+						<div className="rounded-action overflow-hidden border border-border-default flex min-h-72 shadow-md">
 							{/* Left: event image + details */}
 							<div className="relative flex-1 bg-neutral-900">
 								{coverImageUrl && (
@@ -255,7 +255,7 @@ function TicketPageContent({
 						</div>
 
 						{/* Action buttons */}
-						<div className="rounded-panel border border-border-default bg-surface-card p-5 flex items-center justify-center flex-wrap gap-3 shadow-md">
+						<div className="rounded-action border border-border-default bg-surface-card p-5 flex items-center justify-center flex-wrap gap-3 shadow-md">
 							<Button
 								variant="secondary"
 								size="md"
@@ -279,7 +279,7 @@ function TicketPageContent({
 						</div>
 
 						{/* Trust footer */}
-						<div className="rounded-panel border border-border-default bg-surface-card p-5 shadow-md">
+						<div className="rounded-action border border-border-default bg-surface-card p-5 shadow-md">
 							<div className="grid grid-cols-2 gap-6">
 								{TRUST_ITEMS.map((item) => (
 									<div key={item.title} className="flex gap-4 items-center">
@@ -319,7 +319,7 @@ function TicketPageContent({
 					{/* ── Right panel ── */}
 					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">
 						{/* Entry Instructions */}
-						<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
+						<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
 							<div className="flex items-center gap-2">
 								<Icon as={RocketSvg} size="md" color="brand" />
 								<span className="text-title-md font-bold text-text-primary">Entry Instructions</span>
@@ -344,7 +344,7 @@ function TicketPageContent({
 						</div>
 
 						{/* Invite friend, get rewarded — commented until invite feature is live
-						<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
+						<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 							<div className="flex items-center gap-3">
 								<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 									<Icon as={GiftSvg} size="md" color="info" />
@@ -469,8 +469,8 @@ function MyTicketPageSkeleton() {
 						</div>
 					</div>
 					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0">
-						<Skeleton.Block className="h-56 rounded-panel" />
-						<Skeleton.Block className="h-36 rounded-panel" />
+						<Skeleton.Block className="h-56 rounded-action" />
+						<Skeleton.Block className="h-36 rounded-action" />
 					</aside>
 				</div>
 			</div>

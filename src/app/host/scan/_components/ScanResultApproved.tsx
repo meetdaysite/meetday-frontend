@@ -46,7 +46,7 @@ export function ScanResultApproved({ result, onScanNext }: Props) {
 			</div>
 
 			{/* Detail rows */}
-			<div className="mx-4 bg-neutral-50 rounded-panel border border-neutral-200 shadow-md overflow-hidden">
+			<div className="mx-4 bg-neutral-50 rounded-action border border-neutral-200 shadow-md overflow-hidden">
 				<DetailRow icon={<TicketIcon />} label="Ticket tier" value={result.ticketTier} />
 				<Divider />
 				<DetailRow icon={<QrIcon />} label="Ticket code" value={`QR ending ${result.ticketCodeSuffix}`} />

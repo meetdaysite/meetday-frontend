@@ -225,7 +225,7 @@ function CreatePostCard({
 	}
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-4 flex flex-col gap-3 shadow-md">
+		<div className="rounded-action bg-surface-card border border-border-default p-4 flex flex-col gap-3 shadow-md">
 			{/* Input row */}
 			<div className="flex items-start gap-3">
 				{/* Avatar */}
@@ -264,7 +264,7 @@ function CreatePostCard({
 						</div>
 					)}
 
-					<div className="flex items-end gap-2 px-4 py-2.5 rounded-panel bg-surface-page border border-border-default transition-all">
+					<div className="flex items-end gap-2 px-4 py-2.5 rounded-action bg-surface-page border border-border-default transition-all">
 						<textarea
 							ref={textareaRef}
 							rows={2}
@@ -623,7 +623,7 @@ function PostCard({
 		<>
 			<div
 				ref={cardRef}
-				className="rounded-panel bg-surface-card border border-border-default p-4 flex flex-col gap-3 shadow-md"
+				className="rounded-action bg-surface-card border border-border-default p-4 flex flex-col gap-3 shadow-md"
 			>
 				{/* Clickable post body */}
 				<div className="flex flex-col gap-3 cursor-pointer" onClick={onOpenDetail}>
@@ -1039,7 +1039,7 @@ export function FeedTabContent({
 					<Skeleton.Post />
 				</>
 			) : posts.length === 0 ? (
-				<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-10 flex flex-col items-center gap-2 text-center">
+				<div className="rounded-action bg-surface-card border border-border-default shadow-md p-10 flex flex-col items-center gap-2 text-center">
 					<p className="text-body-md font-semibold text-text-primary">No posts yet</p>
 					<p className="text-label-sm text-text-muted font-normal">
 						Be the first to share something with the community!

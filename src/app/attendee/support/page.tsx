@@ -181,7 +181,7 @@ export default function SupportPage() {
 				</div>
 
 				{/* Ticket list */}
-				<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden">
+				<div className="rounded-action border border-border-default bg-surface-card overflow-hidden">
 					{loading ? (
 						<>
 							<TicketRowSkeleton />

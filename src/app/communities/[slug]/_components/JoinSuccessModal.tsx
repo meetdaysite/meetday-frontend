@@ -96,7 +96,7 @@ export function JoinSuccessModal({ community, open, onClose }: JoinSuccessModalP
 			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
 			onClick={e => { if (e.target === e.currentTarget) onClose() }}
 		>
-			<div className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+			<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
 
 				{/* Close button */}
 				<button

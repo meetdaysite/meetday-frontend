@@ -59,10 +59,10 @@ export function EventCard({ event, className, communityName }: EventCardProps) {
 	const isFree = event.startingPrice === 0 || event.startingPrice == null
 
 	return (
-		<div className={clsx("rounded-panel shadow-md", className)}>
+		<div className={clsx("rounded-action shadow-md", className)}>
 			<Link
 				href={`/events/${event.id}`}
-				className="relative flex flex-col overflow-hidden rounded-panel group cursor-pointer aspect-3/4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 border border-border-default"
+				className="relative flex flex-col overflow-hidden rounded-action group cursor-pointer aspect-3/4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 border border-border-default"
 			>
 				<Image
 					src={event.coverImageUrl}

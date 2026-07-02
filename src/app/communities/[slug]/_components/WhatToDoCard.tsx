@@ -74,7 +74,7 @@ export function WhatToDoCard({
 	onJoinClick: () => void
 }) {
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-5 shadow-md">
+		<div className="rounded-action bg-surface-card border border-border-default p-5 shadow-md">
 			<p className="text-body-md font-semibold text-text-primary">What do you want to do?</p>
 			<p className="text-label-sm text-text-secondary font-normal mt-0.5">
 				Discover what&apos;s inside this community.

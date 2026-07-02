@@ -93,7 +93,7 @@ export function OrderSummary({
 	const allFree = paidSubtotal === 0
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-5 shadow-md">
+		<div className="rounded-action bg-surface-card border border-border-default p-5 flex flex-col gap-5 shadow-md">
 			{/* Header */}
 			<div className="flex items-center justify-between">
 				<span className="text-title-md font-bold text-text-primary">Order Summary</span>

@@ -77,7 +77,7 @@ export function SupportTicketModal({ open, onClose, entityType, entityId }: Supp
 				if (e.target === e.currentTarget && !submitting) onClose()
 			}}
 		>
-			<div className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-md relative">
+			<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-md relative">
 				{/* Close */}
 				<button
 					type="button"

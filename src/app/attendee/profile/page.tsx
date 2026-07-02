@@ -167,7 +167,7 @@ function ProfileSkeleton() {
 					<Skeleton.Block className="h-10 w-32 rounded-avatar shrink-0" />
 				</div>
 				<div className="flex flex-col lg:flex-row gap-5 lg:gap-8 items-start">
-					<div className="flex-1 rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
+					<div className="flex-1 rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
 						<Skeleton.Text className="w-16 h-4" />
 						<Skeleton.Text className="w-full" />
 						<Skeleton.Block className="h-11 w-full rounded-action" />
@@ -315,7 +315,7 @@ function ProfilePageInner() {
 					{/* About card */}
 					<div className="w-full lg:flex-1 min-w-0">
 						{hasAbout ? (
-							<div className="rounded-panel bg-surface-card border border-border-default overflow-hidden shadow-card">
+							<div className="rounded-action bg-surface-card border border-border-default overflow-hidden shadow-card">
 								{/* colored top accent */}
 								<div className="h-1 bg-linear-to-r from-red-400 to-purple-500" />
 								<div className="p-5 flex flex-col gap-4">
@@ -353,7 +353,7 @@ function ProfilePageInner() {
 								</div>
 							</div>
 						) : (
-							<div className="rounded-panel bg-surface-card border border-border-default overflow-hidden shadow-card">
+							<div className="rounded-action bg-surface-card border border-border-default overflow-hidden shadow-card">
 								<div className="h-1 bg-linear-to-r from-red-400 to-purple-500" />
 								<div className="p-8 flex flex-col items-center text-center gap-3">
 									<div className="size-12 rounded-full bg-red-100 flex items-center justify-center">

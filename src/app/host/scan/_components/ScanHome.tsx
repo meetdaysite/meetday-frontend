@@ -105,7 +105,7 @@ export function ScanHome({ sessionData, token, onStartScanning, onManualCheckIn,
 				</div>
 
 				{/* Gate card */}
-				<div className="flex items-center justify-between p-3.5 bg-neutral-50 border border-neutral-200 rounded-panel shadow-md">
+				<div className="flex items-center justify-between p-3.5 bg-neutral-50 border border-neutral-200 rounded-action shadow-md">
 					<div className="flex items-center gap-3">
 						<div className="size-10 rounded-lg bg-red-100 flex items-center justify-center">
 							<GateIcon />
@@ -139,7 +139,7 @@ export function ScanHome({ sessionData, token, onStartScanning, onManualCheckIn,
 				</div>
 
 				{/* Live summary */}
-				<div className="bg-white border border-neutral-200 rounded-panel shadow-md p-4">
+				<div className="bg-white border border-neutral-200 rounded-action shadow-md p-4">
 					<div className="flex items-center justify-between mb-4">
 						<div className="flex items-center gap-2">
 							<PulseIcon />

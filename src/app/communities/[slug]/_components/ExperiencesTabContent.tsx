@@ -113,7 +113,7 @@ export function ExperiencesTabContent({
 		filters.interestSlugs.length > 0
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-5 shadow-md">
+		<div className="rounded-action bg-surface-card border border-border-default p-5 flex flex-col gap-5 shadow-md">
 			<div>
 				<p className="text-body-md font-semibold text-text-primary">All experiences from this community</p>
 				{!loading && total > 0 && (

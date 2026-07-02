@@ -241,7 +241,7 @@ function HostAnnouncementCard({
 	const isDraft = ann.status === "DRAFT"
 
 	return (
-		<div className={clsx("flex rounded-panel border bg-surface-card overflow-hidden relative", isDraft ? "border-dashed border-neutral-300" : "border-border-default")}>
+		<div className={clsx("flex rounded-action border bg-surface-card overflow-hidden relative", isDraft ? "border-dashed border-neutral-300" : "border-border-default")}>
 			{/* Cover image */}
 			<div className="w-36 shrink-0 relative bg-neutral-100">
 				{ann.imageUrl ? (
@@ -542,7 +542,7 @@ function TopCitiesModal({ cities, onClose }: { cities: string[]; onClose: () => 
 			onClick={onClose}
 		>
 			<div
-				className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-sm max-h-[80vh] flex flex-col overflow-hidden"
+				className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-sm max-h-[80vh] flex flex-col overflow-hidden"
 				onClick={e => e.stopPropagation()}
 			>
 				<div className="flex items-center justify-between px-5 py-4 border-b border-border-default">
@@ -590,7 +590,7 @@ function UpcomingExperienceCard({ exp }: { exp: HostCommunityUpcomingExperience 
 	return (
 		<Link
 			href={`/host/dashboard/events/${exp.id}`}
-			className="relative shrink-0 w-52 rounded-panel overflow-hidden group border border-border-default shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+			className="relative shrink-0 w-52 rounded-action overflow-hidden group border border-border-default shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
 			style={{ aspectRatio: "3/4" }}
 		>
 			<Image
@@ -639,23 +639,23 @@ function LoadingSkeleton() {
 			<DashboardTopBar />
 			<div className="flex-1 bg-surface-page px-4 sm:px-6 lg:px-8 py-6">
 				<Skeleton.Text className="w-36 mb-5" />
-				<Skeleton.Block className="rounded-panel h-60 mb-1" />
+				<Skeleton.Block className="rounded-action h-60 mb-1" />
 				<Skeleton.Block className="h-11 mb-6" />
 				<div className="flex gap-6 items-start">
 					<div className="flex-1 min-w-0 flex flex-col gap-6">
-						<Skeleton.Block className="h-36 rounded-panel" />
+						<Skeleton.Block className="h-36 rounded-action" />
 						<div className="grid grid-cols-2 gap-4">
 							{Array.from({ length: 4 }).map((_, i) => (
-								<Skeleton.Block key={i} className="h-28 rounded-panel" />
+								<Skeleton.Block key={i} className="h-28 rounded-action" />
 							))}
 						</div>
-						<Skeleton.Block className="h-72 rounded-panel" />
+						<Skeleton.Block className="h-72 rounded-action" />
 					</div>
 					<div className="w-100 shrink-0 flex flex-col gap-4">
-						<Skeleton.Block className="h-36 rounded-panel" />
-						<Skeleton.Block className="h-24 rounded-panel" />
-						<Skeleton.Block className="h-40 rounded-panel" />
-						<Skeleton.Block className="h-44 rounded-panel" />
+						<Skeleton.Block className="h-36 rounded-action" />
+						<Skeleton.Block className="h-24 rounded-action" />
+						<Skeleton.Block className="h-40 rounded-action" />
+						<Skeleton.Block className="h-44 rounded-action" />
 					</div>
 				</div>
 			</div>
@@ -899,7 +899,7 @@ export default function HostCommunityDetailPage() {
 						Back to Communities
 					</Link>
 
-					<div className="rounded-panel overflow-hidden bg-neutral-950 border border-neutral-800 relative min-h-64">
+					<div className="rounded-action overflow-hidden bg-neutral-950 border border-neutral-800 relative min-h-64">
 						{/* Cover image */}
 						<Image
 							src={community.coverImageUrl}
@@ -981,7 +981,7 @@ export default function HostCommunityDetailPage() {
 
 							{/* Right: Audience Match card */}
 							{audience.matchScore != null && (
-								<div className="shrink-0 w-52 bg-white rounded-panel p-4 shadow-floating">
+								<div className="shrink-0 w-52 bg-white rounded-action p-4 shadow-floating">
 									<p className="text-label-sm font-semibold text-text-primary mb-1">
 										Audience Match
 									</p>
@@ -1035,7 +1035,7 @@ export default function HostCommunityDetailPage() {
 							{/* Main content */}
 							<div className="flex-1 min-w-0 flex flex-col gap-6">
 								{/* About */}
-								<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+								<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 									<p className="text-body-md font-semibold text-text-primary mb-3">
 										About this community
 									</p>
@@ -1066,7 +1066,7 @@ export default function HostCommunityDetailPage() {
 								{/* Metrics grid */}
 								<div className="grid grid-cols-2 gap-4">
 									{/* Members */}
-									<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+									<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 										<div className="flex items-center gap-2 mb-3">
 											<div className="size-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
 												<Icon as={UsersGroup2Svg} size="sm" color="brand" />
@@ -1092,7 +1092,7 @@ export default function HostCommunityDetailPage() {
 									</div>
 
 									{/* Top Age Group */}
-									<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+									<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 										<div className="flex items-center gap-2 mb-3">
 											<div className="size-8 rounded-full bg-teal-50 flex items-center justify-center shrink-0">
 												<Icon
@@ -1122,7 +1122,7 @@ export default function HostCommunityDetailPage() {
 									</div>
 
 									{/* Gender Distribution */}
-									<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+									<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 										<div className="flex items-center gap-2 mb-3">
 											<div className="size-8 rounded-full bg-pink-50 flex items-center justify-center shrink-0">
 												<Icon as={StarSvg} size="sm" className="text-pink-500" />
@@ -1169,7 +1169,7 @@ export default function HostCommunityDetailPage() {
 									</div>
 
 									{/* Top Cities */}
-									<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+									<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 										<div className="flex items-center gap-2 mb-3">
 											<div className="size-8 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
 												<Icon
@@ -1213,7 +1213,7 @@ export default function HostCommunityDetailPage() {
 									</div>
 
 									{upcomingExperiences.length === 0 ? (
-										<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-10 flex flex-col items-center text-center">
+										<div className="rounded-action bg-surface-card border border-border-default shadow-md p-10 flex flex-col items-center text-center">
 											<div className="size-12 rounded-full bg-surface-brand-soft flex items-center justify-center mb-3">
 												<Icon as={CalendarSvg} size="md" color="brand" />
 											</div>
@@ -1237,7 +1237,7 @@ export default function HostCommunityDetailPage() {
 							{/* Right sidebar */}
 							<div className="w-100 shrink-0 flex flex-col gap-4 sticky top-6">
 								{/* Community Access */}
-								<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+								<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 									<div className="flex items-center justify-between mb-2">
 										<div className="flex items-center gap-2">
 											<Icon as={ShieldCheckSvg} size="sm" color="secondary" />
@@ -1294,7 +1294,7 @@ export default function HostCommunityDetailPage() {
 								</div>
 
 								{/* Community Stats */}
-								<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+								<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 									<div className="flex items-center gap-2 mb-3">
 										<Icon as={Chart2Svg} size="sm" color="secondary" />
 										<p className="text-body-md font-semibold text-text-primary">
@@ -1355,21 +1355,21 @@ export default function HostCommunityDetailPage() {
 								<div className="flex-1 min-w-0 flex flex-col gap-6">
 									<div className="grid grid-cols-4 gap-4">
 										{Array.from({ length: 4 }).map((_, i) => (
-											<Skeleton.Block key={i} className="h-28 rounded-panel" />
+											<Skeleton.Block key={i} className="h-28 rounded-action" />
 										))}
 									</div>
 									<div className="grid grid-cols-2 gap-4">
-										<Skeleton.Block className="h-64 rounded-panel" />
-										<Skeleton.Block className="h-64 rounded-panel" />
+										<Skeleton.Block className="h-64 rounded-action" />
+										<Skeleton.Block className="h-64 rounded-action" />
 									</div>
-									<Skeleton.Block className="h-48 rounded-panel" />
-									<Skeleton.Block className="h-32 rounded-panel" />
-									<Skeleton.Block className="h-32 rounded-panel" />
+									<Skeleton.Block className="h-48 rounded-action" />
+									<Skeleton.Block className="h-32 rounded-action" />
+									<Skeleton.Block className="h-32 rounded-action" />
 								</div>
 								<div className="w-100 shrink-0 flex flex-col gap-4">
-									<Skeleton.Block className="h-40 rounded-panel" />
-									<Skeleton.Block className="h-40 rounded-panel" />
-									<Skeleton.Block className="h-24 rounded-panel" />
+									<Skeleton.Block className="h-40 rounded-action" />
+									<Skeleton.Block className="h-40 rounded-action" />
+									<Skeleton.Block className="h-24 rounded-action" />
 								</div>
 							</div>
 						)}
@@ -1465,7 +1465,7 @@ export default function HostCommunityDetailPage() {
 										).map(card => (
 											<div
 												key={card.label}
-												className="rounded-panel bg-surface-card border border-border-default shadow-md p-5"
+												className="rounded-action bg-surface-card border border-border-default shadow-md p-5"
 											>
 												<div className="flex items-center gap-2 mb-3">
 													<div
@@ -1504,7 +1504,7 @@ export default function HostCommunityDetailPage() {
 									{/* Demographics */}
 									<div className="grid grid-cols-2 gap-4">
 										{/* Age Distribution */}
-										<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+										<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 											<p className="text-body-md font-semibold text-text-primary mb-4">
 												Age Distribution
 											</p>
@@ -1561,7 +1561,7 @@ export default function HostCommunityDetailPage() {
 										</div>
 
 										{/* Gender Distribution */}
-										<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+										<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 											<p className="text-body-md font-semibold text-text-primary mb-4">
 												Gender Distribution
 											</p>
@@ -1681,7 +1681,7 @@ export default function HostCommunityDetailPage() {
 									</div>
 
 									{/* Top Cities */}
-									<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+									<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 										<p className="text-body-md font-semibold text-text-primary mb-4">
 											Top Cities
 										</p>
@@ -1715,7 +1715,7 @@ export default function HostCommunityDetailPage() {
 									</div>
 
 									{/* Audience Interests */}
-									<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+									<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 										<p className="text-body-md font-semibold text-text-primary mb-4">
 											Audience Interests
 										</p>
@@ -1744,7 +1744,7 @@ export default function HostCommunityDetailPage() {
 									</div>
 
 									{/* Member Activity */}
-									<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+									<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 										<p className="text-body-md font-semibold text-text-primary mb-4">
 											Member Activity
 										</p>
@@ -1822,7 +1822,7 @@ export default function HostCommunityDetailPage() {
 								{/* ── Right sidebar ────────────────────────── */}
 								<div className="w-100 shrink-0 flex flex-col gap-4 sticky top-6">
 									{/* About This Community */}
-									<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+									<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 										<p className="text-body-md font-semibold text-text-primary mb-3">
 											About this community
 										</p>
@@ -1852,7 +1852,7 @@ export default function HostCommunityDetailPage() {
 
 									{/* Audience Highlights */}
 									{audienceData.highlights.length > 0 && (
-										<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+										<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 											<p className="text-body-md font-semibold text-text-primary mb-3">
 												Audience Highlights
 											</p>
@@ -1936,7 +1936,7 @@ export default function HostCommunityDetailPage() {
 
 								{/* Error */}
 								{expError && !expLoading && (
-									<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-10 flex flex-col items-center text-center">
+									<div className="rounded-action bg-surface-card border border-border-default shadow-md p-10 flex flex-col items-center text-center">
 										<p className="text-body-md font-semibold text-text-primary mb-2">
 											{expError}
 										</p>
@@ -1951,7 +1951,7 @@ export default function HostCommunityDetailPage() {
 
 								{/* Empty state */}
 								{!expLoading && !expError && expData && expData.data.length === 0 && (
-									<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-12 flex flex-col items-center text-center">
+									<div className="rounded-action bg-surface-card border border-border-default shadow-md p-12 flex flex-col items-center text-center">
 										<div className="size-14 rounded-full bg-surface-brand-soft flex items-center justify-center mb-4">
 											<Icon as={CalendarSvg} size="lg" color="brand" />
 										</div>
@@ -2049,7 +2049,7 @@ export default function HostCommunityDetailPage() {
 							{/* Right sidebar */}
 							<div className="w-100 shrink-0 flex flex-col gap-4 sticky top-6">
 								{/* Community Stats from sidebar API */}
-								<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+								<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 									<div className="flex items-center gap-2 mb-3">
 										<Icon as={TrendUpSvg} size="sm" color="secondary" />
 										<p className="text-body-md font-semibold text-text-primary">
@@ -2125,7 +2125,7 @@ export default function HostCommunityDetailPage() {
 							<div className="flex-1 min-w-0 flex flex-col gap-6">
 
 								{/* Permission cards grid */}
-								<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-6">
+								<div className="rounded-action bg-surface-card border border-border-default shadow-md p-6">
 									<p className="text-heading-sm font-bold text-text-primary mb-1">
 										Host Permissions in this Community
 									</p>
@@ -2168,7 +2168,7 @@ export default function HostCommunityDetailPage() {
 								</div>
 
 								{/* Review notice banner */}
-								<div className="flex items-center gap-3 px-5 py-4 rounded-panel border border-border-default bg-surface-page">
+								<div className="flex items-center gap-3 px-5 py-4 rounded-action border border-border-default bg-surface-page">
 									<div className="size-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
 										<Icon as={ShieldCheckSvg} size="sm" className="text-blue-600" />
 									</div>
@@ -2178,7 +2178,7 @@ export default function HostCommunityDetailPage() {
 								</div>
 
 								{/* Publishing workflow */}
-								<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-6">
+								<div className="rounded-action bg-surface-card border border-border-default shadow-md p-6">
 									<p className="text-body-md font-semibold text-text-primary mb-6">
 										How publishing works in this community
 									</p>
@@ -2203,7 +2203,7 @@ export default function HostCommunityDetailPage() {
 								</div>
 
 								{/* Bottom CTA */}
-								<div className="flex items-center justify-between gap-6 px-6 py-5 rounded-panel border border-border-default bg-surface-brand-soft">
+								<div className="flex items-center justify-between gap-6 px-6 py-5 rounded-action border border-border-default bg-surface-brand-soft">
 									<div className="flex items-center gap-4">
 										<div className="size-10 rounded-full bg-action-primary/10 flex items-center justify-center shrink-0">
 											<Icon as={PlaneSvg} size="md" color="brand" />
@@ -2234,7 +2234,7 @@ export default function HostCommunityDetailPage() {
 							{/* Right sidebar */}
 							<div className="w-100 shrink-0 flex flex-col gap-4 sticky top-6">
 								{/* Community Access */}
-								<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+								<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 									<div className="flex items-center justify-between mb-2">
 										<div className="flex items-center gap-2">
 											<Icon as={ShieldCheckSvg} size="sm" color="secondary" />
@@ -2248,7 +2248,7 @@ export default function HostCommunityDetailPage() {
 								</div>
 
 								{/* About This Community */}
-								<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+								<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 									<p className="text-body-md font-semibold text-text-primary mb-3">About this community</p>
 									<p className="text-body-sm text-text-secondary leading-relaxed mb-4">{community.description}</p>
 									{community.interestTags.length > 0 ? (
@@ -2268,7 +2268,7 @@ export default function HostCommunityDetailPage() {
 								</div>
 
 								{/* Community Stats from sidebar API */}
-								<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+								<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 									<div className="flex items-center gap-2 mb-3">
 										<Icon as={Chart2Svg} size="sm" color="secondary" />
 										<p className="text-body-md font-semibold text-text-primary">Community Stats</p>
@@ -2336,32 +2336,32 @@ export default function HostCommunityDetailPage() {
 								<div className="grid grid-cols-4 gap-3">
 									{annStatsLoading || !annStats ? (
 										Array.from({ length: 4 }).map((_, i) => (
-											<Skeleton.Block key={i} className="rounded-panel bg-surface-card border border-border-default p-4 h-24" />
+											<Skeleton.Block key={i} className="rounded-action bg-surface-card border border-border-default p-4 h-24" />
 										))
 									) : (
 										<>
-											<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-4 flex flex-col gap-2">
+											<div className="rounded-action bg-surface-card border border-border-default shadow-md p-4 flex flex-col gap-2">
 												<div className="size-8 rounded-full flex items-center justify-center bg-green-50">
 													<CheckCircleSvg className="size-4 text-green-600" aria-hidden />
 												</div>
 												<p className="text-heading-sm font-bold text-text-primary">{annStats.published}</p>
 												<p className="text-caption text-text-secondary">Published</p>
 											</div>
-											<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-4 flex flex-col gap-2">
+											<div className="rounded-action bg-surface-card border border-border-default shadow-md p-4 flex flex-col gap-2">
 												<div className="size-8 rounded-full flex items-center justify-center bg-blue-50">
 													<ClockCircleSvg className="size-4 text-blue-600" aria-hidden />
 												</div>
 												<p className="text-heading-sm font-bold text-text-primary">{annStats.scheduled}</p>
 												<p className="text-caption text-text-secondary">Scheduled</p>
 											</div>
-											<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-4 flex flex-col gap-2">
+											<div className="rounded-action bg-surface-card border border-border-default shadow-md p-4 flex flex-col gap-2">
 												<div className="size-8 rounded-full flex items-center justify-center bg-neutral-100">
 													<FileTextSvg className="size-4 text-neutral-500" aria-hidden />
 												</div>
 												<p className="text-heading-sm font-bold text-text-primary">{annStats.drafts}</p>
 												<p className="text-caption text-text-secondary">Drafts</p>
 											</div>
-											<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-4 flex flex-col gap-2">
+											<div className="rounded-action bg-surface-card border border-border-default shadow-md p-4 flex flex-col gap-2">
 												<div className="size-8 rounded-full flex items-center justify-center bg-purple-50">
 													<EyeOpenSvg className="size-4 text-purple-600" aria-hidden />
 												</div>
@@ -2408,7 +2408,7 @@ export default function HostCommunityDetailPage() {
 
 								{/* Error */}
 								{annError && !annLoading && (
-									<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-10 flex flex-col items-center text-center">
+									<div className="rounded-action bg-surface-card border border-border-default shadow-md p-10 flex flex-col items-center text-center">
 										<p className="text-body-md font-semibold text-text-primary mb-2">{annError}</p>
 										<button onClick={() => setAnnPage((p) => p)} className="text-label-sm text-text-brand hover:underline">
 											Try again
@@ -2418,7 +2418,7 @@ export default function HostCommunityDetailPage() {
 
 								{/* Empty state */}
 								{!annLoading && !annError && annItems.length === 0 && (
-									<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-12 flex flex-col items-center text-center">
+									<div className="rounded-action bg-surface-card border border-border-default shadow-md p-12 flex flex-col items-center text-center">
 										<div className="size-14 rounded-full bg-surface-brand-soft flex items-center justify-center mb-4">
 											<Icon as={BellSvg} size="lg" color="brand" />
 										</div>
@@ -2529,7 +2529,7 @@ export default function HostCommunityDetailPage() {
 							{/* Right sidebar */}
 							<div className="w-100 shrink-0 flex flex-col gap-4 sticky top-6">
 								{/* About This Community */}
-								<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+								<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 									<p className="text-body-md font-semibold text-text-primary mb-3">About this community</p>
 									<p className="text-body-sm text-text-secondary leading-relaxed mb-4">{community.description}</p>
 									{community.interestTags.length > 0 && (
@@ -2544,7 +2544,7 @@ export default function HostCommunityDetailPage() {
 								</div>
 
 								{/* Community Stats */}
-								<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5">
+								<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5">
 									<div className="flex items-center gap-2 mb-3">
 										<Icon as={Chart2Svg} size="sm" color="secondary" />
 										<p className="text-body-md font-semibold text-text-primary">Community Stats</p>

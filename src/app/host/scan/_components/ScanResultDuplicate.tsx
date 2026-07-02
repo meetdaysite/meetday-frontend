@@ -26,7 +26,7 @@ export function ScanResultDuplicate({ result, onScanNext }: Props) {
 
 			<div className="flex-1 flex flex-col gap-5 px-4 py-5 overflow-y-auto">
 				{/* Warning banner */}
-				<div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-panel shadow-md">
+				<div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-200 rounded-action shadow-md">
 					<div className="size-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
 						<WarningIcon />
 					</div>
@@ -39,7 +39,7 @@ export function ScanResultDuplicate({ result, onScanNext }: Props) {
 				</div>
 
 				{/* Detail rows */}
-				<div className="bg-neutral-50 rounded-panel border border-neutral-200 shadow-md overflow-hidden">
+				<div className="bg-neutral-50 rounded-action border border-neutral-200 shadow-md overflow-hidden">
 					<DetailRow icon={<QrIcon />} label="Ticket code" value={`QR ending ${result.ticketCodeSuffix}`} />
 					<Divider />
 					<DetailRow icon={<GateIcon />} label="Gate scanned" value={result.gate} />
@@ -50,7 +50,7 @@ export function ScanResultDuplicate({ result, onScanNext }: Props) {
 				</div>
 
 				{/* Audit log */}
-				<div className="border border-neutral-200 rounded-panel shadow-md overflow-hidden">
+				<div className="border border-neutral-200 rounded-action shadow-md overflow-hidden">
 					<div className="flex items-center justify-between px-4 py-3 bg-neutral-50 border-b border-neutral-200">
 						<span className="text-[13px] font-semibold text-neutral-800">Audit log</span>
 						<div className="flex items-center gap-1">

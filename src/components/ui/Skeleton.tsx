@@ -71,7 +71,7 @@ Skeleton.Post = function SkeletonPost({ className }: { className?: string }) {
 	return (
 		<div
 			className={clsx(
-				"rounded-panel bg-surface-card border border-border-default p-4 flex flex-col gap-3 animate-pulse",
+				"rounded-action bg-surface-card border border-border-default p-4 flex flex-col gap-3 animate-pulse",
 				className,
 			)}
 		>
@@ -97,7 +97,7 @@ Skeleton.Announcement = function SkeletonAnnouncement({ className }: { className
 	return (
 		<div
 			className={clsx(
-				"rounded-panel bg-surface-card border border-border-default flex gap-4 p-4 animate-pulse",
+				"rounded-action bg-surface-card border border-border-default flex gap-4 p-4 animate-pulse",
 				className,
 			)}
 		>

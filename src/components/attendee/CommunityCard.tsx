@@ -34,7 +34,7 @@ interface CommunityCardProps {
 
 export function CommunityCard({ community }: CommunityCardProps) {
 	return (
-		<Link href={`/communities/${community.slug}`} className="w-full rounded-panel overflow-hidden border border-border-default bg-surface-card flex flex-col shadow-md">
+		<Link href={`/communities/${community.slug}`} className="w-full rounded-action overflow-hidden border border-border-default bg-surface-card flex flex-col shadow-md">
 			<div className="relative h-36 w-full overflow-hidden shrink-0">
 				<Image
 					src={community.coverImageUrl}

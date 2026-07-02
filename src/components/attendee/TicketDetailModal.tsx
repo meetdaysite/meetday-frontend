@@ -46,7 +46,7 @@ export function TicketDetailModal({ ticket, onClose }: TicketDetailModalProps) {
 			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
 			onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
 		>
-			<div className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-lg flex flex-col max-h-[85vh]">
+			<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-lg flex flex-col max-h-[85vh]">
 				{/* Header */}
 				<div className="flex items-start gap-3 px-6 pt-6 pb-4 border-b border-border-default shrink-0">
 					<div className="flex-1 min-w-0">

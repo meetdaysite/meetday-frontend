@@ -178,7 +178,7 @@ export default function DashboardSupportPage() {
 				</div>
 
 				{/* Ticket list */}
-				<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden max-w-3xl">
+				<div className="rounded-action border border-border-default bg-surface-card overflow-hidden max-w-3xl">
 					{loading ? (
 						<>
 							<TicketRowSkeleton />
