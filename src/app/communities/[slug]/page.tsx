@@ -6,6 +6,8 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { Skeleton } from "@/components/ui/Skeleton"
+import { Tabs } from "@/components/ui/Tabs"
+import type { TabItem } from "@/components/ui/Tabs"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import LockSvg from "@/icons/outlined/lock.svg"
 import BoltSvg from "@/icons/outlined/bolt.svg"
@@ -37,7 +39,7 @@ import { LeaveConfirmModal } from "./_components/LeaveConfirmModal"
 
 // ─── Tab definition ────────────────────────────────────────────────────────────
 
-type TabKey = "overview" | "experiences" | "chat" | "announcements" | "feed" | "members"
+export type TabKey = "overview" | "experiences" | "chat" | "announcements" | "feed" | "members"
 
 interface Tab {
 	key: TabKey
@@ -336,54 +338,47 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 						<CommunityHero community={community} isMember={isMember} isSaved={apiData.isSaved} onJoinClick={openJoinModal} onLeaveClick={() => setLeaveModalOpen(true)} />
 
 						{/* Tabs row */}
-						<div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-							{visibleTabs.map(tab => {
+						<Tabs
+							items={visibleTabs.map((tab): TabItem<TabKey> => {
 								const locked = tab.requiresAuth && (!isLoggedIn || !isMember)
-								const isActive = safeActiveTab === tab.key
 								const showAnnouncementBadge = tab.key === "announcements" && !locked && announcementUnreadCount > 0
 								const showChatBadge = tab.key === "chat" && !locked && chatDMUnreadCount > 0
 
-								return (
-									<button
-										key={tab.key}
-										type="button"
-										onClick={() => {
-											setActiveTab(tab.key)
-											if (tab.key === "chat" && chatDMUnreadCount > 0) {
-												setChatDMUnreadCount(0)
-											}
-											if (tab.key === "announcements" && announcementUnreadCount > 0) {
-												setAnnouncementUnreadCount(0)
-												markAnnouncementsRead(apiData.id).catch(() => {/* silent */})
-											}
-										}}
-										className={`relative flex items-center gap-1.5 px-4 py-2.5 text-body-sm font-medium whitespace-nowrap transition-colors ${
-											isActive
-												? "text-text-brand"
-												: "text-text-secondary hover:text-text-primary"
-										}`}
-									>
-										{tab.label}
-										{locked && (
-											<span className="flex items-center gap-0.5 text-[10px] font-medium text-text-info border border-icon-info bg-surface-info rounded-avatar px-1 py-1">
-												<Icon as={LockSvg} size="xs" color="info" className="size-2" />
-											</span>
-										)}
-										{showAnnouncementBadge && (
-											<span className="flex items-center justify-center min-w-4 h-4 px-1 text-[10px] font-bold bg-action-primary text-text-inverse rounded-full leading-none">
-												{announcementUnreadCount > 99 ? "99+" : announcementUnreadCount}
-											</span>
-										)}
-										{showChatBadge && (
-											<span className="size-2 rounded-full bg-action-primary shrink-0" />
-										)}
-										{isActive && (
-											<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-text-brand rounded-full" />
-										)}
-									</button>
-								)
+								return {
+									value: tab.key,
+									label: tab.label,
+									extra: (
+										<>
+											{locked && (
+												<span className="flex items-center gap-0.5 text-[10px] font-medium text-text-info border border-icon-info bg-surface-info rounded-avatar px-1 py-1">
+													<Icon as={LockSvg} size="xs" color="info" className="size-2" />
+												</span>
+											)}
+											{showAnnouncementBadge && (
+												<span className="flex items-center justify-center min-w-4 h-4 px-1 text-[10px] font-bold bg-action-primary text-text-inverse rounded-full leading-none">
+													{announcementUnreadCount > 99 ? "99+" : announcementUnreadCount}
+												</span>
+											)}
+											{showChatBadge && (
+												<span className="size-2 rounded-full bg-action-primary shrink-0" />
+											)}
+										</>
+									),
+								}
 							})}
-						</div>
+							value={safeActiveTab}
+							onChange={tab => {
+								setActiveTab(tab)
+								if (tab === "chat" && chatDMUnreadCount > 0) {
+									setChatDMUnreadCount(0)
+								}
+								if (tab === "announcements" && announcementUnreadCount > 0) {
+									setAnnouncementUnreadCount(0)
+									markAnnouncementsRead(apiData.id).catch(() => {/* silent */})
+								}
+							}}
+							variant="pill"
+						/>
 
 						{/* Tab content */}
 						<TabContent
@@ -458,6 +453,7 @@ export default function CommunityDetailsPage({ params }: { params: Promise<{ slu
 				}}
 				open={successModalOpen}
 				onClose={() => setSuccessModalOpen(false)}
+				onNavigate={tab => setActiveTab(tab)}
 			/>
 
 			<JoinPendingModal

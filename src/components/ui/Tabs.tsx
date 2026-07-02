@@ -1,12 +1,15 @@
 "use client"
 
 import clsx from "clsx"
+import type { ReactNode } from "react"
 
 export interface TabItem<T extends string = string> {
 	value: T
 	label: string
 	/** Shown as a badge next to the label when defined. */
 	count?: number
+	/** Arbitrary element rendered after the label/count — e.g. a lock icon or unread dot. */
+	extra?: ReactNode
 }
 
 interface TabsProps<T extends string> {
@@ -69,6 +72,7 @@ export function Tabs<T extends string>({
 									({item.count})
 								</span>
 							)}
+							{item.extra}
 						</button>
 					)
 				})}
@@ -92,6 +96,7 @@ export function Tabs<T extends string>({
 						)}
 					>
 						{item.label}
+						{item.extra}
 					</button>
 				))}
 			</div>
@@ -132,6 +137,7 @@ export function Tabs<T extends string>({
 								{item.count}
 							</span>
 						)} */}
+						{item.extra}
 					</button>
 				)
 			})}

@@ -1,5 +1,5 @@
 import apiClient from "./axios"
-import type { CreateOrderPayload, FullOrderDetail, MyOrderListItem, MyOrdersResponse, OrderDetail } from "@/types/order"
+import type { CancelTicketsResult, CreateOrderPayload, FullOrderDetail, MyOrderListItem, MyOrdersResponse, OrderDetail } from "@/types/order"
 
 export interface ValidateCouponPayload {
 	eventId: string
@@ -78,8 +78,21 @@ export async function getOrderDetail(orderId: string): Promise<OrderDetail> {
 	return data.data
 }
 
-export async function cancelOrder(orderId: string): Promise<void> {
-	await apiClient.post(`/orders/${orderId}/cancel`)
+export async function cancelOrder(orderId: string): Promise<CancelTicketsResult> {
+	const { data } = await apiClient.post<{ success: boolean; data: CancelTicketsResult }>(`/orders/${orderId}/cancel`)
+	return data.data
+}
+
+export interface CancelTicketsPayload {
+	items: { orderItemId: string; quantity: number; attendeeIds: string[] }[]
+}
+
+export async function cancelOrderTickets(orderId: string, payload: CancelTicketsPayload): Promise<CancelTicketsResult> {
+	const { data } = await apiClient.post<{ success: boolean; data: CancelTicketsResult }>(
+		`/orders/${orderId}/cancel-tickets`,
+		payload,
+	)
+	return data.data
 }
 
 export async function getFullOrderDetail(orderId: string): Promise<FullOrderDetail> {

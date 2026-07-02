@@ -4,10 +4,11 @@ import { EventCard } from "@/components/attendee/EventCard"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import { Skeleton } from "@/components/ui/Skeleton"
+import { Tabs } from "@/components/ui/Tabs"
+import type { TabItem } from "@/components/ui/Tabs"
 import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
 import HeadphonesSvg from "@/icons/filled/headphones.svg"
-import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
 import SmileCircleSvg from "@/icons/filled/smile-circle.svg"
 import TicketSvg from "@/icons/filled/ticket.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
@@ -60,51 +61,19 @@ function copyToClipboard(text: string) {
 	})
 }
 
-// ─── Stats bar ────────────────────────────────────────────────────────────────
-
-function StatsBar({
-	upcomingCount,
-	attendedCount,
-	savedCount,
-}: {
-	upcomingCount: number
-	attendedCount: number
-	savedCount: number
-}) {
-	const stats = [
-		{ label: "Upcoming", value: upcomingCount, color: "text-text-brand" },
-		{ label: "Attended", value: attendedCount, color: "text-icon-success" },
-		{ label: "Saved", value: savedCount, color: "text-amber-500" },
-		{ label: "People Met", value: "—", color: "text-purple-500" },
-	]
-	return (
-		<div className="flex items-center gap-3 flex-wrap">
-			{stats.map((s) => (
-				<div
-					key={s.label}
-					className="flex items-center gap-2.5 px-4 py-2 rounded-action bg-surface-card border border-border-default"
-				>
-					<span className={clsx("text-heading-sm font-extrabold", s.color)}>{s.value}</span>
-					<span className="text-label-sm text-text-secondary">{s.label}</span>
-				</div>
-			))}
-		</div>
-	)
-}
-
 // ─── My Events card ───────────────────────────────────────────────────────────
 
 function DaysBadge({ days }: { days: number }) {
 	if (days > 0) {
 		return (
-			<span className="inline-flex items-center px-2.5 py-0.5 rounded-badge text-[11px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
+			<span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
 				In {days} day{days !== 1 ? "s" : ""}
 			</span>
 		)
 	}
 	if (days === 0) {
 		return (
-			<span className="inline-flex items-center px-2.5 py-0.5 rounded-badge text-[11px] font-bold bg-red-100 text-red-600 border border-red-200">
+			<span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold bg-red-100 text-red-600 border border-red-200">
 				Today
 			</span>
 		)
@@ -115,7 +84,7 @@ function DaysBadge({ days }: { days: number }) {
 function StatusBadge({ status }: { status: string }) {
 	if (status === "CONFIRMED") {
 		return (
-			<div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-badge bg-green-50 border border-green-200">
+			<div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-green-50 border border-green-200">
 				<Icon as={CheckCircleSvg} size="sm" color="success" />
 				<span className="text-label-sm font-semibold text-icon-success">Confirmed</span>
 			</div>
@@ -123,13 +92,13 @@ function StatusBadge({ status }: { status: string }) {
 	}
 	if (status === "CANCELLED") {
 		return (
-			<div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-badge bg-red-50 border border-red-200">
+			<div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-50 border border-red-200">
 				<span className="text-label-sm font-semibold text-red-600">Cancelled</span>
 			</div>
 		)
 	}
 	return (
-		<div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-badge bg-surface-secondary border border-border-default">
+		<div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-surface-secondary border border-border-default">
 			<span className="text-label-sm font-semibold text-text-secondary">{status}</span>
 		</div>
 	)
@@ -187,7 +156,7 @@ function MyEventCard({
 					{/* Category badge */}
 					{categoryName && (
 						<div className="absolute top-3 left-3 right-3">
-							<span className="text-[9px] font-bold text-white uppercase tracking-wide bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded">
+							<span className="text-[9px] font-bold text-white uppercase tracking-wide bg-white/20 backdrop-blur-sm px-2 py-1 rounded">
 								{categoryName}
 							</span>
 						</div>
@@ -236,17 +205,14 @@ function MyEventCard({
 
 					{tags.length > 0 && (
 						<div className="flex flex-wrap gap-1.5">
-							{tags.slice(0, 3).map((tag) => (
+							{tags.map((tag) => (
 								<span
 									key={tag}
-									className="text-[11px] font-medium px-2 py-0.5 rounded-badge bg-surface-secondary text-text-secondary border border-border-default"
+									className="text-[11px] font-medium px-2 py-1 rounded-action bg-surface-secondary text-text-vibe border border-violet-200 bg-surface-vibe-soft"
 								>
 									{tag}
 								</span>
 							))}
-							{tags.length > 3 && (
-								<span className="text-[11px] text-text-muted px-1">+{tags.length - 3}</span>
-							)}
 						</div>
 					)}
 				</div>
@@ -283,9 +249,9 @@ function MyEventCard({
 
 					<div className="mt-auto flex flex-col gap-2">
 						<Button
-							variant="secondary"
+							variant="primary"
 							size="sm"
-							radius="md"
+							radius="sm"
 							leftIcon={<Icon as={TicketSvg} size="sm" color="inherit" />}
 							onClick={() => router.push(`/orders/${order.id}`)}
 						>
@@ -295,7 +261,7 @@ function MyEventCard({
 							<Button
 								variant="secondary"
 								size="sm"
-								radius="md"
+								radius="sm"
 								leftIcon={<Icon as={SmileCircleSvg} size="sm" color="inherit" />}
 								onClick={() =>
 									router.push(`/events/${order.event.id}/review?orderId=${order.id}`)
@@ -384,7 +350,7 @@ function EmptyEventsState() {
 							sizes="256px"
 							className="object-cover"
 						/>
-						<div className="absolute top-4 left-4 right-4 px-2.5 py-1 rounded-badge bg-black/30 backdrop-blur-sm border border-white/20">
+						<div className="absolute top-4 left-4 right-4 px-2.5 py-1 rounded-action bg-black/30 backdrop-blur-sm border border-white/20">
 							<span className="text-[10px] font-semibold text-white">New here? Let&apos;s get you started 🎉</span>
 						</div>
 					</div>
@@ -418,7 +384,7 @@ function EmptyEventsState() {
 								<Link
 									key={cat}
 									href={`/explore?category=${cat.toLowerCase()}`}
-									className="inline-flex items-center gap-1 px-3 py-1 rounded-badge border border-border-default bg-surface-secondary text-label-sm text-text-secondary hover:text-text-primary hover:border-border-default transition-colors"
+									className="inline-flex items-center gap-1 px-3 py-1 rounded-action border border-border-default bg-surface-secondary text-label-sm text-text-secondary hover:text-text-primary hover:border-border-default transition-colors"
 								>
 									{cat}
 								</Link>
@@ -451,9 +417,54 @@ function EmptyEventsState() {
 
 // ─── Right panels ─────────────────────────────────────────────────────────────
 
-function WithEventsRightPanel() {
+function StatsSummaryCard({
+	upcomingCount,
+	attendedCount,
+	savedCount,
+}: {
+	upcomingCount: number
+	attendedCount: number
+	savedCount: number
+}) {
+	const stats = [
+		{ label: "Upcoming", value: upcomingCount, icon: TicketSvg, color: "brand" as const, bg: "bg-surface-brand-soft" },
+		{ label: "Attended", value: attendedCount, icon: CheckCircleSvg, color: "success" as const, bg: "bg-surface-success-soft" },
+		{ label: "Saved", value: savedCount, icon: BookmarkFilledSvg, color: "warning" as const, bg: "bg-amber-50" },
+		{ label: "People Met", value: "—", icon: SmileCircleSvg, color: "vibe" as const, bg: "bg-surface-vibe-soft" },
+	]
+	return (
+		<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
+			<p className="text-body-sm font-bold text-text-primary">Your Activity</p>
+			<div className="grid grid-cols-2 gap-4">
+				{stats.map((s) => (
+					<div key={s.label} className="flex items-center gap-2.5 min-w-0">
+						<div className={clsx("size-8 rounded-full flex items-center justify-center shrink-0", s.bg)}>
+							<Icon as={s.icon} size="sm" color={s.color} />
+						</div>
+						<div className="min-w-0">
+							<p className="text-body-md font-extrabold text-text-primary leading-none">{s.value}</p>
+							<p className="text-caption text-text-muted mt-1">{s.label}</p>
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+	)
+}
+
+function WithEventsRightPanel({
+	upcomingCount,
+	attendedCount,
+	savedCount,
+}: {
+	upcomingCount: number
+	attendedCount: number
+	savedCount: number
+}) {
 	return (
 		<>
+			<StatsSummaryCard upcomingCount={upcomingCount} attendedCount={attendedCount} savedCount={savedCount} />
+
 			{/* Need help */}
 			<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
@@ -680,54 +691,32 @@ function MyEventsPageInner() {
 					</p>
 				</div>
 
-				{/* Stats */}
-				{(hasAnyOrders || savedEvents.length > 0) && (
-					<div className="mb-6">
-						<StatsBar
-							upcomingCount={upcomingOrders.length}
-							attendedCount={pastOrders.length}
-							savedCount={savedEvents.length}
-						/>
-					</div>
-				)}
-
 				{/* Two-column layout */}
 				<div className="flex gap-8 items-start">
 					{/* Left */}
 					<div className="flex-1 min-w-0 flex flex-col gap-4">
 						{/* Tabs — always visible */}
-						<div className="flex items-center gap-1 border-b border-border-default">
-							{tabs.map((tab) => (
-								<button
-									key={tab.key}
-									type="button"
-									onClick={() => setActiveTab(tab.key)}
-									className={clsx(
-										"relative px-4 py-2.5 text-label-sm font-medium transition-colors",
-										activeTab === tab.key
-											? "text-text-primary"
-											: "text-text-secondary hover:text-text-primary",
-									)}
-								>
-									{tab.label}
-									{tab.count > 0 && (
-										<span
-											className={clsx(
-												"ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-												activeTab === tab.key
-													? "bg-action-primary text-white"
-													: "bg-surface-secondary text-text-muted",
-											)}
-										>
-											{tab.count}
-										</span>
-									)}
-									{activeTab === tab.key && (
-										<span className="absolute bottom-0 left-4 right-4 h-0.5 bg-text-brand rounded-full" />
-									)}
-								</button>
-							))}
-						</div>
+						<Tabs
+							items={tabs.map((tab): TabItem<Tab> => ({
+								value: tab.key,
+								label: tab.label,
+								extra: tab.count > 0 && (
+									<span
+										className={clsx(
+											"text-[10px] font-bold px-1.5 py-1 rounded-full",
+											activeTab === tab.key
+												? "bg-white text-neutral-900"
+												: "bg-surface-secondary text-text-muted",
+										)}
+									>
+										{tab.count}
+									</span>
+								),
+							}))}
+							value={activeTab}
+							onChange={setActiveTab}
+							variant="pill"
+						/>
 
 						{/* Tab content */}
 						{activeTab === "saved" ? (
@@ -763,7 +752,11 @@ function MyEventsPageInner() {
 					{/* Right sticky panel */}
 					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">
 						{hasAnyOrders ? (
-							<WithEventsRightPanel />
+							<WithEventsRightPanel
+								upcomingCount={upcomingOrders.length}
+								attendedCount={pastOrders.length}
+								savedCount={savedEvents.length}
+							/>
 						) : (
 							<EmptyStateRightPanel recommendations={recommendations} />
 						)}

@@ -508,6 +508,30 @@ export async function getAttendeeProfile(): Promise<AttendeeProfile> {
 	return data.data
 }
 
+// Fields mirror the POST/PATCH /attendee/profile request body. Response shapes for
+// these two endpoints aren't strictly typed yet — kept generic (AttendeeProfile) pending
+// backend confirmation of the full enum lists for ageRange/gender/privacy.
+export type UpdateAttendeeProfilePayload = {
+	username?: string
+	bio?: string
+	city?: string
+	ageRange?: string
+	gender?: string
+	profession?: string
+	vibeType?: AttendeeVibeType
+	socialStyle?: AttendeeSocialStyle
+	privacy?: string
+	avatarKey?: string
+}
+
+export async function updateAttendeeProfile(payload: UpdateAttendeeProfilePayload): Promise<AttendeeProfile> {
+	const { data } = await apiClient.patch<{ success: boolean; data: AttendeeProfile }>(
+		"/attendee/profile",
+		payload,
+	)
+	return data.data
+}
+
 // ─── Interests ────────────────────────────────────────────────────────────────
 
 export type Interest = {
@@ -521,6 +545,29 @@ export type Interest = {
 export async function getInterests(): Promise<Interest[]> {
 	const { data } = await apiClient.get<{ success: boolean; data: Interest[] }>("/interests")
 	return data.data
+}
+
+export type AttendeeInterestAffinity = {
+	interestId: string
+	name: string
+	slug: string
+	image: string
+	affinity: "LIKED" | "OPEN_TO" | "DISLIKED"
+}
+
+export async function getAttendeeInterests(): Promise<AttendeeInterestAffinity[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: { interests: AttendeeInterestAffinity[]; total: number } }>(
+		"/attendee/interests",
+	)
+	return data.data.interests
+}
+
+export async function updateAttendeeInterests(interests: AttendeeInterest[]): Promise<AttendeeInterestAffinity[]> {
+	const { data } = await apiClient.put<{ success: boolean; data: { interests: AttendeeInterestAffinity[]; total: number } }>(
+		"/attendee/interests",
+		{ interests },
+	)
+	return data.data.interests
 }
 
 // ─── Host dashboard ───────────────────────────────────────────────────────────
@@ -900,7 +947,7 @@ export async function getCommunityStats(slug: string): Promise<CommunityStats> {
 }
 
 export type CommunityHost = {
-	brandName: string
+	brandName: string | null
 	avatarUrl: string | null
 	eventCount: number
 }

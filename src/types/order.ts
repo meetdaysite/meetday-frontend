@@ -10,7 +10,13 @@ export interface CreateOrderPayload {
 	couponCode?: string
 }
 
-export type OrderStatus = "PENDING_PAYMENT" | "CONFIRMED" | "CANCELLED"
+export type OrderStatus = "PENDING_PAYMENT" | "CONFIRMED" | "PARTIALLY_REFUNDED" | "CANCELLED"
+
+export interface CancelTicketsResult {
+	message: string
+	refundId: string
+	refundAmountPaise: number
+}
 
 export interface OrderItemDetail {
 	ticketId: string

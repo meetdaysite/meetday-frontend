@@ -233,13 +233,23 @@ function AttendeeDetailsContent({ event, pricingConfig }: { event: PublicEventDe
 							<Checkbox checked={agreedToTerms} onChange={v => setAgreedToTerms(v)} label="" />
 							<p className="-mt-7 ml-7 text-label-sm text-text-secondary leading-snug">
 								I agree to the{" "}
-								<span className="text-text-brand cursor-pointer hover:underline">
+								<a
+									href="https://www.meetday.ai/terms"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-text-brand hover:underline"
+								>
 									Terms of Service
-								</span>{" "}
+								</a>{" "}
 								and{" "}
-								<span className="text-text-brand cursor-pointer hover:underline">
+								<a
+									href="https://www.meetday.ai/privacy"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-text-brand hover:underline"
+								>
 									Privacy Policy
-								</span>
+								</a>
 							</p>
 							<p className="text-caption text-text-muted ml-7">
 								Tickets will be shown to the Primary attendee after payment.

@@ -23,6 +23,9 @@ import { getPublicEventDetails } from "@/lib/api"
 import { getFullOrderDetail } from "@/lib/ordersApi"
 import { useAuthStore } from "@/store/authStore"
 import { SupportTicketModal } from "@/components/attendee/SupportTicketModal"
+import { EventCountdownCard } from "./_components/EventCountdownCard"
+import { CancelTicketModal } from "./_components/CancelTicketModal"
+import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
 import type { PublicEventDetails } from "@/types/attendee"
 import type { FullOrderDetail } from "@/types/order"
 import Image from "next/image"
@@ -107,21 +110,23 @@ const TRUST_ITEMS = [
 function TicketPageContent({
 	order,
 	eventDetails,
+	onOrderUpdated,
 }: {
 	order: FullOrderDetail
 	eventDetails: PublicEventDetails | null
+	onOrderUpdated: () => Promise<void>
 }) {
 	const [copied, setCopied] = useState(false)
 	const [supportOpen, setSupportOpen] = useState(false)
+	const [cancelOpen, setCancelOpen] = useState(false)
 
 	const firstItem = order.items[0]
-	const leadAttendee = firstItem?.attendees.find((a) => a.isLead) ?? firstItem?.attendees[0]
+	const leadAttendee = firstItem?.attendees.find(a => a.isLead) ?? firstItem?.attendees[0]
 	const qrValue = leadAttendee?.ticketCode
 		? `MEETDAY:${order.id}:${firstItem?.ticketId}:${leadAttendee.ticketCode}`
 		: order.id
 
-	const coverImageUrl =
-		eventDetails?.media.find((m) => m.type === "COVER")?.url ?? null
+	const coverImageUrl = eventDetails?.media.find(m => m.type === "COVER")?.url ?? null
 
 	const handleCopy = () => {
 		copyToClipboard(order.bookingId)
@@ -130,6 +135,13 @@ function TicketPageContent({
 	}
 
 	const ev = order.event
+	const eventHasPassed = new Date(order.event.eventDate) < new Date()
+	const canReview = order.status === "CONFIRMED" && eventHasPassed
+	const hasCancellableAttendees = order.items.some(item => item.attendees.some(a => !a.checkedInAt))
+	const canCancel =
+		(order.status === "CONFIRMED" || order.status === "PARTIALLY_REFUNDED") &&
+		!eventHasPassed &&
+		hasCancellableAttendees
 
 	return (
 		<main className="flex-1 py-6 md:py-8 pb-12">
@@ -144,7 +156,9 @@ function TicketPageContent({
 
 				<div className="mb-6">
 					<h1 className="text-heading-md font-extrabold text-text-primary">My Ticket</h1>
-					<p className="text-body-sm text-text-secondary mt-1">You&apos;re all set! Get ready to vibe.</p>
+					<p className="text-body-sm text-text-secondary mt-1">
+						You&apos;re all set! Get ready to vibe.
+					</p>
 				</div>
 
 				<div className="flex gap-8 items-start">
@@ -182,19 +196,34 @@ function TicketPageContent({
 									<div className="flex flex-col gap-3">
 										<div className="flex flex-col gap-1.5">
 											<div className="flex items-center gap-2">
-												<Icon as={CalendarSvg} size="sm" color="inherit" className="text-white/70 shrink-0" />
+												<Icon
+													as={CalendarSvg}
+													size="sm"
+													color="inherit"
+													className="text-white/70 shrink-0"
+												/>
 												<span className="text-label-sm text-white/80">
 													{formatEventDate(ev.eventDate)}
 												</span>
 											</div>
 											<div className="flex items-center gap-2">
-												<Icon as={ClockCircleSvg} size="sm" color="inherit" className="text-white/70 shrink-0" />
+												<Icon
+													as={ClockCircleSvg}
+													size="sm"
+													color="inherit"
+													className="text-white/70 shrink-0"
+												/>
 												<span className="text-label-sm text-white/80">
 													{ev.startTime} – {ev.endTime}
 												</span>
 											</div>
 											<div className="flex items-center gap-2">
-												<Icon as={MapPointSvg} size="sm" color="inherit" className="text-white/70 shrink-0" />
+												<Icon
+													as={MapPointSvg}
+													size="sm"
+													color="inherit"
+													className="text-white/70 shrink-0"
+												/>
 												<span className="text-label-sm text-white/80">
 													{ev.venueName}, {ev.city}
 												</span>
@@ -206,7 +235,12 @@ function TicketPageContent({
 												<p className="text-caption text-white/50 mb-1.5">Attendee</p>
 												<div className="flex items-center gap-2.5">
 													<div className="size-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-														<Icon as={UserSvg} size="sm" color="inherit" className="text-white" />
+														<Icon
+															as={UserSvg}
+															size="sm"
+															color="inherit"
+															className="text-white"
+														/>
 													</div>
 													<span className="text-body-sm font-semibold text-white">
 														{leadAttendee.fullName}
@@ -255,16 +289,8 @@ function TicketPageContent({
 						</div>
 
 						{/* Action buttons */}
-						<div className="rounded-action border border-border-default bg-surface-card p-5 flex items-center justify-center flex-wrap gap-3 shadow-md">
-							<Button
-								variant="secondary"
-								size="md"
-								radius="md"
-								leftIcon={<Icon as={ArrowDownSvg} size="sm" color="inherit" />}
-							>
-								Download
-							</Button>
-							{order.status === "CONFIRMED" && new Date(order.event.eventDate) < new Date() && (
+						{canReview && (
+							<div className="rounded-action border border-border-default bg-surface-card p-5 flex items-center justify-center flex-wrap gap-3 shadow-md">
 								<Link href={`/events/${order.eventId}/review?orderId=${order.id}`}>
 									<Button
 										variant="secondary"
@@ -275,13 +301,13 @@ function TicketPageContent({
 										Leave a Review
 									</Button>
 								</Link>
-							)}
-						</div>
+							</div>
+						)}
 
 						{/* Trust footer */}
 						<div className="rounded-action border border-border-default bg-surface-card p-5 shadow-md">
 							<div className="grid grid-cols-2 gap-6">
-								{TRUST_ITEMS.map((item) => (
+								{TRUST_ITEMS.map(item => (
 									<div key={item.title} className="flex gap-4 items-center">
 										<div
 											className={`size-10 rounded-action ${item.iconBgColor} flex items-center justify-center shrink-0`}
@@ -292,7 +318,9 @@ function TicketPageContent({
 											<p className="text-label-sm font-semibold text-text-primary">
 												{item.title}
 											</p>
-											<p className="text-caption text-text-muted leading-snug">{item.body}</p>
+											<p className="text-caption text-text-muted leading-snug">
+												{item.body}
+											</p>
 											{item.link && (
 												<button
 													type="button"
@@ -316,13 +344,54 @@ function TicketPageContent({
 						entityId={order.id}
 					/>
 
+					<CancelTicketModal
+						order={order}
+						refundPolicy={eventDetails?.refundPolicy}
+						open={cancelOpen}
+						onClose={() => setCancelOpen(false)}
+						onCancelled={() => {
+							onOrderUpdated()
+						}}
+					/>
+
 					{/* ── Right panel ── */}
 					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">
+						<Button
+							variant="primary"
+							size="md"
+							radius="md"
+							className="w-full"
+							leftIcon={<Icon as={ArrowDownSvg} size="sm" color="inherit" />}
+						>
+							Download Ticket
+						</Button>
+
+						{canCancel && (
+							<Button
+								variant="secondary"
+								size="md"
+								radius="md"
+								className="w-full text-red-600 border-red-200 hover:bg-red-50"
+								leftIcon={<Icon as={CloseCircleSvg} size="sm" color="inherit" className="text-red-500" />}
+								onClick={() => setCancelOpen(true)}
+							>
+								Cancel Ticket
+							</Button>
+						)}
+
+						<EventCountdownCard
+							eventDate={ev.eventDate}
+							startTime={ev.startTime}
+							eventTitle={ev.title}
+						/>
+
 						{/* Entry Instructions */}
 						<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
 							<div className="flex items-center gap-2">
 								<Icon as={RocketSvg} size="md" color="brand" />
-								<span className="text-title-md font-bold text-text-primary">Entry Instructions</span>
+								<span className="text-title-md font-bold text-text-primary">
+									Entry Instructions
+								</span>
 							</div>
 							<div className="flex flex-col gap-3">
 								{ENTRY_STEPS.map((step, i) => (
@@ -370,7 +439,6 @@ function TicketPageContent({
 							</div>
 						</div>
 						*/}
-
 					</aside>
 				</div>
 			</div>
@@ -389,17 +457,22 @@ function TicketPageInner({ orderId }: { orderId: string }) {
 		if (authLoading) return
 
 		getFullOrderDetail(orderId)
-			.then((o) => {
+			.then(o => {
 				setOrder(o)
-				return getPublicEventDetails(o.eventId).then((ev) => {
+				return getPublicEventDetails(o.eventId).then(ev => {
 					if (ev) setEventDetails(ev)
 				})
 			})
-			.catch((err) => {
+			.catch(err => {
 				setError(err instanceof Error ? err.message : "Failed to load ticket.")
 			})
 			.finally(() => setLoading(false))
 	}, [orderId, authLoading])
+
+	const refetchOrder = async () => {
+		const o = await getFullOrderDetail(orderId)
+		setOrder(o)
+	}
 
 	if (loading) {
 		return <MyTicketPageSkeleton />
@@ -424,7 +497,7 @@ function TicketPageInner({ orderId }: { orderId: string }) {
 		)
 	}
 
-	return <TicketPageContent order={order} eventDetails={eventDetails} />
+	return <TicketPageContent order={order} eventDetails={eventDetails} onOrderUpdated={refetchOrder} />
 }
 
 function MyTicketPageSkeleton() {

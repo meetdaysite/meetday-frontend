@@ -4,6 +4,8 @@ import { CommunityCard } from "@/components/attendee/CommunityCard"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import { Skeleton } from "@/components/ui/Skeleton"
+import { Tabs } from "@/components/ui/Tabs"
+import type { TabItem } from "@/components/ui/Tabs"
 import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
 import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
 import type { PublicCommunity } from "@/lib/api"
@@ -205,38 +207,27 @@ function MyCommunitiesPageInner() {
 					{hasAny ? (
 							<>
 								{/* Tabs */}
-								<div className="flex items-center gap-1 border-b border-border-default">
-									{tabs.map((tab) => (
-										<button
-											key={tab.key}
-											type="button"
-											onClick={() => setActiveTab(tab.key)}
-											className={clsx(
-												"relative px-4 py-2.5 text-label-sm font-medium transition-colors",
-												activeTab === tab.key
-													? "text-text-primary"
-													: "text-text-secondary hover:text-text-primary",
-											)}
-										>
-											{tab.label}
-											{tab.count > 0 && (
-												<span
-													className={clsx(
-														"ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-														activeTab === tab.key
-															? "bg-action-primary text-white"
-															: "bg-surface-secondary text-text-muted",
-													)}
-												>
-													{tab.count}
-												</span>
-											)}
-											{activeTab === tab.key && (
-												<span className="absolute bottom-0 left-4 right-4 h-0.5 bg-text-brand rounded-full" />
-											)}
-										</button>
-									))}
-								</div>
+								<Tabs
+									items={tabs.map((tab): TabItem<Tab> => ({
+										value: tab.key,
+										label: tab.label,
+										extra: tab.count > 0 && (
+											<span
+												className={clsx(
+													"text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+													activeTab === tab.key
+														? "bg-white text-neutral-900"
+														: "bg-surface-secondary text-text-muted",
+												)}
+											>
+												{tab.count}
+											</span>
+										),
+									}))}
+									value={activeTab}
+									onChange={setActiveTab}
+									variant="pill"
+								/>
 
 								{/* Tab content */}
 								{activeList.length > 0 ? (

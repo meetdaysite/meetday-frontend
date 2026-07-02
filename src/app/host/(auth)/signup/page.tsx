@@ -104,13 +104,23 @@ export default function SignupPage() {
 								/>
 								<span className="text-body-sm text-text-secondary leading-snug">
 									I agree to the{" "}
-									<Link href="/terms" className="font-medium text-text-link hover:underline">
+									<a
+										href="https://www.meetday.ai/terms"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="font-medium text-text-link hover:underline"
+									>
 										Terms of service
-									</Link>{" "}
+									</a>{" "}
 									and{" "}
-									<Link href="/privacy" className="font-medium text-text-link hover:underline">
+									<a
+										href="https://www.meetday.ai/privacy"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="font-medium text-text-link hover:underline"
+									>
 										Privacy Policy
-									</Link>
+									</a>
 								</span>
 							</label>
 						)}

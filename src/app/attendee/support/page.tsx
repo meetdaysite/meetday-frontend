@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react"
 import clsx from "clsx"
 import { Button } from "@/components/ui/Button"
 import { Skeleton } from "@/components/ui/Skeleton"
+import { Tabs } from "@/components/ui/Tabs"
+import type { TabItem } from "@/components/ui/Tabs"
 import { SupportTicketModal } from "@/components/attendee/SupportTicketModal"
 import { TicketDetailModal } from "@/components/attendee/TicketDetailModal"
 import {
@@ -154,31 +156,26 @@ export default function SupportPage() {
 				</div>
 
 				{/* Tabs */}
-				<div className="flex items-center gap-0 border-b border-border-default mb-4">
-					{TABS.map((t) => (
-						<button
-							key={t.value}
-							type="button"
-							onClick={() => setTab(t.value)}
-							className={clsx(
-								"relative px-4 py-2.5 text-label-md transition-colors",
-								tab === t.value
-									? "text-text-primary"
-									: "text-text-secondary hover:text-text-primary",
-							)}
-						>
-							{t.label}
-							{t.value === "active" && activeCount > 0 && (
-								<span className="ml-1.5 inline-flex items-center justify-center size-4 rounded-full bg-action-primary text-white text-[10px] font-bold">
-									{activeCount}
-								</span>
-							)}
-							{tab === t.value && (
-								<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-text-brand rounded-full" />
-							)}
-						</button>
-					))}
-				</div>
+				<Tabs
+					items={TABS.map((t): TabItem<Tab> => ({
+						value: t.value,
+						label: t.label,
+						extra: t.value === "active" && activeCount > 0 && (
+							<span
+								className={clsx(
+									"inline-flex items-center justify-center size-4 rounded-full text-[10px] font-bold",
+									tab === t.value ? "bg-white text-neutral-900" : "bg-action-primary text-white",
+								)}
+							>
+								{activeCount}
+							</span>
+						),
+					}))}
+					value={tab}
+					onChange={setTab}
+					variant="pill"
+					className="mb-4"
+				/>
 
 				{/* Ticket list */}
 				<div className="rounded-action border border-border-default bg-surface-card overflow-hidden">
