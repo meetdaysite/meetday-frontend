@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useRef, useMemo, useCallback, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import clsx from "clsx"
 import { Button } from "@/components/ui/Button"
 import { Dropdown } from "@/components/ui/Dropdown"
@@ -23,6 +23,7 @@ import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
 import { toast } from "sonner"
 import { getApiErrorMessage } from "@/lib/errors"
 import { Skeleton } from "@/components/ui/Skeleton"
+import { Tabs } from "@/components/ui/Tabs"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -105,7 +106,16 @@ function eventStartingPrice(event: Event): number | null {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MyEventsPage() {
+	return (
+		<Suspense>
+			<MyEventsPageContent />
+		</Suspense>
+	)
+}
+
+function MyEventsPageContent() {
 	const router = useRouter()
+	const searchParams = useSearchParams()
 	const { events, eventsLoading, eventsError, fetchMyEvents, deleteEvent } = useEventStore()
 
 	const [viewMode, setViewMode] = useState<"list" | "grid">(() => {
@@ -115,7 +125,11 @@ export default function MyEventsPage() {
 		}
 		return "grid"
 	})
-	const [statusFilter, setStatusFilter] = useState<"ALL" | ApiEventStatus>("ALL")
+	const searchQueryParam = searchParams.get("status")
+	const statusFilter: "ALL" | ApiEventStatus =
+		searchQueryParam && STATUS_TABS.some(tab => tab.value === searchQueryParam)
+			? (searchQueryParam as ApiEventStatus)
+			: "ALL"
 	const [searchQuery, setSearchQuery] = useState("")
 	const [sortOrder, setSortOrder] = useState("newest")
 	const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
@@ -129,15 +143,25 @@ export default function MyEventsPage() {
 		fetchMyEvents()
 	}, [fetchMyEvents])
 
+	// Reset pagination whenever the status filter (driven by the URL) changes.
+	const [prevStatusFilter, setPrevStatusFilter] = useState(statusFilter)
+	if (statusFilter !== prevStatusFilter) {
+		setPrevStatusFilter(statusFilter)
+		setVisibleCount(PAGE_SIZE)
+	}
+
 	const handleViewMode = useCallback((mode: "list" | "grid") => {
 		setViewMode(mode)
 		localStorage.setItem("events-view-mode", mode)
 	}, [])
 
 	const handleStatusFilter = useCallback((v: "ALL" | ApiEventStatus) => {
-		setStatusFilter(v)
-		setVisibleCount(PAGE_SIZE)
-	}, [])
+		const params = new URLSearchParams(searchParams.toString())
+		if (v === "ALL") params.delete("status")
+		else params.set("status", v)
+		const query = params.toString()
+		router.push(`/host/dashboard/events${query ? `?${query}` : ""}`, { scroll: false })
+	}, [router, searchParams])
 
 	const handleSearchQuery = useCallback((v: string) => {
 		setSearchQuery(v)
@@ -320,36 +344,13 @@ export default function MyEventsPage() {
 					</div>
 
 					{/* Status tabs */}
-					<div className="flex items-center gap-1 overflow-x-auto pb-1 mb-6 scrollbar-none border-b border-border-default">
-						{STATUS_TABS.map(tab => {
-							const count = tabCounts[tab.value] ?? 0
-							const isActive = statusFilter === tab.value
-							return (
-								<button
-									key={tab.value}
-									onClick={() => handleStatusFilter(tab.value)}
-									className={clsx(
-										"shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-label-sm border-b-2 transition-colors whitespace-nowrap -mb-px",
-										isActive
-											? "border-text-primary text-text-primary font-semibold"
-											: "border-transparent text-text-muted hover:text-text-secondary",
-									)}
-								>
-									{tab.label}
-									<span
-										className={clsx(
-											"text-caption font-medium px-1.5 py-0.5 rounded-badge min-w-5 text-center",
-											isActive
-												? "bg-surface-inverse text-text-inverse"
-												: "bg-surface-card-muted text-text-muted",
-										)}
-									>
-										{count}
-									</span>
-								</button>
-							)
-						})}
-					</div>
+					<Tabs
+						items={STATUS_TABS.map(tab => ({ ...tab, count: tabCounts[tab.value] ?? 0 }))}
+						value={statusFilter}
+						onChange={handleStatusFilter}
+						variant="pill"
+						className="mb-6"
+					/>
 
 					{/* Error */}
 					{eventsError && (
@@ -365,7 +366,7 @@ export default function MyEventsPage() {
 					)}
 
 					{/* Loading skeleton */}
-					{eventsLoading && events.length === 0 && (
+					{eventsLoading && (
 						<div
 							className={clsx(
 								viewMode === "grid"

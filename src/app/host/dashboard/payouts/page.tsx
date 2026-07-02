@@ -6,6 +6,7 @@ import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import { Dropdown } from "@/components/ui/Dropdown"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
+import { Tabs } from "@/components/ui/Tabs"
 import { MOCK_PAYOUTS, PAYOUT_TOTALS, type MockPayout, type PayoutStatus } from "@/lib/mock-payouts"
 import DollarSvg from "@/icons/outlined/dollar.svg"
 import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
@@ -276,35 +277,13 @@ export default function PayoutsPage() {
 						</div>
 
 						{/* Status tabs */}
-						<div className="flex items-center gap-1 overflow-x-auto scrollbar-none border-b border-border-default -mx-5 px-5">
-							{STATUS_TABS.map(tab => {
-								const isActive = statusFilter === tab.value
-								return (
-									<button
-										key={tab.value}
-										onClick={() => handleStatusFilter(tab.value)}
-										className={clsx(
-											"shrink-0 flex items-center gap-1.5 px-3 py-2.5 text-label-sm border-b-2 transition-colors whitespace-nowrap -mb-px",
-											isActive
-												? "border-text-primary text-text-primary font-semibold"
-												: "border-transparent text-text-muted hover:text-text-secondary",
-										)}
-									>
-										{tab.label}
-										<span
-											className={clsx(
-												"text-caption font-medium px-1.5 py-0.5 rounded-badge min-w-5 text-center",
-												isActive
-													? "bg-surface-inverse text-text-inverse"
-													: "bg-surface-card-muted text-text-muted",
-											)}
-										>
-											{statusCounts[tab.value]}
-										</span>
-									</button>
-								)
-							})}
-						</div>
+						<Tabs
+							items={STATUS_TABS.map(tab => ({ ...tab, count: statusCounts[tab.value] }))}
+							value={statusFilter}
+							onChange={handleStatusFilter}
+							variant="pill"
+							className="mb-4"
+						/>
 					</div>
 
 					{/* Table */}

@@ -30,13 +30,14 @@ import {
 	MiniSpinner,
 	PillInput,
 } from "@/components/eventForm/shared"
-import { AddressAutocompleteInput, VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
+import { VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
 import { TicketListEditor } from "@/components/eventForm/TicketListEditor"
 import type { ApiEventStatus } from "@/types/event"
 
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
+import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
 import CameraAddSvg from "@/icons/outlined/camera-add.svg"
 
 // ─── Status display ───────────────────────────────────────────────────────────
@@ -132,6 +133,18 @@ export default function EditEventPage() {
 
 	function set<K extends keyof FormData>(key: K, value: FormData[K]) {
 		setFormData((prev) => ({ ...prev, [key]: value }))
+	}
+
+	const eventDateRef = useRef<HTMLInputElement>(null)
+	const startTimeRef = useRef<HTMLInputElement>(null)
+	const endTimeRef = useRef<HTMLInputElement>(null)
+
+	function openPicker(ref: React.RefObject<HTMLInputElement | null>) {
+		try {
+			ref.current?.showPicker?.()
+		} catch {
+			// showPicker isn't supported in every browser — clicking the input directly still works
+		}
 	}
 
 	async function handleAddressBlur() {
@@ -493,9 +506,10 @@ export default function EditEventPage() {
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 							<div className="flex flex-col gap-1.5">
 								<FieldLabel required>Event Date</FieldLabel>
-								<div id="eventDate" className={iconWrapCls(!!errors.eventDate)}>
+								<div id="eventDate" className={iconWrapCls(!!errors.eventDate)} onClick={() => openPicker(eventDateRef)}>
 									<Icon as={CalendarSvg} size="md" color="secondary" />
 									<input
+										ref={eventDateRef}
 										type="date"
 										value={formData.eventDate}
 										onChange={(e) => set("eventDate", e.target.value)}
@@ -506,9 +520,10 @@ export default function EditEventPage() {
 							</div>
 							<div className="flex flex-col gap-1.5">
 								<FieldLabel required>Start Time</FieldLabel>
-								<div id="startTime" className={iconWrapCls(!!errors.startTime)}>
+								<div id="startTime" className={iconWrapCls(!!errors.startTime)} onClick={() => openPicker(startTimeRef)}>
 									<Icon as={ClockCircleSvg} size="md" color="secondary" />
 									<input
+										ref={startTimeRef}
 										type="time"
 										value={formData.startTime}
 										onChange={(e) => set("startTime", e.target.value)}
@@ -519,9 +534,10 @@ export default function EditEventPage() {
 							</div>
 							<div className="flex flex-col gap-1.5">
 								<FieldLabel required>End Time</FieldLabel>
-								<div id="endTime" className={iconWrapCls(!!errors.endTime)}>
+								<div id="endTime" className={iconWrapCls(!!errors.endTime)} onClick={() => openPicker(endTimeRef)}>
 									<Icon as={ClockCircleSvg} size="md" color="secondary" />
 									<input
+										ref={endTimeRef}
 										type="time"
 										value={formData.endTime}
 										onChange={(e) => set("endTime", e.target.value)}
@@ -555,23 +571,17 @@ export default function EditEventPage() {
 
 						<div id="fullAddress" className="flex flex-col gap-1.5">
 							<FieldLabel required>Full Address</FieldLabel>
-							<AddressAutocompleteInput
-								value={formData.fullAddress}
-								currentVenueName={formData.venueName}
-								error={!!errors.fullAddress}
-								onChange={(v) => set("fullAddress", v)}
-								onBlur={handleAddressBlur}
-								onPlaceSelect={(fields) =>
-									setFormData((prev) => ({
-										...prev,
-										fullAddress: fields.fullAddress,
-										city: fields.city || prev.city,
-										venueName: prev.venueName.trim() ? prev.venueName : fields.venueName,
-										latitude: fields.latitude,
-										longitude: fields.longitude,
-									}))
-								}
-							/>
+							<div className={iconWrapCls(!!errors.fullAddress)}>
+								<Icon as={MapPointRotateSvg} size="md" color="secondary" />
+								<input
+									type="text"
+									value={formData.fullAddress}
+									onChange={(e) => set("fullAddress", e.target.value)}
+									onBlur={handleAddressBlur}
+									placeholder="Auto-filled from venue name"
+									className="flex-1 bg-transparent text-sm placeholder:text-text-muted text-text-primary outline-none"
+								/>
+							</div>
 							<ErrMsg msg={errors.fullAddress} />
 						</div>
 

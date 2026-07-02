@@ -6,6 +6,7 @@ import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { Dropdown } from "@/components/ui/Dropdown"
 import { Icon } from "@/components/ui/Icon"
 import { Skeleton } from "@/components/ui/Skeleton"
+import { Tabs } from "@/components/ui/Tabs"
 import {
 	getCategories,
 	getHostBrowseCommunities,
@@ -122,7 +123,7 @@ function buildPageNumbers(current: number, total: number): (number | "…")[] {
 
 function CommunityCardSkeleton() {
 	return (
-		<div className="flex rounded-card border border-border-default bg-red-400 overflow-hidden h-33">
+		<div className="flex rounded-card border border-border-default bg-surface-card overflow-hidden h-33">
 			<Skeleton.Block className="w-44 shrink-0 rounded-none" />
 			<div className="flex-1 p-5 flex flex-col justify-between gap-2">
 				<div className="flex items-start justify-between gap-6">
@@ -362,7 +363,7 @@ function ActivityRow({ label, value }: { label: string; value: number | string }
 
 function ActivityCard({ loading, activity }: { loading: boolean; activity: HostCommunityActivity | null }) {
 	return (
-		<div className="p-5 rounded-action bg-surface-card border border-border-default shadow-md">
+		<div className="p-5 rounded-action bg-surface-card border border-border-default ">
 			<div className="flex items-center gap-2.5 mb-4">
 				<div className="size-8 rounded-badge bg-surface-vibe-soft flex items-center justify-center shrink-0">
 					<Icon as={UsersGroupSvg} size="sm" color="vibe" />
@@ -391,14 +392,13 @@ function ActivityCard({ loading, activity }: { loading: boolean; activity: HostC
 					/>
 				</div>
 			) : null}
-
 		</div>
 	)
 }
 
 function FindCommunityCard() {
 	return (
-		<div className="p-5 rounded-action bg-surface-card border border-border-default shadow-md">
+		<div className="p-5 rounded-action bg-surface-card border border-border-default ">
 			<p className="text-body-md font-semibold text-text-primary">Find the right community</p>
 			<p className="text-label-sm text-text-secondary mt-1 mb-4 leading-snug">
 				Communities help you reach new audiences and grow your impact.
@@ -491,7 +491,9 @@ export default function HostCommunitiesPage() {
 		}
 
 		load()
-		return () => { cancelled = true }
+		return () => {
+			cancelled = true
+		}
 	}, [page, tab, debouncedSearch, categoryId, city, audienceSize, access, refreshKey])
 
 	// Categories + activity on mount
@@ -561,16 +563,16 @@ export default function HostCommunitiesPage() {
 					{/* ── Main content ── */}
 					<div className="flex-1 min-w-0">
 						{/* Filters row */}
-						<div className="flex flex-wrap items-center gap-2 mb-4">
+						<div className="flex flex-col gap-2 mb-4">
 							{/* Search */}
-							<div className="flex items-center gap-2 h-9 px-3 rounded-action border border-border-default bg-surface-canvas text-text-muted hover:border-border-strong focus-within:border-border-focused transition-colors flex-1 min-w-44 max-w-64">
+							<div className="flex items-center gap-2 h-(--size-action-sm) shrink-0 px-3 rounded-action border border-border-default bg-surface-canvas text-text-muted hover:border-border-strong focus-within:border-border-focused transition-colors w-full">
 								<SearchSvg className="size-4 shrink-0" aria-hidden />
 								<input
 									type="text"
 									value={search}
 									onChange={e => handleSearch(e.target.value)}
 									placeholder="Search communities..."
-									className="flex-1 min-w-0 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
+									className="flex-1 min-w-0 h-9 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
 								/>
 								{search && (
 									<button
@@ -583,63 +585,60 @@ export default function HostCommunitiesPage() {
 								)}
 							</div>
 
-							<Dropdown
-								options={categoryOptions}
-								value={categoryId}
-								onChange={handleCategoryChange}
-								size="sm"
-								className="w-36"
-								disabled={categories.length === 0}
-							/>
+							<div className="flex items-center gap-2.5 mt-2">
+								<Dropdown
+									options={categoryOptions}
+									value={categoryId}
+									onChange={handleCategoryChange}
+									size="sm"
+									className="flex-1"
+									disabled={categories.length === 0}
+								/>
 
-							<Dropdown
-								options={CITY_OPTIONS}
-								value={city}
-								onChange={handleCityChange}
-								size="sm"
-								className="w-36"
-							/>
+								<Dropdown
+									options={CITY_OPTIONS}
+									value={city}
+									onChange={handleCityChange}
+									size="sm"
+									className="flex-1"
+								/>
 
-							<Dropdown
-								options={AUDIENCE_SIZE_OPTIONS}
-								value={audienceSize}
-								onChange={handleAudienceSizeChange}
-								size="sm"
-								className="w-44"
-							/>
+								<Dropdown
+									options={AUDIENCE_SIZE_OPTIONS}
+									value={audienceSize}
+									onChange={handleAudienceSizeChange}
+									size="sm"
+									className="flex-1"
+								/>
 
-							<Dropdown
-								options={ACCESS_TYPE_OPTIONS}
-								value={access}
-								onChange={handleAccessChange}
-								size="sm"
-								className="w-40"
-							/>
+								<Dropdown
+									options={ACCESS_TYPE_OPTIONS}
+									value={access}
+									onChange={handleAccessChange}
+									size="sm"
+									className="flex-1"
+								/>
+							</div>
 						</div>
 
 						{/* Tabs (pill style) */}
-						<div className="flex items-center gap-1.5 mb-5 p-1 bg-surface-card-muted rounded-action w-fit">
-							{TABS.map(({ value, label }) => (
-								<button
-									key={value}
-									onClick={() => handleTabChange(value)}
-									className={clsx(
-										"px-4 py-2.5 rounded-action text-label-sm font-medium transition-colors whitespace-nowrap",
-										tab === value
-											? "bg-action-primary text-action-primary-text shadow-card"
-											: "text-text-primary hover:text-text-primary",
-									)}
-								>
-									{label}
-								</button>
-							))}
-						</div>
+						<Tabs
+							items={TABS}
+							value={tab}
+							onChange={handleTabChange}
+							variant="pill"
+							className="mb-5"
+						/>
 
 						{/* Content */}
 						{error ? (
 							<div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
 								<p className="text-body-md text-text-secondary">{error}</p>
-								<Button variant="secondary" size="sm" onClick={() => setRefreshKey((k) => k + 1)}>
+								<Button
+									variant="secondary"
+									size="sm"
+									onClick={() => setRefreshKey(k => k + 1)}
+								>
 									Retry
 								</Button>
 							</div>

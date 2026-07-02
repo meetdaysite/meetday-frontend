@@ -1,10 +1,7 @@
 "use client"
 
 import { CopilotPanel, type CopilotPanelState, type EventSummaryData } from "@/components/aiCopilot/CopilotPanel"
-import {
-	AddressAutocompleteInput,
-	VenueAutocompleteInput,
-} from "@/components/eventForm/AddressAutocompleteInput"
+import { VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
 import {
 	ErrMsg,
 	FieldLabel,
@@ -566,6 +563,18 @@ function Step2DateTime({
 		setFormData(prev => ({ ...prev, [key]: value }))
 	}
 
+	const eventDateRef = useRef<HTMLInputElement>(null)
+	const startTimeRef = useRef<HTMLInputElement>(null)
+	const endTimeRef = useRef<HTMLInputElement>(null)
+
+	function openPicker(ref: React.RefObject<HTMLInputElement | null>) {
+		try {
+			ref.current?.showPicker?.()
+		} catch {
+			// showPicker isn't supported in every browser — clicking the input directly still works
+		}
+	}
+
 	return (
 		<div className="flex flex-col gap-6">
 			<div>
@@ -580,9 +589,10 @@ function Step2DateTime({
 
 				<div className="flex flex-col gap-1.5">
 					<FieldLabel required>Event Date</FieldLabel>
-					<div className={iconWrapCls(!!errors.eventDate)}>
+					<div className={iconWrapCls(!!errors.eventDate)} onClick={() => openPicker(eventDateRef)}>
 						<Icon as={CalendarSvg} size="md" color="secondary" />
 						<input
+							ref={eventDateRef}
 							type="date"
 							value={eventDate}
 							min={new Date().toISOString().split("T")[0]}
@@ -596,9 +606,10 @@ function Step2DateTime({
 				<div className="grid grid-cols-2 gap-4">
 					<div className="flex flex-col gap-1.5">
 						<FieldLabel required>Start Time</FieldLabel>
-						<div className={iconWrapCls(!!errors.startTime)}>
+						<div className={iconWrapCls(!!errors.startTime)} onClick={() => openPicker(startTimeRef)}>
 							<Icon as={ClockCircleSvg} size="md" color="secondary" />
 							<input
+								ref={startTimeRef}
 								type="time"
 								value={startTime}
 								onChange={e => set("startTime", e.target.value)}
@@ -609,9 +620,10 @@ function Step2DateTime({
 					</div>
 					<div className="flex flex-col gap-1.5">
 						<FieldLabel required>End Time</FieldLabel>
-						<div className={iconWrapCls(!!errors.endTime)}>
+						<div className={iconWrapCls(!!errors.endTime)} onClick={() => openPicker(endTimeRef)}>
 							<Icon as={ClockCircleSvg} size="md" color="secondary" />
 							<input
+								ref={endTimeRef}
 								type="time"
 								value={endTime}
 								onChange={e => set("endTime", e.target.value)}
@@ -648,23 +660,17 @@ function Step2DateTime({
 
 				<div className="flex flex-col gap-1.5">
 					<FieldLabel required>Full Address</FieldLabel>
-					<AddressAutocompleteInput
-						value={fullAddress}
-						currentVenueName={venueName}
-						error={!!errors.fullAddress}
-						onChange={v => set("fullAddress", v)}
-						onBlur={handleAddressBlur}
-						onPlaceSelect={fields =>
-							setFormData(prev => ({
-								...prev,
-								fullAddress: fields.fullAddress,
-								city: fields.city || prev.city,
-								venueName: prev.venueName.trim() ? prev.venueName : fields.venueName,
-								latitude: fields.latitude,
-								longitude: fields.longitude,
-							}))
-						}
-					/>
+					<div className={iconWrapCls(!!errors.fullAddress)}>
+						<Icon as={MapPointRotateSvg} size="md" color="secondary" />
+						<input
+							type="text"
+							value={fullAddress}
+							onChange={e => set("fullAddress", e.target.value)}
+							onBlur={handleAddressBlur}
+							placeholder="Auto-filled from venue name"
+							className="flex-1 bg-transparent text-sm placeholder:text-text-muted text-text-primary outline-none"
+						/>
+					</div>
 					<ErrMsg msg={errors.fullAddress} />
 				</div>
 

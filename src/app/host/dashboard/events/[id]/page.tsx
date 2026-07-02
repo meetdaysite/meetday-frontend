@@ -15,9 +15,7 @@ import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
 import DangerTriangleSvg from "@/icons/outlined/danger-triangle.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group.svg"
-import UsersGroup2Svg from "@/icons/outlined/users-group-2.svg"
 import UserCheckSvg from "@/icons/outlined/user-check.svg"
-import DollarSvg from "@/icons/outlined/dollar.svg"
 import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
@@ -190,25 +188,6 @@ export default function EventDetailPage() {
 						</div>
 					)}
 
-					{/* Stats row */}
-					<div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
-						<StatCard
-							icon={<PeopleStatIcon />}
-							label="Registrations"
-							value={checkInStats ? String(checkInStats.totalAttendees) : "—"}
-						/>
-						<StatCard icon={<DollarIcon />} label="Revenue" value="—" />
-						<StatCard
-							icon={<CheckInIcon />}
-							label="Checked In"
-							value={
-								checkInStats
-									? `${checkInStats.checkedIn}/${checkInStats.totalAttendees}`
-									: "—"
-							}
-						/>
-					</div>
-
 					{/* Two-column layout */}
 					<div className="grid grid-cols-1 lg:grid-cols-[1fr_288px] gap-6">
 						{/* Left — main content */}
@@ -322,6 +301,20 @@ export default function EventDetailPage() {
 									}}
 									onEdit={() => router.push(`/host/dashboard/events/${event.id}/edit`)}
 									onCancel={cancelEvent}
+								/>
+							</div>
+
+							{/* Stats */}
+							<div className="grid grid-cols-2 gap-3">
+								<StatCard
+									icon={<PeopleStatIcon />}
+									label="Attendees"
+									value={checkInStats ? String(checkInStats.totalAttendees) : "—"}
+								/>
+								<StatCard
+									icon={<CheckInIcon />}
+									label="Checked In"
+									value={checkInStats ? String(checkInStats.checkedIn) : "—"}
 								/>
 							</div>
 
@@ -500,13 +493,6 @@ function EventActions({
 			return (
 				<>
 					<div className="flex flex-col gap-2">
-						<Link
-							href="/host/dashboard/registrations"
-							className="flex items-center justify-center gap-2 h-(--size-action-md) px-4 text-label-sm font-medium border border-action-secondary-border rounded-action bg-action-secondary text-action-secondary-text hover:bg-action-secondary-hover transition-colors"
-						>
-							<PeopleActionIcon />
-							View Registrations
-						</Link>
 						<ActionButton
 							variant="secondary"
 							icon={<ScannerStaffIcon />}
@@ -545,13 +531,6 @@ function EventActions({
 		case "COMPLETED":
 			return (
 				<div className="flex flex-col gap-2">
-					<Link
-						href="/host/dashboard/registrations"
-						className="flex items-center justify-center gap-2 h-(--size-action-md) px-4 text-label-sm font-medium border border-action-secondary-border rounded-action bg-action-secondary text-action-secondary-text hover:bg-action-secondary-hover transition-colors"
-					>
-						<PeopleActionIcon />
-						View Registrations
-					</Link>
 					<p className="text-caption text-text-muted text-center pt-1">
 						This event is completed. No further actions available.
 					</p>
@@ -651,14 +630,19 @@ function AddStaffModal({ eventId, onClose }: { eventId: string; onClose: () => v
 		nameRef.current?.focus()
 	}, [])
 
+	const phoneDigits = phone.trim().replace(/[\s-]/g, "")
+	const phoneError = phoneDigits.length > 0 && !/^(?:\+?91|0)?[6-9]\d{9}$/.test(phoneDigits)
+		? "Enter a valid Indian phone number"
+		: null
+
 	async function handleConfirm() {
-		if (!name.trim() || !email.trim()) return
+		if (!name.trim() || !email.trim() || phoneError) return
 		setLoading(true)
 		try {
 			await createScannerSession(eventId, {
 				name: name.trim(),
 				email: email.trim(),
-				...(phone.trim() ? { phone: phone.trim() } : {}),
+				...(phoneDigits ? { phone: phoneDigits } : {}),
 				...(label.trim() ? { label: label.trim() } : {}),
 			})
 			toast.success("Support staff added. An invite email has been sent.")
@@ -669,7 +653,7 @@ function AddStaffModal({ eventId, onClose }: { eventId: string; onClose: () => v
 		}
 	}
 
-	const isValid = name.trim().length > 0 && email.trim().length > 0
+	const isValid = name.trim().length > 0 && email.trim().length > 0 && !phoneError
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
@@ -713,8 +697,14 @@ function AddStaffModal({ eventId, onClose }: { eventId: string; onClose: () => v
 							value={phone}
 							onChange={e => setPhone(e.target.value)}
 							placeholder="e.g. +919876543210"
-							className="w-full px-4 py-3 rounded-input border border-border-default bg-surface-canvas text-text-primary placeholder:text-text-muted text-sm focus:outline-none focus:border-border-focused transition-colors"
+							className={clsx(
+								"w-full px-4 py-3 rounded-input border bg-surface-canvas text-text-primary placeholder:text-text-muted text-sm focus:outline-none transition-colors",
+								phoneError
+									? "border-red-400 focus:border-red-500"
+									: "border-border-default focus:border-border-focused",
+							)}
 						/>
+						{phoneError && <p className="text-caption text-red-600">{phoneError}</p>}
 					</div>
 					<div className="flex flex-col gap-1.5">
 						<label className="text-label-sm font-semibold text-text-primary">Label</label>
@@ -975,9 +965,6 @@ function AlertIcon({ className }: { className?: string }) {
 function PeopleStatIcon() {
 	return <UsersGroupSvg className="size-4" aria-hidden />
 }
-function DollarIcon() {
-	return <DollarSvg className="size-4" aria-hidden />
-}
 function CheckInIcon() {
 	return <CheckCircleSvg className="size-4" aria-hidden />
 }
@@ -992,9 +979,6 @@ function SendIcon() {
 }
 function PenIcon() {
 	return <PenSvg className="size-4" aria-hidden />
-}
-function PeopleActionIcon() {
-	return <UsersGroup2Svg className="size-4" aria-hidden />
 }
 function CancelIcon() {
 	return <CloseCircleSvg className="size-4" aria-hidden />

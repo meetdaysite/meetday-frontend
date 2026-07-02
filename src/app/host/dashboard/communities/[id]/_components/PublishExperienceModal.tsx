@@ -17,6 +17,7 @@ import CalendarSvg from "@/icons/outlined/calendar.svg"
 import MapPointSvg from "@/icons/outlined/map-point.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
 import { Skeleton } from "@/components/ui/Skeleton"
+import { Tabs } from "@/components/ui/Tabs"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -180,22 +181,7 @@ export function PublishExperienceModal({
 						/>
 					</div>
 
-					<div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-						{STATUS_TABS.map(({ value, label }) => (
-							<button
-								key={value}
-								onClick={() => setStatusFilter(value)}
-								className={clsx(
-									"shrink-0 px-3 py-1.5 rounded-full text-[12px] font-medium border whitespace-nowrap transition-colors",
-									statusFilter === value
-										? "border-text-primary text-text-primary bg-transparent"
-										: "border-border-default text-text-secondary hover:text-text-primary hover:border-border-focus",
-								)}
-							>
-								{label}
-							</button>
-						))}
-					</div>
+					<Tabs items={STATUS_TABS} value={statusFilter} onChange={setStatusFilter} variant="pill" />
 				</div>
 
 				{/* List */}

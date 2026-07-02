@@ -1,11 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import clsx from "clsx"
 import { Button } from "@/components/ui/Button"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { SupportTicketModal } from "@/components/attendee/SupportTicketModal"
 import { TicketDetailModal } from "@/components/attendee/TicketDetailModal"
+import { Tabs } from "@/components/ui/Tabs"
 import {
 	listMyTickets,
 	CATEGORY_LABELS,
@@ -110,19 +111,23 @@ export default function DashboardSupportPage() {
 	const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null)
 	const [createOpen, setCreateOpen] = useState(false)
 
-	const fetchTickets = useCallback(async () => {
-		setLoading(true)
-		try {
-			const result = await listMyTickets({ limit: 100 })
-			setTickets(result.items)
-		} catch {
-			// show empty state
-		} finally {
-			setLoading(false)
+	useEffect(() => {
+		let cancelled = false
+		async function load() {
+			try {
+				const result = await listMyTickets({ limit: 100 })
+				if (!cancelled) setTickets(result.items)
+			} catch {
+				// show empty state
+			} finally {
+				if (!cancelled) setLoading(false)
+			}
+		}
+		load()
+		return () => {
+			cancelled = true
 		}
 	}, [])
-
-	useEffect(() => { fetchTickets() }, [fetchTickets])
 
 	const visible = filterTickets(tickets, tab)
 	const activeCount = tickets.filter((t) => t.status === "OPEN" || t.status === "IN_PROGRESS").length
@@ -151,31 +156,16 @@ export default function DashboardSupportPage() {
 				</div>
 
 				{/* Tabs */}
-				<div className="flex items-center gap-0 border-b border-border-default mb-4">
-					{TABS.map((t) => (
-						<button
-							key={t.value}
-							type="button"
-							onClick={() => setTab(t.value)}
-							className={clsx(
-								"relative px-4 py-2.5 text-label-md transition-colors",
-								tab === t.value
-									? "text-text-primary"
-									: "text-text-secondary hover:text-text-primary",
-							)}
-						>
-							{t.label}
-							{t.value === "active" && activeCount > 0 && (
-								<span className="ml-1.5 inline-flex items-center justify-center size-4 rounded-full bg-action-primary text-white text-[10px] font-bold">
-									{activeCount}
-								</span>
-							)}
-							{tab === t.value && (
-								<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-text-brand rounded-full" />
-							)}
-						</button>
-					))}
-				</div>
+				<Tabs
+					items={TABS.map(t => ({
+						...t,
+						count: t.value === "active" && activeCount > 0 ? activeCount : undefined,
+					}))}
+					value={tab}
+					onChange={setTab}
+					variant="pill"
+					className="mb-4"
+				/>
 
 				{/* Ticket list */}
 				<div className="rounded-action border border-border-default bg-surface-card overflow-hidden max-w-3xl">
