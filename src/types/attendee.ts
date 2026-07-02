@@ -158,6 +158,7 @@ export interface AttendeeProfile {
 	bio: string | null
 	city: string | null
 	ageRange: string | null
+	gender: string | null
 	profession: string | null
 	vibeType: string | null
 	socialStyle: string | null

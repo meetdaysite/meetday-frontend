@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
-import ShareSvg from "@/icons/outlined/share.svg"
+// import ShareSvg from "@/icons/outlined/share.svg"
 import BookmarkSvg from "@/icons/outlined/bookmark.svg"
 import BookmarkFilledSvg from "@/icons/filled/bookmark.svg"
 import { useAuthStore } from "@/store/authStore"
@@ -12,19 +12,25 @@ import { saveEvent, unsaveEvent } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import { toast } from "sonner"
 
-export function StickyFooter({ eventId, isSaved: initialSaved = false }: { eventId: string; isSaved?: boolean }) {
+export function StickyFooter({
+	eventId,
+	isSaved: initialSaved = false,
+}: {
+	eventId: string
+	isSaved?: boolean
+}) {
 	const router = useRouter()
-	const user = useAuthStore((s) => s.user)
+	const user = useAuthStore(s => s.user)
 	const [saved, setSaved] = useState(initialSaved)
 	const [saving, setSaving] = useState(false)
 
-	function handleShare() {
-		if (navigator.share) {
-			navigator.share({ title: document.title, url: window.location.href }).catch(() => {})
-		} else {
-			navigator.clipboard.writeText(window.location.href).catch(() => {})
-		}
-	}
+	// function handleShare() {
+	// 	if (navigator.share) {
+	// 		navigator.share({ title: document.title, url: window.location.href }).catch(() => {})
+	// 	} else {
+	// 		navigator.clipboard.writeText(window.location.href).catch(() => {})
+	// 	}
+	// }
 
 	function handleJoin() {
 		if (!user) {
@@ -67,13 +73,19 @@ export function StickyFooter({ eventId, isSaved: initialSaved = false }: { event
 			</div>
 
 			<div className="flex items-center gap-2 shrink-0">
-				<Button variant="secondary" size="md" leftIcon={<Icon as={ShareSvg} size="sm" color="inherit" />} onClick={handleShare}>
+				{/* <Button variant="secondary" size="md" leftIcon={<Icon as={ShareSvg} size="sm" color="inherit" />} onClick={handleShare}>
 					Share
-				</Button>
+				</Button> */}
 				<Button
 					variant="secondary"
 					size="md"
-					leftIcon={<Icon as={saved ? BookmarkFilledSvg : BookmarkSvg} size="sm" color={saved ? "brand" : "inherit"} />}
+					leftIcon={
+						<Icon
+							as={saved ? BookmarkFilledSvg : BookmarkSvg}
+							size="sm"
+							color={saved ? "brand" : "inherit"}
+						/>
+					}
 					onClick={handleSave}
 					disabled={saving}
 				>

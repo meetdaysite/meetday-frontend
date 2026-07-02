@@ -12,14 +12,17 @@ import TicketSvg from "@/icons/outlined/ticket.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 import BoltSvg from "@/icons/outlined/bolt.svg"
 import UserSvg from "@/icons/outlined/user.svg"
+import MapPointSvg from "@/icons/outlined/map-point.svg"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 import { useAuthStore } from "@/store/authStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import {
 	getAttendeeProfile,
 	getJoinedCommunities,
+	getAttendeeInterests,
 	type AttendeeVibeType,
 	type AttendeeSocialStyle,
+	type AttendeeInterestAffinity,
 } from "@/lib/api"
 import { getMyOrders } from "@/lib/ordersApi"
 import type { AttendeeProfile } from "@/types/attendee"
@@ -37,6 +40,19 @@ const SOCIAL_LABELS: Record<AttendeeSocialStyle, string> = {
 	SOLO_EXPLORER: "Solo Explorer",
 	OPEN_TO_MEETING: "Open to Meeting People",
 	BRINGING_GANG: "Bringing the Gang",
+}
+
+const GENDER_LABELS: Record<string, string> = {
+	MALE: "Male",
+	FEMALE: "Female",
+	OTHER: "Other",
+	PREFER_NOT_TO_SAY: "Prefer not to say",
+}
+
+const PRIVACY_LABELS: Record<string, string> = {
+	PUBLIC: "Your profile is visible to everyone.",
+	MEMBERS_ONLY: "Your profile is visible to community members.",
+	PRIVATE: "Your profile is only visible to you.",
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -69,18 +85,20 @@ function StatPill({
 	label,
 	valueColor,
 	bgClass,
+	iconColor,
 }: {
 	icon: React.ComponentType
 	value: number | string
 	label: string
 	valueColor: string
 	bgClass: string
+	iconColor?: "secondary" | "primary" | "muted" | "inverse" | "brand" | "info" | "vibe" | "warning" | "success" | "inherit" | undefined
 }) {
 	return (
 		<div className={`flex items-center gap-2 px-3.5 py-2 rounded-action border ${bgClass}`}>
-			<Icon as={icon} size="sm" color="secondary" />
-			<span className={`text-heading-sm font-extrabold ${valueColor}`}>{value}</span>
-			<span className="text-label-sm text-text-secondary">{label}</span>
+			<Icon as={icon} size="lg" color={iconColor || "secondary"} />
+			<span className={`text-heading-sm font-semibold ${valueColor}`}>{value}</span>
+			<span className={`text-label-md ${valueColor}`}>{label}</span>
 		</div>
 	)
 }
@@ -192,6 +210,7 @@ function ProfilePageInner() {
 	const profileLoading = useAttendeeProfileStore((s) => s.profileLoading)
 
 	const [attendeeProfile, setAttendeeProfile] = useState<AttendeeProfile | null>(null)
+	const [interests, setInterests] = useState<AttendeeInterestAffinity[]>([])
 	const [communitiesCount, setCommunitiesCount] = useState(0)
 	const [eventsCount, setEventsCount] = useState(0)
 	const [dataLoading, setDataLoading] = useState(true)
@@ -205,10 +224,12 @@ function ProfilePageInner() {
 
 		Promise.all([
 			getAttendeeProfile().catch(() => null),
+			getAttendeeInterests().catch(() => []),
 			getJoinedCommunities({ limit: 1 }).catch(() => ({ data: [], total: 0 })),
 			getMyOrders().catch(() => [] as Awaited<ReturnType<typeof getMyOrders>>),
-		]).then(([ap, communities, orders]) => {
+		]).then(([ap, ints, communities, orders]) => {
 			setAttendeeProfile(ap)
+			setInterests(ints)
 			setCommunitiesCount(communities.total ?? communities.data.length)
 			setEventsCount(orders.length)
 		}).finally(() => setDataLoading(false))
@@ -238,9 +259,13 @@ function ProfilePageInner() {
 	const hasAbout =
 		attendeeProfile?.bio ||
 		attendeeProfile?.profession ||
+		attendeeProfile?.city ||
 		attendeeProfile?.ageRange ||
+		attendeeProfile?.gender ||
 		vibeLabel ||
 		socialLabel
+
+	const likedInterests = interests.filter(i => i.affinity === "LIKED")
 
 	return (
 		<main className="flex-1">
@@ -274,8 +299,8 @@ function ProfilePageInner() {
 						)}
 						{memberSince && (
 							<div className="flex items-center gap-1.5 mt-0.5">
-								<Icon as={CalendarSvg} size="xs" color="muted" />
-								<span className="text-label-sm text-text-secondary">Member since {memberSince}</span>
+								<Icon as={CalendarSvg} size="lg" color="vibe" />
+								<span className="text-body-md font-medium text-text-vibe">Member since {memberSince}</span>
 							</div>
 						)}
 					</div>
@@ -290,6 +315,7 @@ function ProfilePageInner() {
 							label="Communities"
 							valueColor="text-text-brand"
 							bgClass="bg-red-50 border-red-100"
+							iconColor="brand"
 						/>
 						<StatPill
 							icon={TicketSvg}
@@ -297,6 +323,7 @@ function ProfilePageInner() {
 							label="Events"
 							valueColor="text-green-600"
 							bgClass="bg-green-50 border-green-100"
+							iconColor="success"
 						/>
 					</div>
 
@@ -327,10 +354,34 @@ function ProfilePageInner() {
 										</p>
 									)}
 
-									{attendeeProfile?.ageRange && (
-										<div className="flex items-center gap-2.5">
-											<Icon as={SmileCircleSvg} size="sm" color="muted" />
-											<span className="text-body-sm text-text-secondary">Age {formatAgeRange(attendeeProfile.ageRange)}</span>
+									{(attendeeProfile?.ageRange || attendeeProfile?.gender || attendeeProfile?.profession || attendeeProfile?.city) && (
+										<div className="flex flex-col gap-2">
+											{attendeeProfile?.profession && (
+												<div className="flex items-center gap-2.5">
+													<Icon as={BoltSvg} size="sm" color="muted" />
+													<span className="text-body-sm text-text-secondary">{attendeeProfile.profession}</span>
+												</div>
+											)}
+											{attendeeProfile?.city && (
+												<div className="flex items-center gap-2.5">
+													<Icon as={MapPointSvg} size="sm" color="muted" />
+													<span className="text-body-sm text-text-secondary">{attendeeProfile.city}</span>
+												</div>
+											)}
+											{attendeeProfile?.ageRange && (
+												<div className="flex items-center gap-2.5">
+													<Icon as={SmileCircleSvg} size="sm" color="muted" />
+													<span className="text-body-sm text-text-secondary">Age {formatAgeRange(attendeeProfile.ageRange)}</span>
+												</div>
+											)}
+											{attendeeProfile?.gender && (
+												<div className="flex items-center gap-2.5">
+													<Icon as={UserSvg} size="sm" color="muted" />
+													<span className="text-body-sm text-text-secondary">
+														{GENDER_LABELS[attendeeProfile.gender] ?? attendeeProfile.gender}
+													</span>
+												</div>
+											)}
 										</div>
 									)}
 
@@ -391,13 +442,27 @@ function ProfilePageInner() {
 							icon={UsersGroupSvg}
 						/>
 
+						{likedInterests.length > 0 && (
+							<div className="rounded-action bg-surface-card border border-border-default shadow-card p-4 flex flex-col gap-2.5">
+								<SectionLabel icon={SmileCircleSvg}>Interests</SectionLabel>
+								<div className="flex flex-wrap gap-1.5">
+									{likedInterests.map((i) => (
+										<span
+											key={i.interestId}
+											className="text-[11px] font-medium px-2.5 py-1 rounded-avatar bg-surface-vibe-soft text-text-vibe border border-violet-200"
+										>
+											{i.name}
+										</span>
+									))}
+								</div>
+							</div>
+						)}
+
 						{attendeeProfile?.privacy && (
 							<div className="mt-0.5 px-4 py-3 rounded-action bg-amber-50 border border-amber-100">
 								<p className="text-[11px] text-amber-800 leading-snug">
 									<span className="font-semibold">Privacy: </span>
-									{attendeeProfile.privacy === "PUBLIC"
-										? "Your profile is visible to other members."
-										: "Your profile is only visible to you."}
+									{PRIVACY_LABELS[attendeeProfile.privacy] ?? "Your profile is only visible to you."}
 								</p>
 							</div>
 						)}

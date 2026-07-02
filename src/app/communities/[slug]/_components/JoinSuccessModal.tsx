@@ -12,6 +12,7 @@ import BellSvg from "@/icons/outlined/bell.svg"
 import PenSvg from "@/icons/outlined/pen.svg"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 import ConfettiSvg from "@/icons/filled/confetti.svg"
+import type { TabKey } from "../page"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,47 +25,52 @@ export interface JoinSuccessCommunity {
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
-const GET_STARTED_ACTIONS = [
+const GET_STARTED_ACTIONS: {
+	key: string
+	icon: typeof ChatSvg
+	iconBg: string
+	iconColor: "success" | "vibe" | "inherit" | "info"
+	iconClassName?: string
+	title: string
+	description: string
+	tab: TabKey
+}[] = [
 	{
 		key: "chat",
 		icon: ChatSvg,
 		iconBg: "bg-green-50",
-		iconColor: "success" as const,
+		iconColor: "success",
 		title: "Open Chat Room",
 		description: "Introduce yourself, ask, and connect with members.",
-		// TODO: Link to /communities/[id]/chat once chat tab is built
-		href: "#",
+		tab: "chat",
 	},
 	{
 		key: "announcements",
 		icon: BellSvg,
 		iconBg: "bg-purple-50",
-		iconColor: "vibe" as const,
+		iconColor: "vibe",
 		title: "See Announcements",
 		description: "Stay updated with the latest experience drops and community updates.",
-		// TODO: Link to /communities/[id]/announcements once tab is built
-		href: "#",
+		tab: "announcements",
 	},
 	{
 		key: "feed",
 		icon: PenSvg,
 		iconBg: "bg-red-50",
-		iconColor: "inherit" as const,
+		iconColor: "inherit",
 		iconClassName: "text-red-400",
 		title: "Create a Feed Post",
 		description: "Share your thoughts, photos, or ask something to the community.",
-		// TODO: Link to /communities/[id]/feed?compose=true once feed tab is built
-		href: "#",
+		tab: "feed",
 	},
 	{
 		key: "experiences",
 		icon: CalendarSvg,
 		iconBg: "bg-blue-50",
-		iconColor: "info" as const,
+		iconColor: "info",
 		title: "Explore Experiences",
 		description: "Discover and book the best music experiences with your community.",
-		// TODO: Link to /communities/[id]/experiences once tab is built
-		href: "#",
+		tab: "experiences",
 	},
 ]
 
@@ -79,9 +85,15 @@ interface JoinSuccessModalProps {
 	community: JoinSuccessCommunity
 	open: boolean
 	onClose: () => void
+	onNavigate: (tab: TabKey) => void
 }
 
-export function JoinSuccessModal({ community, open, onClose }: JoinSuccessModalProps) {
+export function JoinSuccessModal({ community, open, onClose, onNavigate }: JoinSuccessModalProps) {
+	const goTo = (tab: TabKey) => {
+		onNavigate(tab)
+		onClose()
+	}
+
 	useEffect(() => {
 		if (open) {
 			document.body.style.overflow = "hidden"
@@ -153,17 +165,18 @@ export function JoinSuccessModal({ community, open, onClose }: JoinSuccessModalP
 					<div className="w-full flex flex-col gap-3">
 						<div className="grid grid-cols-2 gap-2.5">
 							{GET_STARTED_ACTIONS.map(action => (
-								<a
+								<button
 									key={action.key}
-									href={action.href}
-									className="flex flex-col gap-2.5 p-3.5 rounded-action border border-border-default bg-surface-page hover:bg-surface-hover transition-colors group"
+									type="button"
+									onClick={() => goTo(action.tab)}
+									className="flex flex-col gap-2.5 p-3.5 rounded-action border border-border-default bg-surface-page hover:bg-surface-hover transition-colors group text-left"
 								>
 									<div className={`size-9 rounded-lg ${action.iconBg} flex items-center justify-center shrink-0`}>
 										<Icon
 											as={action.icon}
 											size="md"
 											color={action.iconColor}
-											className={"iconClassName" in action ? action.iconClassName : undefined}
+											className={action.iconClassName}
 										/>
 									</div>
 									<div className="flex-1">
@@ -175,32 +188,30 @@ export function JoinSuccessModal({ community, open, onClose }: JoinSuccessModalP
 									<div className="flex justify-end">
 										<Icon as={ArrowRightSvg} size="sm" color="primary" />
 									</div>
-								</a>
+								</button>
 							))}
 						</div>
 					</div>
 
 					{/* Actions */}
 					<div className="w-full flex gap-2 pb-2">
-						{/* TODO: Navigate to /communities/[id] (community home) after joining */}
 						<Button
 							variant="primary"
 							size="lg"
 							radius="pill"
 							className="w-full"
 							rightIcon={<Icon as={ArrowRightSvg} size="sm" color="inverse" />}
-							onClick={onClose}
+							onClick={() => goTo("overview")}
 						>
 							Go to Community Home
 						</Button>
-						{/* TODO: Navigate to /communities/[id]/experiences after joining */}
 						<Button
 							variant="secondary"
 							size="lg"
 							radius="pill"
 							className="w-full"
 							rightIcon={<Icon as={ArrowRightSvg} size="sm" color="secondary" />}
-							onClick={onClose}
+							onClick={() => goTo("experiences")}
 						>
 							Explore Experiences
 						</Button>

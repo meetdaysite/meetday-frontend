@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Icon } from "@/components/ui/Icon"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
+import CheckSvg from "@/icons/outlined/check.svg"
 import UserSvg from "@/icons/outlined/user.svg"
 
 export type CommunityType = "MEETDAY_MANAGED_PUBLIC" | "HOST_LED" | "PRIVATE_INVITE_ONLY"
@@ -61,6 +62,16 @@ export function CommunityCard({ community }: CommunityCardProps) {
 						<span>{community.experienceCount} upcoming</span>
 					</div>
 				</div>
+				{community.isMember ? (
+					<span className="inline-flex items-center gap-1 self-end mt-3 px-2.5 py-1 rounded-avatar text-[11px] font-semibold bg-surface-success-soft text-text-success border border-green-200">
+						<Icon as={CheckSvg} size="xs" color="success" />
+						Joined
+					</span>
+				) : (
+					<span className="inline-flex items-center justify-center self-end mt-3 px-3 py-1 rounded-avatar text-[11px] font-semibold text-text-brand border border-border-brand bg-transparent">
+						Join
+					</span>
+				)}
 			</div>
 		</Link>
 	)

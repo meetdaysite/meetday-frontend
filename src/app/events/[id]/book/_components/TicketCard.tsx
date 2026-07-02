@@ -79,7 +79,7 @@ export function TicketCard({ ticket, tierIndex, quantity, onQuantityChange }: Ti
 
 			{/* Name + description */}
 			<div className="w-36 shrink-0 flex flex-col gap-0.5 pt-0.5">
-				<h4 className="text-body-lg font-bold text-text-primary leading-snug">{ticket.name}</h4>
+				<h4 className="text-body-lg font-semibold text-text-primary leading-snug">{ticket.name}</h4>
 				{ticket.description && features.length === 0 && (
 					<p className="text-label-sm text-text-secondary leading-snug line-clamp-3">
 						{ticket.description}

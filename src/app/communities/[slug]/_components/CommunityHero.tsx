@@ -13,6 +13,7 @@ import MapPointSvg from "@/icons/outlined/map-point.svg"
 import BookmarkSvg from "@/icons/outlined/bookmark.svg"
 import BoltSvg from "@/icons/outlined/bolt.svg"
 import CheckSvg from "@/icons/outlined/check.svg"
+import UserCrossSvg from "@/icons/outlined/user-cross.svg"
 import { useAuthStore } from "@/store/authStore"
 import { saveCommunity, unsaveCommunity } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
@@ -128,8 +129,14 @@ export function CommunityHero({
 								{visibilityLabel} Community
 							</span>
 							{isManaged && (
-								<span className="text-[11px] font-medium bg-teal-600/20 text-teal-300 border border-teal-500/30 rounded-avatar px-2.5 py-0.5">
+								<span className="text-[11px] font-medium bg-red-600/20 text-red-300 border border-red-500/30 rounded-avatar px-2.5 py-0.5">
 									Managed by Meetday
+								</span>
+							)}
+							{isMember && (
+								<span className="flex items-center gap-1 text-[11px] font-medium bg-green-600/20 text-green-300 border border-green-500/30 rounded-avatar px-2.5 py-0.5">
+									<Icon as={CheckSvg} size="xs" color="inherit" />
+									Joined
 								</span>
 							)}
 						</div>
@@ -167,14 +174,14 @@ export function CommunityHero({
 				<div className="flex gap-2">
 					{isMember ? (
 						<Button
-							variant="secondary"
+							variant="primary"
 							size="md"
 							radius="pill"
-							leftIcon={<Icon as={CheckSvg} size="sm" color="inherit" />}
-							className="border-white/20 text-white bg-white/10 hover:bg-white/15"
+							leftIcon={<Icon as={UserCrossSvg} size="sm" color="inverse" />}
+							className="bg-red-500 hover:bg-red-600 border-red-500"
 							onClick={onLeaveClick}
 						>
-							Joined
+							Leave Community
 						</Button>
 					) : (
 						<Button

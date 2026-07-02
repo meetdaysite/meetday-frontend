@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation"
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
-import { useHostStore } from "@/store/hostStore"
 import type { ComponentType, SVGProps } from "react"
 
 import UserSvg from "@/icons/outlined/user.svg"
@@ -16,8 +15,6 @@ import UsersGroupOutSvg from "@/icons/outlined/users-group.svg"
 import UsersGroupFillSvg from "@/icons/filled/users-group.svg"
 import TicketOutSvg from "@/icons/outlined/ticket.svg"
 import TicketFillSvg from "@/icons/filled/ticket.svg"
-import GiftSvg from "@/icons/outlined/gift.svg"
-import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
 
 import WidgetSvg from "@/icons/filled/widget.svg"
 import CalendarFillSvg from "@/icons/filled/calendar.svg"
@@ -32,12 +29,6 @@ const NAV_ITEMS: { label: string; href: string; outlined: SvgIcon; filled: SvgIc
 	{ label: "Support", href: "/host/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
 ]
 
-const PLAN_LABELS: Record<string, string> = {
-	DISCOVER: "Discover Plan",
-	COMMUNITY: "Community Plan",
-	SELL: "Sell Plan",
-}
-
 interface SidebarProps {
 	isOpen: boolean
 	onClose: () => void
@@ -45,8 +36,6 @@ interface SidebarProps {
 
 function SidebarContent({ onClose }: { onClose: () => void }) {
 	const pathname = usePathname()
-	const { profile } = useHostStore()
-	const planLabel = profile?.currentPlan ? PLAN_LABELS[profile.currentPlan] ?? "Host Plan" : "Host Plan"
 
 	return (
 		<div className="flex flex-col h-full">

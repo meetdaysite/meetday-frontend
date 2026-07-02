@@ -17,6 +17,7 @@ import HeartFilledSvg from "@/icons/filled/heart.svg"
 import PinSvg from "@/icons/outlined/pin.svg"
 import PinFilledSvg from "@/icons/filled/pin.svg"
 import CloseSvg from "@/icons/outlined/close.svg"
+import AddCircleSvg from "@/icons/outlined/add-circle.svg"
 import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
 import PenSvg from "@/icons/outlined/pen.svg"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
@@ -86,6 +87,8 @@ const EMOJI_TRAY = [
 ]
 const MAX_IMAGES = 5
 const ACCEPTED_IMAGE_TYPES = "image/jpeg,image/png,image/webp"
+const MIN_POLL_OPTIONS = 2
+const MAX_POLL_OPTIONS = 6
 
 const POST_ACTIONS = [
 	{
@@ -142,6 +145,8 @@ function CreatePostCard({
 	const [imagePreviews, setImagePreviews] = useState<string[]>([])
 	const [emojiTrayOpen, setEmojiTrayOpen] = useState(false)
 	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [isPollMode, setIsPollMode] = useState(false)
+	const [pollOptions, setPollOptions] = useState<string[]>(["", ""])
 
 	const textareaRef = useRef<HTMLTextAreaElement>(null)
 	const emojiRef = useRef<HTMLDivElement>(null)
@@ -196,12 +201,51 @@ function CreatePostCard({
 		setImagePreviews(prev => prev.filter((_, i) => i !== index))
 	}
 
-	const canSubmit = (content.trim().length > 0 || imageFiles.length > 0) && !isSubmitting
+	const togglePollMode = () => {
+		setIsPollMode(v => {
+			const next = !v
+			if (!next) setPollOptions(["", ""])
+			return next
+		})
+	}
+
+	const updatePollOption = (index: number, value: string) => {
+		setPollOptions(prev => prev.map((o, i) => (i === index ? value : o)))
+	}
+
+	const addPollOption = () => {
+		setPollOptions(prev => (prev.length < MAX_POLL_OPTIONS ? [...prev, ""] : prev))
+	}
+
+	const removePollOption = (index: number) => {
+		setPollOptions(prev => (prev.length > MIN_POLL_OPTIONS ? prev.filter((_, i) => i !== index) : prev))
+	}
+
+	const trimmedPollOptions = pollOptions.map(o => o.trim()).filter(Boolean)
+
+	const canSubmit = isPollMode
+		? content.trim().length > 0 && trimmedPollOptions.length >= MIN_POLL_OPTIONS && !isSubmitting
+		: (content.trim().length > 0 || imageFiles.length > 0) && !isSubmitting
 
 	const handleSubmit = async () => {
 		if (!canSubmit) return
 		setIsSubmitting(true)
 		try {
+			if (isPollMode) {
+				const post = await createCommunityFeedPost(communityId, {
+					postType: "POLL",
+					category: "POLL",
+					content: content.trim(),
+					pollOptions: trimmedPollOptions,
+				})
+				toast.success("Poll shared!")
+				setContent("")
+				setIsPollMode(false)
+				setPollOptions(["", ""])
+				onPosted(post)
+				return
+			}
+
 			let mediaKeys: string[] = []
 			if (imageFiles.length > 0) {
 				mediaKeys = await Promise.all(imageFiles.map(f => uploadImageToS3(f, communityId)))
@@ -270,7 +314,7 @@ function CreatePostCard({
 							rows={2}
 							value={content}
 							onChange={e => setContent(e.target.value)}
-							placeholder="What's on your mind?"
+							placeholder={isPollMode ? "Ask a question…" : "What's on your mind?"}
 							className="flex-1 resize-none bg-transparent text-label-sm text-text-primary placeholder:text-text-muted outline-none leading-relaxed"
 						/>
 						<button
@@ -285,8 +329,46 @@ function CreatePostCard({
 				</div>
 			</div>
 
+			{/* Poll options */}
+			{isPollMode && (
+				<div className="flex flex-col gap-2 ml-13">
+					{pollOptions.map((option, i) => (
+						<div key={i} className="flex items-center gap-2">
+							<input
+								type="text"
+								value={option}
+								onChange={e => updatePollOption(i, e.target.value)}
+								placeholder={`Option ${i + 1}`}
+								maxLength={80}
+								className="flex-1 px-3.5 py-2 rounded-action bg-surface-page border border-border-default text-label-sm text-text-primary placeholder:text-text-muted outline-none focus:border-border-focus transition-colors"
+							/>
+							{pollOptions.length > MIN_POLL_OPTIONS && (
+								<button
+									type="button"
+									onClick={() => removePollOption(i)}
+									className="shrink-0 text-text-muted hover:text-text-primary transition-colors"
+									aria-label="Remove option"
+								>
+									<Icon as={CloseSvg} size="sm" color="muted" />
+								</button>
+							)}
+						</div>
+					))}
+					{pollOptions.length < MAX_POLL_OPTIONS && (
+						<button
+							type="button"
+							onClick={addPollOption}
+							className="self-start flex items-center gap-1.5 text-label-sm font-medium text-text-brand hover:underline"
+						>
+							<Icon as={AddCircleSvg} size="sm" color="brand" />
+							Add option
+						</button>
+					)}
+				</div>
+			)}
+
 			{/* Image previews */}
-			{imagePreviews.length > 0 && (
+			{!isPollMode && imagePreviews.length > 0 && (
 				<div className="grid grid-cols-4 gap-2 ml-13">
 					{imagePreviews.map((src, i) => (
 						<div
@@ -309,13 +391,23 @@ function CreatePostCard({
 			{/* Actions row */}
 			<div className="flex items-center justify-between gap-2">
 				<div className="flex items-center gap-2 flex-wrap">
-					{POST_ACTIONS.map(action => (
+					{POST_ACTIONS.map(action => {
+						const isActive = action.key === "poll" && isPollMode
+						return (
 						<button
 							key={action.key}
 							type="button"
-							onClick={action.key === "photo" ? () => fileInputRef.current?.click() : undefined}
-							disabled={action.key === "photo" && imageFiles.length >= MAX_IMAGES}
-							className="flex items-center gap-2 px-3 py-2 rounded-action border border-border-default bg-surface-page hover:bg-surface-hover transition-colors text-label-sm text-text-primary font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+							onClick={
+								action.key === "photo"
+									? () => fileInputRef.current?.click()
+									: togglePollMode
+							}
+							disabled={action.key === "photo" ? imageFiles.length >= MAX_IMAGES || isPollMode : imageFiles.length > 0}
+							className={`flex items-center gap-2 px-3 py-2 rounded-action border transition-colors text-label-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed ${
+								isActive
+									? "border-action-primary bg-surface-brand-soft text-text-brand"
+									: "border-border-default bg-surface-page hover:bg-surface-hover text-text-primary"
+							}`}
 						>
 							<div
 								className={`size-6 rounded-action ${action.iconBg} flex items-center justify-center shrink-0`}
@@ -329,7 +421,8 @@ function CreatePostCard({
 							</div>
 							{action.label}
 						</button>
-					))}
+						)
+					})}
 					<input
 						ref={fileInputRef}
 						type="file"

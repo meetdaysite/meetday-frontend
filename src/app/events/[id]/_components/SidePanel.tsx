@@ -9,7 +9,7 @@ import StarCircleSvg from "@/icons/filled/star-circle.svg"
 import PulseSvg from "@/icons/filled/pulse.svg"
 import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
 import EyeSvg from "@/icons/outlined/eye-open.svg"
-import BoltSvg from "@/icons/outlined/bolt.svg"
+// import BoltSvg from "@/icons/outlined/bolt.svg"
 import UsersGroupSvg from "@/icons/filled/users-group-2.svg"
 import type { PublicEventDetails, PublicEventCommunity, PublicRefundPolicy, VibeMatchResponse, CrowdPulseResponse } from "@/types/attendee"
 import { useAuthStore } from "@/store/authStore"
@@ -30,23 +30,22 @@ function VibeMatchCard({ eventId }: { eventId: string }) {
 	const router = useRouter()
 	const { user, authLoading } = useAuthStore()
 	const [match, setMatch] = useState<VibeMatchResponse | null>(null)
-	const [fetching, setFetching] = useState(false)
+	const [loadedForEventId, setLoadedForEventId] = useState<string | null>(null)
 
 	useEffect(() => {
 		if (authLoading || !user) return
-		setFetching(true)
 		getEventVibeMatch(eventId)
 			.then(setMatch)
 			.catch(() => {})
-			.finally(() => setFetching(false))
+			.finally(() => setLoadedForEventId(eventId))
 	}, [eventId, authLoading, user])
 
-	const isLoading = authLoading || fetching
+	const isLoading = authLoading || (!!user && loadedForEventId !== eventId)
 
 	return (
 		<div className="p-5 rounded-action bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center gap-2 mb-4">
-				<Icon as={StarCircleSvg} size="md" color="vibe" />
+				<Icon as={StarCircleSvg} size="xl" color="vibe" />
 				<span className="text-body-md font-medium text-text-primary">Your Vibe Match</span>
 			</div>
 
@@ -65,7 +64,7 @@ function VibeMatchCard({ eventId }: { eventId: string }) {
 						<span className="text-3xl font-extrabold text-text-vibe">
 							{match.score !== null ? `${match.score}%` : "—"}
 						</span>
-						<span className="text-label-sm text-text-muted">
+						<span className="text-label-sm text-text-secondary">
 							{match.label ?? "match score"}
 						</span>
 					</div>
@@ -142,7 +141,7 @@ function CommunityAccessCard({ community }: { community: PublicEventCommunity })
 
 			<div className="flex gap-2 mt-1">
 				{/* TODO: Wire up join action via POST /api/communities/[slug]/join */}
-				<Button
+				{/* <Button
 					variant="primary"
 					size="sm"
 					radius="pill"
@@ -150,13 +149,14 @@ function CommunityAccessCard({ community }: { community: PublicEventCommunity })
 					leftIcon={<Icon as={BoltSvg} size="sm" color="inverse" />}
 				>
 					Join Community
-				</Button>
+				</Button> */}
 				<Link href={`/communities/${community.slug}`} className="flex-1">
 					<Button
 						variant="primary"
 						size="sm"
 						radius="pill"
-						className="w-full bg-neutral-900"
+						className="w-full"
+						// className="w-full bg-neutral-900"
 						leftIcon={<Icon as={EyeSvg} size="sm" color="inverse" />}
 					>
 						View Community
@@ -209,7 +209,7 @@ function CrowdPulseCard({ eventId }: { eventId: string }) {
 	return (
 		<div className="p-5 rounded-action bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center gap-2 mb-4">
-				<Icon as={PulseSvg} size="md" color={!loading && pulse ? "primary" : "muted"} />
+				<Icon as={PulseSvg} size="xl" color={!loading && pulse ? "info" : "muted"} />
 				<span className="text-body-md font-medium text-text-primary">Crowd Pulse</span>
 			</div>
 
@@ -227,7 +227,7 @@ function CrowdPulseCard({ eventId }: { eventId: string }) {
 					{dims.map(({ label, value, fill, barCls, textCls }) => (
 						<div key={label} className="flex flex-col gap-1.5">
 							<div className="flex items-center justify-between">
-								<span className="text-label-sm text-text-muted">{label}</span>
+								<span className="text-label-sm text-text-primary">{label}</span>
 								{value && (
 									<span className={`text-label-sm font-semibold ${textCls}`}>{value}</span>
 								)}
@@ -241,7 +241,7 @@ function CrowdPulseCard({ eventId }: { eventId: string }) {
 						</div>
 					))}
 
-					<p className="text-caption text-text-muted text-center mt-0.5 italic">
+					<p className="text-caption text-text-secondary text-center mt-0.5 italic">
 						{pulse!.isEstimate
 							? "The vibe is still cooking — check back as more people join!"
 							: `Based on ${pulse!.totalAttendees.toLocaleString()} attendee${pulse!.totalAttendees !== 1 ? "s" : ""}`
@@ -252,11 +252,11 @@ function CrowdPulseCard({ eventId }: { eventId: string }) {
 				<div className="flex flex-col gap-3.5">
 					{["Energy", "Crowd style", "Social friendliness"].map(dim => (
 						<div key={dim} className="flex flex-col gap-1.5">
-							<span className="text-label-sm text-text-muted">{dim}</span>
+							<span className="text-label-sm text-text-primary">{dim}</span>
 							<div className="h-1.5 rounded-full bg-neutral-100" />
 						</div>
 					))}
-					<p className="text-caption text-text-muted text-center mt-0.5">Crowd data coming soon</p>
+					<p className="text-caption text-text-secondary text-center mt-0.5">Crowd data coming soon</p>
 				</div>
 			)}
 		</div>
@@ -266,36 +266,31 @@ function CrowdPulseCard({ eventId }: { eventId: string }) {
 // ─── Refund Policy ────────────────────────────────────────────────────────────
 
 function RefundCard({ policy }: { policy: PublicRefundPolicy }) {
-	let summary: string
+	const destination = policy.refundTo === "ORIGINAL_PAYMENT" ? "to your original payment method" : "as credits"
+
+	let body: string
 	if (policy.type === "NO_REFUND") {
-		summary = "No refunds available for this event."
+		body = "This event is non-refundable — all ticket sales are final."
 	} else if (policy.type === "FULL") {
-		summary = policy.cutoffHours
-			? `Full refund if cancelled ${policy.cutoffHours}+ hours before the event.`
-			: "Full refunds available."
+		body = policy.cutoffHours
+			? `Cancel upto ${policy.cutoffHours}h before the event for a full refund ${destination}. No hassle.`
+			: `Full refunds are available for this event, credited ${destination}. No hassle.`
 	} else {
-		summary =
+		body =
 			policy.cutoffHours && policy.refundPercent
-				? `${policy.refundPercent}% refund if cancelled ${policy.cutoffHours}+ hours before the event.`
-				: "Partial refund available."
+				? `Cancel upto ${policy.cutoffHours}h before the event for a ${policy.refundPercent}% refund ${destination}. No hassle.`
+				: `Partial refunds are available for this event, credited ${destination}.`
 	}
 
-	const destination = policy.refundTo === "ORIGINAL_PAYMENT" ? "to original payment method" : "as credits"
-
 	return (
-		<div className="p-5 rounded-action bg-surface-card border border-border-default shadow-md">
-			<div className="flex items-center gap-2 mb-3">
-				<Icon
-					as={ShieldCheckSvg}
-					size="md"
-					color={policy.type === "NO_REFUND" ? "muted" : "success"}
-				/>
-				<span className="text-body-md font-medium text-text-primary">Refund Policy</span>
+		<div className="p-4 rounded-action bg-surface-card border border-border-default shadow-md">
+			<div className="flex items-center gap-2 mb-4">
+				<Icon as={ShieldCheckSvg} size="xl" color="success" />
+				<span className="text-body-md font-medium text-text-primary">Refund Clarity</span>
 			</div>
-			<p className="text-body-sm text-text-secondary leading-relaxed">{summary}</p>
-			{policy.type !== "NO_REFUND" && (
-				<p className="text-caption text-text-muted mt-1.5">Refunded {destination}.</p>
-			)}
+			<div className="min-w-0">
+				<p className="text-label-sm text-text-secondary font-normal leading-snug mt-0.5">{body}</p>
+			</div>
 		</div>
 	)
 }
