@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react"
 import clsx from "clsx"
 import { Button } from "@/components/ui/Button"
-import { Skeleton } from "@/components/ui/Skeleton"
 import { Tabs } from "@/components/ui/Tabs"
 import type { TabItem } from "@/components/ui/Tabs"
 import { SupportTicketModal } from "@/components/attendee/SupportTicketModal"
@@ -124,14 +123,11 @@ export default function SupportPage() {
 		}
 	}, [])
 
+	// eslint-disable-next-line react-hooks/set-state-in-effect
 	useEffect(() => { fetchTickets() }, [fetchTickets])
 
 	const visible = filterTickets(tickets, tab)
 	const activeCount = tickets.filter((t) => t.status === "OPEN" || t.status === "IN_PROGRESS").length
-
-	function handleCreated(ticket: SupportTicket) {
-		setTickets((prev) => [ticket, ...prev])
-	}
 
 	return (
 		<main className="flex-1 py-6 md:py-8 pb-16">

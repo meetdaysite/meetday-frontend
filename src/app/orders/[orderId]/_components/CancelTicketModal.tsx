@@ -47,6 +47,7 @@ export function CancelTicketModal({ order, refundPolicy, open, onClose, onCancel
 	useEffect(() => {
 		if (open) {
 			document.body.style.overflow = "hidden"
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setSelected(new Set())
 		}
 		return () => {

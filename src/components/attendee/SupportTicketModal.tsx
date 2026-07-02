@@ -40,6 +40,7 @@ export function SupportTicketModal({ open, onClose, entityType, entityId }: Supp
 	// Reset form when modal opens
 	useEffect(() => {
 		if (open) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setSubject("")
 			setBody("")
 			setCategory("EVENT_ISSUE")
