@@ -15,7 +15,7 @@ export function AttendeeLayoutShell({ children }: { children: React.ReactNode })
 		if (!user || !profile) return
 		// HOST accounts have attendeeProfile: null — redirect them to the host dashboard
 		if (profile.attendeeProfile === null) {
-			router.replace("/dashboard")
+			router.replace("/host/dashboard")
 		}
 	}, [user, authLoading, profile, profileLoading, router])
 

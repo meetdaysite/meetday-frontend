@@ -184,7 +184,7 @@ function TrustedHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Trusted hosts</span>
-				{/* TODO: Link to /communities/[slug]/hosts once sub-page is built */}
+				{/* TODO: Link to /communities/[slug]/host once sub-page is built */}
 				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
 					View all
 					<Icon as={ArrowRightSvg} size="xs" color="brand" />
@@ -501,7 +501,7 @@ function ExperiencesCommunityHostsCard({ hosts }: { hosts: CommunityHost[] | nul
 		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Community hosts</span>
-				{/* TODO: Link to /communities/[slug]/hosts once sub-page is built */}
+				{/* TODO: Link to /communities/[slug]/host once sub-page is built */}
 				<Link
 					href="#"
 					className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0"

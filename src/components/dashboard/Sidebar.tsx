@@ -25,11 +25,11 @@ import CalendarFillSvg from "@/icons/filled/calendar.svg"
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
 const NAV_ITEMS: { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; dot?: boolean }[] = [
-	{ label: "Dashboard", href: "/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
-	{ label: "My Experiences", href: "/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg },
-	{ label: "Communities", href: "/dashboard/communities", outlined: UsersGroupOutSvg, filled: UsersGroupFillSvg },
-	{ label: "Profile", href: "/dashboard/profile", outlined: UserSvg, filled: UserSvg },
-	{ label: "Support", href: "/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
+	{ label: "Dashboard", href: "/host/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
+	{ label: "My Experiences", href: "/host/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg },
+	{ label: "Communities", href: "/host/dashboard/communities", outlined: UsersGroupOutSvg, filled: UsersGroupFillSvg },
+	{ label: "Profile", href: "/host/dashboard/profile", outlined: UserSvg, filled: UserSvg },
+	{ label: "Support", href: "/host/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
 ]
 
 const PLAN_LABELS: Record<string, string> = {
@@ -61,7 +61,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 			</div>
 
 			<div className="px-4 pb-5">
-				<Link href="/dashboard/create" onClick={onClose}>
+				<Link href="/host/dashboard/create" onClick={onClose}>
 					<Button variant="primary" size="md" radius="md" className="w-full">
 						Create new experience
 					</Button>
@@ -70,7 +70,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 
 			<nav className="flex-1 px-3 flex flex-col gap-0.5">
 				{NAV_ITEMS.map(({ label, href, outlined: Outlined, filled: Filled, dot }) => {
-					const isActive = href === "/dashboard" ? pathname === href : pathname.startsWith(href)
+					const isActive = href === "/host/dashboard" ? pathname === href : pathname.startsWith(href)
 					return (
 						<Link
 							key={href}
