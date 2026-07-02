@@ -168,7 +168,7 @@ function MyEventCard({
 	}
 
 	return (
-		<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex flex-col shadow-md">
+		<div className="rounded-action border border-border-default bg-surface-card overflow-hidden flex flex-col shadow-md">
 			{/* Main row */}
 			<div className="flex min-h-44">
 				{/* Cover image */}
@@ -455,7 +455,7 @@ function WithEventsRightPanel() {
 	return (
 		<>
 			{/* Need help */}
-			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
+			<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-red-100 flex items-center justify-center shrink-0">
 						<Icon as={HeadphonesSvg} size="md" color="inherit" className="text-red-500" />
@@ -476,7 +476,7 @@ function WithEventsRightPanel() {
 			</div>
 
 			{/* Invite — commented until invite feature is live
-			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
+			<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 						<Icon as={GiftSvg} size="md" color="info" />
@@ -503,7 +503,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 	return (
 		<>
 			{/* Good vibes */}
-			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
+			<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
 				<p className="text-title-md font-bold text-text-primary">Good vibes, great company</p>
 				<div className="grid grid-cols-3 gap-3">
 					{[
@@ -522,7 +522,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 
 			{/* Recommendations */}
 			{recommendations.length > 0 && (
-				<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
+				<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 					<div className="flex items-center justify-between">
 						<p className="text-title-md font-bold text-text-primary">Recommended for you</p>
 						<Link
@@ -566,7 +566,7 @@ function EmptyStateRightPanel({ recommendations }: { recommendations: ExploreEve
 			)}
 
 			{/* Invite — commented until invite feature is live
-			<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
+			<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					<div className="size-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
 						<Icon as={GiftSvg} size="md" color="info" />

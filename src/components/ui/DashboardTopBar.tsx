@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import { NotificationBell } from "@/components/ui/NotificationBell"
@@ -39,7 +40,7 @@ export function DashboardTopBar() {
 	async function handleSignOut() {
 		clearProfile()
 		await signOut()
-		router.replace("/login")
+		router.replace("/host/login")
 	}
 
 	useClickOutside(userRef, () => setUserOpen(false))
@@ -60,9 +61,21 @@ export function DashboardTopBar() {
 						onClick={() => setUserOpen((o) => !o)}
 						className="flex items-center gap-2 cursor-pointer hover:bg-surface-card-muted px-2 py-1.5 rounded-action transition-colors"
 					>
-						<div className="size-8 rounded-avatar bg-surface-brand-soft flex items-center justify-center">
-							<span className="text-label-sm font-semibold text-text-brand">{initials}</span>
-						</div>
+						{profile?.avatarUrl ? (
+							<div className="relative size-8 rounded-avatar overflow-hidden shrink-0 border border-border-default bg-surface-hover">
+								<Image
+									src={profile.avatarUrl}
+									alt={displayName}
+									fill
+									sizes="32px"
+									className="object-cover"
+								/>
+							</div>
+						) : (
+							<div className="size-8 rounded-avatar bg-surface-brand-soft flex items-center justify-center shrink-0">
+								<span className="text-label-sm font-semibold text-text-brand">{initials}</span>
+							</div>
+						)}
 						<span className="text-label-md text-text-primary">{displayName}</span>
 						<Icon
 							as={AltArrowDownSvg}

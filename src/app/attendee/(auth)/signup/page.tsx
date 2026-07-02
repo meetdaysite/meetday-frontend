@@ -36,7 +36,6 @@ type FormValues = z.infer<typeof schema>
 export default function AttendeeSignupPage() {
 	const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY)
 	const [loading, setLoading] = useState(false)
-	const [phoneExistsError, setPhoneExistsError] = useState<string | null>(null)
 	const { sendOtp } = useAuth()
 	const setSession = useAttendeeSessionStore((s) => s.setSession)
 	const router = useRouter()
@@ -53,7 +52,6 @@ export default function AttendeeSignupPage() {
 	const agreed = useWatch({ control, name: "agreed" })
 
 	async function onSubmit({ phone, firstName, lastName, email }: FormValues) {
-		setPhoneExistsError(null)
 		setLoading(true)
 
 		try {
@@ -61,7 +59,7 @@ export default function AttendeeSignupPage() {
 			const { exists } = await checkPhone(fullPhone)
 
 			if (exists) {
-				setPhoneExistsError("This number already has an account — log in instead.")
+				toast.error("This number already has an account — log in instead.")
 				setLoading(false)
 				return
 			}
@@ -153,14 +151,11 @@ export default function AttendeeSignupPage() {
 						<PhoneField
 							label="Phone number"
 							value={field.value}
-							onChange={(val) => {
-								field.onChange(val)
-								if (phoneExistsError) setPhoneExistsError(null)
-							}}
+							onChange={field.onChange}
 							country={country}
 							onCountryChange={setCountry}
 							disabled={loading}
-							error={phoneExistsError ?? errors.phone?.message}
+							error={errors.phone?.message}
 						/>
 					)}
 				/>

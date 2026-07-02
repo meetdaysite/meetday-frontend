@@ -117,7 +117,7 @@ export function JoinCommunityModal({ community, open, onClose, onJoin }: JoinCom
 			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
 			onClick={e => { if (e.target === e.currentTarget && !isSubmitting) onClose() }}
 		>
-			<div className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col sm:flex-row relative">
+			<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col sm:flex-row relative">
 
 				{/* Close button */}
 				<button

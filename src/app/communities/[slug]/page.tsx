@@ -79,7 +79,7 @@ function LockedTabContent({
 	}
 
 	return (
-		<div className="rounded-panel bg-surface-brand-soft border border-border-focus p-6 flex flex-col sm:flex-row items-center gap-4 shadow-md">
+		<div className="rounded-action bg-surface-brand-soft border border-border-focus p-6 flex flex-col sm:flex-row items-center gap-4 shadow-md">
 			<div className="flex items-center justify-center size-12 rounded-full bg-action-primary shrink-0">
 				<Icon as={LockSvg} size="md" color="inverse" />
 			</div>
@@ -180,7 +180,7 @@ function TabContent({
 	if (activeTab === "members") return <MembersTabContent communityId={community.id} onOpenDM={onOpenDM} />
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-10 flex items-center justify-center">
+		<div className="rounded-action bg-surface-card border border-border-default shadow-md p-10 flex items-center justify-center">
 			<p className="text-body-sm text-text-muted">Content coming soon.</p>
 		</div>
 	)
@@ -195,16 +195,16 @@ function CommunityPageSkeleton() {
 				<Skeleton.Text className="w-36 mb-6" />
 				<div className="flex gap-8 items-start">
 					<div className="flex-1 min-w-0 flex flex-col gap-5">
-						<Skeleton.Block className="h-64 rounded-panel" />
+						<Skeleton.Block className="h-64 rounded-action" />
 						<div className="flex gap-1">
 							{Array.from({ length: 4 }).map((_, i) => (
 								<Skeleton.Block key={i} className="h-9 w-24 rounded-full" />
 							))}
 						</div>
-						<Skeleton.Block className="h-48 rounded-panel" />
+						<Skeleton.Block className="h-48 rounded-action" />
 					</div>
 					<div className="hidden lg:flex flex-col gap-4 w-100 shrink-0">
-						<Skeleton.Block className="h-72 rounded-panel" />
+						<Skeleton.Block className="h-72 rounded-action" />
 					</div>
 				</div>
 			</div>

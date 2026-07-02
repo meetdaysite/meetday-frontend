@@ -310,7 +310,7 @@ export function PostDetailModal({ postId, communityId, currentUserRole, onClose 
 					if (e.target === e.currentTarget) onClose()
 				}}
 			>
-				<div className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-surface-card rounded-panel border border-border-default shadow-floating overflow-hidden">
+				<div className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-surface-card rounded-action border border-border-default shadow-floating overflow-hidden">
 					{/* Sticky header */}
 					<div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-default shrink-0">
 						{loading || !post ? (

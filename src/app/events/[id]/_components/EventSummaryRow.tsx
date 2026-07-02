@@ -49,7 +49,7 @@ export function EventSummaryRow({ event }: { event: PublicEventDetails }) {
 	const hasRating = host.averageRating !== null && host.totalReviews > 0
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default shadow-md overflow-hidden grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border-default">
+		<div className="rounded-action bg-surface-card border border-border-default shadow-md overflow-hidden grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border-default">
 			{/* Col 1 — About */}
 			<div className="p-5 flex flex-col gap-3">
 				<ColHeader icon={PulseSvg} title="Vibe Summary" iconColor="brand" />

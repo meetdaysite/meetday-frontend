@@ -51,7 +51,7 @@ export function UpcomingExperiences({
 	}, [communitySlug])
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-5 shadow-md">
+		<div className="rounded-action bg-surface-card border border-border-default p-5 shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<p className="text-body-md font-semibold text-text-primary">
 					Upcoming experiences from this community

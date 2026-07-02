@@ -39,7 +39,7 @@ export function LeaveConfirmModal({ communityName, open, onClose, onConfirm }: L
 			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
 			onClick={e => { if (e.target === e.currentTarget && !isSubmitting) onClose() }}
 		>
-			<div className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-sm relative">
+			<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-sm relative">
 
 				<button
 					type="button"

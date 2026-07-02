@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/Skeleton"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { useBookingStore } from "@/store/bookingStore"
 import { createOrder, confirmFreeOrder, getOrderDetail, initiatePayment, verifyPayment, getPricingConfig } from "@/lib/ordersApi"
-import { getApiErrorMessage } from "@/lib/errors"
+import { getApiErrorMessage, ApiError } from "@/lib/errors"
 import { getPublicEventDetails } from "@/lib/api"
 import type { PublicEventDetails } from "@/types/attendee"
 import type { PricingConfig } from "@/lib/ordersApi"
@@ -35,6 +35,7 @@ function AttendeeDetailsContent({ event, pricingConfig }: { event: PublicEventDe
 		setAgreedToTerms,
 		setPendingOrderId,
 		setConfirmedOrder,
+		clearPromo,
 	} = useBookingStore()
 
 	const [submitting, setSubmitting] = useState(false)
@@ -148,6 +149,15 @@ function AttendeeDetailsContent({ event, pricingConfig }: { event: PublicEventDe
 
 			rzp.open()
 		} catch (err: unknown) {
+			if (err instanceof ApiError && (err.statusCode === 409 || err.statusCode === 400) && promoCode) {
+				const msg = err.message.toLowerCase()
+				if (msg.includes("usage limit") || msg.includes("promo code")) {
+					clearPromo()
+					setSubmitError("This promo code is no longer available. Please review your order and try again.")
+					setSubmitting(false)
+					return
+				}
+			}
 			setSubmitError(getApiErrorMessage(err))
 			setSubmitting(false)
 		}
@@ -250,6 +260,7 @@ function AttendeeDetailsContent({ event, pricingConfig }: { event: PublicEventDe
 							continueLabel={isPaidOrder ? "Continue to Payment" : "Confirm Booking"}
 							continueLoading={submitting}
 							continueDisabled={!isFormValid || !agreedToTerms}
+							eventId={event.id}
 						/>
 					</aside>
 				</div>

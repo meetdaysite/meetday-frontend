@@ -23,7 +23,7 @@ export function AttendeeAuthShell({ children, variant }: AttendeeAuthShellProps)
 			</div>
 
 			{/* ── Right — dark panel with floating illustration cards, hidden below lg ── */}
-			<div className="hidden lg:block shrink-0 w-[38%] xl:w-[42%]">
+			<div className="hidden lg:block shrink-0 w-[38%] lg:w-[46%] xl:w-[50%]">
 				<AttendeeDarkPanel variant={variant} />
 			</div>
 		</div>

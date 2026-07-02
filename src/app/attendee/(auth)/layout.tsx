@@ -13,7 +13,7 @@ export default function AttendeeAuthLayout({ children }: { children: React.React
 				aria-hidden
 			/>
 
-			<AttendeeHeader />
+			<AttendeeHeader hideAuthButtons />
 
 			<main className="relative flex flex-1 w-full max-w-screen-2xl mx-auto">
 				{children}

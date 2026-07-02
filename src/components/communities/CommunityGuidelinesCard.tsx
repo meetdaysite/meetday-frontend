@@ -11,7 +11,7 @@ const GUIDELINES = [
 
 export function CommunityGuidelinesCard() {
 	return (
-		<div className="p-5 rounded-panel bg-surface-card border border-border-default shadow-md">
+		<div className="p-5 rounded-action bg-surface-card border border-border-default shadow-md">
 			<p className="text-body-md font-semibold text-text-primary mb-4">Community guidelines</p>
 			<div className="flex flex-col gap-2">
 				{GUIDELINES.slice(0, 3).map((g) => (

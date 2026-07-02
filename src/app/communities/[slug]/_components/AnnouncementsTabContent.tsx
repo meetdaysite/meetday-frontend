@@ -147,7 +147,7 @@ function AnnouncementCard({
 	}, [])
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default shadow-md flex gap-4 p-4 relative">
+		<div className="rounded-action bg-surface-card border border-border-default shadow-md flex gap-4 p-4 relative">
 			{/* Cover image */}
 			<div className="w-32 shrink-0 rounded-action overflow-hidden self-stretch min-h-27.5">
 				{announcement.coverImageUrl ? (
@@ -382,7 +382,7 @@ export function AnnouncementsTabContent({ communityId }: { communityId: string }
 	const loadingMore = isAllView ? allLoadingMore : savedLoadingMore
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default p-5 flex flex-col gap-4 shadow-md">
+		<div className="rounded-action bg-surface-card border border-border-default p-5 flex flex-col gap-4 shadow-md">
 			{/* Header */}
 			<div className="flex items-start justify-between gap-4">
 				<div>

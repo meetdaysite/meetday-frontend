@@ -10,6 +10,7 @@ import { NotificationBell } from "../ui/NotificationBell"
 import { useAuthStore } from "@/store/authStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import { useNotificationStore } from "@/store/notificationStore"
+import { useAccountRole } from "@/context/AuthContext"
 
 interface NavLink {
 	label: string
@@ -26,7 +27,7 @@ const NAV_LINKS: NavLink[] = [
 	{ label: "My Communities", href: "/attendee/my-communities", requiresAuth: true },
 ]
 
-export function AttendeeHeader() {
+export function AttendeeHeader({ hideAuthButtons }: { hideAuthButtons?: boolean }) {
 	const [mobileOpen, setMobileOpen] = useState(false)
 	const [dropdownOpen, setDropdownOpen] = useState(false)
 	const dropdownRef = useRef<HTMLDivElement>(null)
@@ -37,11 +38,17 @@ export function AttendeeHeader() {
 	const signOut = useAuthStore((s) => s.signOut)
 	const profile = useAttendeeProfileStore((s) => s.profile)
 	const initNotifications = useNotificationStore((s) => s.init)
+	const { role } = useAccountRole()
+
+	// Until we can positively confirm this signed-in user isn't a host, don't show
+	// attendee-only UI. `user` alone (Firebase auth presence) isn't enough since it
+	// resolves before the profile — and thus the role — does.
+	const showAuthedUi = !!user && role !== "host"
 
 	useEffect(() => {
-		if (user) initNotifications()
+		if (showAuthedUi) initNotifications()
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [user?.uid])
+	}, [showAuthedUi, user?.uid])
 
 	// Close dropdown on outside click
 	useEffect(() => {
@@ -76,7 +83,7 @@ export function AttendeeHeader() {
 
 				{/* Desktop nav */}
 				<nav className="hidden lg:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2" aria-label="Main navigation">
-					{NAV_LINKS.filter(link => !link.requiresAuth || !!user).map((link) => {
+					{NAV_LINKS.filter(link => !link.requiresAuth || showAuthedUi).map((link) => {
 						const isActive = pathname === link.href
 						return (
 							<Link
@@ -103,7 +110,7 @@ export function AttendeeHeader() {
 
 				{/* Desktop right actions */}
 				<div className="hidden lg:flex items-center gap-2 ml-auto">
-					{user ? (
+					{showAuthedUi ? (
 						<>
 						<NotificationBell />
 						<div className="relative" ref={dropdownRef}>
@@ -133,7 +140,7 @@ export function AttendeeHeader() {
 							</button>
 
 							{dropdownOpen && (
-								<div className="absolute right-0 top-full mt-2 w-44 rounded-panel border border-border-default bg-surface-canvas shadow-floating py-1.5 z-50">
+								<div className="absolute right-0 top-full mt-2 w-44 rounded-action border border-border-default bg-surface-canvas shadow-floating py-1.5 z-50">
 									<Link
 										href="/attendee/profile"
 										onClick={() => setDropdownOpen(false)}
@@ -141,6 +148,14 @@ export function AttendeeHeader() {
 									>
 										<UserIcon />
 										Profile
+									</Link>
+									<Link
+										href="/attendee/support"
+										onClick={() => setDropdownOpen(false)}
+										className="w-full flex items-center gap-2.5 px-3.5 py-2 text-body-sm text-text-secondary hover:text-text-primary hover:bg-surface-card-muted transition-colors"
+									>
+										<TicketIcon />
+										Support Tickets
 									</Link>
 									<div className="my-1 border-t border-border-default" />
 									<button
@@ -154,7 +169,7 @@ export function AttendeeHeader() {
 							)}
 						</div>
 						</>
-					) : (
+					) : !hideAuthButtons ? (
 						<>
 							<Button
 								variant="secondary"
@@ -175,7 +190,7 @@ export function AttendeeHeader() {
 								Sign up
 							</Button>
 						</>
-					)}
+					) : null}
 				</div>
 
 				{/* Mobile hamburger */}
@@ -194,7 +209,7 @@ export function AttendeeHeader() {
 			{/* Mobile drawer */}
 			{mobileOpen && (
 				<div className="lg:hidden border-t border-border-default bg-surface-canvas px-4 pb-4 pt-2 flex flex-col gap-1">
-					{NAV_LINKS.filter(link => !link.requiresAuth || !!user).map((link) => (
+					{NAV_LINKS.filter(link => !link.requiresAuth || showAuthedUi).map((link) => (
 						<Link
 							key={link.label}
 							href={link.href}
@@ -211,8 +226,18 @@ export function AttendeeHeader() {
 						</Link>
 					))}
 
+					{showAuthedUi && (
+						<Link
+							href="/attendee/support"
+							className="px-3 py-2.5 text-body-md rounded-action transition-colors text-text-primary hover:bg-surface-card-muted"
+							onClick={() => setMobileOpen(false)}
+						>
+							Support Tickets
+						</Link>
+					)}
+
 					<div className="flex gap-3 mt-3 pt-3 border-t border-border-default">
-						{user ? (
+						{showAuthedUi ? (
 							<Button
 								variant="secondary"
 								size="sm"
@@ -221,7 +246,7 @@ export function AttendeeHeader() {
 							>
 								Log out
 							</Button>
-						) : (
+						) : !hideAuthButtons ? (
 							<>
 								<Button
 									variant="secondary"
@@ -240,11 +265,11 @@ export function AttendeeHeader() {
 									Sign up
 								</Button>
 							</>
-						)}
+						) : null}
 					</div>
 				</div>
 			)}
-		</header>
+	</header>
 	)
 }
 
@@ -291,6 +316,15 @@ function LogoutIcon() {
 			<path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
 			<path d="M10 11l3-3-3-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
 			<path d="M13 8H6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+		</svg>
+	)
+}
+
+function TicketIcon() {
+	return (
+		<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+			<path d="M10.5 2H5.5A1.5 1.5 0 004 3.5v9A1.5 1.5 0 005.5 14h5A1.5 1.5 0 0012 12.5v-9A1.5 1.5 0 0010.5 2z" stroke="currentColor" strokeWidth="1.3" />
+			<path d="M6 5.5h4M6 8h4M6 10.5h2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
 		</svg>
 	)
 }

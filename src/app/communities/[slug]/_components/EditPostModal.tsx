@@ -69,7 +69,7 @@ export function EditPostModal({ post, communityId, onClose, onSaved }: EditPostM
 			className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
 			onClick={e => { if (e.target === e.currentTarget) onClose() }}
 		>
-			<div className="w-full max-w-lg flex flex-col bg-surface-card rounded-panel border border-border-default shadow-floating overflow-hidden">
+			<div className="w-full max-w-lg flex flex-col bg-surface-card rounded-action border border-border-default shadow-floating overflow-hidden">
 				{/* Header */}
 				<div className="flex items-center justify-between px-5 py-4 border-b border-border-default shrink-0">
 					<h2 className="text-label-md font-semibold text-text-primary">Edit post</h2>

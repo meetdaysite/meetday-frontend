@@ -25,6 +25,7 @@ import { EventPreviewBar } from "../_components/EventPreviewBar"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { TicketQRDisplay } from "../_components/TicketQRDisplay"
 import { ConfirmedRightPanel } from "../_components/ConfirmedRightPanel"
+import { SupportTicketModal } from "@/components/attendee/SupportTicketModal"
 
 interface PageProps {
 	params: Promise<{ id: string }>
@@ -79,6 +80,7 @@ const TRUST_ITEMS = [
 
 function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: OrderDetail }) {
 	const [copied, setCopied] = useState(false)
+	const [supportOpen, setSupportOpen] = useState(false)
 	const primaryEmail = order.items[0]?.groupAttendees?.[0]?.email ?? ""
 
 	const firstItem = order.items[0]
@@ -109,7 +111,7 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 					{/* Left */}
 					<div className="flex-1 min-w-0 flex flex-col gap-6">
 						{/* ── Main confirmation card ── */}
-						<div className="rounded-panel border border-border-default bg-surface-card p-6 flex flex-col gap-6 shadow-md">
+						<div className="rounded-action border border-border-default bg-surface-card p-6 flex flex-col gap-6 shadow-md">
 							{/* Success hero */}
 							<div className="flex flex-col items-center text-center gap-4 py-2">
 								<div className="size-16 rounded-full bg-green-100 flex items-center justify-center">
@@ -254,7 +256,7 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">
 						<ConfirmedRightPanel />
 						{/* Trust footer card */}
-						<div className="rounded-panel border border-border-default bg-surface-card p-5 shadow-md">
+						<div className="rounded-action border border-border-default bg-surface-card p-5 shadow-md">
 							<div className="grid gap-6">
 								{TRUST_ITEMS.map(item => (
 									<div key={item.title} className="flex gap-3 items-start">
@@ -271,9 +273,13 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 												{item.body}
 											</p>
 											{item.link && (
-												<span className="text-caption text-text-brand cursor-pointer hover:underline font-medium">
+												<button
+													type="button"
+													onClick={() => setSupportOpen(true)}
+													className="text-caption text-text-brand hover:underline font-medium bg-transparent border-0 p-0 cursor-pointer"
+												>
 													{item.link}
-												</span>
+												</button>
 											)}
 										</div>
 									</div>
@@ -283,6 +289,13 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 					</aside>
 				</div>
 			</div>
+
+			<SupportTicketModal
+				open={supportOpen}
+				onClose={() => setSupportOpen(false)}
+				entityType="ORDER"
+				entityId={order.id}
+			/>
 		</main>
 	)
 }

@@ -553,7 +553,7 @@ export function ChatTabContent({
 
 	if (chatLoading) {
 		return (
-			<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex h-155">
+			<div className="rounded-action border border-border-default bg-surface-card overflow-hidden flex h-155">
 				<aside className="w-60 shrink-0 border-r border-border-default flex flex-col bg-surface-page p-4 gap-3">
 					<Skeleton.Text className="w-14" />
 					{Array.from({ length: 4 }).map((_, i) => (
@@ -578,7 +578,7 @@ export function ChatTabContent({
 	}
 
 	return (
-		<div className="rounded-panel border border-border-default bg-surface-card overflow-hidden flex h-155 shadow-md">
+		<div className="rounded-action border border-border-default bg-surface-card overflow-hidden flex h-155 shadow-md">
 			{/* ── Left sidebar ── */}
 			<aside className="w-60 shrink-0 border-r border-gray-200 flex flex-col bg-gray-50 overflow-y-auto no-scrollbar">
 				<ChannelList

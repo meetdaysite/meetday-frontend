@@ -18,7 +18,7 @@ function CommunityCard({ community }: { community: PublicEventCommunity }) {
 	const isPublic = community.access === "PUBLIC"
 
 	return (
-		<div className="rounded-panel border border-border-default shadow-md p-4 flex items-stretch gap-4">
+		<div className="rounded-action border border-border-default shadow-md p-4 flex items-stretch gap-4">
 			<div className="relative w-20 shrink-0 self-stretch rounded-md overflow-hidden">
 				<Image
 					src={community.coverImageUrl}
@@ -96,7 +96,7 @@ export function EventCommunityBanner({ communities }: EventCommunityBannerProps)
 			: `This event is part of ${communities.length} communities.`
 
 	return (
-		<div className="rounded-panel bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
+		<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
 			<div>
 				<p className="text-body-md font-medium text-text-primary">{label}</p>
 				<p className="text-label-sm text-text-secondary font-normal mt-0.5">

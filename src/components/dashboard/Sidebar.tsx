@@ -12,33 +12,24 @@ import type { ComponentType, SVGProps } from "react"
 import UserSvg from "@/icons/outlined/user.svg"
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
-import ClipboardListSvg from "@/icons/outlined/clipboard-list.svg"
-import UsersGroup2Svg from "@/icons/outlined/users-group-2.svg"
 import UsersGroupOutSvg from "@/icons/outlined/users-group.svg"
 import UsersGroupFillSvg from "@/icons/filled/users-group.svg"
-import MessageSvg from "@/icons/outlined/message.svg"
-import CashOutOutSvg from "@/icons/outlined/cash-out.svg"
-import Chart2OutSvg from "@/icons/outlined/chart-2.svg"
+import TicketOutSvg from "@/icons/outlined/ticket.svg"
+import TicketFillSvg from "@/icons/filled/ticket.svg"
 import GiftSvg from "@/icons/outlined/gift.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
 
 import WidgetSvg from "@/icons/filled/widget.svg"
 import CalendarFillSvg from "@/icons/filled/calendar.svg"
-import CashOutFillSvg from "@/icons/filled/cash-out.svg"
-import Chart2FillSvg from "@/icons/filled/chart-2.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
 const NAV_ITEMS: { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; dot?: boolean }[] = [
-	{ label: "Dashboard", href: "/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
-	{ label: "My Experiences", href: "/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg },
-	// { label: "Registrations", href: "/dashboard/registrations", outlined: ClipboardListSvg, filled: ClipboardListSvg },
-	// { label: "Attendees", href: "/dashboard/attendees", outlined: UsersGroup2Svg, filled: UsersGroup2Svg },
-	{ label: "Communities", href: "/dashboard/communities", outlined: UsersGroupOutSvg, filled: UsersGroupFillSvg },
-	// { label: "Messages", href: "/dashboard/messages", outlined: MessageSvg, filled: MessageSvg, dot: true },
-	// { label: "Payouts", href: "/dashboard/payouts", outlined: CashOutOutSvg, filled: CashOutFillSvg },
-	// { label: "Insights", href: "/dashboard/insights", outlined: Chart2OutSvg, filled: Chart2FillSvg },
-	{ label: "Profile", href: "/dashboard/profile", outlined: UserSvg, filled: UserSvg },
+	{ label: "Dashboard", href: "/host/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
+	{ label: "My Experiences", href: "/host/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg },
+	{ label: "Communities", href: "/host/dashboard/communities", outlined: UsersGroupOutSvg, filled: UsersGroupFillSvg },
+	{ label: "Profile", href: "/host/dashboard/profile", outlined: UserSvg, filled: UserSvg },
+	{ label: "Support", href: "/host/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
 ]
 
 const PLAN_LABELS: Record<string, string> = {
@@ -70,7 +61,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 			</div>
 
 			<div className="px-4 pb-5">
-				<Link href="/dashboard/create" onClick={onClose}>
+				<Link href="/host/dashboard/create" onClick={onClose}>
 					<Button variant="primary" size="md" radius="md" className="w-full">
 						Create new experience
 					</Button>
@@ -79,7 +70,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 
 			<nav className="flex-1 px-3 flex flex-col gap-0.5">
 				{NAV_ITEMS.map(({ label, href, outlined: Outlined, filled: Filled, dot }) => {
-					const isActive = href === "/dashboard" ? pathname === href : pathname.startsWith(href)
+					const isActive = href === "/host/dashboard" ? pathname === href : pathname.startsWith(href)
 					return (
 						<Link
 							key={href}

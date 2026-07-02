@@ -7,21 +7,33 @@ import { Icon } from "@/components/ui/Icon"
 import { Skeleton } from "@/components/ui/Skeleton"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { useBookingStore } from "@/store/bookingStore"
+import { useAuthStore } from "@/store/authStore"
 import { EventPreviewBar } from "./_components/EventPreviewBar"
 import { TicketSelector } from "./_components/TicketSelector"
 import { OrderSummary } from "./_components/OrderSummary"
 import { getPublicEventDetails } from "@/lib/api"
-import { getPricingConfig } from "@/lib/ordersApi"
+import { getPricingConfig, validateCoupon, getAvailableOffers } from "@/lib/ordersApi"
+import { getApiErrorMessage } from "@/lib/errors"
+import { toast } from "sonner"
 import type { PublicEventDetails } from "@/types/attendee"
-import type { PricingConfig } from "@/lib/ordersApi"
+import type { PricingConfig, AvailableOffer } from "@/lib/ordersApi"
 
 interface PageProps {
 	params: Promise<{ id: string }>
 }
 
-function SelectTicketContent({ event, pricingConfig }: { event: PublicEventDetails; pricingConfig: PricingConfig }) {
+function SelectTicketContent({
+	event,
+	pricingConfig,
+	availableOffers,
+}: {
+	event: PublicEventDetails
+	pricingConfig: PricingConfig
+	availableOffers: AvailableOffer[]
+}) {
 	const router = useRouter()
 	const {
+		eventId: storedEventId,
 		quantities,
 		promoCode,
 		promoApplied,
@@ -30,12 +42,16 @@ function SelectTicketContent({ event, pricingConfig }: { event: PublicEventDetai
 		setEventId,
 		setQuantity,
 		setPromoCode,
+		setPromoApplied,
 		setPromoError,
 		clearPromo,
 		initAttendeeSlots,
 	} = useBookingStore()
 
 	useEffect(() => {
+		if (storedEventId && storedEventId !== event.id) {
+			clearPromo()
+		}
 		setEventId(event.id)
 		event.tickets.forEach((t) => setQuantity(t.id, 1))
 	}, [event.id, setEventId]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -54,13 +70,29 @@ function SelectTicketContent({ event, pricingConfig }: { event: PublicEventDetai
 		router.push(`/events/${event.id}/book/attendee`)
 	}
 
-	const handlePromoApply = async () => {
-		// TODO: wire up to coupon validation API when available
-		if (promoCode.trim().length < 3) {
-			setPromoError("Invalid promo code.")
-			return
+	const buildItems = () =>
+		event.tickets
+			.filter((t) => (quantities[t.id] ?? 0) > 0)
+			.map((t) => ({ ticketId: t.id, quantity: quantities[t.id] }))
+
+	const applyPromoCode = async (code: string) => {
+		try {
+			const result = await validateCoupon({ eventId: event.id, couponCode: code, items: buildItems() })
+			setPromoApplied(result.discountAmount)
+			toast.success(`Promo code applied! You saved ₹${result.discountAmount}.`)
+		} catch (err) {
+			setPromoError(getApiErrorMessage(err))
 		}
-		setPromoError("Promo code not recognised.")
+	}
+
+	const handlePromoApply = async () => {
+		if (!promoCode.trim()) return
+		await applyPromoCode(promoCode.trim())
+	}
+
+	const handleOfferSelect = async (code: string) => {
+		setPromoCode(code)
+		await applyPromoCode(code)
 	}
 
 	return (
@@ -95,10 +127,12 @@ function SelectTicketContent({ event, pricingConfig }: { event: PublicEventDetai
 							promoCode={promoCode}
 							promoApplied={promoApplied}
 							promoError={promoError}
+							availableOffers={availableOffers}
 							onQuantityChange={setQuantity}
 							onPromoCodeChange={setPromoCode}
 							onPromoApply={handlePromoApply}
 							onPromoClear={clearPromo}
+							onOfferSelect={handleOfferSelect}
 						/>
 					</div>
 
@@ -112,6 +146,7 @@ function SelectTicketContent({ event, pricingConfig }: { event: PublicEventDetai
 							onContinue={handleContinue}
 							continueLabel="Continue"
 							continueDisabled={totalTickets === 0}
+							eventId={event.id}
 						/>
 					</aside>
 				</div>
@@ -135,15 +170,26 @@ function SelectTicketContent({ event, pricingConfig }: { event: PublicEventDetai
 
 export default function SelectTicketPage({ params }: PageProps) {
 	const { id } = use(params)
+	const { authLoading } = useAuthStore()
 	const [event, setEvent] = useState<PublicEventDetails | null>(null)
 	const [pricingConfig, setPricingConfig] = useState<PricingConfig | null>(null)
+	const [availableOffers, setAvailableOffers] = useState<AvailableOffer[]>([])
 
+	// Public fetches — no auth needed
 	useEffect(() => {
 		Promise.all([getPublicEventDetails(id), getPricingConfig(id)]).then(([e, pc]) => {
 			if (e) setEvent(e)
 			setPricingConfig(pc)
 		})
 	}, [id])
+
+	// Authenticated fetch — wait for Firebase to resolve auth state
+	useEffect(() => {
+		if (authLoading) return
+		getAvailableOffers(id)
+			.then(setAvailableOffers)
+			.catch(() => setAvailableOffers([]))
+	}, [id, authLoading])
 
 	if (!event || !pricingConfig) {
 		return (
@@ -197,5 +243,5 @@ export default function SelectTicketPage({ params }: PageProps) {
 		)
 	}
 
-	return <SelectTicketContent event={event} pricingConfig={pricingConfig} />
+	return <SelectTicketContent event={event} pricingConfig={pricingConfig} availableOffers={availableOffers} />
 }
