@@ -4,7 +4,7 @@ import { useState } from "react"
 import { TextField } from "@/components/ui/TextField"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
-import TagPriceSvg from "@/icons/outlined/tag-price.svg"
+import TicketSaleSvg from "@/icons/filled/ticket-sale.svg"
 import { TicketCard } from "./TicketCard"
 import { AvailableOffersModal } from "./AvailableOffersModal"
 import type { PublicTicket } from "@/types/attendee"
@@ -74,7 +74,7 @@ export function TicketSelector({
 							key={ticket.id}
 							ticket={ticket}
 							tierIndex={index}
-							quantity={quantities[ticket.id] ?? 1}
+							quantity={quantities[ticket.id] ?? 0}
 							onQuantityChange={(qty) => onQuantityChange(ticket.id, qty)}
 						/>
 					))
@@ -83,8 +83,8 @@ export function TicketSelector({
 
 			{/* Promo code card — hidden for fully free events */}
 			{!allFree && <div className="rounded-action border border-border-default bg-surface-card p-4 flex items-start gap-4 shadow-md">
-				<div className="size-10 shrink-0 rounded-action bg-surface-brand-soft flex items-center justify-center">
-					<Icon as={TagPriceSvg} size="md" color="brand" />
+				<div className="size-10 shrink-0 rounded-action bg-surface-vibe-soft flex items-center justify-center">
+					<Icon as={TicketSaleSvg} size="lg" color="vibe" />
 				</div>
 				<div className="flex-1 min-w-0">
 					<p className="text-body-sm font-semibold text-text-primary mb-0.5">Have a promo code?</p>
@@ -121,7 +121,7 @@ export function TicketSelector({
 							onClick={() => setOffersOpen(true)}
 							className="mt-2.5 flex items-center gap-1.5 text-caption font-medium text-text-brand hover:underline"
 						>
-							<Icon as={TagPriceSvg} size="xs" color="brand" />
+							<Icon as={TicketSaleSvg} size="xs" color="brand" />
 							{availableOffers.length} offer{availableOffers.length !== 1 ? "s" : ""} available for this event
 						</button>
 					)}

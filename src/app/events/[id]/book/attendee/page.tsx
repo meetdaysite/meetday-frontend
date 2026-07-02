@@ -9,6 +9,8 @@ import { Checkbox } from "@/components/ui/Checkbox"
 import { Skeleton } from "@/components/ui/Skeleton"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { useBookingStore } from "@/store/bookingStore"
+import { useAuthStore } from "@/store/authStore"
+import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import { createOrder, confirmFreeOrder, getOrderDetail, initiatePayment, verifyPayment, getPricingConfig } from "@/lib/ordersApi"
 import { getApiErrorMessage, ApiError } from "@/lib/errors"
 import { getPublicEventDetails } from "@/lib/api"
@@ -18,6 +20,7 @@ import { EventPreviewBar } from "../_components/EventPreviewBar"
 import { BookingStepBadge } from "../_components/BookingStepBadge"
 import { OrderSummary } from "../_components/OrderSummary"
 import { AttendeeForm } from "../_components/AttendeeForm"
+import { CurrentUserAttendeeCard } from "../_components/CurrentUserAttendeeCard"
 
 interface PageProps {
 	params: Promise<{ id: string }>
@@ -37,6 +40,8 @@ function AttendeeDetailsContent({ event, pricingConfig }: { event: PublicEventDe
 		setConfirmedOrder,
 		clearPromo,
 	} = useBookingStore()
+	const user = useAuthStore((s) => s.user)
+	const profile = useAttendeeProfileStore((s) => s.profile)
 
 	const [submitting, setSubmitting] = useState(false)
 	const [submitError, setSubmitError] = useState<string | null>(null)
@@ -67,6 +72,11 @@ function AttendeeDetailsContent({ event, pricingConfig }: { event: PublicEventDe
 
 	// Only additional attendees (not the primary) need details
 	const additionalSlots = allSlots.filter(s => s.globalIndex > 0)
+	const primarySlot = allSlots[0]
+
+	const currentUserName =
+		[profile?.firstName, profile?.lastName].filter(Boolean).join(" ") || user?.displayName || "You"
+	const currentUserEmail = profile?.email ?? user?.email ?? ""
 
 	const isFormValid = additionalSlots.every(({ ticketId, slotIndex }) => {
 		const slot = attendeesByTicket[ticketId]?.[slotIndex]
@@ -192,7 +202,16 @@ function AttendeeDetailsContent({ event, pricingConfig }: { event: PublicEventDe
 						<BookingStepBadge totalTickets={totalTickets} />
 						<EventPreviewBar event={event} />
 
-						{/* Additional attendee forms (primary slot belongs to the logged-in user) */}
+						{/* Primary attendee — the logged-in user, non-editable */}
+						{primarySlot && (
+							<CurrentUserAttendeeCard
+								fullName={currentUserName}
+								email={currentUserEmail}
+								ticketName={primarySlot.ticketName}
+							/>
+						)}
+
+						{/* Additional attendee forms */}
 						{additionalSlots.map(({ ticketId, ticketName, slotIndex, globalIndex: gIdx }) => (
 							<AttendeeForm
 								key={`${ticketId}-${slotIndex}`}

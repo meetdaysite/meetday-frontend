@@ -53,7 +53,8 @@ function SelectTicketContent({
 			clearPromo()
 		}
 		setEventId(event.id)
-		event.tickets.forEach((t) => setQuantity(t.id, 1))
+		const defaultQty = event.tickets.length === 1 ? 1 : 0
+		event.tickets.forEach((t) => setQuantity(t.id, defaultQty))
 	}, [event.id, setEventId]) // eslint-disable-line react-hooks/exhaustive-deps
 
 	const totalTickets = Object.values(quantities).reduce((a, b) => a + b, 0)
@@ -64,7 +65,7 @@ function SelectTicketContent({
 
 	const handleContinue = () => {
 		event.tickets.forEach((t) => {
-			const qty = quantities[t.id] ?? 1
+			const qty = quantities[t.id] ?? 0
 			if (qty > 0) initAttendeeSlots(t.id, qty)
 		})
 		router.push(`/events/${event.id}/book/attendee`)

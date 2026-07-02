@@ -25,6 +25,7 @@ import { EventPreviewBar } from "../_components/EventPreviewBar"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { TicketQRDisplay } from "../_components/TicketQRDisplay"
 import { ConfirmedRightPanel } from "../_components/ConfirmedRightPanel"
+import { EventCommunitiesSection } from "../_components/EventCommunitiesSection"
 import { SupportTicketModal } from "@/components/attendee/SupportTicketModal"
 
 interface PageProps {
@@ -82,6 +83,7 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 	const [copied, setCopied] = useState(false)
 	const [supportOpen, setSupportOpen] = useState(false)
 	const primaryEmail = order.items[0]?.groupAttendees?.[0]?.email ?? ""
+	const communities = event.communities ?? []
 
 	const firstItem = order.items[0]
 	const firstTicket = event.tickets.find(t => t.id === firstItem?.ticketId)
@@ -159,6 +161,16 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 											{firstTicket.description.split("\n")[0]}
 										</p>
 									)}
+									<Link href={`/orders/${order.id}`} className="mt-auto pt-1">
+										<Button
+											variant="primary"
+											size="sm"
+											radius="sm"
+											leftIcon={<Icon as={TicketSvg} size="sm" color="inherit" />}
+										>
+											View my ticket
+										</Button>
+									</Link>
 								</div>
 
 								{/* Booking ID */}
@@ -181,14 +193,14 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 										</button>
 									</div>
 									<div className="flex items-center gap-2 mt-auto pt-1">
-										<span className="text-caption text-text-muted">Paid via</span>
+										<span className="text-label-md text-text-muted">Paid via</span>
 										<Image
 											src="/assets/razorpay-logo.svg"
 											alt="Razorpay"
-											width={60}
+											width={100}
 											height={13}
 										/>
-										<span className="text-caption font-semibold text-text-secondary">
+										<span className="text-label-md font-semibold text-text-secondary">
 											{formatINR(parseFloat(String(order.totalAmount)))}
 										</span>
 									</div>
@@ -227,20 +239,6 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 									</p>
 								</div>
 							)}
-
-							{/* Action buttons */}
-							<div className="flex flex-wrap justify-center gap-3">
-								<Link href={`/orders/${order.id}`}>
-									<Button
-										variant="primary"
-										size="md"
-										radius="md"
-										leftIcon={<Icon as={TicketSvg} size="sm" color="inherit" />}
-									>
-										View my ticket
-									</Button>
-								</Link>
-							</div>
 
 							{/* Secure note */}
 							<div className="flex items-center justify-center gap-1.5">
@@ -288,6 +286,13 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 						</div>
 					</aside>
 				</div>
+
+				{/* Event communities */}
+				{communities.length > 0 && (
+					<div className="mt-6">
+						<EventCommunitiesSection communities={communities} />
+					</div>
+				)}
 			</div>
 
 			<SupportTicketModal

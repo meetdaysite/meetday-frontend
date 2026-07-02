@@ -103,14 +103,14 @@ export function EventPreviewBar({ event }: { event: PublicEventDetails }) {
 
 			{/* Vibe match — only shown when authenticated and data is available */}
 			{showVibe && (
-				<div className="hidden md:flex flex-col items-center justify-center gap-1.5 shrink-0 w-30 rounded-action bg-blue-50 border border-blue-100 p-3 text-center">
-					<div className="flex gap-2 items-center justify-center">
-						<Icon as={StarCircleSvg} size="lg" color="vibe" />
-						<p className="text-heading-sm font-extrabold text-text-vibe leading-none">
+				<div className="hidden md:flex flex-col items-center justify-center gap-1.5 shrink-0 w-40 rounded-action bg-blue-50 border border-blue-100 p-3 text-center">
+					<div className="flex gap-1 items-center justify-center">
+						<Icon as={StarCircleSvg} size="2xl" color="vibe" />
+						<p className="text-heading-lg font-semibold text-text-vibe leading-none tracking-tighter">
 							{match.score !== null ? `${match.score}%` : "—"}
 						</p>
 					</div>
-					<p className="text-label-sm font-bold text-text-vibe">
+					<p className="text-label-md font-semibold text-text-vibe">
 						{match.label ?? "Vibe match"}
 					</p>
 					{match.summary && (

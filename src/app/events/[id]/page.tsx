@@ -28,7 +28,10 @@ export default function EventDetailsPage({ params }: PageProps) {
 
 	useEffect(() => {
 		if (authLoading) return
-		getPublicEventDetails(id).then(setEvent)
+		getPublicEventDetails(id).then((res) => {
+			console.log("[EventDetailsPage] event details:", res)
+			setEvent(res)
+		})
 	}, [id, authLoading])
 
 	if (authLoading || event === undefined) {
