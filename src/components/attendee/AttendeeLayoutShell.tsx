@@ -2,16 +2,12 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useAuthStore } from "@/store/authStore"
-import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
+import { useAccountRole } from "@/context/AuthContext"
 
 export function AttendeeLayoutShell({ children }: { children: React.ReactNode }) {
-	const { user, authLoading } = useAuthStore()
-	const { profile, profileLoading } = useAttendeeProfileStore()
+	const { role } = useAccountRole()
+	const isHostAccount = role === "host"
 	const router = useRouter()
-
-	// HOST accounts have attendeeProfile: null — redirect them to the host dashboard
-	const isHostAccount = !authLoading && !profileLoading && !!user && !!profile && profile.attendeeProfile === null
 
 	useEffect(() => {
 		if (isHostAccount) router.replace("/host/dashboard")

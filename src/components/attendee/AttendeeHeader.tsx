@@ -10,6 +10,7 @@ import { NotificationBell } from "../ui/NotificationBell"
 import { useAuthStore } from "@/store/authStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import { useNotificationStore } from "@/store/notificationStore"
+import { useAccountRole } from "@/context/AuthContext"
 
 interface NavLink {
 	label: string
@@ -34,17 +35,15 @@ export function AttendeeHeader({ hideAuthButtons }: { hideAuthButtons?: boolean 
 	const router = useRouter()
 
 	const user = useAuthStore((s) => s.user)
-	const authLoading = useAuthStore((s) => s.authLoading)
 	const signOut = useAuthStore((s) => s.signOut)
 	const profile = useAttendeeProfileStore((s) => s.profile)
-	const profileLoading = useAttendeeProfileStore((s) => s.profileLoading)
 	const initNotifications = useNotificationStore((s) => s.init)
+	const { role } = useAccountRole()
 
-	// HOST accounts have attendeeProfile: null — until we can positively confirm
-	// this signed-in user isn't a host, don't show attendee-only UI. `user` alone
-	// (Firebase auth presence) isn't enough since it resolves before the profile does.
-	const isHostAccount = !authLoading && !profileLoading && !!user && !!profile && profile.attendeeProfile === null
-	const showAuthedUi = !!user && !isHostAccount
+	// Until we can positively confirm this signed-in user isn't a host, don't show
+	// attendee-only UI. `user` alone (Firebase auth presence) isn't enough since it
+	// resolves before the profile — and thus the role — does.
+	const showAuthedUi = !!user && role !== "host"
 
 	useEffect(() => {
 		if (showAuthedUi) initNotifications()

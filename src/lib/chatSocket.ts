@@ -81,13 +81,24 @@ function attachHandlers(h: ChatSocketHandlers) {
 	socket.on("disconnect", async (reason) => {
 		console.debug("[chatSocket] ❌ disconnected, reason:", reason)
 		h.onDisconnect()
-		if (reason === "io server disconnect" || reason === "transport close") {
-			console.debug("[chatSocket] attempting reconnect with fresh token")
+		// "io server disconnect" is the one reason Socket.IO won't auto-reconnect for —
+		// everything else (transport close, transport error, ping timeout) is retried
+		// automatically, with the token refreshed on each attempt below.
+		if (reason === "io server disconnect") {
+			console.debug("[chatSocket] attempting manual reconnect with fresh token")
 			const freshToken = await auth.currentUser?.getIdToken(true)
 			if (!freshToken) return
 			socket!.auth = { token: freshToken }
 			socket!.connect()
 		}
+	})
+
+	// Covers every automatic reconnect attempt (any disconnect reason other than
+	// "io server disconnect"), reusing Socket.IO's own backoff — no custom retry needed.
+	socket.io.on("reconnect_attempt", async () => {
+		console.debug("[chatSocket] reconnect_attempt — refreshing token")
+		const freshToken = await auth.currentUser?.getIdToken(true)
+		if (freshToken && socket) socket.auth = { token: freshToken }
 	})
 
 	socket.on("connect_error", (err) => {
@@ -198,6 +209,7 @@ export const chatSocket = {
 		if (socket) {
 			console.debug("[chatSocket] connect — tearing down existing socket")
 			socket.removeAllListeners()
+			socket.io.off("reconnect_attempt")
 			socket.disconnect()
 			socket = null
 		}
@@ -221,6 +233,7 @@ export const chatSocket = {
 		console.debug("[chatSocket] disconnect called")
 		if (socket) {
 			socket.removeAllListeners()
+			socket.io.off("reconnect_attempt")
 			socket.disconnect()
 			socket = null
 		}

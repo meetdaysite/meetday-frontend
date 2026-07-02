@@ -5,8 +5,31 @@ import { onAuthStateChanged } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { useAuthStore } from "@/store/authStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
+import { useBookingStore } from "@/store/bookingStore"
+import { useHostStore } from "@/store/hostStore"
+import { useDashboardStore } from "@/store/dashboardStore"
+import { useNotificationStore } from "@/store/notificationStore"
 
 export { useAuthStore as useAuth } from "@/store/authStore"
+
+export type AccountRole = "host" | "attendee" | "unknown"
+
+// Single source of truth for host-vs-attendee — HOST accounts have attendeeProfile: null
+// on the /auth/me response. `role` only ever resolves to "host"/"attendee" once both
+// Firebase auth and the profile fetch have settled; it stays "unknown" while loading
+// or when no one is signed in.
+export function useAccountRole(): { role: AccountRole; roleLoading: boolean } {
+	const authLoading = useAuthStore((s) => s.authLoading)
+	const user = useAuthStore((s) => s.user)
+	const profile = useAttendeeProfileStore((s) => s.profile)
+	const profileLoading = useAttendeeProfileStore((s) => s.profileLoading)
+
+	const roleLoading = authLoading || (!!user && profileLoading)
+	const role: AccountRole =
+		!roleLoading && user && profile ? (profile.attendeeProfile === null ? "host" : "attendee") : "unknown"
+
+	return { role, roleLoading }
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
@@ -16,7 +39,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 			if (u) {
 				useAttendeeProfileStore.getState().fetchProfile()
 			} else {
+				// Firebase's auth persistence broadcasts sign-out to every open tab, so this
+				// branch also runs in tabs that didn't initiate the logout — reset the same
+				// in-memory stores signOut() resets, so a passive tab doesn't keep showing
+				// stale profile/dashboard data after another tab logs out.
 				useAttendeeProfileStore.getState().clearProfile()
+				useBookingStore.getState().reset()
+				useHostStore.getState().clearProfile()
+				useDashboardStore.getState().reset()
+				useNotificationStore.getState().reset()
 			}
 		})
 	}, [])

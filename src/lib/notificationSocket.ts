@@ -27,6 +27,7 @@ export const notificationSocket = {
 	connect(initialToken: string, callbacks: SocketCallbacks) {
 		if (socket) {
 			socket.removeAllListeners()
+			socket.io.off("reconnect_attempt")
 			socket.disconnect()
 			socket = null
 		}
@@ -44,12 +45,19 @@ export const notificationSocket = {
 
 		socket.on("disconnect", async (reason) => {
 			callbacks.onDisconnect()
-			if (reason === "io server disconnect" || reason === "transport close") {
+			// "io server disconnect" is the one reason Socket.IO won't auto-reconnect for —
+			// everything else is retried automatically, with the token refreshed per attempt below.
+			if (reason === "io server disconnect") {
 				const freshToken = await auth.currentUser?.getIdToken(true)
 				if (!freshToken) return
 				socket!.auth = { token: freshToken }
 				socket!.connect()
 			}
+		})
+
+		socket.io.on("reconnect_attempt", async () => {
+			const freshToken = await auth.currentUser?.getIdToken(true)
+			if (freshToken && socket) socket.auth = { token: freshToken }
 		})
 
 		socket.on("connect_error", () => {
@@ -60,6 +68,7 @@ export const notificationSocket = {
 	disconnect() {
 		if (socket) {
 			socket.removeAllListeners()
+			socket.io.off("reconnect_attempt")
 			socket.disconnect()
 			socket = null
 		}

@@ -221,21 +221,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 				if (cancelled) return
 				setProfile(p)
 			})
-			.catch(e => {
-				if (!cancelled) {
-					if (e instanceof ApiError && e.statusCode === 404) {
-						// If the signed-in user has an attendee profile they're not a host — send to their portal
-						const meProfile = useAttendeeProfileStore.getState().profile
-						if (meProfile?.attendeeProfile != null) {
-							router.replace("/attendee")
-						} else {
-							router.replace("/host/onboarding")
-						}
+			.catch(async e => {
+				if (cancelled) return
+				if (e instanceof ApiError && e.statusCode === 404) {
+					// If the signed-in user has an attendee profile they're not a host — send to
+					// their portal. Wait for the attendee-profile fetch to actually settle first —
+					// reading it immediately here raced a still-in-flight fetch and could send a
+					// genuine attendee to /host/onboarding instead of /attendee.
+					await useAttendeeProfileStore.getState().waitUntilLoaded()
+					if (cancelled) return
+					const meProfile = useAttendeeProfileStore.getState().profile
+					if (meProfile?.attendeeProfile != null) {
+						router.replace("/attendee")
 					} else {
-						// Don't redirect to /login — the user is still authenticated in Firebase,
-						// which would cause an immediate bounce back to /dashboard and an infinite loop.
-						setProfileError(true)
+						router.replace("/host/onboarding")
 					}
+				} else {
+					// Don't redirect to /login — the user is still authenticated in Firebase,
+					// which would cause an immediate bounce back to /dashboard and an infinite loop.
+					setProfileError(true)
 				}
 			})
 		return () => {

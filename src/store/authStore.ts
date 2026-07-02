@@ -22,6 +22,17 @@ import { useNotificationStore } from "./notificationStore"
 let _confirmation: ConfirmationResult | null = null
 let _recaptcha: RecaptchaVerifier | null = null
 
+// Audited allow-list of identity-scoped keys (see localStorage/sessionStorage.setItem
+// call sites app-wide). Deliberately excludes non-identity UI prefs like
+// "events-view-mode", which should survive a logout.
+const LOCAL_STORAGE_KEYS_TO_CLEAR = [
+	"attendee_vibes",
+	"attendee_about",
+	"meetday_create_draft",
+	"meetday_create_draft_id",
+]
+const SESSION_STORAGE_KEYS_TO_CLEAR = ["auth-session", "attendee-session", "meetday-booking"]
+
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
 	"auth/invalid-phone-number": "Please enter a valid phone number.",
 	"auth/missing-phone-number": "Please enter a phone number.",
@@ -127,7 +138,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 		useHostStore.getState().clearProfile()
 		useDashboardStore.getState().reset()
 		useNotificationStore.getState().reset()
-		try { localStorage.clear() } catch { /* ignore */ }
-		try { sessionStorage.clear() } catch { /* ignore */ }
+		try {
+			for (const key of LOCAL_STORAGE_KEYS_TO_CLEAR) localStorage.removeItem(key)
+		} catch { /* ignore */ }
+		try {
+			for (const key of SESSION_STORAGE_KEYS_TO_CLEAR) sessionStorage.removeItem(key)
+		} catch { /* ignore */ }
 	},
 }))

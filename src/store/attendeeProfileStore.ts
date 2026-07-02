@@ -11,6 +11,10 @@ type AttendeeProfileStore = {
 	fetchProfile: () => Promise<void>
 	clearProfile: () => void
 	setShowWelcomeModal: (v: boolean) => void
+	// Resolves once any in-flight fetch settles (immediately if none is in flight).
+	// Lets non-reactive callers (e.g. a .catch() outside React) read `profile` without
+	// racing an in-progress request for the current user.
+	waitUntilLoaded: () => Promise<void>
 }
 
 // Guards against out-of-order responses: if the signed-in user changes while a
@@ -38,8 +42,20 @@ export const useAttendeeProfileStore = create<AttendeeProfileStore>((set) => ({
 
 	clearProfile: () => {
 		fetchToken++
-		set({ profile: null })
+		set({ profile: null, profileLoading: false })
 	},
 
 	setShowWelcomeModal: (showWelcomeModal) => set({ showWelcomeModal }),
+
+	waitUntilLoaded: () => {
+		if (!useAttendeeProfileStore.getState().profileLoading) return Promise.resolve()
+		return new Promise<void>((resolve) => {
+			const unsub = useAttendeeProfileStore.subscribe((state) => {
+				if (!state.profileLoading) {
+					unsub()
+					resolve()
+				}
+			})
+		})
+	},
 }))
