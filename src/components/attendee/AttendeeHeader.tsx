@@ -34,14 +34,22 @@ export function AttendeeHeader({ hideAuthButtons }: { hideAuthButtons?: boolean 
 	const router = useRouter()
 
 	const user = useAuthStore((s) => s.user)
+	const authLoading = useAuthStore((s) => s.authLoading)
 	const signOut = useAuthStore((s) => s.signOut)
 	const profile = useAttendeeProfileStore((s) => s.profile)
+	const profileLoading = useAttendeeProfileStore((s) => s.profileLoading)
 	const initNotifications = useNotificationStore((s) => s.init)
 
+	// HOST accounts have attendeeProfile: null — until we can positively confirm
+	// this signed-in user isn't a host, don't show attendee-only UI. `user` alone
+	// (Firebase auth presence) isn't enough since it resolves before the profile does.
+	const isHostAccount = !authLoading && !profileLoading && !!user && !!profile && profile.attendeeProfile === null
+	const showAuthedUi = !!user && !isHostAccount
+
 	useEffect(() => {
-		if (user) initNotifications()
+		if (showAuthedUi) initNotifications()
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [user?.uid])
+	}, [showAuthedUi, user?.uid])
 
 	// Close dropdown on outside click
 	useEffect(() => {
@@ -76,7 +84,7 @@ export function AttendeeHeader({ hideAuthButtons }: { hideAuthButtons?: boolean 
 
 				{/* Desktop nav */}
 				<nav className="hidden lg:flex items-center gap-0.5 absolute left-1/2 -translate-x-1/2" aria-label="Main navigation">
-					{NAV_LINKS.filter(link => !link.requiresAuth || !!user).map((link) => {
+					{NAV_LINKS.filter(link => !link.requiresAuth || showAuthedUi).map((link) => {
 						const isActive = pathname === link.href
 						return (
 							<Link
@@ -103,7 +111,7 @@ export function AttendeeHeader({ hideAuthButtons }: { hideAuthButtons?: boolean 
 
 				{/* Desktop right actions */}
 				<div className="hidden lg:flex items-center gap-2 ml-auto">
-					{user ? (
+					{showAuthedUi ? (
 						<>
 						<NotificationBell />
 						<div className="relative" ref={dropdownRef}>
@@ -202,7 +210,7 @@ export function AttendeeHeader({ hideAuthButtons }: { hideAuthButtons?: boolean 
 			{/* Mobile drawer */}
 			{mobileOpen && (
 				<div className="lg:hidden border-t border-border-default bg-surface-canvas px-4 pb-4 pt-2 flex flex-col gap-1">
-					{NAV_LINKS.filter(link => !link.requiresAuth || !!user).map((link) => (
+					{NAV_LINKS.filter(link => !link.requiresAuth || showAuthedUi).map((link) => (
 						<Link
 							key={link.label}
 							href={link.href}
@@ -219,7 +227,7 @@ export function AttendeeHeader({ hideAuthButtons }: { hideAuthButtons?: boolean 
 						</Link>
 					))}
 
-					{user && (
+					{showAuthedUi && (
 						<Link
 							href="/attendee/support"
 							className="px-3 py-2.5 text-body-md rounded-action transition-colors text-text-primary hover:bg-surface-card-muted"
@@ -230,7 +238,7 @@ export function AttendeeHeader({ hideAuthButtons }: { hideAuthButtons?: boolean 
 					)}
 
 					<div className="flex gap-3 mt-3 pt-3 border-t border-border-default">
-						{user ? (
+						{showAuthedUi ? (
 							<Button
 								variant="secondary"
 								size="sm"

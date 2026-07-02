@@ -30,37 +30,13 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-const RESEND_SECONDS = 42
-
-function ShieldCheckIcon() {
-	return (
-		<svg viewBox="0 0 48 48" fill="none" className="size-full" aria-hidden>
-			<path
-				d="M24 4L8 10v14c0 9.94 6.84 19.24 16 22 9.16-2.76 16-12.06 16-22V10L24 4z"
-				fill="var(--surface-success-soft)"
-			/>
-			<path
-				d="M24 4L8 10v14c0 9.94 6.84 19.24 16 22 9.16-2.76 16-12.06 16-22V10L24 4z"
-				stroke="var(--icon-success)"
-				strokeWidth={2}
-				strokeLinejoin="round"
-			/>
-			<path
-				d="M17 24l5 5 9-10"
-				stroke="var(--icon-success)"
-				strokeWidth={2.5}
-				strokeLinecap="round"
-				strokeLinejoin="round"
-			/>
-		</svg>
-	)
-}
+const RESEND_SECONDS = 60
 
 
 export default function VerifyPage() {
 	const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS)
 	const [loading, setLoading] = useState(false)
-	const { confirmOtp, sendOtp } = useAuth()
+	const { confirmOtp, sendOtp, signOut, hasPendingOtp } = useAuth()
 	const { intent, phone, clearSession } = useAuthSessionStore()
 	const { setProfile } = useHostStore()
 	const router = useRouter()
@@ -77,7 +53,16 @@ export default function VerifyPage() {
 	})
 
 	useEffect(() => {
-		if (!intent) router.replace("/host/login")
+		if (!intent) {
+			router.replace("/host/login")
+			return
+		}
+		// Pending OTP confirmation lives in memory only — a page refresh between
+		// "OTP sent" and "OTP confirmed" loses it, so send the user back to resend.
+		if (!hasPendingOtp()) {
+			toast.error("Your code expired. Please request a new one.")
+			router.replace(intent === "login" ? "/host/login" : "/host/signup")
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
@@ -129,11 +114,17 @@ export default function VerifyPage() {
 					clearSession()
 					router.push("/host/dashboard")
 				} else {
+					// Firebase sign-in succeeded but no host record exists — don't leave the
+					// user authenticated with no matching profile.
+					await signOut()
 					toast.error("No account found for this number. Please sign up.")
+					router.replace("/host/signup")
 				}
 			} else {
 				if (exists) {
+					await signOut()
 					toast.error("An account already exists for this number. Please log in.")
+					router.replace("/host/login")
 				} else {
 					router.push("/host/onboarding")
 				}
@@ -167,10 +158,6 @@ export default function VerifyPage() {
 				<Icon as={ArrowLeftSvg} size="sm" />
 				{intent === "login" ? "Back to Log in" : "Back to Sign up"}
 			</Link>
-
-			<div className="size-14 mb-5">
-				<ShieldCheckIcon />
-			</div>
 
 			<div className="mb-6">
 				<h1 className="text-heading-sm text-text-primary mb-1">

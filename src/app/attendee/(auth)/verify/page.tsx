@@ -47,7 +47,7 @@ function TrustBadge({ icon, label, sublabel }: { icon: React.ReactNode; label: s
 export default function AttendeeVerifyPage() {
 	const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS)
 	const [loading, setLoading] = useState(false)
-	const { confirmOtp, sendOtp } = useAuth()
+	const { confirmOtp, sendOtp, signOut, hasPendingOtp } = useAuth()
 	const { intent, phone, firstName, lastName, email, clearSession } = useAttendeeSessionStore()
 	const setShowWelcomeModal = useAttendeeProfileStore(s => s.setShowWelcomeModal)
 	const router = useRouter()
@@ -64,7 +64,16 @@ export default function AttendeeVerifyPage() {
 	})
 
 	useEffect(() => {
-		if (!intent) router.replace("/attendee/login")
+		if (!intent) {
+			router.replace("/attendee/login")
+			return
+		}
+		// Pending OTP confirmation lives in memory only — a page refresh between
+		// "OTP sent" and "OTP confirmed" loses it, so send the user back to resend.
+		if (!hasPendingOtp()) {
+			toast.error("Your code expired. Please request a new one.")
+			router.replace(intent === "login" ? "/attendee/login" : "/attendee/signup")
+		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
@@ -114,9 +123,19 @@ export default function AttendeeVerifyPage() {
 					clearSession()
 					router.push("/explore")
 				} else {
+					// Firebase sign-in succeeded but no attendee record exists — don't leave
+					// the user authenticated with no matching profile.
+					await signOut()
 					toast.error("No account found for this number. Please sign up.")
 					router.replace("/attendee/signup")
 				}
+				return
+			}
+
+			if (exists) {
+				await signOut()
+				toast.error("An account already exists for this number. Please log in.")
+				router.replace("/attendee/login")
 				return
 			}
 
