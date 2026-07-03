@@ -402,31 +402,33 @@ function TicketPageContent({
 						</div>
 
 						{/* Entry Instructions */}
-						<div className="rounded-action border border-border-default bg-surface-card p-5 shadow-md">
-							<div className="flex items-center gap-2 mb-4">
-								<Icon as={RocketSvg} size="md" color="brand" />
-								<span className="text-title-md font-bold text-text-primary">
-									Entry Instructions
-								</span>
-							</div>
-							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-								{ENTRY_STEPS.map((step, i) => (
-									<div key={i} className="flex items-start gap-3">
-										<div className="size-7 rounded-full bg-neutral-900 flex items-center justify-center shrink-0">
-											<span className="text-[11px] font-bold text-white">{i + 1}</span>
+						{!isOrderVoid && (
+							<div className="rounded-action border border-border-default bg-surface-card p-5 shadow-md">
+								<div className="flex items-center gap-2 mb-4">
+									<Icon as={RocketSvg} size="md" color="brand" />
+									<span className="text-title-md font-bold text-text-primary">
+										Entry Instructions
+									</span>
+								</div>
+								<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+									{ENTRY_STEPS.map((step, i) => (
+										<div key={i} className="flex items-start gap-3">
+											<div className="size-7 rounded-full bg-neutral-900 flex items-center justify-center shrink-0">
+												<span className="text-[11px] font-bold text-white">{i + 1}</span>
+											</div>
+											<div className="pt-0.5">
+												<p className="text-label-sm font-semibold text-text-primary leading-snug">
+													{step.title}
+												</p>
+												<p className="text-caption text-text-muted leading-snug mt-0.5">
+													{step.body}
+												</p>
+											</div>
 										</div>
-										<div className="pt-0.5">
-											<p className="text-label-sm font-semibold text-text-primary leading-snug">
-												{step.title}
-											</p>
-											<p className="text-caption text-text-muted leading-snug mt-0.5">
-												{step.body}
-											</p>
-										</div>
-									</div>
-								))}
+									))}
+								</div>
 							</div>
-						</div>
+						)}
 
 						{/* Trust footer */}
 						<div className="rounded-action border border-border-default bg-surface-card p-5 shadow-md">
@@ -480,23 +482,27 @@ function TicketPageContent({
 
 					{/* ── Right panel ── */}
 					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">
-						<EventCountdownCard
-							eventDate={ev.eventDate}
-							startTime={ev.startTime}
-							eventTitle={ev.title}
-						/>
+						{!isOrderVoid && (
+							<EventCountdownCard
+								eventDate={ev.eventDate}
+								startTime={ev.startTime}
+								eventTitle={ev.title}
+							/>
+						)}
 
-						<Button
-							variant="primary"
-							size="md"
-							radius="md"
-							className="w-full"
-							leftIcon={<Icon as={ArrowDownSvg} size="sm" color="inherit" />}
-							onClick={handleDownloadTicket}
-							disabled={downloading}
-						>
-							{downloading ? "Downloading…" : "Download Ticket"}
-						</Button>
+						{!isOrderVoid && (
+							<Button
+								variant="primary"
+								size="md"
+								radius="md"
+								className="w-full"
+								leftIcon={<Icon as={ArrowDownSvg} size="sm" color="inherit" />}
+								onClick={handleDownloadTicket}
+								disabled={downloading}
+							>
+								{downloading ? "Downloading…" : "Download Ticket"}
+							</Button>
+						)}
 
 						{canCancel && (
 							<Button
