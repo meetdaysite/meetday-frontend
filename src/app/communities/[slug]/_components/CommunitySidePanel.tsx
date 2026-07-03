@@ -31,8 +31,9 @@ import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Shared host avatar helper ─────────────────────────────────────────────────
 
-function hostDisplayName(brandName: string | null): string {
-	return brandName?.trim() || "Host"
+function hostDisplayName(host: { firstName?: string | null; lastName?: string | null; displayName?: string | null }): string {
+	const fullName = [host.firstName, host.lastName].filter(Boolean).join(" ").trim()
+	return host.displayName?.trim() || fullName || "Host"
 }
 
 function HostAvatar({ avatarUrl, name }: { avatarUrl: string | null; name: string }) {
@@ -188,27 +189,21 @@ function TrustedHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
 		<div className="p-5 rounded-action bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Trusted hosts</span>
-				{/* TODO: Link to /communities/[slug]/host once sub-page is built */}
-				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
-					View all
-					<Icon as={ArrowRightSvg} size="xs" color="brand" />
-				</Link>
 			</div>
 
 			<div className="flex flex-col gap-3">
-				{hosts.map((host, i) => (
-					<div key={i} className="flex items-center gap-3">
-						<HostAvatar avatarUrl={host.avatarUrl} name={hostDisplayName(host.brandName)} />
+				{hosts.map((host) => (
+					<div key={host.userId} className="flex items-center gap-3">
+						<HostAvatar avatarUrl={host.avatarUrl} name={hostDisplayName(host)} />
 						<div className="flex-1 min-w-0">
 							<p className="text-label-sm font-semibold text-text-primary truncate">
-								{hostDisplayName(host.brandName)}
+								{hostDisplayName(host)}
 							</p>
 							{/* tagline field not in API */}
 							<p className="text-[11px] text-text-secondary">
 								Host · {host.eventCount} {host.eventCount === 1 ? "experience" : "experiences"}
 							</p>
 						</div>
-						<Icon as={ArrowRightSvg} size="sm" color="primary" />
 					</div>
 				))}
 			</div>
@@ -505,24 +500,16 @@ function ExperiencesCommunityHostsCard({ hosts }: { hosts: CommunityHost[] | nul
 		<div className="p-5 rounded-action bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Community hosts</span>
-				{/* TODO: Link to /communities/[slug]/host once sub-page is built */}
-				<Link
-					href="#"
-					className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0"
-				>
-					View all
-					<Icon as={ArrowRightSvg} size="xs" color="brand" />
-				</Link>
 			</div>
 
 			<div className="flex flex-col gap-3">
-				{hosts.map((host, i) => (
-					<div key={i} className="flex items-center gap-3">
-						<HostAvatar avatarUrl={host.avatarUrl} name={hostDisplayName(host.brandName)} />
+				{hosts.map((host) => (
+					<div key={host.userId} className="flex items-center gap-3">
+						<HostAvatar avatarUrl={host.avatarUrl} name={hostDisplayName(host)} />
 						<div className="flex-1 min-w-0">
 							<div className="flex items-center gap-1">
 								<p className="text-label-sm font-semibold text-text-primary truncate">
-									{hostDisplayName(host.brandName)}
+									{hostDisplayName(host)}
 								</p>
 								<Icon as={VerifiedSvg} size="xs" color="brand" className="shrink-0" />
 							</div>
@@ -531,7 +518,6 @@ function ExperiencesCommunityHostsCard({ hosts }: { hosts: CommunityHost[] | nul
 								Host · {host.eventCount} {host.eventCount === 1 ? "experience" : "experiences"}
 							</p>
 						</div>
-						<Icon as={ArrowRightSvg} size="sm" color="primary" />
 					</div>
 				))}
 			</div>
@@ -673,19 +659,15 @@ function MembersTopHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
 		<div className="p-5 rounded-action bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Top hosts</span>
-				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
-					View all
-					<Icon as={ArrowRightSvg} size="xs" color="brand" />
-				</Link>
 			</div>
 
 			<div className="flex flex-col gap-3">
-				{hosts.map((host, i) => (
-					<div key={i} className="flex items-center gap-3">
-						<HostAvatar avatarUrl={host.avatarUrl} name={hostDisplayName(host.brandName)} />
+				{hosts.map((host) => (
+					<div key={host.userId} className="flex items-center gap-3">
+						<HostAvatar avatarUrl={host.avatarUrl} name={hostDisplayName(host)} />
 						<div className="flex-1 min-w-0">
 							<div className="flex items-center gap-1">
-								<p className="text-label-sm font-semibold text-text-primary truncate">{hostDisplayName(host.brandName)}</p>
+								<p className="text-label-sm font-semibold text-text-primary truncate">{hostDisplayName(host)}</p>
 								<Icon as={VerifiedSvg} size="xs" color="brand" className="shrink-0" />
 							</div>
 							{/* tagline field not in API */}
@@ -693,7 +675,6 @@ function MembersTopHostsCard({ hosts }: { hosts: CommunityHost[] | null }) {
 								Host · {host.eventCount} {host.eventCount === 1 ? "experience" : "experiences"}
 							</p>
 						</div>
-						<Icon as={ArrowRightSvg} size="sm" color="primary" />
 					</div>
 				))}
 			</div>
@@ -770,20 +751,16 @@ function AnnouncementsTrustedHostsCard({ hosts }: { hosts: CommunityHost[] | nul
 		<div className="p-5 rounded-action bg-surface-card border border-border-default shadow-md">
 			<div className="flex items-center justify-between gap-2 mb-4">
 				<span className="text-body-md font-semibold text-text-primary">Trusted hosts</span>
-				<Link href="#" className="flex items-center gap-1 text-sm text-text-brand font-medium hover:underline shrink-0">
-					View all
-					<Icon as={ArrowRightSvg} size="xs" color="brand" />
-				</Link>
 			</div>
 
 			<div className="flex flex-col gap-3">
 				{visible.map((host, i) => (
 					<div key={i} className="flex items-center gap-3">
-						<HostAvatar avatarUrl={host.avatarUrl} name={hostDisplayName(host.brandName)} />
+						<HostAvatar avatarUrl={host.avatarUrl} name={hostDisplayName(host)} />
 						<div className="flex-1 min-w-0">
 							<div className="flex items-center gap-1">
 								<p className="text-label-sm font-semibold text-text-primary truncate">
-									{hostDisplayName(host.brandName)}
+									{hostDisplayName(host)}
 								</p>
 								<Icon as={VerifiedSvg} size="xs" color="brand" className="shrink-0" />
 							</div>
@@ -792,7 +769,6 @@ function AnnouncementsTrustedHostsCard({ hosts }: { hosts: CommunityHost[] | nul
 								Host · {host.eventCount} {host.eventCount === 1 ? "experience" : "experiences"}
 							</p>
 						</div>
-						<Icon as={ArrowRightSvg} size="sm" color="primary" />
 					</div>
 				))}
 			</div>

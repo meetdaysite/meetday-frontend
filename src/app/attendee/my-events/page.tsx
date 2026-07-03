@@ -81,6 +81,12 @@ function DaysBadge({ days }: { days: number }) {
 	return null
 }
 
+// PARTIALLY_REFUNDED still has active tickets — not fully valid, not fully void — so it
+// gets its own amber state rather than reading either green Confirmed or red Cancelled.
+function isActiveOrderStatus(status: string) {
+	return status === "CONFIRMED" || status === "PARTIALLY_REFUNDED"
+}
+
 function StatusBadge({ status }: { status: string }) {
 	if (status === "CONFIRMED") {
 		return (
@@ -90,10 +96,31 @@ function StatusBadge({ status }: { status: string }) {
 			</div>
 		)
 	}
+	if (status === "PARTIALLY_REFUNDED") {
+		return (
+			<div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200">
+				<span className="text-label-sm font-semibold text-amber-700">Partially Refunded</span>
+			</div>
+		)
+	}
+	if (status === "PENDING_PAYMENT") {
+		return (
+			<div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200">
+				<span className="text-label-sm font-semibold text-amber-700">Payment Pending</span>
+			</div>
+		)
+	}
 	if (status === "CANCELLED") {
 		return (
 			<div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-50 border border-red-200">
 				<span className="text-label-sm font-semibold text-red-600">Cancelled</span>
+			</div>
+		)
+	}
+	if (status === "REFUNDED") {
+		return (
+			<div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-50 border border-red-200">
+				<span className="text-label-sm font-semibold text-red-600">Refunded</span>
 			</div>
 		)
 	}
@@ -126,7 +153,10 @@ function MyEventCard({
 	const hostName = eventDetails?.hostProfile.displayName ?? null
 	const tags = eventDetails?.tags ?? []
 
-	const totalTickets = order.items.reduce((sum, item) => sum + item.quantity, 0)
+	// quantity is the originally purchased count; cancelledCount tracks how many of those
+	// were later cancelled (relevant for PARTIALLY_REFUNDED orders) — subtract it so the
+	// label reflects tickets actually still active, not the original purchase size.
+	const totalTickets = order.items.reduce((sum, item) => sum + (item.quantity - (item.cancelledCount ?? 0)), 0)
 	const ticketLabel = `${totalTickets} Ticket${totalTickets !== 1 ? "s" : ""}`
 
 	const handleCopy = (e: React.MouseEvent) => {
@@ -257,7 +287,7 @@ function MyEventCard({
 						>
 							View Ticket
 						</Button>
-						{isPast && order.status === "CONFIRMED" && (
+						{isPast && isActiveOrderStatus(order.status) && (
 							<Button
 								variant="secondary"
 								size="sm"
@@ -275,7 +305,7 @@ function MyEventCard({
 			</div>
 
 			{/* Bottom bar */}
-			{isUpcoming && order.status === "CONFIRMED" && (
+			{isUpcoming && isActiveOrderStatus(order.status) && (
 				<div className="flex items-center gap-2 px-5 py-2.5 bg-green-50 border-t border-green-100">
 					<Icon as={CheckCircleSvg} size="sm" color="success" />
 					<span className="text-label-sm font-medium text-icon-success">
@@ -655,15 +685,19 @@ function MyEventsPageInner() {
 	const today = new Date()
 	today.setHours(0, 0, 0, 0)
 
+	// PARTIALLY_REFUNDED orders still have active tickets, so they bucket with CONFIRMED
+	// (upcoming/past) via isActiveOrderStatus; REFUNDED is a terminal/void state, so it
+	// buckets with CANCELLED. Without this, PARTIALLY_REFUNDED and REFUNDED orders
+	// wouldn't appear in any tab.
 	const upcomingOrders = allOrders.filter(
 		(o) =>
-			o.status === "CONFIRMED" && new Date(o.event.eventDate).setHours(0, 0, 0, 0) >= today.getTime(),
+			isActiveOrderStatus(o.status) && new Date(o.event.eventDate).setHours(0, 0, 0, 0) >= today.getTime(),
 	)
 	const pastOrders = allOrders.filter(
 		(o) =>
-			o.status === "CONFIRMED" && new Date(o.event.eventDate).setHours(0, 0, 0, 0) < today.getTime(),
+			isActiveOrderStatus(o.status) && new Date(o.event.eventDate).setHours(0, 0, 0, 0) < today.getTime(),
 	)
-	const cancelledOrders = allOrders.filter((o) => o.status === "CANCELLED")
+	const cancelledOrders = allOrders.filter((o) => o.status === "CANCELLED" || o.status === "REFUNDED")
 
 	const tabOrders: Record<"upcoming" | "past" | "cancelled", MyOrderListItem[]> = {
 		upcoming: upcomingOrders,

@@ -10,7 +10,7 @@ export interface CreateOrderPayload {
 	couponCode?: string
 }
 
-export type OrderStatus = "PENDING_PAYMENT" | "CONFIRMED" | "PARTIALLY_REFUNDED" | "CANCELLED"
+export type OrderStatus = "PENDING_PAYMENT" | "CONFIRMED" | "PARTIALLY_REFUNDED" | "CANCELLED" | "REFUNDED"
 
 export interface CancelTicketsResult {
 	message: string
@@ -68,6 +68,10 @@ export interface MyOrderListItem {
 	items: Array<{
 		id: string
 		quantity: number
+		// Not present on every /orders/me response (confirmed absent on CONFIRMED orders
+		// with no cancellations) — only reliably populated once a partial cancellation
+		// has happened. Treat as absent-means-zero, never assume it's always sent.
+		cancelledCount?: number
 		unitPrice: string
 		ticket: { id: string; name: string }
 		_count: { attendees: number }
@@ -91,6 +95,7 @@ export interface OrderAttendee {
 	isLead: boolean
 	ticketCode: string
 	checkedInAt: string | null
+	cancelledAt: string | null
 }
 
 export interface OrderItemFull {
@@ -98,6 +103,7 @@ export interface OrderItemFull {
 	orderId: string
 	ticketId: string
 	quantity: number
+	cancelledCount?: number
 	unitPrice: string
 	ticket: {
 		id: string

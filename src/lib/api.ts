@@ -59,6 +59,13 @@ export async function updateUserDetails(payload: UpdateUserPayload): Promise<Use
 	return data.data
 }
 
+export async function deleteAccount(reason?: string): Promise<{ message: string }> {
+	const { data } = await apiClient.delete<{ message: string }>("/users/me", {
+		data: reason ? { reason } : {},
+	})
+	return data
+}
+
 // ─── Host profile ─────────────────────────────────────────────────────────────
 
 export type HostProfile = {
@@ -833,7 +840,13 @@ export type CommunityMember = {
 	lastName: string
 	avatarUrl: string | null
 	role: CommunityRole
+	badge?: MemberBadge | null
+	isOnline?: boolean
+	isMe?: boolean
 	joinedAt: string
+	city?: string | null
+	interestTags?: { id: string; name: string }[]
+	eventsAttendedCount?: number
 }
 
 export type CommunityMembersResponse = {
@@ -947,8 +960,11 @@ export async function getCommunityStats(slug: string): Promise<CommunityStats> {
 }
 
 export type CommunityHost = {
-	brandName: string | null
+	userId: string
+	firstName: string
+	lastName: string
 	avatarUrl: string | null
+	displayName: string | null
 	eventCount: number
 }
 
