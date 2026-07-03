@@ -1,16 +1,16 @@
 export function PrivacyNotice({ compact = false }: { compact?: boolean }) {
 	return (
-		<div className="flex items-start gap-3 p-3 bg-blue-50 rounded-action border border-blue-100 shadow-md">
-			<ShieldIcon className="shrink-0 mt-0.5 text-blue-600" size={compact ? 16 : 18} />
+		<div className="flex items-start gap-3 p-3 bg-surface-info-soft rounded-action border border-blue-200 shadow-card">
+			<ShieldIcon className="shrink-0 mt-0.5 text-text-info" size={compact ? 16 : 18} />
 			<div>
-				<p className="text-[13px] font-semibold text-blue-700">Privacy first</p>
+				<p className="text-label-sm text-text-info font-semibold">Privacy first</p>
 				{!compact && (
-					<p className="text-[12px] text-blue-600 leading-snug mt-0.5">
+					<p className="text-caption text-text-info leading-snug mt-0.5">
 						Attendee personal details are hidden. You will only see entry verification status.
 					</p>
 				)}
 				{compact && (
-					<p className="text-[12px] text-blue-600 leading-snug">
+					<p className="text-caption text-text-info leading-snug">
 						Attendee personal details are hidden.
 					</p>
 				)}

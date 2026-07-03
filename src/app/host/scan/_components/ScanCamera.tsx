@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { getLiveStats, parseQrContent, scanTicket } from "@/lib/scannerApi"
+import { getLiveStats, parseQrContent, scanTicket, toScanResult } from "@/lib/scannerApi"
 import type { LiveStatsResponse, ScanResult, VerifySessionResponse } from "@/lib/scannerApi"
 import { PrivacyNotice } from "./PrivacyNotice"
 
@@ -14,8 +14,14 @@ type Props = {
 	onSessionExpired: () => void
 }
 
+function scanErrorMessage(status: number | undefined): string {
+	if (status === 404) return "Ticket not found"
+	if (status === 400) return "This ticket isn't valid for this event"
+	return "Scan failed — try again"
+}
+
 export function ScanCamera({ sessionData, token, onResult, onPause, onManualCheckIn, onSessionExpired }: Props) {
-	const { session, event } = sessionData
+	const { event } = sessionData
 	const videoRef = useRef<HTMLVideoElement>(null)
 	const scannerRef = useRef<import("qr-scanner").default | null>(null)
 	const processingRef = useRef(false)
@@ -38,7 +44,7 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 				setSyncStatus("live")
 			} catch (err) {
 				const status = (err as { status?: number }).status
-				if (status === 401 || status === 403) { onSessionExpired(); return }
+				if (status === 401 || status === 403 || status === 410) { onSessionExpired(); return }
 				setSyncStatus("offline")
 			}
 		}
@@ -59,13 +65,12 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 
 			const ticketCode = parseQrContent(result.data)
 			try {
-				const scanResult = await scanTicket(ticketCode, token)
-				onResult(scanResult)
+				const data = await scanTicket(ticketCode, token)
+				onResult(toScanResult(ticketCode, data))
 			} catch (err) {
 				const status = (err as { status?: number }).status
-				if (status === 401 || status === 403) { onSessionExpired(); return }
-				const msg = status === 404 ? "Ticket not found" : "Scan failed — try again"
-				onResult({ status: "INVALID", message: msg })
+				if (status === 401 || status === 403 || status === 410) { onSessionExpired(); return }
+				onResult({ status: "INVALID", message: scanErrorMessage(status) })
 				processingRef.current = false
 			}
 		},
@@ -144,16 +149,16 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 		: "—"
 
 	return (
-		<div className="flex flex-col min-h-screen bg-black">
+		<div className="flex flex-col min-h-screen bg-surface-inverse">
 			{/* Compact event header */}
 			<div className="flex items-center justify-between px-4 py-3 bg-black/80 z-10">
 				<div>
-					<p className="text-[14px] font-bold text-white">{event.title}</p>
-					<p className="text-[11px] text-white/60">{event.venueName} · {session.label ?? "Main Entry"}</p>
+					<p className="text-label-md text-text-inverse font-bold">{event.title}</p>
+					<p className="text-caption text-text-inverse/60">{event.venueName}</p>
 				</div>
 				<div className="text-right">
-					<p className="text-[12px] text-white/70">{formattedDate}</p>
-					<p className="text-[11px] text-white/50">{event.startTime} – {event.endTime}</p>
+					<p className="text-caption text-text-inverse/70">{formattedDate}</p>
+					<p className="text-caption text-text-inverse/50">{event.startTime} – {event.endTime}</p>
 				</div>
 			</div>
 
@@ -168,49 +173,43 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 
 				{/* Dark overlay with cutout feel */}
 				<div className="absolute inset-0 pointer-events-none">
-					{/* Top overlay */}
 					<div className="absolute top-0 left-0 right-0 h-[20%] bg-black/50" />
-					{/* Bottom overlay */}
 					<div className="absolute bottom-0 left-0 right-0 h-[20%] bg-black/50" />
-					{/* Left overlay */}
 					<div className="absolute top-[20%] bottom-[20%] left-0 w-[12%] bg-black/50" />
-					{/* Right overlay */}
 					<div className="absolute top-[20%] bottom-[20%] right-0 w-[12%] bg-black/50" />
 
-					{/* Corner brackets */}
 					<div className="absolute top-[20%] left-[12%] w-8 h-8 border-l-2 border-t-2 border-white/90 rounded-tl-sm" />
 					<div className="absolute top-[20%] right-[12%] w-8 h-8 border-r-2 border-t-2 border-white/90 rounded-tr-sm" />
 					<div className="absolute bottom-[20%] left-[12%] w-8 h-8 border-l-2 border-b-2 border-white/90 rounded-bl-sm" />
 					<div className="absolute bottom-[20%] right-[12%] w-8 h-8 border-r-2 border-b-2 border-white/90 rounded-br-sm" />
 
-					{/* Scan line */}
 					<div className="absolute left-[12%] right-[12%] top-[20%] bottom-[20%] flex items-center">
-						<div className="w-full h-0.5 bg-red-500/80 animate-[scanline_2s_ease-in-out_infinite]" />
+						<div className="w-full h-0.5 bg-action-primary/80 animate-[scanline_2s_ease-in-out_infinite]" />
 					</div>
 				</div>
 
-{/* Hint text */}
+				{/* Hint text */}
 				<div className="absolute top-[22%] left-0 right-0 flex justify-center pointer-events-none">
-					<div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/60 rounded-full">
+					<div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/60 rounded-avatar">
 						<ScanFrameIcon />
-						<span className="text-[11px] text-white/80">Align the attendee QR inside the frame</span>
+						<span className="text-caption text-text-inverse/80">Align the attendee QR inside the frame</span>
 					</div>
 				</div>
 
 				{/* Camera error overlay */}
 				{cameraError && (
 					<div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/80 px-6 text-center z-10">
-						<div className="size-16 rounded-full bg-white/10 flex items-center justify-center">
+						<div className="size-16 rounded-avatar bg-white/10 flex items-center justify-center">
 							{cameraError === "permission"
 								? <NoCameraIcon />
 								: <AlertIcon />
 							}
 						</div>
 						<div>
-							<p className="text-white font-bold text-[16px] mb-1">
+							<p className="text-text-inverse font-bold text-label-md mb-1">
 								{cameraError === "permission" ? "Camera access denied" : "Camera unavailable"}
 							</p>
-							<p className="text-white/70 text-[12px] leading-snug">
+							<p className="text-text-inverse/70 text-caption leading-snug">
 								{cameraError === "permission"
 									? "Allow camera access in your browser settings, then reload the page."
 									: "Could not start the camera. Use manual check-in instead."}
@@ -218,7 +217,7 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 						</div>
 						<button
 							onClick={onManualCheckIn}
-							className="flex items-center gap-2 px-5 py-2.5 bg-white text-neutral-900 text-[13px] font-semibold rounded-xl"
+							className="flex items-center gap-2 px-5 py-2.5 bg-white text-text-primary text-label-md font-semibold rounded-action"
 						>
 							Switch to manual check-in
 						</button>
@@ -229,67 +228,56 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 				{torchAvailable && (
 					<button
 						onClick={toggleTorch}
-						className="absolute top-3 left-3 flex flex-col items-center gap-1 px-3 py-2 bg-black/60 rounded-xl"
+						className="absolute top-3 left-3 flex flex-col items-center gap-1 px-3 py-2 bg-black/60 rounded-action"
 					>
 						<TorchIcon active={torchOn} />
-						<span className="text-[10px] text-white/80">Torch</span>
+						<span className="text-caption text-text-inverse/80">Torch</span>
 					</button>
 				)}
 				<button
 					onClick={flipCamera}
-					className="absolute top-3 right-3 flex flex-col items-center gap-1 px-3 py-2 bg-black/60 rounded-xl"
+					className="absolute top-3 right-3 flex flex-col items-center gap-1 px-3 py-2 bg-black/60 rounded-action"
 				>
 					<FlipIcon />
-					<span className="text-[10px] text-white/80">Flip</span>
+					<span className="text-caption text-text-inverse/80">Flip</span>
 				</button>
 			</div>
 
 			{/* Bottom panel */}
-			<div className="flex flex-col gap-4 px-4 py-5 bg-white">
-				{/* Privacy notice compact */}
+			<div className="flex flex-col gap-4 px-4 py-5 bg-surface-canvas">
 				<PrivacyNotice compact />
 
 				{/* Stats strip */}
 				<div className="flex items-center justify-between">
-					<StatChip
-						icon={<CheckSmIcon />}
-						label="Checked in"
-						value={stats?.checkedIn ?? "—"}
-						color="text-green-600"
-					/>
-					<StatChip
-						icon={<PeopleSmIcon />}
-						label="Remaining"
-						value={stats?.remaining ?? "—"}
-						color="text-neutral-700"
-					/>
+					<StatChip icon={<CheckSmIcon />} label="Checked in" value={stats?.checkedIn ?? "—"} className="text-text-success" />
+					<StatChip icon={<PeopleSmIcon />} label="Remaining" value={stats?.remaining ?? "—"} className="text-text-primary" />
 					<div className="flex flex-col items-center gap-0.5">
 						<div className="flex items-center gap-1">
-							<span className={`size-2 rounded-full ${syncStatus === "live" ? "bg-green-500" : "bg-orange-400"}`} />
-							<span className="text-[13px] font-bold text-neutral-800">{syncStatus === "live" ? "Live" : "Offline"}</span>
+							<span className={`size-2 rounded-avatar ${syncStatus === "live" ? "bg-text-success" : "bg-text-warning"}`} />
+							<span className="text-label-md text-text-primary font-bold">{syncStatus === "live" ? "Live" : "Offline"}</span>
 						</div>
-						<span className="text-[10px] text-neutral-400">{syncStatus === "live" ? "● Connected" : "Reconnecting…"}</span>
+						<span className="text-caption text-text-muted">{syncStatus === "live" ? "● Connected" : "Reconnecting…"}</span>
 					</div>
 				</div>
 
 				{/* Action buttons */}
 				<button
 					onClick={onPause}
-					className="w-full flex items-center justify-center gap-2 h-13 bg-red-600 text-white text-[15px] font-semibold rounded-2xl active:bg-red-700 transition-colors"
+					className="w-full flex items-center justify-center gap-2 h-13 bg-action-primary text-action-primary-text text-label-md font-semibold rounded-panel active:bg-action-primary-pressed transition-colors"
 				>
 					<PauseIcon />
 					Pause scanning
 				</button>
 				<button
 					onClick={onManualCheckIn}
-					className="w-full flex items-center justify-center gap-2 h-11 border-2 border-neutral-200 text-neutral-700 text-[14px] font-medium rounded-2xl active:bg-neutral-50 transition-colors"
+					className="w-full flex items-center justify-center gap-2 h-11 border-2 border-border-default text-text-secondary text-label-md font-medium rounded-panel active:bg-surface-card-muted transition-colors"
 				>
 					<PersonSmIcon />
 					Manual check-in
 				</button>
 				<button
 					onClick={() => setShowTips(true)}
-					className="text-[13px] text-blue-600 font-medium text-center"
+					className="text-label-sm text-text-link font-medium text-center"
 				>
 					<span className="flex items-center justify-center gap-1"><LightbulbIcon /> Scan tips</span>
 				</button>
@@ -298,8 +286,8 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 			{/* Scan tips bottom sheet */}
 			{showTips && (
 				<div className="fixed inset-0 z-50 flex items-end" onClick={() => setShowTips(false)}>
-					<div className="w-full bg-white rounded-t-2xl p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-						<p className="text-[15px] font-bold text-neutral-900 mb-4">Scan tips</p>
+					<div className="w-full bg-surface-card rounded-t-panel p-6 shadow-modal" onClick={(e) => e.stopPropagation()}>
+						<p className="text-label-md text-text-primary font-bold mb-4">Scan tips</p>
 						<ul className="flex flex-col gap-3">
 							{[
 								"Hold steady — let the camera focus",
@@ -307,15 +295,15 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 								"Keep the QR fully inside the frame",
 								"Try flipping to front camera indoors",
 							].map((tip) => (
-								<li key={tip} className="flex items-start gap-2 text-[13px] text-neutral-600">
-									<span className="mt-1.5 size-1.5 rounded-full bg-red-500 shrink-0" />
+								<li key={tip} className="flex items-start gap-2 text-label-sm text-text-secondary">
+									<span className="mt-1.5 size-1.5 rounded-avatar bg-action-primary shrink-0" />
 									{tip}
 								</li>
 							))}
 						</ul>
 						<button
 							onClick={() => setShowTips(false)}
-							className="w-full mt-5 h-11 bg-neutral-100 text-neutral-700 text-[14px] font-medium rounded-xl"
+							className="w-full mt-5 h-11 bg-surface-card-muted text-text-secondary text-label-md font-medium rounded-action"
 						>
 							Got it
 						</button>
@@ -333,14 +321,14 @@ export function ScanCamera({ sessionData, token, onResult, onPause, onManualChec
 	)
 }
 
-function StatChip({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number | string; color: string }) {
+function StatChip({ icon, label, value, className }: { icon: React.ReactNode; label: string; value: number | string; className: string }) {
 	return (
 		<div className="flex flex-col items-center gap-0.5">
-			<div className={`flex items-center gap-1 ${color}`}>
+			<div className={`flex items-center gap-1 ${className}`}>
 				{icon}
-				<span className="text-[18px] font-bold">{value}</span>
+				<span className="text-title-md font-bold">{value}</span>
 			</div>
-			<span className="text-[10px] text-neutral-400">{label}</span>
+			<span className="text-caption text-text-muted">{label}</span>
 		</div>
 	)
 }
@@ -354,7 +342,7 @@ function ScanFrameIcon() {
 }
 function TorchIcon({ active }: { active: boolean }) {
 	return (
-		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" className={active ? "text-yellow-400" : "text-white/80"} aria-hidden>
+		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" className={active ? "text-amber-400" : "text-white/80"} aria-hidden>
 			<path d="M13 2L4.09 12.96A1 1 0 0 0 5 14.5h7l-1 7.5 8.91-10.96A1 1 0 0 0 19 9.5h-7L13 2z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
 		</svg>
 	)

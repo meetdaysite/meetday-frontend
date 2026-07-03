@@ -87,7 +87,10 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 
 	const firstItem = order.items[0]
 	const firstTicket = event.tickets.find(t => t.id === firstItem?.ticketId)
-	const qrValue = `MEETDAY:${order.id}:${firstItem?.ticketId ?? ""}:${primaryEmail}`
+	// No ticketCode is available on this order-detail response (only groupAttendees
+	// name/email), so there's no client-side fallback that can produce a QR that
+	// actually matches an attendee's ticket — only the backend-rendered qrCodes
+	// image is valid here. Show a loading state instead of a QR that won't scan.
 	const qrDataUrl = firstItem?.qrCodes?.[0]
 	const bookingRef = order.bookingRef ?? order.id.slice(0, 12).toUpperCase()
 
@@ -214,7 +217,7 @@ function ConfirmedContent({ event, order }: { event: PublicEventDetails; order: 
 										</span>
 										<Icon as={InfoCircleSvg} size="sm" color="muted" />
 									</div>
-									<TicketQRDisplay qrDataUrl={qrDataUrl} value={qrValue} size={140} />
+									<TicketQRDisplay qrDataUrl={qrDataUrl} size={140} />
 									<p className="text-caption text-text-muted text-center leading-snug">
 										Scan at the venue entry
 									</p>
