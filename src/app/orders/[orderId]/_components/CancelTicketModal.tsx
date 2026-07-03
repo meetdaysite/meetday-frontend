@@ -39,7 +39,7 @@ export function CancelTicketModal({ order, refundPolicy, open, onClose, onCancel
 		() => order.items.flatMap(item => item.attendees.map(a => ({ ...a, ticketName: item.ticket.name }))),
 		[order.items],
 	)
-	const cancellable = attendees.filter(a => !a.checkedInAt)
+	const cancellable = attendees.filter(a => !a.checkedInAt && !a.cancelledAt)
 
 	const [selected, setSelected] = useState<Set<string>>(new Set())
 	const [submitting, setSubmitting] = useState(false)
@@ -138,19 +138,23 @@ export function CancelTicketModal({ order, refundPolicy, open, onClose, onCancel
 					<div className="flex flex-col gap-2.5">
 						{attendees.map(a => {
 							const checkedIn = !!a.checkedInAt
+							const alreadyCancelled = !!a.cancelledAt
+							const isLocked = checkedIn || alreadyCancelled
 							return (
 								<div
 									key={a.id}
 									className={`flex items-center justify-between gap-3 rounded-action border border-border-default p-3 ${
-										checkedIn ? "bg-surface-page opacity-60" : ""
+										isLocked ? "bg-surface-page opacity-60" : ""
 									}`}
 								>
 									<div className="min-w-0">
 										<p className="text-label-sm font-semibold text-text-primary truncate">{a.fullName}</p>
 										<p className="text-caption text-text-muted">{a.ticketName}</p>
 									</div>
-									{checkedIn ? (
-										<span className="text-[10px] font-semibold text-text-muted shrink-0">Checked in</span>
+									{isLocked ? (
+										<span className="text-[10px] font-semibold text-text-muted shrink-0">
+											{alreadyCancelled ? "Already cancelled" : "Checked in"}
+										</span>
 									) : (
 										<Checkbox checked={selected.has(a.id)} onChange={() => toggleOne(a.id)} size="sm" />
 									)}

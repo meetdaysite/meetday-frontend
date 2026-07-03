@@ -95,6 +95,13 @@ export async function cancelOrderTickets(orderId: string, payload: CancelTickets
 	return data.data
 }
 
+export async function getOrderTicketUrl(orderId: string): Promise<string> {
+	const { data } = await apiClient.get<{ success: boolean; data: { url: string } }>(
+		`/orders/${orderId}/ticket`,
+	)
+	return data.data.url
+}
+
 export async function getFullOrderDetail(orderId: string): Promise<FullOrderDetail> {
 	const { data } = await apiClient.get<{ success: boolean; data: FullOrderDetail }>(`/orders/${orderId}`)
 	return data.data

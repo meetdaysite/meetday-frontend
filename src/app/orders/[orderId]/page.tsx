@@ -1,6 +1,7 @@
 "use client"
 
 import { TicketQRDisplay } from "@/app/events/[id]/book/_components/TicketQRDisplay"
+import { SupportTicketModal } from "@/components/attendee/SupportTicketModal"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import { Skeleton } from "@/components/ui/Skeleton"
@@ -9,28 +10,28 @@ import HeadphonesSvg from "@/icons/filled/headphones.svg"
 import LockSvg from "@/icons/filled/lock.svg"
 import RocketSvg from "@/icons/filled/rocket.svg"
 import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
-import SmileCircleSvg from "@/icons/filled/smile-circle.svg"
 import StarCircleSvg from "@/icons/filled/star-circle.svg"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import ArrowDownSvg from "@/icons/outlined/arrow-down.svg"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
-
+import ChatSvg from "@/icons/outlined/chat.svg"
 import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
+import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
 import CopySvg from "@/icons/outlined/copy.svg"
 import MapPointSvg from "@/icons/outlined/map-point.svg"
 import UserSvg from "@/icons/outlined/user.svg"
 import { getPublicEventDetails } from "@/lib/api"
-import { getFullOrderDetail } from "@/lib/ordersApi"
+import { getFullOrderDetail, getOrderTicketUrl } from "@/lib/ordersApi"
+import { getApiErrorMessage } from "@/lib/errors"
 import { useAuthStore } from "@/store/authStore"
-import { SupportTicketModal } from "@/components/attendee/SupportTicketModal"
-import { EventCountdownCard } from "./_components/EventCountdownCard"
-import { CancelTicketModal } from "./_components/CancelTicketModal"
-import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
 import type { PublicEventDetails } from "@/types/attendee"
 import type { FullOrderDetail } from "@/types/order"
 import Image from "next/image"
 import Link from "next/link"
 import { Suspense, use, useEffect, useState } from "react"
+import { toast } from "sonner"
+import { CancelTicketModal } from "./_components/CancelTicketModal"
+import { EventCountdownCard } from "./_components/EventCountdownCard"
 
 interface PageProps {
 	params: Promise<{ orderId: string }>
@@ -43,6 +44,11 @@ function formatEventDate(isoDate: string): string {
 		month: "short",
 		year: "numeric",
 	})
+}
+
+function formatINR(amount: string | number): string {
+	const n = typeof amount === "string" ? parseFloat(amount) : amount
+	return isNaN(n) ? "₹0" : `₹${n.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
 }
 
 function copyToClipboard(text: string) {
@@ -119,12 +125,19 @@ function TicketPageContent({
 	const [copied, setCopied] = useState(false)
 	const [supportOpen, setSupportOpen] = useState(false)
 	const [cancelOpen, setCancelOpen] = useState(false)
+	const [downloading, setDownloading] = useState(false)
 
 	const firstItem = order.items[0]
 	const leadAttendee = firstItem?.attendees.find(a => a.isLead) ?? firstItem?.attendees[0]
 	const qrValue = leadAttendee?.ticketCode
 		? `MEETDAY:${order.id}:${firstItem?.ticketId}:${leadAttendee.ticketCode}`
 		: order.id
+
+	const allAttendees = order.items.flatMap(item =>
+		item.attendees.map(a => ({ ...a, ticketName: item.ticket.name })),
+	)
+	const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0)
+	const discountAmount = parseFloat(order.discountAmount)
 
 	const coverImageUrl = eventDetails?.media.find(m => m.type === "COVER")?.url ?? null
 
@@ -134,24 +147,61 @@ function TicketPageContent({
 		setTimeout(() => setCopied(false), 2000)
 	}
 
+	// The presign endpoint doesn't set Content-Disposition, so the browser would name the
+	// download after the storage object's key (e.g. ticket.pdf) if we just navigated to
+	// the URL. Fetching it as a blob lets us force the filename client-side instead.
+	const handleDownloadTicket = async () => {
+		if (downloading) return
+		setDownloading(true)
+		try {
+			const url = await getOrderTicketUrl(order.id)
+			const res = await fetch(url)
+			if (!res.ok) throw new Error("Failed to download ticket.")
+			const blob = await res.blob()
+			const objectUrl = URL.createObjectURL(blob)
+			const link = document.createElement("a")
+			link.href = objectUrl
+			link.download = `ticket-${order.bookingId}.pdf`
+			document.body.appendChild(link)
+			link.click()
+			link.remove()
+			URL.revokeObjectURL(objectUrl)
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
+		} finally {
+			setDownloading(false)
+		}
+	}
+
 	const ev = order.event
 	const eventHasPassed = new Date(order.event.eventDate) < new Date()
 	const canReview = order.status === "CONFIRMED" && eventHasPassed
-	const hasCancellableAttendees = order.items.some(item => item.attendees.some(a => !a.checkedInAt))
+	const hasCancellableAttendees = order.items.some(item =>
+		item.attendees.some(a => !a.checkedInAt && !a.cancelledAt),
+	)
 	const canCancel =
 		(order.status === "CONFIRMED" || order.status === "PARTIALLY_REFUNDED") &&
 		!eventHasPassed &&
 		hasCancellableAttendees
 
+	// The order can be PARTIALLY_REFUNDED while this specific (lead) attendee is still
+	// active, so ticket validity has to be checked per-attendee, not just per-order —
+	// and never trust a QR/"Confirmed" state for an attendee whose cancelledAt is set,
+	// regardless of what the order-level status says.
+	const isOrderVoid = order.status === "CANCELLED" || order.status === "REFUNDED"
+	const isPendingPayment = order.status === "PENDING_PAYMENT"
+	const isAttendeeCancelled = !!leadAttendee?.cancelledAt
+	const ticketIsValid = !isOrderVoid && !isPendingPayment && !isAttendeeCancelled
+
 	return (
 		<main className="flex-1 py-6 md:py-8 pb-12">
 			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
 				<Link
-					href="/explore"
+					href="/attendee/my-events"
 					className="inline-flex items-center gap-1.5 text-body-sm text-text-primary hover:text-text-primary transition-colors mb-4"
 				>
 					<Icon as={AltArrowLeftSvg} size="sm" color="primary" />
-					Back to events
+					Back to my events
 				</Link>
 
 				<div className="mb-6">
@@ -192,63 +242,89 @@ function TicketPageContent({
 										{ev.title}
 									</h2>
 
-									{/* Details + attendee */}
-									<div className="flex flex-col gap-3">
-										<div className="flex flex-col gap-1.5">
-											<div className="flex items-center gap-2">
-												<Icon
-													as={CalendarSvg}
-													size="sm"
-													color="inherit"
-													className="text-white/70 shrink-0"
-												/>
-												<span className="text-label-sm text-white/80">
-													{formatEventDate(ev.eventDate)}
-												</span>
-											</div>
-											<div className="flex items-center gap-2">
-												<Icon
-													as={ClockCircleSvg}
-													size="sm"
-													color="inherit"
-													className="text-white/70 shrink-0"
-												/>
-												<span className="text-label-sm text-white/80">
-													{ev.startTime} – {ev.endTime}
-												</span>
-											</div>
-											<div className="flex items-center gap-2">
-												<Icon
-													as={MapPointSvg}
-													size="sm"
-													color="inherit"
-													className="text-white/70 shrink-0"
-												/>
-												<span className="text-label-sm text-white/80">
-													{ev.venueName}, {ev.city}
-												</span>
+									{/* Date, time, location — single row */}
+									<div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+										<div className="flex items-center gap-1.5">
+											<Icon
+												as={CalendarSvg}
+												size="sm"
+												color="inherit"
+												className="text-white/70 shrink-0"
+											/>
+											<span className="text-label-sm text-white/80">
+												{formatEventDate(ev.eventDate)}
+											</span>
+										</div>
+										<div className="flex items-center gap-1.5">
+											<Icon
+												as={ClockCircleSvg}
+												size="sm"
+												color="inherit"
+												className="text-white/70 shrink-0"
+											/>
+											<span className="text-label-sm text-white/80">
+												{ev.startTime} – {ev.endTime}
+											</span>
+										</div>
+										<div className="flex items-center gap-1.5">
+											<Icon
+												as={MapPointSvg}
+												size="sm"
+												color="inherit"
+												className="text-white/70 shrink-0"
+											/>
+											<span className="text-label-sm text-white/80">
+												{ev.venueName}, {ev.city}
+											</span>
+										</div>
+									</div>
+
+									{/* Attendees — full list */}
+									{allAttendees.length > 0 && (
+										<div className="border-t border-white/20 pt-3 flex flex-col gap-2.5">
+											<p className="text-caption text-white/50">
+												Attendee{allAttendees.length !== 1 ? "s" : ""} (
+												{allAttendees.length})
+											</p>
+											<div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+												{allAttendees.map(a => (
+													<div
+														key={a.id}
+														className="flex items-center gap-2.5 min-w-0"
+													>
+														<div className="size-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+															<Icon
+																as={UserSvg}
+																size="sm"
+																color="inherit"
+																className="text-white"
+															/>
+														</div>
+														<div className="min-w-0 flex-1">
+															<div className="flex items-center gap-1.5">
+																<span className="text-body-sm font-semibold text-white truncate">
+																	{a.fullName}
+																</span>
+																{a.isLead && (
+																	<span className="text-[9px] font-bold text-white bg-action-primary px-1.5 py-0.5 rounded-full shrink-0">
+																		LEAD
+																	</span>
+																)}
+																{!!a.cancelledAt && (
+																	<span className="text-[9px] font-bold text-white bg-red-500 px-1.5 py-0.5 rounded-full shrink-0">
+																		CANCELLED
+																	</span>
+																)}
+															</div>
+															<span className="text-caption text-white/50 truncate block">
+																{a.ticketName}
+															</span>
+														</div>
+													</div>
+												))}
 											</div>
 										</div>
-
-										{leadAttendee && (
-											<div className="border-t border-white/20 pt-3">
-												<p className="text-caption text-white/50 mb-1.5">Attendee</p>
-												<div className="flex items-center gap-2.5">
-													<div className="size-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-														<Icon
-															as={UserSvg}
-															size="sm"
-															color="inherit"
-															className="text-white"
-														/>
-													</div>
-													<span className="text-body-sm font-semibold text-white">
-														{leadAttendee.fullName}
-													</span>
-												</div>
-											</div>
-										)}
-									</div>
+									)}
 								</div>
 							</div>
 
@@ -277,32 +353,80 @@ function TicketPageContent({
 									</div>
 								</div>
 
-								<TicketQRDisplay value={qrValue} size={160} />
-
-								<div className="flex items-center gap-1.5 px-3 py-1.5 rounded-badge bg-green-50 border border-green-200">
-									<Icon as={CheckCircleSvg} size="sm" color="success" />
-									<span className="text-label-sm font-medium text-icon-success">
-										Ticket Confirmed
-									</span>
-								</div>
+								{ticketIsValid ? (
+									<>
+										<TicketQRDisplay value={qrValue} size={160} />
+										<div className="flex items-center gap-1.5 px-3 py-1.5 rounded-badge bg-green-50 border border-green-200">
+											<Icon as={CheckCircleSvg} size="sm" color="success" />
+											<span className="text-label-sm font-medium text-icon-success">
+												Ticket Confirmed
+											</span>
+										</div>
+									</>
+								) : (
+									<>
+										<div className="size-40 rounded-action bg-surface-page border border-border-default flex flex-col items-center justify-center gap-2 text-center px-4">
+											<Icon as={CloseCircleSvg} size="lg" color="muted" />
+											<span className="text-label-sm text-text-muted">
+												{isPendingPayment ? "No ticket yet" : "No longer valid"}
+											</span>
+										</div>
+										<div
+											className={`flex items-center gap-1.5 px-3 py-1.5 rounded-badge border ${
+												isPendingPayment
+													? "bg-amber-50 border-amber-200"
+													: "bg-red-50 border-red-200"
+											}`}
+										>
+											<Icon
+												as={isPendingPayment ? ClockCircleSvg : CloseCircleSvg}
+												size="sm"
+												color={isPendingPayment ? "warning" : "inherit"}
+												className={isPendingPayment ? undefined : "text-red-500"}
+											/>
+											<span
+												className={`text-label-sm font-medium ${
+													isPendingPayment ? "text-text-warning" : "text-red-600"
+												}`}
+											>
+												{isPendingPayment
+													? "Payment Pending"
+													: order.status === "REFUNDED"
+														? "Ticket Refunded"
+														: "Ticket Cancelled"}
+											</span>
+										</div>
+									</>
+								)}
 							</div>
 						</div>
 
-						{/* Action buttons */}
-						{canReview && (
-							<div className="rounded-action border border-border-default bg-surface-card p-5 flex items-center justify-center flex-wrap gap-3 shadow-md">
-								<Link href={`/events/${order.eventId}/review?orderId=${order.id}`}>
-									<Button
-										variant="secondary"
-										size="md"
-										radius="md"
-										leftIcon={<Icon as={SmileCircleSvg} size="sm" color="inherit" />}
-									>
-										Leave a Review
-									</Button>
-								</Link>
+						{/* Entry Instructions */}
+						<div className="rounded-action border border-border-default bg-surface-card p-5 shadow-md">
+							<div className="flex items-center gap-2 mb-4">
+								<Icon as={RocketSvg} size="md" color="brand" />
+								<span className="text-title-md font-bold text-text-primary">
+									Entry Instructions
+								</span>
 							</div>
-						)}
+							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+								{ENTRY_STEPS.map((step, i) => (
+									<div key={i} className="flex items-start gap-3">
+										<div className="size-7 rounded-full bg-neutral-900 flex items-center justify-center shrink-0">
+											<span className="text-[11px] font-bold text-white">{i + 1}</span>
+										</div>
+										<div className="pt-0.5">
+											<p className="text-label-sm font-semibold text-text-primary leading-snug">
+												{step.title}
+											</p>
+											<p className="text-caption text-text-muted leading-snug mt-0.5">
+												{step.body}
+											</p>
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
 
 						{/* Trust footer */}
 						<div className="rounded-action border border-border-default bg-surface-card p-5 shadow-md">
@@ -356,14 +480,22 @@ function TicketPageContent({
 
 					{/* ── Right panel ── */}
 					<aside className="hidden lg:flex flex-col gap-4 w-80 shrink-0 sticky top-20">
+						<EventCountdownCard
+							eventDate={ev.eventDate}
+							startTime={ev.startTime}
+							eventTitle={ev.title}
+						/>
+
 						<Button
 							variant="primary"
 							size="md"
 							radius="md"
 							className="w-full"
 							leftIcon={<Icon as={ArrowDownSvg} size="sm" color="inherit" />}
+							onClick={handleDownloadTicket}
+							disabled={downloading}
 						>
-							Download Ticket
+							{downloading ? "Downloading…" : "Download Ticket"}
 						</Button>
 
 						{canCancel && (
@@ -372,43 +504,65 @@ function TicketPageContent({
 								size="md"
 								radius="md"
 								className="w-full text-red-600 border-red-200 hover:bg-red-50"
-								leftIcon={<Icon as={CloseCircleSvg} size="sm" color="inherit" className="text-red-500" />}
+								leftIcon={
+									<Icon
+										as={CloseCircleSvg}
+										size="sm"
+										color="inherit"
+										className="text-red-500"
+									/>
+								}
 								onClick={() => setCancelOpen(true)}
 							>
 								Cancel Ticket
 							</Button>
 						)}
 
-						<EventCountdownCard
-							eventDate={ev.eventDate}
-							startTime={ev.startTime}
-							eventTitle={ev.title}
-						/>
+						{canReview && (
+							<Link
+								href={`/events/${order.eventId}/review?orderId=${order.id}`}
+								className="w-full"
+							>
+								<Button
+									variant="secondary"
+									size="md"
+									radius="md"
+									className="w-full"
+									leftIcon={<Icon as={ChatSvg} size="sm" color="inherit" />}
+								>
+									Leave a Review
+								</Button>
+							</Link>
+						)}
 
-						{/* Entry Instructions */}
-						<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-4">
-							<div className="flex items-center gap-2">
-								<Icon as={RocketSvg} size="md" color="brand" />
-								<span className="text-title-md font-bold text-text-primary">
-									Entry Instructions
-								</span>
-							</div>
-							<div className="flex flex-col gap-3">
-								{ENTRY_STEPS.map((step, i) => (
-									<div key={i} className="flex items-start gap-3">
-										<div className="size-7 rounded-full bg-neutral-900 flex items-center justify-center shrink-0">
-											<span className="text-[11px] font-bold text-white">{i + 1}</span>
-										</div>
-										<div className="pt-0.5">
-											<p className="text-label-sm font-semibold text-text-primary leading-snug">
-												{step.title}
-											</p>
-											<p className="text-caption text-text-muted leading-snug mt-0.5">
-												{step.body}
-											</p>
-										</div>
+						{/* Payment breakdown */}
+						<div className="rounded-action bg-surface-card border border-border-default shadow-md p-5 flex flex-col gap-3">
+							<span className="text-title-md font-bold text-text-primary">Payment</span>
+							<div className="flex flex-col gap-1.5">
+								<div className="flex items-center justify-between text-label-sm text-text-secondary">
+									<span>
+										Subtotal ({totalQuantity} ticket{totalQuantity !== 1 ? "s" : ""})
+									</span>
+									<span>{formatINR(order.subtotal)}</span>
+								</div>
+								{discountAmount > 0 && (
+									<div className="flex items-center justify-between text-label-sm text-text-secondary">
+										<span>Discount</span>
+										<span>−{formatINR(discountAmount)}</span>
 									</div>
-								))}
+								)}
+								<div className="flex items-center justify-between text-label-sm text-text-secondary">
+									<span>Platform fee</span>
+									<span>{formatINR(order.platformFee)}</span>
+								</div>
+								<div className="flex items-center justify-between text-label-sm text-text-secondary">
+									<span>Taxes</span>
+									<span>{formatINR(order.taxAmount)}</span>
+								</div>
+								<div className="flex items-center justify-between text-body-sm font-bold text-text-primary pt-2 mt-0.5 border-t border-border-default">
+									<span>Total paid</span>
+									<span>{formatINR(order.totalAmount)}</span>
+								</div>
 							</div>
 						</div>
 
@@ -487,10 +641,10 @@ function TicketPageInner({ orderId }: { orderId: string }) {
 						{error ?? "We couldn't find this ticket."}
 					</p>
 					<Link
-						href="/explore"
+						href="/attendee/my-events"
 						className="text-label-sm text-text-brand hover:underline font-medium"
 					>
-						← Back to events
+						← Back to my events
 					</Link>
 				</div>
 			</main>

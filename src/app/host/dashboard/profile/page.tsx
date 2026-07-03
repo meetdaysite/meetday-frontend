@@ -1,12 +1,15 @@
 "use client"
 
-// import { useState } from "react"
+import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
+import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
 import { useHostStore } from "@/store/hostStore"
+import { useAuthStore } from "@/store/authStore"
 
 import UserSvg from "@/icons/outlined/user.svg"
 import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
@@ -122,7 +125,10 @@ const GENDER_LABELS: Record<string, string> = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
-	const { profile } = useHostStore()
+	const router = useRouter()
+	const { profile, clearProfile } = useHostStore()
+	const signOut = useAuthStore((s) => s.signOut)
+	const [showDeleteModal, setShowDeleteModal] = useState(false)
 
 	// const [notifs, setNotifs] = useState<Record<string, boolean>>(
 	// 	Object.fromEntries(NOTIFICATION_PREFS.map(n => [n.id, n.defaultOn])),
@@ -168,11 +174,22 @@ export default function ProfilePage() {
 							icon={<Icon as={UserSvg} size="md" color="brand" />}
 							title="Host Identity"
 							action={
-								<Link href="/host/dashboard/profile/edit">
-									<Button variant="secondary" size="sm" radius="pill">
-										Edit Profile
+								<div className="flex items-center gap-2">
+									<Link href="/host/dashboard/profile/edit">
+										<Button variant="secondary" size="sm" radius="pill">
+											Edit Profile
+										</Button>
+									</Link>
+									<Button
+										variant="primary"
+										size="sm"
+										radius="pill"
+										className="bg-red-500 hover:bg-red-600 border-red-500"
+										onClick={() => setShowDeleteModal(true)}
+									>
+										Delete Account
 									</Button>
-								</Link>
+								</div>
 							}
 						>
 							{/* Avatar row */}
@@ -396,6 +413,18 @@ export default function ProfilePage() {
 					</div>
 				</div>
 			</div>
+
+			<DeleteAccountModal
+				open={showDeleteModal}
+				role="host"
+				onClose={() => setShowDeleteModal(false)}
+				onDeleted={async () => {
+					setShowDeleteModal(false)
+					clearProfile()
+					await signOut()
+					router.replace("/host/login")
+				}}
+			/>
 		</div>
 	)
 }

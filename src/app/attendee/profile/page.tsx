@@ -6,6 +6,7 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Icon } from "@/components/ui/Icon"
 import { Skeleton } from "@/components/ui/Skeleton"
+import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
 import CalendarSvg from "@/icons/outlined/calendar.svg"
 import SmileCircleSvg from "@/icons/outlined/smile-circle.svg"
 import TicketSvg from "@/icons/outlined/ticket.svg"
@@ -14,6 +15,7 @@ import BoltSvg from "@/icons/outlined/bolt.svg"
 import UserSvg from "@/icons/outlined/user.svg"
 import MapPointSvg from "@/icons/outlined/map-point.svg"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
+import DangerTriangleSvg from "@/icons/outlined/danger-triangle.svg"
 import { useAuthStore } from "@/store/authStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
 import {
@@ -26,6 +28,7 @@ import {
 } from "@/lib/api"
 import { getMyOrders } from "@/lib/ordersApi"
 import type { AttendeeProfile } from "@/types/attendee"
+import { Button } from "@/components/ui/Button"
 
 // ─── Label maps ───────────────────────────────────────────────────────────────
 
@@ -72,7 +75,7 @@ function formatAgeRange(raw: string): string {
 function getInitials(firstName: string | null, lastName: string | null): string {
 	return [firstName, lastName]
 		.filter(Boolean)
-		.map((n) => n![0]!.toUpperCase())
+		.map(n => n![0]!.toUpperCase())
 		.slice(0, 2)
 		.join("")
 }
@@ -92,7 +95,18 @@ function StatPill({
 	label: string
 	valueColor: string
 	bgClass: string
-	iconColor?: "secondary" | "primary" | "muted" | "inverse" | "brand" | "info" | "vibe" | "warning" | "success" | "inherit" | undefined
+	iconColor?:
+		| "secondary"
+		| "primary"
+		| "muted"
+		| "inverse"
+		| "brand"
+		| "info"
+		| "vibe"
+		| "warning"
+		| "success"
+		| "inherit"
+		| undefined
 }) {
 	return (
 		<div className={`flex items-center gap-2 px-3.5 py-2 rounded-action border ${bgClass}`}>
@@ -129,7 +143,9 @@ function SectionLabel({ icon, children }: { icon: React.ComponentType; children:
 	return (
 		<div className="flex items-center gap-1.5">
 			<Icon as={icon} size="xs" color="muted" />
-			<span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{children}</span>
+			<span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">
+				{children}
+			</span>
 		</div>
 	)
 }
@@ -159,7 +175,12 @@ function QuickLinkCard({
 				<p className="text-label-sm font-bold text-text-primary">{label}</p>
 				<p className="text-[11px] text-text-muted mt-0.5">{sub}</p>
 			</div>
-			<Icon as={ArrowRightSvg} size="xs" color="muted" className="shrink-0 group-hover:text-text-brand transition-colors" />
+			<Icon
+				as={ArrowRightSvg}
+				size="xs"
+				color="muted"
+				className="shrink-0 group-hover:text-text-brand transition-colors"
+			/>
 		</Link>
 	)
 }
@@ -205,15 +226,16 @@ function ProfileSkeleton() {
 
 function ProfilePageInner() {
 	const router = useRouter()
-	const { authLoading, user } = useAuthStore()
-	const profile = useAttendeeProfileStore((s) => s.profile)
-	const profileLoading = useAttendeeProfileStore((s) => s.profileLoading)
+	const { authLoading, user, signOut } = useAuthStore()
+	const profile = useAttendeeProfileStore(s => s.profile)
+	const profileLoading = useAttendeeProfileStore(s => s.profileLoading)
 
 	const [attendeeProfile, setAttendeeProfile] = useState<AttendeeProfile | null>(null)
 	const [interests, setInterests] = useState<AttendeeInterestAffinity[]>([])
 	const [communitiesCount, setCommunitiesCount] = useState(0)
 	const [eventsCount, setEventsCount] = useState(0)
 	const [dataLoading, setDataLoading] = useState(true)
+	const [showDeleteModal, setShowDeleteModal] = useState(false)
 
 	useEffect(() => {
 		if (authLoading || profileLoading) return
@@ -227,12 +249,14 @@ function ProfilePageInner() {
 			getAttendeeInterests().catch(() => []),
 			getJoinedCommunities({ limit: 1 }).catch(() => ({ data: [], total: 0 })),
 			getMyOrders().catch(() => [] as Awaited<ReturnType<typeof getMyOrders>>),
-		]).then(([ap, ints, communities, orders]) => {
-			setAttendeeProfile(ap)
-			setInterests(ints)
-			setCommunitiesCount(communities.total ?? communities.data.length)
-			setEventsCount(orders.length)
-		}).finally(() => setDataLoading(false))
+		])
+			.then(([ap, ints, communities, orders]) => {
+				setAttendeeProfile(ap)
+				setInterests(ints)
+				setCommunitiesCount(communities.total ?? communities.data.length)
+				setEventsCount(orders.length)
+			})
+			.finally(() => setDataLoading(false))
 	}, [authLoading, profileLoading, user, router])
 
 	if (authLoading || profileLoading || dataLoading) return <ProfileSkeleton />
@@ -244,16 +268,14 @@ function ProfilePageInner() {
 	const initials = getInitials(profile.firstName, profile.lastName) || "A"
 	const avatarUrl = attendeeProfile?.avatarUrl ?? profile.avatarUrl
 
-	const memberSince = attendeeProfile?.createdAt
-		? formatMemberSince(attendeeProfile.createdAt)
-		: null
+	const memberSince = attendeeProfile?.createdAt ? formatMemberSince(attendeeProfile.createdAt) : null
 
 	const vibeLabel = attendeeProfile?.vibeType
-		? VIBE_LABELS[attendeeProfile.vibeType as AttendeeVibeType] ?? attendeeProfile.vibeType
+		? (VIBE_LABELS[attendeeProfile.vibeType as AttendeeVibeType] ?? attendeeProfile.vibeType)
 		: null
 
 	const socialLabel = attendeeProfile?.socialStyle
-		? SOCIAL_LABELS[attendeeProfile.socialStyle as AttendeeSocialStyle] ?? attendeeProfile.socialStyle
+		? (SOCIAL_LABELS[attendeeProfile.socialStyle as AttendeeSocialStyle] ?? attendeeProfile.socialStyle)
 		: null
 
 	const hasAbout =
@@ -269,9 +291,7 @@ function ProfilePageInner() {
 
 	return (
 		<main className="flex-1">
-
 			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop) pt-8 pb-16">
-
 				{/* ── Avatar + name ─────────────────────────────────────────────── */}
 				<div className="flex items-center gap-4 lg:gap-5">
 					{/* Gradient ring avatar */}
@@ -300,7 +320,9 @@ function ProfilePageInner() {
 						{memberSince && (
 							<div className="flex items-center gap-1.5 mt-0.5">
 								<Icon as={CalendarSvg} size="lg" color="vibe" />
-								<span className="text-body-md font-medium text-text-vibe">Member since {memberSince}</span>
+								<span className="text-body-md font-medium text-text-vibe">
+									Member since {memberSince}
+								</span>
 							</div>
 						)}
 					</div>
@@ -327,18 +349,26 @@ function ProfilePageInner() {
 						/>
 					</div>
 
-					<Link
-						href="/attendee/profile/edit"
-						className="inline-flex items-center justify-center h-(--size-action-md) px-4 gap-2 text-label-sm rounded-action bg-action-primary text-action-primary-text hover:bg-action-primary-hover active:bg-action-primary-pressed transition-colors duration-(--duration-120) shrink-0"
-					>
-						<EditIcon />
-						Edit profile
-					</Link>
+					<div className="flex items-center gap-2.5 shrink-0">
+						<Link
+							href="/attendee/profile/edit"
+							className="inline-flex items-center justify-center h-(--size-action-md) px-4 gap-2 text-label-sm rounded-action bg-surface-card text-text-brand hover:bg-surface-card-muted transition-colors duration-(--duration-120) shrink-0 border border-border-focus"
+						>
+							<EditIcon />
+							Edit profile
+						</Link>
+						<Button
+							variant="primary"
+							onClick={() => setShowDeleteModal(true)}
+							leftIcon={<Icon as={DangerTriangleSvg} size="sm" color="inherit" />}
+						>
+							Delete account
+						</Button>
+					</div>
 				</div>
 
 				{/* ── Two-column body ───────────────────────────────────────────── */}
 				<div className="flex flex-col lg:flex-row gap-5 lg:gap-7 items-start">
-
 					{/* About card */}
 					<div className="w-full lg:flex-1 min-w-0">
 						{hasAbout ? (
@@ -354,31 +384,41 @@ function ProfilePageInner() {
 										</p>
 									)}
 
-									{(attendeeProfile?.ageRange || attendeeProfile?.gender || attendeeProfile?.profession || attendeeProfile?.city) && (
+									{(attendeeProfile?.ageRange ||
+										attendeeProfile?.gender ||
+										attendeeProfile?.profession ||
+										attendeeProfile?.city) && (
 										<div className="flex flex-col gap-2">
 											{attendeeProfile?.profession && (
 												<div className="flex items-center gap-2.5">
 													<Icon as={BoltSvg} size="sm" color="muted" />
-													<span className="text-body-sm text-text-secondary">{attendeeProfile.profession}</span>
+													<span className="text-body-sm text-text-secondary">
+														{attendeeProfile.profession}
+													</span>
 												</div>
 											)}
 											{attendeeProfile?.city && (
 												<div className="flex items-center gap-2.5">
 													<Icon as={MapPointSvg} size="sm" color="muted" />
-													<span className="text-body-sm text-text-secondary">{attendeeProfile.city}</span>
+													<span className="text-body-sm text-text-secondary">
+														{attendeeProfile.city}
+													</span>
 												</div>
 											)}
 											{attendeeProfile?.ageRange && (
 												<div className="flex items-center gap-2.5">
 													<Icon as={SmileCircleSvg} size="sm" color="muted" />
-													<span className="text-body-sm text-text-secondary">Age {formatAgeRange(attendeeProfile.ageRange)}</span>
+													<span className="text-body-sm text-text-secondary">
+														Age {formatAgeRange(attendeeProfile.ageRange)}
+													</span>
 												</div>
 											)}
 											{attendeeProfile?.gender && (
 												<div className="flex items-center gap-2.5">
 													<Icon as={UserSvg} size="sm" color="muted" />
 													<span className="text-body-sm text-text-secondary">
-														{GENDER_LABELS[attendeeProfile.gender] ?? attendeeProfile.gender}
+														{GENDER_LABELS[attendeeProfile.gender] ??
+															attendeeProfile.gender}
 													</span>
 												</div>
 											)}
@@ -411,7 +451,9 @@ function ProfilePageInner() {
 										<Icon as={UserSvg} size="md" color="brand" />
 									</div>
 									<div>
-										<p className="text-body-sm font-semibold text-text-primary">Your profile is bare</p>
+										<p className="text-body-sm font-semibold text-text-primary">
+											Your profile is bare
+										</p>
 										<p className="text-label-sm text-text-secondary font-normal mt-0.5">
 											Add a bio, vibe, and more so others know who you are.
 										</p>
@@ -446,7 +488,7 @@ function ProfilePageInner() {
 							<div className="rounded-action bg-surface-card border border-border-default shadow-card p-4 flex flex-col gap-2.5">
 								<SectionLabel icon={SmileCircleSvg}>Interests</SectionLabel>
 								<div className="flex flex-wrap gap-1.5">
-									{likedInterests.map((i) => (
+									{likedInterests.map(i => (
 										<span
 											key={i.interestId}
 											className="text-[11px] font-medium px-2.5 py-1 rounded-avatar bg-surface-vibe-soft text-text-vibe border border-violet-200"
@@ -462,13 +504,25 @@ function ProfilePageInner() {
 							<div className="mt-0.5 px-4 py-3 rounded-action bg-amber-50 border border-amber-100">
 								<p className="text-[11px] text-amber-800 leading-snug">
 									<span className="font-semibold">Privacy: </span>
-									{PRIVACY_LABELS[attendeeProfile.privacy] ?? "Your profile is only visible to you."}
+									{PRIVACY_LABELS[attendeeProfile.privacy] ??
+										"Your profile is only visible to you."}
 								</p>
 							</div>
 						)}
 					</div>
 				</div>
 			</div>
+
+			<DeleteAccountModal
+				open={showDeleteModal}
+				role="attendee"
+				onClose={() => setShowDeleteModal(false)}
+				onDeleted={async () => {
+					setShowDeleteModal(false)
+					await signOut()
+					router.replace("/attendee/login")
+				}}
+			/>
 		</main>
 	)
 }
