@@ -14,17 +14,14 @@ import {
 	verifyPan,
 	verifyBankAccount,
 	getCategories,
-	getSubscriptionPlans,
 	getHostProfile,
 	type Category,
-	type SubscriptionPlan,
 	type BankKycResult,
 	type RegisterPayload,
 } from "@/lib/api"
 import { useHostStore } from "@/store/hostStore"
 import { useAuthSessionStore } from "@/store/authSessionStore"
 import { Button } from "@/components/ui/Button"
-import { Skeleton } from "@/components/ui/Skeleton"
 import { TextField } from "@/components/ui/TextField"
 import { Dropdown } from "@/components/ui/Dropdown"
 import { Icon } from "@/components/ui/Icon"
@@ -33,6 +30,7 @@ import { STEP_PANEL_CONFIGS } from "./config"
 import CheckCircleSvg from "@/icons/filled/check-circle.svg"
 import CardSvg from "@/icons/filled/card.svg"
 import LockKeyholeSvg from "@/icons/outlined/lock-keyhole.svg"
+import DangerTriangleSvg from "@/icons/outlined/danger-triangle.svg"
 import InstagramSvg from "@/icons/socials/instagram.svg"
 import LinkedinSvg from "@/icons/socials/linkedin.svg"
 import YoutubeSvg from "@/icons/socials/youtube.svg"
@@ -84,32 +82,6 @@ function buildRegisterPayload(values: FormValues, phone?: string): RegisterPaylo
 	}
 }
 
-// ─── Plan display metadata (marketing copy, not from API) ────────────────────
-
-const PLAN_META: Record<
-	string,
-	{ features: string[]; highlightFeature: string | null; recommended: boolean; cta: string }
-> = {
-	DISCOVER: {
-		features: ["Host up to 3 events/month", "Community up to 100 people", "Basic event tools", "Email support"],
-		highlightFeature: null,
-		recommended: false,
-		cta: "Try for free",
-	},
-	COMMUNITY: {
-		features: ["Host unlimited events", "Community up to 5,000 people", "Ticket & registrations", "Custom branding", "Priority support"],
-		highlightFeature: "All Discover features +",
-		recommended: true,
-		cta: "Choose Community",
-	},
-	SELL: {
-		features: ["No platform fees", "Advanced analytics", "Payouts & Settlements", "Dedicated support"],
-		highlightFeature: "Everything in Community +",
-		recommended: false,
-		cta: "Choose Sell",
-	},
-}
-
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
 const schema = z.object({
@@ -138,10 +110,10 @@ const schema = z.object({
 	addressPincode: z.string().optional(),
 	addressCountry: z.string().optional(),
 	// Step 4
-	yearsOfExperience: z.coerce.number().min(0).optional(),
-	totalEventsHosted: z.coerce.number().min(0).optional(),
-	categoryIds: z.array(z.string()).optional(),
-	operatingCities: z.array(z.string()).optional(),
+	yearsOfExperience: z.coerce.number({ error: "Required" }).min(0, "Required"),
+	totalEventsHosted: z.coerce.number({ error: "Required" }).min(0, "Required"),
+	categoryIds: z.array(z.string()).min(1, "Select at least one"),
+	operatingCities: z.array(z.string()).min(1, "Add at least one city"),
 	portfolioLinks: z.array(z.string()).optional(),
 	// Step 5
 	reviewConfirmed: z.boolean().refine(v => v === true, "Please confirm to continue"),
@@ -150,10 +122,6 @@ const schema = z.object({
 	accountNumber: z.string().min(1, "Required"),
 	ifscCode: z.string().min(1, "Required"),
 	bankName: z.string().min(1, "Required"),
-	// Step 8
-	plan: z.enum(["discover", "community", "sell"]).refine(v => !!v, "Select a plan"),
-	billingCycle: z.enum(["MONTHLY", "YEARLY"]).optional(),
-	couponCode: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -162,11 +130,10 @@ const STEP_FIELDS: (keyof FormValues)[][] = [
 	["firstName", "lastName", "accountType", "email"],
 	[],
 	["legalName", "pan"],
-	[],
+	["yearsOfExperience", "totalEventsHosted", "categoryIds", "operatingCities"],
 	["reviewConfirmed"],
 	["accountHolderName", "accountNumber", "ifscCode", "bankName"],
 	[],
-	["plan"],
 	[],
 ]
 
@@ -178,7 +145,6 @@ const STEP_BUTTON_LABELS = [
 	"Submit & Continue",
 	"Confirm & Continue",
 	"Save & Continue",
-	"Continue",
 	"",
 ]
 
@@ -190,7 +156,6 @@ const STEP_SUBTITLES = [
 	"Take a moment to review everything before we proceed.",
 	"Almost there! Please verify your account to receive payouts.",
 	"Almost there! Please verify your account to receive payouts.",
-	"Pick the plan that matches your goals. You can upgrade anytime.",
 	"We'll review your application and notify you by email once it's approved.",
 ]
 
@@ -527,7 +492,13 @@ function StepLinksLegal() {
 // ─── Step 4 — Experience & Focus ─────────────────────────────────────────────
 
 function StepExperienceFocus({ categories }: { categories: Category[] }) {
-	const { control, register, getValues, setValue } = useFormContext<FormValues>()
+	const {
+		control,
+		register,
+		getValues,
+		setValue,
+		formState: { errors },
+	} = useFormContext<FormValues>()
 	const [cityInput, setCityInput] = useState("")
 
 	function addCity() {
@@ -544,21 +515,23 @@ function StepExperienceFocus({ categories }: { categories: Category[] }) {
 			<div className="flex gap-3">
 				<TextField
 					label="Years of experience"
-					hint="Optional"
 					placeholder="e.g. 3"
 					type="number"
 					min={0}
 					{...register("yearsOfExperience", { valueAsNumber: true })}
+					error={!!errors.yearsOfExperience}
+					helperText={errors.yearsOfExperience?.message}
 					size="md"
 					className="flex-1"
 				/>
 				<TextField
 					label="Total events hosted"
-					hint="Optional"
 					placeholder="e.g. 15"
 					type="number"
 					min={0}
 					{...register("totalEventsHosted", { valueAsNumber: true })}
+					error={!!errors.totalEventsHosted}
+					helperText={errors.totalEventsHosted?.message}
 					size="md"
 					className="flex-1"
 				/>
@@ -566,10 +539,7 @@ function StepExperienceFocus({ categories }: { categories: Category[] }) {
 
 			{/* Operating cities */}
 			<div className="flex flex-col gap-2">
-				<div className="flex items-center justify-between">
-					<p className="text-label-sm font-semibold text-text-primary">Operating cities</p>
-					<span className="text-caption text-text-muted">Optional</span>
-				</div>
+				<p className="text-label-sm font-semibold text-text-primary">Operating cities</p>
 				<div className="flex gap-2">
 					<TextField
 						placeholder="e.g. Mumbai"
@@ -616,13 +586,16 @@ function StepExperienceFocus({ categories }: { categories: Category[] }) {
 						)
 					}}
 				/>
+				{errors.operatingCities && (
+					<p className="text-caption text-text-danger">{errors.operatingCities.message}</p>
+				)}
 			</div>
 
 			{/* Interests & focus areas */}
 			<div className="flex flex-col gap-3">
 				<div className="flex items-center justify-between">
 					<p className="text-label-sm font-semibold text-text-primary">Interests & focus areas</p>
-					<span className="text-caption text-text-muted">Optional · pick all that apply</span>
+					<span className="text-caption text-text-muted">Pick all that apply</span>
 				</div>
 				{categories.length === 0 ? (
 					<p className="text-caption text-text-muted">Loading categories…</p>
@@ -663,6 +636,9 @@ function StepExperienceFocus({ categories }: { categories: Category[] }) {
 							)
 						}}
 					/>
+				)}
+				{errors.categoryIds && (
+					<p className="text-caption text-text-danger">{errors.categoryIds.message}</p>
 				)}
 			</div>
 
@@ -926,202 +902,7 @@ function StepReviewPayout({ bankKycResult }: { bankKycResult: BankKycResult | nu
 	)
 }
 
-// ─── Step 8 — Choose your host plan ──────────────────────────────────────────
-
-function FilledCheckIcon() {
-	return (
-		<svg viewBox="0 0 16 16" fill="none" className="size-3.5 shrink-0">
-			<circle cx="8" cy="8" r="8" fill="#3B82F6" />
-			<path d="M4.5 8l2.5 2.5 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-		</svg>
-	)
-}
-
-function OutlineCheckIcon() {
-	return (
-		<svg viewBox="0 0 16 16" fill="none" className="size-3.5 mt-0.5 shrink-0 text-text-muted">
-			<circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
-			<path d="M5 8l2 2 4-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-		</svg>
-	)
-}
-
-function StepChoosePlan({ plans }: { plans: SubscriptionPlan[] }) {
-	const {
-		control,
-		register,
-		watch,
-		formState: { errors },
-	} = useFormContext<FormValues>()
-	const selectedPlan = watch("plan")
-	const billingCycle = watch("billingCycle")
-
-	if (plans.length === 0) {
-		return (
-			<div className="flex flex-col items-center gap-3 py-8 text-center">
-				<p className="text-body-sm text-text-secondary">Loading plans…</p>
-			</div>
-		)
-	}
-
-	return (
-		<div className="flex flex-col gap-5">
-			<Controller
-				control={control}
-				name="plan"
-				render={({ field }) => (
-					<div className="flex gap-3 py-4">
-						{plans.map(apiPlan => {
-							const meta = PLAN_META[apiPlan.plan]
-							if (!meta) return null
-							const planId = apiPlan.plan.toLowerCase() as "discover" | "community" | "sell"
-							const selected = field.value === planId
-
-							const isCommunitySelected = planId === "community" && selected
-							const displayPrice = (() => {
-								if (apiPlan.plan === "DISCOVER") return "Free"
-								if (apiPlan.plan === "SELL") return apiPlan.yearlyPrice ? `₹${apiPlan.yearlyPrice.toLocaleString("en-IN")}` : "—"
-								if (apiPlan.plan === "COMMUNITY") {
-									if (billingCycle === "MONTHLY" && apiPlan.monthlyPrice) return `₹${apiPlan.monthlyPrice.toLocaleString("en-IN")}`
-									if (apiPlan.yearlyPrice) return `₹${apiPlan.yearlyPrice.toLocaleString("en-IN")}`
-								}
-								return "—"
-							})()
-
-							const priceNote = (() => {
-								if (apiPlan.plan === "DISCOVER") return null
-								if (apiPlan.plan === "SELL") return "/year"
-								if (apiPlan.plan === "COMMUNITY") return billingCycle === "MONTHLY" ? "/month" : "/year"
-								return null
-							})()
-
-							const feeRate = `${(apiPlan.platformFeeRate * 100).toFixed(0)}% platform fee`
-
-							return (
-								<div
-									key={apiPlan.id}
-									role="button"
-									tabIndex={0}
-									onClick={() => field.onChange(planId)}
-									onKeyDown={e => (e.key === "Enter" || e.key === " ") && field.onChange(planId)}
-									className={clsx(
-										"flex flex-col rounded-action border-2 text-left flex-1 overflow-hidden cursor-pointer transition-all duration-(--duration-120)",
-										meta.recommended && "-my-4",
-										selected
-											? "border-border-focus bg-surface-brand-soft"
-											: meta.recommended
-												? "border-action-primary"
-												: "border-border-default hover:border-border-strong",
-									)}
-								>
-									{meta.recommended && (
-										<div className="bg-action-primary text-text-inverse text-[10px] font-bold uppercase tracking-widest py-1.5 text-center w-full shrink-0">
-											Recommended Plan
-										</div>
-									)}
-
-									<div className="flex flex-col gap-3 px-3 py-4 flex-1">
-										<div>
-											<p className="text-label-md font-bold text-text-primary capitalize">{planId}</p>
-											<p className="text-[10px] text-text-muted mt-0.5 leading-tight">{feeRate}</p>
-											<p className="text-2xl font-extrabold text-text-primary mt-2 leading-none">
-												{displayPrice}
-												{priceNote && (
-													<span className="text-caption font-normal text-text-muted"> {priceNote}</span>
-												)}
-											</p>
-										</div>
-
-										{/* Billing cycle toggle for Community */}
-										{isCommunitySelected && (
-											<Controller
-												control={control}
-												name="billingCycle"
-												render={({ field: bf }) => (
-													<div className="flex rounded-avatar border border-border-default overflow-hidden text-[10px] font-semibold">
-														{(["MONTHLY", "YEARLY"] as const).map(cycle => (
-															<button
-																key={cycle}
-																type="button"
-																onClick={e => { e.stopPropagation(); bf.onChange(cycle) }}
-																className={clsx(
-																	"flex-1 py-1.5 text-center transition-colors",
-																	bf.value === cycle
-																		? "bg-action-primary text-text-inverse"
-																		: "bg-surface-canvas text-text-secondary hover:bg-action-secondary-hover",
-																)}
-															>
-																{cycle === "MONTHLY" ? "Monthly" : "Yearly"}
-															</button>
-														))}
-													</div>
-												)}
-											/>
-										)}
-
-										<ul className="flex flex-col gap-1.5 flex-1">
-											{meta.highlightFeature && (
-												<li className="flex items-center gap-1.5">
-													<FilledCheckIcon />
-													<span className="text-[11px] font-semibold text-text-primary leading-tight">
-														{meta.highlightFeature}
-													</span>
-												</li>
-											)}
-											{meta.features.map(f => (
-												<li key={f} className="flex items-start gap-1.5">
-													<OutlineCheckIcon />
-													<span className="text-[11px] text-text-secondary leading-tight">{f}</span>
-												</li>
-											))}
-										</ul>
-
-										<div className="mt-2 py-2.5 rounded-avatar bg-[#0a0a0a] text-white text-label-sm font-semibold text-center">
-											{meta.cta}
-										</div>
-									</div>
-								</div>
-							)
-						})}
-					</div>
-				)}
-			/>
-			{errors.plan && <p className="text-caption text-text-danger">{errors.plan.message}</p>}
-			{errors.billingCycle && <p className="text-caption text-text-danger">{errors.billingCycle.message}</p>}
-
-			<div className="flex flex-col gap-1.5">
-				<label className="text-[10px] font-semibold uppercase tracking-widest text-text-muted">
-					Coupon Code
-				</label>
-				<div className="flex gap-2">
-					<TextField
-						placeholder="e.g. MEETDAY2026"
-						{...register("couponCode")}
-						size="md"
-						className="flex-1"
-					/>
-					<button
-						type="button"
-						className="px-5 rounded-input bg-[#0a0a0a] text-white text-label-sm font-semibold shrink-0 hover:opacity-80 transition-opacity"
-					>
-						Apply
-					</button>
-				</div>
-				<p className="text-caption text-text-muted">
-					Uppercase letters, numbers, hyphens and underscores only.
-				</p>
-			</div>
-
-			{selectedPlan && selectedPlan !== "discover" && (
-				<p className="text-caption text-text-muted text-center">
-					Payment via Razorpay will be enabled shortly. Your plan selection is saved.
-				</p>
-			)}
-		</div>
-	)
-}
-
-// ─── Step 9 — Account under review ───────────────────────────────────────────
+// ─── Step 8 — Account under review ───────────────────────────────────────────
 
 function StepUnderReview({ onGoToDashboard }: { onGoToDashboard: () => void }) {
 	return (
@@ -1147,7 +928,6 @@ function StepUnderReview({ onGoToDashboard }: { onGoToDashboard: () => void }) {
 					{ label: "Profile submitted", done: true },
 					{ label: "PAN submitted for verification", done: true },
 					{ label: "Bank account verified", done: true },
-					{ label: "Plan selected", done: true },
 					{ label: "Admin approval", done: false },
 				].map((item, i, arr) => (
 					<div
@@ -1207,7 +987,6 @@ const STEP_HEADINGS: HeadingConfig[] = [
 	{ full: "Review your details" },
 	{ full: "Verify payout details" },
 	{ full: "Review payout details" },
-	{ full: "Choose your host plan" },
 	{ full: "Your account is under review" },
 ]
 
@@ -1218,7 +997,7 @@ export default function OnboardingPage() {
 	const [loadingMessage, setLoadingMessage] = useState<string | null>(null)
 	const [bankKycResult, setBankKycResult] = useState<BankKycResult | null>(null)
 	const [categories, setCategories] = useState<Category[]>([])
-	const [plans, setPlans] = useState<SubscriptionPlan[]>([])
+	const [isRegistered, setIsRegistered] = useState(false)
 	const { phone, email: sessionEmail, clearSession } = useAuthSessionStore()
 	const { setProfile } = useHostStore()
 	const router = useRouter()
@@ -1231,18 +1010,13 @@ export default function OnboardingPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
-	// Fetch categories and plans on mount (both are public endpoints)
+	// Fetch categories on mount (public endpoint)
 	useEffect(() => {
 		let cancelled = false
-		Promise.all([getCategories(), getSubscriptionPlans()]).then(([cats, plns]) => {
-			if (!cancelled) {
-				setCategories(cats)
-				// Sort: DISCOVER first, then COMMUNITY, then SELL
-				const order = ["DISCOVER", "COMMUNITY", "SELL"]
-				setPlans(plns.sort((a, b) => order.indexOf(a.plan) - order.indexOf(b.plan)))
-			}
+		getCategories().then(cats => {
+			if (!cancelled) setCategories(cats)
 		}).catch(() => {
-			if (!cancelled) toast.error("Failed to load plan data. Some fields may be unavailable.")
+			if (!cancelled) toast.error("Failed to load category data. Some fields may be unavailable.")
 		})
 		return () => { cancelled = true }
 	}, [])
@@ -1282,13 +1056,10 @@ export default function OnboardingPage() {
 			accountNumber: "",
 			ifscCode: "",
 			bankName: "",
-			plan: undefined,
-			billingCycle: undefined,
-			couponCode: "",
 		},
 	})
 
-	const { handleSubmit, trigger, getValues, setError } = methods
+	const { handleSubmit, trigger, getValues } = methods
 	const TOTAL = STEP_PANEL_CONFIGS.length
 	const isLast = step === TOTAL - 1
 	const panelConfig = STEP_PANEL_CONFIGS[step]
@@ -1318,7 +1089,12 @@ export default function OnboardingPage() {
 			setLoadingMessage("Setting up your profile…")
 			try {
 				const values = getValues()
-				await registerHost(buildRegisterPayload(values, phone))
+				try {
+					await registerHost(buildRegisterPayload(values, phone))
+				} catch (e) {
+					// 409 = host already registered (e.g. re-submitted after navigating back) — treat as success
+					if (!(e instanceof ApiError && e.statusCode === 409)) throw e
+				}
 
 				setLoadingMessage("Verifying your PAN…")
 				try {
@@ -1328,6 +1104,7 @@ export default function OnboardingPage() {
 					if (!(e instanceof ApiError && e.statusCode === 409)) throw e
 				}
 
+				setIsRegistered(true)
 				setStep(s => s + 1)
 			} catch (e) {
 				toast.error(getApiErrorMessage(e))
@@ -1373,17 +1150,6 @@ export default function OnboardingPage() {
 			return
 		}
 
-		// Step 7 (Plan): require billing cycle for Community
-		if (step === 7) {
-			const values = getValues()
-			if (values.plan === "community" && !values.billingCycle) {
-				setError("billingCycle", { message: "Please select a billing cycle" })
-				return
-			}
-			setStep(s => s + 1)
-			return
-		}
-
 		setStep(s => s + 1)
 	}
 
@@ -1397,8 +1163,7 @@ export default function OnboardingPage() {
 		<StepReviewDetails key={4} onJumpTo={setStep} />,
 		<StepPayoutDetails key={5} />,
 		<StepReviewPayout key={6} bankKycResult={bankKycResult} />,
-		<StepChoosePlan key={7} plans={plans} />,
-		<StepUnderReview key={8} onGoToDashboard={handleNext} />,
+		<StepUnderReview key={7} onGoToDashboard={handleNext} />,
 	]
 
 	return (
@@ -1407,7 +1172,9 @@ export default function OnboardingPage() {
 			{loadingMessage && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
 					<div className="bg-surface-card rounded-action px-10 py-8 flex flex-col items-center gap-4 shadow-xl">
-						<Skeleton.Block className="size-10 rounded-full" />
+						<div className="size-10 rounded-full bg-surface-warning-soft flex items-center justify-center">
+							<Icon as={DangerTriangleSvg} size="lg" color="warning" />
+						</div>
 						<p className="text-body-sm font-semibold text-text-primary">{loadingMessage}</p>
 					</div>
 				</div>
@@ -1461,7 +1228,7 @@ export default function OnboardingPage() {
 					{/* Navigation */}
 					{!isLast && (
 						<div className="flex gap-3 mt-8">
-							{step > 0 && (
+							{step > 0 && !(step === 5 && isRegistered) && (
 								<Button
 									type="button"
 									variant="secondary"
