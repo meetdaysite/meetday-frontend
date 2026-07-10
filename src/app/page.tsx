@@ -1,65 +1,117 @@
-import Image from "next/image";
+import Image from "next/image"
+import Link from "next/link"
+import clsx from "clsx"
+// import ShieldCheckSvg from "@/icons/filled/shield-check.svg"
+import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
+import { Icon } from "@/components/ui/Icon"
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+const OPTIONS = [
+	{
+		key: "attendee",
+		image: "/assets/landing/attendee.svg",
+		title: "Attendee",
+		titleClass: "text-text-brand",
+		description:
+			"Discover curated experiences, meet like-minded people, and be part of real-world moments.",
+		cta: "Continue as Attendee",
+		href: "/attendee/login",
+		tone: "red" as const,
+	},
+	{
+		key: "host",
+		image: "/assets/landing/host.svg",
+		title: "Host",
+		titleClass: "text-text-vibe",
+		description: "Create and manage experiences, grow your community, and collaborate with brands.",
+		cta: "Continue as Host",
+		href: "/host/login",
+		tone: "purple" as const,
+	},
+	{
+		key: "website",
+		image: "/assets/landing/website.svg",
+		title: "Visit Website",
+		titleClass: "text-text-primary",
+		description: "Explore Meetday, learn more about our mission, features, and how it all works.",
+		cta: "Visit Website",
+		href: "https://meetday.ai",
+		tone: "outline" as const,
+	},
+]
+
+const CTA_BASE_CLASS =
+	"inline-flex items-center justify-center w-full h-(--size-action-lg) px-5 rounded-avatar text-label-md font-semibold transition-colors duration-(--duration-120)"
+
+const CTA_TONE_CLASS = {
+	red: "bg-action-primary text-action-primary-text hover:bg-action-primary-hover active:bg-action-primary-pressed",
+	purple: "bg-text-vibe text-white hover:bg-purple-700 active:bg-purple-800",
+	outline: "bg-surface-card text-text-primary border-2 border-border-focused hover:bg-surface-card-muted",
+} as const
+
+export default function RootPage() {
+	return (
+		<div className="relative flex-1 flex flex-col items-center justify-center overflow-hidden px-6 py-16 sm:py-20">
+			{/* Decorative background */}
+			<Image
+				src="/assets/landing/background.svg"
+				alt=""
+				fill
+				priority
+				aria-hidden
+				className="pointer-events-none object-cover"
+			/>
+
+			{/* Heading */}
+			<div className="relative z-10 flex flex-col items-center text-center max-w-7xl mx-auto mb-14">
+				<h1 className="text-heading-lg sm:text-display-md font-extrabold text-text-primary leading-tight">
+					Real people. Real experiences.
+				</h1>
+				<h1 className="relative inline-block text-heading-lg sm:text-display-md font-extrabold text-text-brand leading-tight mt-1">
+					Stronger together.
+				</h1>
+				<p className="mt-7 text-body-lg text-text-secondary max-w-2xl">
+					Whether you want to discover experiences, host for your community, or just explore what
+					we&apos;re building — you&apos;re in the right place.
+				</p>
+			</div>
+
+			{/* Option cards */}
+			<div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-5xl">
+				{OPTIONS.map(option => (
+					<div
+						key={option.key}
+						className="flex flex-col items-center text-center bg-surface-card border border-border-default rounded-panel shadow-panel px-8 py-10"
+					>
+						<div className="relative w-44 h-44 mb-5 shrink-0">
+							<Image src={option.image} alt="" fill sizes="176px" className="object-contain" />
+						</div>
+						<h2 className={clsx("text-heading-sm font-extrabold mb-2", option.titleClass)}>
+							{option.title}
+						</h2>
+						<p className="text-body-sm text-text-secondary leading-relaxed mb-8 flex-1">
+							{option.description}
+						</p>
+						<Link
+							href={option.href}
+							className={clsx(CTA_BASE_CLASS, CTA_TONE_CLASS[option.tone])}
+						>
+							{option.cta}
+							<Icon as={ArrowRightSvg} className="ml-2" />
+						</Link>
+					</div>
+				))}
+			</div>
+
+			{/* Trust badge */}
+			{/* <div className="relative z-10 flex flex-col items-center gap-1 mt-14 text-center">
+				<div className="flex items-center gap-2">
+					<ShieldCheckSvg className="size-4 text-text-primary" aria-hidden />
+					<span className="text-label-md font-semibold text-text-primary">
+						Secure. Verified. Built for trust.
+					</span>
+				</div>
+				<p className="text-caption text-text-muted">Your data and privacy are always protected.</p>
+			</div> */}
+		</div>
+	)
 }

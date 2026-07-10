@@ -1,26 +1,171 @@
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "../styles/tokens/primitive.css";
+@import "../styles/tokens/semantic.css";
+@import "../styles/tokens/typography.css";
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+	/* FONTS */
+	--font-sans: var(--font-poppins), "Inter", Arial, sans-serif;
+
+	/* SURFACE */
+	--color-surface-page: var(--surface-page);
+	--color-surface-canvas: var(--surface-canvas);
+	--color-surface-card: var(--surface-card);
+	--color-surface-card-muted: var(--surface-card-muted);
+	--color-surface-elevated: var(--surface-elevated);
+	--color-surface-inverse: var(--surface-inverse);
+	--color-surface-brand-soft: var(--surface-brand-soft);
+	--color-surface-info-soft: var(--surface-info-soft);
+	--color-surface-vibe-soft: var(--surface-vibe-soft);
+	--color-surface-warning-soft: var(--surface-warning-soft);
+	--color-surface-success-soft: var(--surface-success-soft);
+
+	/* TEXT */
+	--color-text-primary: var(--text-primary);
+	--color-text-secondary: var(--text-secondary);
+	--color-text-tertiary: var(--text-tertiary);
+	--color-text-muted: var(--text-muted);
+	--color-text-inverse: var(--text-inverse);
+	--color-text-brand: var(--text-brand);
+	--color-text-link: var(--text-link);
+	--color-text-success: var(--text-success);
+	--color-text-warning: var(--text-warning);
+	--color-text-danger: var(--text-danger);
+	--color-text-vibe: var(--text-vibe);
+	--color-text-info: var(--text-info);
+
+	/* BORDER */
+	--color-border-subtle: var(--border-subtle);
+	--color-border-default: var(--border-default);
+	--color-border-strong: var(--border-strong);
+	--color-border-focused: var(--border-focused);
+	--color-border-brand: var(--border-brand);
+	--color-border-focus: var(--border-focus);
+
+	/* ACTION */
+	--color-action-primary: var(--action-primary-bg);
+	--color-action-primary-hover: var(--action-primary-bg-hover);
+	--color-action-primary-pressed: var(--action-primary-bg-pressed);
+	--color-action-primary-text: var(--action-primary-text);
+	--color-action-secondary: var(--action-secondary-bg);
+	--color-action-secondary-hover: var(--action-secondary-bg-hover);
+	--color-action-secondary-text: var(--action-secondary-text);
+	--color-action-secondary-border: var(--action-secondary-border);
+	--color-action-disabled: var(--action-disabled-bg);
+	--color-action-disabled-text: var(--action-disabled-text);
+	--color-action-disabled-border: var(--action-disabled-border);
+
+	/* ICON */
+	--color-icon-primary: var(--icon-primary);
+	--color-icon-secondary: var(--icon-secondary);
+	--color-icon-muted: var(--icon-muted);
+	--color-icon-inverse: var(--icon-inverse);
+	--color-icon-brand: var(--icon-brand);
+	--color-icon-info: var(--icon-info);
+	--color-icon-vibe: var(--icon-vibe);
+	--color-icon-warning: var(--icon-warning);
+	--color-icon-success: var(--icon-success);
+
+	/* STATUS */
+	--color-status-trending-bg: var(--status-trending-bg);
+	--color-status-trending-text: var(--status-trending-text);
+	--color-status-new-bg: var(--status-new-bg);
+	--color-status-new-text: var(--status-new-text);
+	--color-status-popular-bg: var(--status-popular-bg);
+	--color-status-popular-text: var(--status-popular-text);
+	--color-status-success-bg: var(--status-success-bg);
+	--color-status-success-text: var(--status-success-text);
+	--color-status-error-bg: var(--status-error-bg);
+	--color-status-error-text: var(--status-error-text);
+	--color-status-verified-bg: var(--status-verified-bg);
+	--color-status-verified-text: var(--status-verified-text);
+
+	/* RADIUS */
+	--radius-action: var(--radius-action);
+	--radius-input: var(--radius-input);
+	--radius-chip: var(--radius-chip);
+	--radius-badge: var(--radius-badge);
+	--radius-card: var(--radius-card);
+	--radius-panel: var(--radius-panel);
+	--radius-modal: var(--radius-modal);
+	--radius-image: var(--radius-image);
+	--radius-avatar: var(--radius-avatar);
+
+	/* SHADOWS */
+	--shadow-card: var(--effect-card);
+	--shadow-card-hover: var(--effect-card-hover);
+	--shadow-panel: var(--effect-panel);
+	--shadow-modal: var(--effect-modal);
+	--shadow-floating: var(--effect-floating);
+	--shadow-brand-glow: var(--effect-brand-glow);
+	--shadow-vibe-glow: var(--effect-vibe-glow);
+
+	/* SEMANTIC SPACING */
+	--spacing-page-x-mobile: var(--space-page-x-mobile);
+	--spacing-page-x-tablet: var(--space-page-x-tablet);
+	--spacing-page-x-desktop: var(--space-page-x-desktop);
+	--spacing-section-gap: var(--space-section-gap);
+	--spacing-card-sm: var(--space-card-sm);
+	--spacing-card-md: var(--space-card-md);
+	--spacing-card-lg: var(--space-card-lg);
+	--spacing-stack-xs: var(--space-stack-xs);
+	--spacing-stack-sm: var(--space-stack-sm);
+	--spacing-stack-md: var(--space-stack-md);
+	--spacing-stack-lg: var(--space-stack-lg);
+	--spacing-stack-xl: var(--space-stack-xl);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+	color-scheme: light;
+	background: var(--surface-page);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+	background: var(--surface-page);
+	color: var(--text-primary);
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* Thin scrollbars */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--border-default) transparent;
+}
+
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--border-default);
+	border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--border-strong);
+}
+
+/* Hide scrollbar visually while keeping scroll behaviour */
+.no-scrollbar {
+	scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
+}
+
+/* Horizontal marquee — left-to-right continuous scroll */
+@keyframes marquee {
+	from { transform: translateX(-50%); }
+	to   { transform: translateX(0%); }
+}
+.animate-marquee {
+	animation: marquee 60s linear infinite;
+	will-change: transform;
 }
