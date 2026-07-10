@@ -246,37 +246,6 @@ export const STEP_PANEL_CONFIGS: StepPanelConfig[] = [
 		],
 	},
 
-	// Step 7 — Choose your host plan
-	{
-		headingPlain: "Pick the plan that",
-		headingHighlight: "fits your growth",
-		description: "Start simple. Scale smart. Every plan is built to help you host more, engage better, and grow faster.",
-		personImage: "/onboarding/person-1.png",
-		cards: [
-			{
-				icon: "/icons/onboarding/users-group.svg",
-				iconBg: "#EFF6FF",
-				title: "Build your community",
-				body: "Engage your people and keep them coming back.",
-				position: { top: "52%", left: "4%" },
-			},
-			{
-				icon: "/icons/onboarding/wallet.svg",
-				iconBg: "#FFFBEB",
-				title: "Monetize your events",
-				body: "Sell tickets, passes and unlock new revenue streams.",
-				position: { top: "36%", right: "2%" },
-			},
-			{
-				icon: "/icons/onboarding/chart-2.svg",
-				iconBg: "#F5F3FF",
-				title: "Scale with confidence",
-				body: "Advanced tools and insights to grow bigger.",
-				position: { bottom: "8%", left: "18%" },
-			},
-		],
-	},
-
 	// Step 8 — You're ready to host
 	{
 		headingPlain: "Your stage",
