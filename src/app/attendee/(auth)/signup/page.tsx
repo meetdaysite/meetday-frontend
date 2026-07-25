@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm, Controller, useWatch } from "react-hook-form"
@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/Checkbox"
 import { PhoneField } from "@/components/auth/PhoneField"
 import { useAuth } from "@/context/AuthContext"
 import { useAttendeeSessionStore } from "@/store/attendeeSessionStore"
+import { useAuthStore } from "@/store/authStore"
 import { checkPhone } from "@/lib/api"
 import { DEFAULT_COUNTRY, type Country } from "@/lib/countries"
 import { getApiErrorMessage } from "@/lib/errors"
@@ -39,6 +40,13 @@ export default function AttendeeSignupPage() {
 	const { sendOtp } = useAuth()
 	const setSession = useAttendeeSessionStore((s) => s.setSession)
 	const router = useRouter()
+	const { user, authLoading } = useAuthStore()
+
+	useEffect(() => {
+		if (!authLoading && user) {
+			router.replace("/explore")
+		}
+	}, [user, authLoading, router])
 
 	const {
 		control,
@@ -74,6 +82,8 @@ export default function AttendeeSignupPage() {
 			setLoading(false)
 		}
 	}
+
+	if (authLoading || user) return null
 
 	return (
 		<AttendeeAuthShell variant="signup">

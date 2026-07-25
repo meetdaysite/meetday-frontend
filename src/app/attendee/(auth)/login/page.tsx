@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useForm, Controller } from "react-hook-form"
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button"
 import { PhoneField } from "@/components/auth/PhoneField"
 import { useAuth } from "@/context/AuthContext"
 import { useAttendeeSessionStore } from "@/store/attendeeSessionStore"
+import { useAuthStore } from "@/store/authStore"
 import { DEFAULT_COUNTRY, type Country } from "@/lib/countries"
 import { getApiErrorMessage } from "@/lib/errors"
 
@@ -32,6 +33,13 @@ export default function AttendeeLoginPage() {
 	const { sendOtp } = useAuth()
 	const setSession = useAttendeeSessionStore((s) => s.setSession)
 	const router = useRouter()
+	const { user, authLoading } = useAuthStore()
+
+	useEffect(() => {
+		if (!authLoading && user) {
+			router.replace("/explore")
+		}
+	}, [user, authLoading, router])
 
 	const {
 		control,
@@ -55,6 +63,8 @@ export default function AttendeeLoginPage() {
 			setLoading(false)
 		}
 	}
+
+	if (authLoading || user) return null
 
 	return (
 		<AttendeeAuthShell variant="login">

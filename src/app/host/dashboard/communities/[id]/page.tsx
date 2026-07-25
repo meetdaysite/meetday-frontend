@@ -18,6 +18,8 @@ import {
 	pinHostCommunityAnnouncement,
 	unpinHostCommunityAnnouncement,
 	deleteHostCommunityAnnouncement,
+	joinCommunity,
+	leaveCommunity,
 	type HostCommunityOverviewResponse,
 	type HostCommunityAudienceResponse,
 	type HostCommunityExperience,
@@ -44,10 +46,13 @@ import {
 } from "recharts"
 import { getApiErrorMessage } from "@/lib/errors"
 import { PublishExperienceModal } from "./_components/PublishExperienceModal"
+import { LeaveCommunityModal } from "./_components/LeaveCommunityModal"
+import { JoinCommunityConfirmModal } from "./_components/JoinCommunityConfirmModal"
 import { FeedTabContent } from "./_components/FeedTabContent"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { Tabs } from "@/components/ui/Tabs"
 
+import BoltSvg from "@/icons/outlined/bolt.svg"
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 import DotsSvg from "@/icons/outlined/dots.svg"
@@ -623,6 +628,153 @@ function TopCitiesModal({ cities, onClose }: { cities: string[]; onClose: () => 
 	)
 }
 
+// ─── Join / request access banner ────────────────────────────────────────────
+
+function HostCommunityJoinBanner({
+	communityName,
+	access,
+	isPending,
+	joining,
+	onJoin,
+}: {
+	communityName: string
+	access: HostCommunityAccess
+	isPending: boolean
+	joining: boolean
+	onJoin: () => void
+}) {
+	if (isPending) {
+		return (
+			<div className="rounded-action bg-surface-card-muted border border-border-default p-6 flex flex-col sm:flex-row items-center gap-4">
+				<div className="flex items-center justify-center size-12 rounded-full bg-surface-card border border-border-default shrink-0">
+					<Icon as={LockSvg} size="md" color="secondary" />
+				</div>
+				<div className="flex-1 min-w-0 text-center sm:text-left">
+					<p className="text-body-md font-semibold text-text-primary">Request pending approval</p>
+					<p className="text-label-sm text-text-secondary mt-0.5 leading-snug">
+						Your request to join{" "}
+						<span className="font-semibold text-text-primary">{communityName}</span> is awaiting
+						admin review.
+					</p>
+				</div>
+			</div>
+		)
+	}
+
+	if (access === "INVITE_ONLY") {
+		return (
+			<div className="rounded-action bg-surface-card-muted border border-border-default p-6 flex flex-col sm:flex-row items-center gap-4">
+				<div className="flex items-center justify-center size-12 rounded-full bg-surface-card border border-border-default shrink-0">
+					<Icon as={LockSvg} size="md" color="secondary" />
+				</div>
+				<div className="flex-1 min-w-0 text-center sm:text-left">
+					<p className="text-body-md font-semibold text-text-primary">Invite only community</p>
+					<p className="text-label-sm text-text-secondary mt-0.5 leading-snug">
+						You need an invitation from an admin to join{" "}
+						<span className="font-semibold text-text-primary">{communityName}</span>.
+					</p>
+				</div>
+			</div>
+		)
+	}
+
+	return (
+		<div className="rounded-action bg-surface-brand-soft border border-border-focus p-6 flex flex-col sm:flex-row items-center gap-4">
+			<div className="flex items-center justify-center size-12 rounded-full bg-action-primary shrink-0">
+				<Icon as={BoltSvg} size="md" color="inverse" />
+			</div>
+			<div className="flex-1 min-w-0 text-center sm:text-left">
+				<p className="text-body-md font-semibold text-text-primary">
+					{access === "PUBLIC" ? "Join " : "Request access to "}
+					<span className="text-text-brand">{communityName}</span> to unlock everything
+				</p>
+				<p className="text-label-sm text-text-secondary mt-0.5 leading-snug">
+					Members get the community feed, announcements, audience insights, and can publish
+					experiences.
+				</p>
+			</div>
+			<Button
+				variant="primary"
+				size="md"
+				radius="pill"
+				className="shrink-0"
+				disabled={joining}
+				onClick={onJoin}
+			>
+				{access === "PUBLIC"
+					? joining
+						? "Joining…"
+						: "Join Community"
+					: joining
+						? "Requesting…"
+						: "Request Access"}
+			</Button>
+		</div>
+	)
+}
+
+// ─── Locked tab placeholder ───────────────────────────────────────────────────
+
+function HostLockedTabContent({
+	tabLabel,
+	communityName,
+	access,
+	isPending,
+	joining,
+	onJoin,
+}: {
+	tabLabel: string
+	communityName: string
+	access: HostCommunityAccess
+	isPending: boolean
+	joining: boolean
+	onJoin: () => void
+}) {
+	const ctaLabel = isPending
+		? null
+		: access === "INVITE_ONLY"
+			? null
+			: access === "PUBLIC"
+				? joining
+					? "Joining…"
+					: "Join Community"
+				: joining
+					? "Requesting…"
+					: "Request Access"
+
+	const description = isPending
+		? "Your request to join is awaiting admin review."
+		: access === "INVITE_ONLY"
+			? "You need an invitation from an admin to access this section."
+			: `Join ${communityName} to access ${tabLabel.toLowerCase()} and more.`
+
+	return (
+		<div className="px-4 sm:px-6 lg:px-8 pt-2 pb-6">
+			<div className="rounded-action bg-surface-brand-soft border border-border-focus p-6 flex flex-col sm:flex-row items-center gap-4">
+				<div className="flex items-center justify-center size-12 rounded-full bg-action-primary shrink-0">
+					<Icon as={LockSvg} size="md" color="inverse" />
+				</div>
+				<div className="flex-1 min-w-0 text-center sm:text-left">
+					<p className="text-body-md font-semibold text-text-primary">{tabLabel} is members-only</p>
+					<p className="text-label-sm text-text-secondary mt-0.5 leading-snug">{description}</p>
+				</div>
+				{ctaLabel && (
+					<Button
+						variant="primary"
+						size="md"
+						radius="pill"
+						className="shrink-0"
+						disabled={joining}
+						onClick={onJoin}
+					>
+						{ctaLabel}
+					</Button>
+				)}
+			</div>
+		</div>
+	)
+}
+
 // ─── Upcoming Experience Card ─────────────────────────────────────────────────
 
 function UpcomingExperienceCard({ exp }: { exp: HostCommunityUpcomingExperience }) {
@@ -739,6 +891,13 @@ export default function HostCommunityDetailPage() {
 	const [publishModalOpen, setPublishModalOpen] = useState(false)
 	const [expRefreshKey, setExpRefreshKey] = useState(0)
 
+	// Join / request access state
+	const [joining, setJoining] = useState(false)
+	const [joinModalOpen, setJoinModalOpen] = useState(false)
+
+	// Leave community state
+	const [leaveModalOpen, setLeaveModalOpen] = useState(false)
+
 	// Announcements tab state
 	const [annItems, setAnnItems] = useState<HostCommunityAnnouncement[]>([])
 	const [annTotal, setAnnTotal] = useState(0)
@@ -775,7 +934,7 @@ export default function HostCommunityDetailPage() {
 
 	// Experiences: re-fetch when tab is active or page changes
 	useEffect(() => {
-		if (activeTab !== "EXPERIENCES") return
+		if (activeTab !== "EXPERIENCES" || !data?.hostContext.isMember) return
 		let cancelled = false
 		async function load() {
 			setExpLoading(true)
@@ -793,7 +952,7 @@ export default function HostCommunityDetailPage() {
 		return () => {
 			cancelled = true
 		}
-	}, [activeTab, id, expPage, expRefreshKey])
+	}, [activeTab, id, expPage, expRefreshKey, data?.hostContext.isMember])
 
 	// Sidebar: lazy-load once when any tab that uses it opens
 	useEffect(() => {
@@ -802,6 +961,7 @@ export default function HostCommunityDetailPage() {
 				activeTab !== "HOST_PERMISSIONS" &&
 				activeTab !== "ANNOUNCEMENTS" &&
 				activeTab !== "FEED") ||
+			!data?.hostContext.isMember ||
 			sidebarFetched.current
 		)
 			return
@@ -819,7 +979,7 @@ export default function HostCommunityDetailPage() {
 		return () => {
 			cancelled = true
 		}
-	}, [activeTab, id])
+	}, [activeTab, id, data?.hostContext.isMember])
 
 	// Kebab: close when clicking outside (experiences)
 	useEffect(() => {
@@ -843,7 +1003,7 @@ export default function HostCommunityDetailPage() {
 
 	// Announcements list: re-fetch when tab opens, page changes, or filter changes
 	useEffect(() => {
-		if (activeTab !== "ANNOUNCEMENTS") return
+		if (activeTab !== "ANNOUNCEMENTS" || !data?.hostContext.isMember) return
 		let cancelled = false
 		async function load() {
 			setAnnLoading(true)
@@ -869,11 +1029,11 @@ export default function HostCommunityDetailPage() {
 		return () => {
 			cancelled = true
 		}
-	}, [activeTab, id, annPage])
+	}, [activeTab, id, annPage, data?.hostContext.isMember])
 
 	// Announcements stats: lazy-load once
 	useEffect(() => {
-		if (activeTab !== "ANNOUNCEMENTS" || annStatsFetched.current) return
+		if (activeTab !== "ANNOUNCEMENTS" || !data?.hostContext.isMember || annStatsFetched.current) return
 		annStatsFetched.current = true
 		let cancelled = false
 		setAnnStatsLoading(true)
@@ -888,11 +1048,11 @@ export default function HostCommunityDetailPage() {
 		return () => {
 			cancelled = true
 		}
-	}, [activeTab, id])
+	}, [activeTab, id, data?.hostContext.isMember])
 
 	// Lazy-load audience data the first time the Audience tab is opened
 	useEffect(() => {
-		if (activeTab !== "AUDIENCE" || audienceFetched.current) return
+		if (activeTab !== "AUDIENCE" || !data?.hostContext.isMember || audienceFetched.current) return
 		audienceFetched.current = true
 		let cancelled = false
 		setAudienceLoading(true)
@@ -910,7 +1070,7 @@ export default function HostCommunityDetailPage() {
 		return () => {
 			cancelled = true
 		}
-	}, [activeTab, id])
+	}, [activeTab, id, data?.hostContext.isMember])
 
 	if (loading) return <LoadingSkeleton />
 
@@ -943,6 +1103,31 @@ export default function HostCommunityDetailPage() {
 
 	const { community, audience, hostContext, stats, upcomingExperiences } = data
 	const accessCfg = ACCESS_CONFIG[community.access]
+
+	async function handleJoinOrRequest() {
+		if (joining) return
+		setJoining(true)
+		try {
+			const res = await joinCommunity(id, "COMMUNITY_MEMBERS")
+			toast.success(
+				res.status === "ACTIVE" ? `You've joined ${community.name}` : "Request sent — pending approval",
+			)
+			setJoinModalOpen(false)
+			setRefreshKey(k => k + 1)
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
+		} finally {
+			setJoining(false)
+		}
+	}
+
+	async function handleLeave() {
+		await leaveCommunity(id)
+		toast.success(`You've left ${community.name}`)
+		setLeaveModalOpen(false)
+		setRefreshKey(k => k + 1)
+	}
+
 	const cityLabel = community.communityCities.length > 1 ? "All Cities" : community.primaryCity
 	const activePermissions = Object.entries(hostContext.permissions)
 		.filter(([, v]) => v)
@@ -1073,6 +1258,19 @@ export default function HostCommunityDetailPage() {
 							)}
 						</div>
 					</div>
+
+					{/* ── Join / request access banner ─────────────────────── */}
+					{!hostContext.isMember && (
+						<div className="pt-5">
+							<HostCommunityJoinBanner
+								communityName={community.name}
+								access={community.access}
+								isPending={hostContext.isPending}
+								joining={joining}
+								onJoin={() => setJoinModalOpen(true)}
+							/>
+						</div>
+					)}
 				</div>
 
 				{/* ── Tab navigation ───────────────────────────────────────── */}
@@ -1116,6 +1314,7 @@ export default function HostCommunityDetailPage() {
 								</div>
 
 								{/* Metrics grid */}
+								{hostContext.isMember && (
 								<div className="grid grid-cols-2 gap-4">
 									{/* Members */}
 									<div className="rounded-action bg-surface-card border border-border-default  p-5">
@@ -1244,6 +1443,7 @@ export default function HostCommunityDetailPage() {
 										</button> */}
 									</div>
 								</div>
+								)}
 
 								{/* Upcoming Experiences */}
 								<div>
@@ -1325,69 +1525,107 @@ export default function HostCommunityDetailPage() {
 
 								{/* Action buttons */}
 								<div className="flex flex-col gap-2">
-									<Button
-										variant="primary"
-										size="md"
-										radius="md"
-										className="w-full"
-										disabled={!hostContext.permissions.canSubmitExperiences}
-										leftIcon={<Icon as={PlaneSvg} size="sm" color="inherit" />}
-										onClick={() => setPublishModalOpen(true)}
-									>
-										Publish an Experience
-									</Button>
+									{hostContext.isMember ? (
+										<>
+											<Button
+												variant="primary"
+												size="md"
+												radius="md"
+												className="w-full"
+												disabled={!hostContext.permissions.canSubmitExperiences}
+												leftIcon={<Icon as={PlaneSvg} size="sm" color="inherit" />}
+												onClick={() => setPublishModalOpen(true)}
+											>
+												Publish an Experience
+											</Button>
+											{hostContext.role !== "OWNER" && (
+												<Button
+													variant="secondary"
+													size="md"
+													radius="md"
+													className="w-full text-red-600 hover:bg-red-50 border-red-200"
+													onClick={() => setLeaveModalOpen(true)}
+												>
+													Leave Community
+												</Button>
+											)}
+										</>
+									) : (
+										community.access !== "INVITE_ONLY" && (
+											<Button
+												variant="primary"
+												size="md"
+												radius="md"
+												className="w-full"
+												disabled={joining || hostContext.isPending}
+												onClick={() => setJoinModalOpen(true)}
+											>
+												{hostContext.isPending
+													? "Requested"
+													: community.access === "PUBLIC"
+														? joining
+															? "Joining…"
+															: "Join Community"
+														: joining
+															? "Requesting…"
+															: "Request Access"}
+											</Button>
+										)
+									)}
 								</div>
 
 								{/* Community Stats */}
-								<div className="rounded-action bg-surface-card border border-border-default  p-5">
-									<div className="flex items-center gap-2 mb-4">
-										<Icon as={Chart2Svg} size="lg" color="info" />
-										<p className="text-body-md font-semibold text-text-primary">
-											Community Stats
-										</p>
+								{hostContext.isMember && (
+									<div className="rounded-action bg-surface-card border border-border-default  p-5">
+										<div className="flex items-center gap-2 mb-4">
+											<Icon as={Chart2Svg} size="lg" color="info" />
+											<p className="text-body-md font-semibold text-text-primary">
+												Community Stats
+											</p>
+										</div>
+										<div className="flex flex-col divide-y divide-border-subtle">
+											<div className="flex items-center justify-between py-2.5 first:pt-0">
+												<span className="text-label-sm text-text-secondary">
+													Total Community Views
+												</span>
+												<span className="text-label-sm font-semibold text-text-primary">
+													{stats.totalViews.toLocaleString()}
+												</span>
+											</div>
+											<div className="flex items-center justify-between py-2.5">
+												<span className="text-label-sm text-text-secondary">
+													Experiences Published
+												</span>
+												<span className="text-label-sm font-semibold text-text-primary">
+													{stats.experiencesPublished}
+												</span>
+											</div>
+											<div className="flex items-center justify-between py-2.5">
+												<span className="text-label-sm text-text-secondary">
+													Monthly Active Members
+												</span>
+												<span className="text-label-sm font-semibold text-text-primary">
+													{stats.monthlyActiveMembers.toLocaleString()}
+												</span>
+											</div>
+											<div className="flex items-center justify-between py-2.5 last:pb-0">
+												<span className="text-label-sm text-text-secondary">
+													Avg. Engagement Rate
+												</span>
+												<span className="text-label-sm font-semibold text-text-primary">
+													{stats.avgEngagementRate}%
+												</span>
+											</div>
+										</div>
 									</div>
-									<div className="flex flex-col divide-y divide-border-subtle">
-										<div className="flex items-center justify-between py-2.5 first:pt-0">
-											<span className="text-label-sm text-text-secondary">
-												Total Community Views
-											</span>
-											<span className="text-label-sm font-semibold text-text-primary">
-												{stats.totalViews.toLocaleString()}
-											</span>
-										</div>
-										<div className="flex items-center justify-between py-2.5">
-											<span className="text-label-sm text-text-secondary">
-												Experiences Published
-											</span>
-											<span className="text-label-sm font-semibold text-text-primary">
-												{stats.experiencesPublished}
-											</span>
-										</div>
-										<div className="flex items-center justify-between py-2.5">
-											<span className="text-label-sm text-text-secondary">
-												Monthly Active Members
-											</span>
-											<span className="text-label-sm font-semibold text-text-primary">
-												{stats.monthlyActiveMembers.toLocaleString()}
-											</span>
-										</div>
-										<div className="flex items-center justify-between py-2.5 last:pb-0">
-											<span className="text-label-sm text-text-secondary">
-												Avg. Engagement Rate
-											</span>
-											<span className="text-label-sm font-semibold text-text-primary">
-												{stats.avgEngagementRate}%
-											</span>
-										</div>
-									</div>
-								</div>
+								)}
 							</div>
 						</div>
 					</div>
 				)}
 
 				{/* ── Feed tab ─────────────────────────────────────────────── */}
-				{activeTab === "FEED" && (
+				{activeTab === "FEED" && hostContext.isMember && (
 					<div className="px-4 sm:px-6 lg:px-8 pt-2 pb-6">
 						<div className="flex gap-6 items-start">
 							{/* Main content */}
@@ -1550,7 +1788,7 @@ export default function HostCommunityDetailPage() {
 				)}
 
 				{/* ── Audience tab ─────────────────────────────────────────── */}
-				{activeTab === "AUDIENCE" && (
+				{activeTab === "AUDIENCE" && hostContext.isMember && (
 					<div className="px-4 sm:px-6 lg:px-8 pt-2 pb-6">
 						{audienceLoading && (
 							<div className="flex gap-6 items-start">
@@ -2062,7 +2300,7 @@ export default function HostCommunityDetailPage() {
 				)}
 
 				{/* ── Experiences tab ──────────────────────────────────────── */}
-				{activeTab === "EXPERIENCES" && (
+				{activeTab === "EXPERIENCES" && hostContext.isMember && (
 					<div className="px-4 sm:px-6 lg:px-8 pt-2 pb-6">
 						<div className="flex gap-6 items-start">
 							{/* Main content */}
@@ -2302,7 +2540,7 @@ export default function HostCommunityDetailPage() {
 				)}
 
 				{/* ── Host Permissions tab ─────────────────────────────────── */}
-				{activeTab === "HOST_PERMISSIONS" && (
+				{activeTab === "HOST_PERMISSIONS" && hostContext.isMember && (
 					<div className="px-4 sm:px-6 lg:px-8 pt-2 pb-6">
 						<div className="flex gap-6 items-start">
 							{/* Main content */}
@@ -2565,7 +2803,7 @@ export default function HostCommunityDetailPage() {
 				)}
 
 				{/* ── Announcements tab ────────────────────────────────────── */}
-				{activeTab === "ANNOUNCEMENTS" && (
+				{activeTab === "ANNOUNCEMENTS" && hostContext.isMember && (
 					<div className="px-4 sm:px-6 lg:px-8 pt-2 pb-6">
 						<div className="flex gap-6 items-start">
 							{/* Main content */}
@@ -2941,8 +3179,21 @@ export default function HostCommunityDetailPage() {
 					</div>
 				)}
 
+				{/* ── Locked tab placeholder (non-members) ─────────────────── */}
+				{activeTab !== "OVERVIEW" && !hostContext.isMember && (
+					<HostLockedTabContent
+						tabLabel={TABS.find(t => t.value === activeTab)?.label ?? "This section"}
+						communityName={community.name}
+						access={community.access}
+						isPending={hostContext.isPending}
+						joining={joining}
+						onJoin={handleJoinOrRequest}
+					/>
+				)}
+
 				{/* ── Stub for unimplemented tabs ──────────────────────────── */}
-				{activeTab !== "OVERVIEW" &&
+				{hostContext.isMember &&
+					activeTab !== "OVERVIEW" &&
 					activeTab !== "AUDIENCE" &&
 					activeTab !== "EXPERIENCES" &&
 					activeTab !== "HOST_PERMISSIONS" &&
@@ -2972,6 +3223,27 @@ export default function HostCommunityDetailPage() {
 					setExpRefreshKey(k => k + 1)
 					setRefreshKey(k => k + 1)
 				}}
+			/>
+
+			<LeaveCommunityModal
+				communityName={community.name}
+				open={leaveModalOpen}
+				onClose={() => setLeaveModalOpen(false)}
+				onConfirm={async () => {
+					try {
+						await handleLeave()
+					} catch (err) {
+						toast.error(getApiErrorMessage(err))
+					}
+				}}
+			/>
+
+			<JoinCommunityConfirmModal
+				communityName={community.name}
+				isRequestOnly={community.access === "APPROVAL_REQUIRED"}
+				open={joinModalOpen}
+				onClose={() => setJoinModalOpen(false)}
+				onConfirm={handleJoinOrRequest}
 			/>
 		</div>
 	)
