@@ -32,6 +32,10 @@ function getIconConfig(type: NotificationType): IconConfig {
 			return { icon: DangerCircleSvg, iconBg: "bg-blue-50", iconColor: "text-blue-500" }
 		case "event_cancelled":
 			return { icon: DangerTriangleSvg, iconBg: "bg-amber-50", iconColor: "text-amber-500" }
+		case "event_changes_approved":
+			return { icon: CheckCircleSvg, iconBg: "bg-emerald-50", iconColor: "text-emerald-600" }
+		case "event_changes_rejected":
+			return { icon: CloseCircleSvg, iconBg: "bg-neutral-100", iconColor: "text-neutral-700" }
 		case "booking_confirmed":
 			return { icon: TicketSvg, iconBg: "bg-emerald-50", iconColor: "text-emerald-600" }
 		case "booking_cancelled":

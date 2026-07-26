@@ -733,13 +733,13 @@ function Step3MediaUpload({
 	const hasGallery = galleryKeys.some(k => k !== "")
 
 	const errors = useMemo(
-		() => (validated ? validateStep3({ coverKey, hasGallery }) : {}),
+		() => (validated ? validateStep3({ hasCover: !!coverKey, hasGallery }) : {}),
 		[validated, coverKey, hasGallery],
 	)
 
 	const validate = useCallback(() => {
 		setValidated(true)
-		return Object.keys(validateStep3({ coverKey, hasGallery })).length === 0
+		return Object.keys(validateStep3({ hasCover: !!coverKey, hasGallery })).length === 0
 	}, [coverKey, hasGallery])
 
 	useEffect(() => {
