@@ -2,6 +2,8 @@
 
 import { CopilotPanel, type CopilotPanelState, type EventSummaryData } from "@/components/aiCopilot/CopilotPanel"
 import { VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
+import { DateField } from "@/components/eventForm/DateField"
+import { TimeField } from "@/components/eventForm/TimeField"
 import {
 	ErrMsg,
 	FieldLabel,
@@ -50,9 +52,7 @@ import { toast } from "sonner"
 import AiAvatarSvg from "@/assets/ai-avatar.svg"
 import StarsSvg from "@/icons/filled/stars.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
-import CalendarSvg from "@/icons/outlined/calendar.svg"
 import CameraAddSvg from "@/icons/outlined/camera-add.svg"
-import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
 import FileTextSvg from "@/icons/outlined/file-text.svg"
 import GalleryWideSvg from "@/icons/outlined/gallery-wide.svg"
 import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
@@ -61,6 +61,12 @@ import TicketSvg from "@/icons/outlined/ticket.svg"
 import UploadSvg from "@/icons/outlined/upload.svg"
 
 import type { ComponentType, SVGProps } from "react"
+
+function startOfToday() {
+	const d = new Date()
+	d.setHours(0, 0, 0, 0)
+	return d
+}
 
 // ─── Step definitions ──────────────────────────────────────────────────────────
 
@@ -563,18 +569,6 @@ function Step2DateTime({
 		setFormData(prev => ({ ...prev, [key]: value }))
 	}
 
-	const eventDateRef = useRef<HTMLInputElement>(null)
-	const startTimeRef = useRef<HTMLInputElement>(null)
-	const endTimeRef = useRef<HTMLInputElement>(null)
-
-	function openPicker(ref: React.RefObject<HTMLInputElement | null>) {
-		try {
-			ref.current?.showPicker?.()
-		} catch {
-			// showPicker isn't supported in every browser — clicking the input directly still works
-		}
-	}
-
 	return (
 		<div className="flex flex-col gap-6">
 			<div>
@@ -589,47 +583,24 @@ function Step2DateTime({
 
 				<div className="flex flex-col gap-1.5">
 					<FieldLabel required>Event Date</FieldLabel>
-					<div className={iconWrapCls(!!errors.eventDate)} onClick={() => openPicker(eventDateRef)}>
-						<Icon as={CalendarSvg} size="md" color="secondary" />
-						<input
-							ref={eventDateRef}
-							type="date"
-							value={eventDate}
-							min={new Date().toISOString().split("T")[0]}
-							onChange={e => set("eventDate", e.target.value)}
-							className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute"
-						/>
-					</div>
+					<DateField
+						value={eventDate}
+						onChange={v => set("eventDate", v)}
+						error={!!errors.eventDate}
+						minDate={startOfToday()}
+					/>
 					<ErrMsg msg={errors.eventDate} />
 				</div>
 
 				<div className="grid grid-cols-2 gap-4">
 					<div className="flex flex-col gap-1.5">
 						<FieldLabel required>Start Time</FieldLabel>
-						<div className={iconWrapCls(!!errors.startTime)} onClick={() => openPicker(startTimeRef)}>
-							<Icon as={ClockCircleSvg} size="md" color="secondary" />
-							<input
-								ref={startTimeRef}
-								type="time"
-								value={startTime}
-								onChange={e => set("startTime", e.target.value)}
-								className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute"
-							/>
-						</div>
+						<TimeField value={startTime} onChange={v => set("startTime", v)} error={!!errors.startTime} />
 						<ErrMsg msg={errors.startTime} />
 					</div>
 					<div className="flex flex-col gap-1.5">
 						<FieldLabel required>End Time</FieldLabel>
-						<div className={iconWrapCls(!!errors.endTime)} onClick={() => openPicker(endTimeRef)}>
-							<Icon as={ClockCircleSvg} size="md" color="secondary" />
-							<input
-								ref={endTimeRef}
-								type="time"
-								value={endTime}
-								onChange={e => set("endTime", e.target.value)}
-								className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute"
-							/>
-						</div>
+						<TimeField value={endTime} onChange={v => set("endTime", v)} error={!!errors.endTime} />
 						<ErrMsg msg={errors.endTime} />
 					</div>
 				</div>
@@ -733,13 +704,13 @@ function Step3MediaUpload({
 	const hasGallery = galleryKeys.some(k => k !== "")
 
 	const errors = useMemo(
-		() => (validated ? validateStep3({ coverKey, hasGallery }) : {}),
+		() => (validated ? validateStep3({ hasCover: !!coverKey, hasGallery }) : {}),
 		[validated, coverKey, hasGallery],
 	)
 
 	const validate = useCallback(() => {
 		setValidated(true)
-		return Object.keys(validateStep3({ coverKey, hasGallery })).length === 0
+		return Object.keys(validateStep3({ hasCover: !!coverKey, hasGallery })).length === 0
 	}, [coverKey, hasGallery])
 
 	useEffect(() => {

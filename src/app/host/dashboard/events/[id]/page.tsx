@@ -35,6 +35,26 @@ const STATUS_CONFIG: Record<ApiEventStatus, { label: string; badge: string }> = 
 	COMPLETED: { label: "Completed", badge: "bg-neutral-900/90 text-white backdrop-blur-sm shadow-sm" },
 }
 
+// ─── Revision field labels ────────────────────────────────────────────────────
+
+const REVISION_FIELD_LABEL: Record<string, string> = {
+	categoryId: "Category",
+	title: "Title",
+	description: "Description",
+	eventType: "Event Type",
+	languages: "Languages",
+	tags: "Tags",
+	whatToExpect: "What to Expect",
+	whoShouldAttend: "Who Should Attend",
+	specialInstructions: "Special Instructions",
+	media: "Media",
+	venueName: "Venue Name",
+	fullAddress: "Full Address",
+	city: "City",
+	latitude: "Latitude",
+	longitude: "Longitude",
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(iso?: string): string {
@@ -188,6 +208,35 @@ export default function EventDetailPage() {
 						</div>
 					)}
 
+					{/* Pending revision banner */}
+					{event.pendingRevision && (
+						<div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-action mb-5">
+							<AlertIcon className="text-blue-500 shrink-0 mt-0.5" />
+							<div>
+								<p className="text-label-sm font-semibold text-blue-700 mb-0.5">
+									Edits awaiting review
+								</p>
+								<p className="text-body-sm text-blue-600 mb-2">
+									Submitted on {formatDate(event.pendingRevision.createdAt)}. This event is still
+									showing its currently published version — your changes go live once an admin
+									approves them.
+								</p>
+								{Object.keys(event.pendingRevision.changes).length > 0 && (
+									<div className="flex flex-wrap gap-1.5">
+										{Object.keys(event.pendingRevision.changes).map((field) => (
+											<span
+												key={field}
+												className="text-caption text-blue-700 bg-blue-100 px-2 py-0.5 rounded-badge"
+											>
+												{REVISION_FIELD_LABEL[field] ?? field}
+											</span>
+										))}
+									</div>
+								)}
+							</div>
+						</div>
+					)}
+
 					{/* Two-column layout */}
 					<div className="grid grid-cols-1 lg:grid-cols-[1fr_288px] gap-6">
 						{/* Left — main content */}
@@ -299,7 +348,13 @@ export default function EventDetailPage() {
 											toast.error(getApiErrorMessage(err))
 										}
 									}}
-									onEdit={() => router.push(`/host/dashboard/events/${event.id}/edit`)}
+									onEdit={() =>
+										router.push(
+											event.status === "PUBLISHED"
+												? `/host/dashboard/events/${event.id}/revise`
+												: `/host/dashboard/events/${event.id}/edit`,
+										)
+									}
 									onCancel={cancelEvent}
 								/>
 							</div>
@@ -483,16 +538,27 @@ function EventActions({
 
 		case "UNDER_REVIEW":
 			return (
-				<p className="text-body-sm text-text-muted">
-					Your event is currently under review. We&apos;ll notify you once it&apos;s approved or if
-					changes are needed.
-				</p>
+				<div className="flex flex-col gap-2">
+					<p className="text-[12px] text-text-secondary">
+						Your event is currently under review. We&apos;ll notify you once it&apos;s approved or if
+						changes are needed.
+					</p>
+					<ActionButton variant="secondary" icon={<PenIcon />} onClick={onEdit}>
+						Edit Event
+					</ActionButton>
+					<p className="text-caption text-amber-700 bg-amber-50 border border-amber-200 rounded-action px-3 py-2">
+						Editing will move this event back to draft — you&apos;ll need to submit it for review again.
+					</p>
+				</div>
 			)
 
 		case "PUBLISHED":
 			return (
 				<>
 					<div className="flex flex-col gap-2">
+						<ActionButton variant="secondary" icon={<PenIcon />} onClick={onEdit}>
+							Edit Event
+						</ActionButton>
 						<ActionButton
 							variant="secondary"
 							icon={<ScannerStaffIcon />}

@@ -59,6 +59,40 @@ export interface EventDraftPayload {
 	media?: EventMedia[]
 }
 
+export interface UpdatePublishedEventPayload {
+	categoryId?: string
+	title?: string
+	description?: string
+	eventType?: string
+	languages?: string[]
+	tags?: string[]
+	whatToExpect?: string[]
+	whoShouldAttend?: string[]
+	specialInstructions?: string
+	media?: EventMedia[]
+	venueName?: string
+	fullAddress?: string
+	city?: string
+	latitude?: number
+	longitude?: number
+}
+
+export type EventRevisionChanges = UpdatePublishedEventPayload
+
+export interface EventRevision {
+	id: string
+	eventId: string
+	status: "PENDING"
+	touchesVenue: boolean
+	submittedBy: string
+	changes: EventRevisionChanges
+	adminRemark: string | null
+	reviewedBy: string | null
+	reviewedAt: string | null
+	createdAt: string
+	updatedAt: string
+}
+
 export interface Event {
 	id: string
 	status: ApiEventStatus
@@ -69,6 +103,7 @@ export interface Event {
 	rejectionReason?: string
 	cancellationReason?: string
 	adminRejectionRemark?: string | null
+	pendingRevision?: EventRevision | null
 	// List-response computed fields
 	coverImageUrl?: string
 	totalCapacity?: number

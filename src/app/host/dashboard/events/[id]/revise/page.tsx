@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { Dropdown } from "@/components/ui/Dropdown"
 import { Icon } from "@/components/ui/Icon"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
-import { getMyEventDetail, updateEventDraft, submitEventForReview, getCategories, type Category } from "@/lib/api"
+import { getMyEventDetail, getCategories, reviseEvent, type Category, type EventRevision } from "@/lib/api"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { getApiErrorMessage } from "@/lib/errors"
 import { uploadEventMedia } from "@/lib/uploadMedia"
@@ -16,15 +16,17 @@ import {
 	EVENT_TYPE_OPTIONS,
 	defaultFormData,
 	eventToFormData,
-	buildPayload,
-	validateAll,
+	buildRevisionPayload,
+	venueFieldsChanged,
+	validateStep1,
+	validateStep3,
 	validateMediaKeys,
+	to12Hour,
 	type FormData,
 	type Errors,
 } from "@/lib/eventForm"
 import {
 	inpCls,
-	iconWrapCls,
 	taCls,
 	FieldLabel,
 	ErrMsg,
@@ -32,34 +34,49 @@ import {
 	PillInput,
 } from "@/components/eventForm/shared"
 import { VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
-import { DateField } from "@/components/eventForm/DateField"
-import { TimeField } from "@/components/eventForm/TimeField"
-import { TicketListEditor } from "@/components/eventForm/TicketListEditor"
-import type { ApiEventStatus } from "@/types/event"
 
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
-import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
 import CameraAddSvg from "@/icons/outlined/camera-add.svg"
 import DangerTriangleSvg from "@/icons/outlined/danger-triangle.svg"
 
-// ─── Status display ───────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const STATUS_BADGE: Record<ApiEventStatus, string> = {
-	DRAFT:        "bg-neutral-100 text-neutral-700",
-	UNDER_REVIEW: "bg-blue-50 text-blue-700",
-	REJECTED:     "bg-red-50 text-red-700",
-	PUBLISHED:    "bg-green-50 text-green-700",
-	CANCELLED:    "bg-orange-50 text-orange-700",
-	COMPLETED:    "bg-neutral-900 text-white",
+function formatDisplayDate(dateInput: string): string {
+	if (!dateInput) return "—"
+	const d = new Date(`${dateInput}T00:00:00`)
+	if (isNaN(d.getTime())) return dateInput
+	return d.toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })
 }
 
-const STATUS_LABEL: Record<ApiEventStatus, string> = {
-	DRAFT:        "Draft",
-	UNDER_REVIEW: "Under Review",
-	REJECTED:     "Rejected",
-	PUBLISHED:    "Published",
-	CANCELLED:    "Cancelled",
-	COMPLETED:    "Completed",
+function formatSubmittedAt(iso: string): string {
+	const d = new Date(iso)
+	if (isNaN(d.getTime())) return iso
+	return d.toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })
+}
+
+const VISIBILITY_LABEL: Record<string, string> = {
+	PUBLIC: "Public Searchable",
+	PRIVATE: "Private",
+}
+
+const REFUND_LABEL: Record<string, string> = {
+	NO_REFUND: "No Refund",
+	FULL: "Full Refund",
+	PARTIAL: "Partial Refund",
+}
+
+function validateRevision(f: FormData, venueTouched: boolean, mediaTouched: boolean): Errors {
+	const e: Errors = {
+		...validateStep1(f),
+		...validateStep3({ hasCover: !!f.coverUrl, hasGallery: f.gallerySlots.some((s) => s !== "") }),
+		...validateMediaKeys(f, mediaTouched),
+	}
+	if (!f.venueName.trim()) e.venueName = "Venue name is required."
+	if (!f.fullAddress.trim()) e.fullAddress = "Full address is required."
+	if (!e.venueName && venueTouched && (f.latitude == null || f.longitude == null)) {
+		e.venueName = "Re-select the venue from the suggestions so we can capture its coordinates."
+	}
+	return e
 }
 
 // ─── Section card wrapper ─────────────────────────────────────────────────────
@@ -84,23 +101,31 @@ function SectionCard({
 	)
 }
 
+function LockedRow({ label, value }: { label: string; value: string }) {
+	return (
+		<div className="flex items-center justify-between gap-3 py-2 border-b border-border-default last:border-b-0">
+			<span className="text-body-sm text-text-secondary">{label}</span>
+			<span className="text-body-sm font-medium text-text-primary text-right">{value}</span>
+		</div>
+	)
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function EditEventPage() {
+export default function ReviseEventPage() {
 	const params = useParams()
 	const router = useRouter()
 	const id = params.id as string
 
 	const [formData, setFormData] = useState<FormData>(defaultFormData)
-	const [originalStatus, setOriginalStatus] = useState<ApiEventStatus | null>(null)
+	const [initialFormData, setInitialFormData] = useState<FormData>(defaultFormData)
 	const [loading, setLoading] = useState(true)
 	const [loadError, setLoadError] = useState<string | null>(null)
 	const [categories, setCategories] = useState<Category[]>([])
 	const [categoriesLoading, setCategoriesLoading] = useState(true)
 	const [saving, setSaving] = useState(false)
-	const [submitting, setSubmitting] = useState(false)
 	const [validated, setValidated] = useState(false)
-	const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
+	const [pendingRevision, setPendingRevision] = useState<EventRevision | null>(null)
 
 	const [coverUploading, setCoverUploading] = useState(false)
 	const [galleryUploading, setGalleryUploading] = useState<boolean[]>(Array(6).fill(false))
@@ -114,17 +139,15 @@ export default function EditEventPage() {
 	useEffect(() => {
 		Promise.all([getMyEventDetail(id), getCategories()])
 			.then(([event, cats]) => {
-				if (event.status === "PUBLISHED") {
-					router.replace(`/host/dashboard/events/${id}/revise`)
-					return
-				}
-				if (event.status !== "DRAFT" && event.status !== "UNDER_REVIEW") {
+				if (event.status !== "PUBLISHED") {
 					router.replace(`/host/dashboard/events/${id}`)
 					return
 				}
-				setFormData(eventToFormData(event))
-				setOriginalStatus(event.status)
+				const fd = eventToFormData(event)
+				setFormData(fd)
+				setInitialFormData(fd)
 				setCategories(cats)
+				setPendingRevision(event.pendingRevision ?? null)
 			})
 			.catch((err) => setLoadError(getApiErrorMessage(err)))
 			.finally(() => {
@@ -132,11 +155,6 @@ export default function EditEventPage() {
 				setCategoriesLoading(false)
 			})
 	}, [id, router])
-
-	const errors: Errors = useMemo(
-		() => (validated ? { ...validateAll(formData, true), ...validateMediaKeys(formData, mediaTouched) } : {}),
-		[validated, formData, mediaTouched],
-	)
 
 	function set<K extends keyof FormData>(key: K, value: FormData[K]) {
 		setFormData((prev) => ({ ...prev, [key]: value }))
@@ -161,54 +179,43 @@ export default function EditEventPage() {
 	}
 
 	const isMediaUploading = coverUploading || galleryUploading.some(Boolean)
-	const canSubmitForReview = originalStatus === "DRAFT"
 	const categoryOptions = useMemo(() => categories.map((c) => ({ value: c.id, label: c.name })), [categories])
 	const availableLanguages = LANGUAGE_OPTIONS.filter((o) => !formData.languages.includes(o.value))
-	const isPartial = formData.refundType === "PARTIAL"
 
-	async function handleSave() {
+	const venueTouched = venueFieldsChanged(initialFormData, formData)
+	const revisionPayload = useMemo(
+		() => buildRevisionPayload(initialFormData, formData),
+		[initialFormData, formData],
+	)
+	const hasChanges = Object.keys(revisionPayload).length > 0
+
+	const errors: Errors = useMemo(
+		() => (validated ? validateRevision(formData, venueTouched, mediaTouched) : {}),
+		[validated, formData, venueTouched, mediaTouched],
+	)
+
+	async function handleSubmit() {
 		setValidated(true)
-		const errs = { ...validateAll(formData, true), ...validateMediaKeys(formData, mediaTouched) }
+		const errs = validateRevision(formData, venueTouched, mediaTouched)
 		if (Object.keys(errs).length > 0) {
-			toast.error("Please fix the errors before saving.")
+			toast.error("Please fix the errors before submitting.")
 			const firstErrId = Object.keys(errs)[0]
 			document.getElementById(firstErrId)?.scrollIntoView({ behavior: "smooth", block: "center" })
 			return
 		}
+		if (!hasChanges) {
+			toast.error("No changes to submit.")
+			return
+		}
 		setSaving(true)
 		try {
-			const wasUnderReview = originalStatus === "UNDER_REVIEW"
-			const updated = await updateEventDraft(id, buildPayload(formData))
-			if (wasUnderReview && updated.status === "DRAFT") {
-				setOriginalStatus("DRAFT")
-				toast.success("Moved back to draft — submit again for review.")
-			} else {
-				toast.success("Changes saved.")
-			}
+			await reviseEvent(id, revisionPayload)
+			toast.success("Changes submitted for review.")
+			router.push(`/host/dashboard/events/${id}`)
 		} catch (err) {
 			toast.error(getApiErrorMessage(err))
 		} finally {
 			setSaving(false)
-		}
-	}
-
-	async function handleSubmit() {
-		setValidated(true)
-		const errs = { ...validateAll(formData, true), ...validateMediaKeys(formData, mediaTouched) }
-		if (Object.keys(errs).length > 0) {
-			setShowSubmitConfirm(false)
-			toast.error("Please fix the errors before submitting.")
-			return
-		}
-		setSubmitting(true)
-		try {
-			await updateEventDraft(id, buildPayload(formData))
-			await submitEventForReview(id)
-			toast.success("Experience submitted for review!")
-			router.push("/host/dashboard/events")
-		} catch (err) {
-			toast.error(getApiErrorMessage(err))
-			setSubmitting(false)
 		}
 	}
 
@@ -298,7 +305,7 @@ export default function EditEventPage() {
 				<DashboardTopBar />
 				<div className="flex-1 px-6 lg:px-10 py-8 bg-surface-page">
 					<div className="max-w-4xl mx-auto flex flex-col gap-5">
-						{Array.from({ length: 5 }).map((_, i) => (
+						{Array.from({ length: 3 }).map((_, i) => (
 							<div key={i} className="border border-border-default rounded-action bg-surface-card overflow-hidden">
 								<div className="px-6 py-4 border-b border-border-default">
 									<Skeleton.Text className="w-32" />
@@ -332,20 +339,19 @@ export default function EditEventPage() {
 		)
 	}
 
-	const saveBtn = (
+	const submitBtn = (
 		<button
 			type="button"
-			onClick={handleSave}
-			disabled={saving || isMediaUploading}
-			className="flex items-center gap-2 px-5 py-2 bg-surface-inverse text-text-inverse text-label-sm font-semibold rounded-action hover:opacity-90 transition-opacity disabled:opacity-50"
+			onClick={handleSubmit}
+			disabled={saving || isMediaUploading || (validated && !hasChanges)}
+			className="flex items-center gap-2 px-5 py-2 bg-action-primary text-action-primary-text text-label-sm font-semibold rounded-action hover:bg-action-primary-hover transition-colors disabled:opacity-50"
 		>
 			{saving && <MiniSpinner />}
-			Save Changes
+			Submit for Review
 		</button>
 	)
 
 	return (
-		<>
 		<div className="flex flex-col min-h-screen">
 			<DashboardTopBar />
 
@@ -360,39 +366,35 @@ export default function EditEventPage() {
 					>
 						<ArrowLeftSvg className="size-5" aria-hidden />
 					</button>
-					<h2 className="text-label-md font-semibold text-text-primary">Edit Experience</h2>
-					{originalStatus && (
-						<span className={clsx("text-caption font-semibold px-2.5 py-0.5 rounded-badge", STATUS_BADGE[originalStatus])}>
-							{STATUS_LABEL[originalStatus]}
-						</span>
-					)}
+					<h2 className="text-label-md font-semibold text-text-primary">Edit Published Experience</h2>
+					<span className="text-caption font-semibold px-2.5 py-0.5 rounded-badge bg-green-50 text-green-700">
+						Published
+					</span>
 				</div>
-				<div className="flex items-center gap-3">
-					{canSubmitForReview && (
-						<button
-							type="button"
-							onClick={() => setShowSubmitConfirm(true)}
-							disabled={submitting}
-							className="px-4 py-2 text-label-sm font-semibold text-white bg-action-primary rounded-action hover:opacity-90 transition-opacity disabled:opacity-50"
-						>
-							Submit for Review
-						</button>
-					)}
-					{saveBtn}
-				</div>
+				<div className="flex items-center gap-3">{submitBtn}</div>
 			</div>
 
 			{/* Form */}
 			<div className="flex-1 px-6 lg:px-10 py-8 bg-surface-page">
 				<div className="max-w-4xl mx-auto flex flex-col gap-5">
 
-					{/* Recall-to-draft notice */}
-					{originalStatus === "UNDER_REVIEW" && (
+					{/* Review notice */}
+					<div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-action">
+						<Icon as={DangerTriangleSvg} size="md" color="info" className="shrink-0 mt-0.5" />
+						<p className="text-body-sm text-blue-700">
+							Changes to a published event are reviewed by our team before they go live. Your event
+							stays public with its current details until the changes are approved.
+						</p>
+					</div>
+
+					{/* Pending revision overwrite warning */}
+					{pendingRevision && (
 						<div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-action">
 							<Icon as={DangerTriangleSvg} size="md" color="warning" className="shrink-0 mt-0.5" />
 							<p className="text-body-sm text-amber-700">
-								This event is currently under review. Saving any change here will move it back to
-								draft and clear its submission — you&apos;ll need to submit it for review again.
+								You already have edits submitted on {formatSubmittedAt(pendingRevision.createdAt)}{" "}
+								awaiting review. Submitting again here will replace those pending edits — only the
+								latest submission is kept for review.
 							</p>
 						</div>
 					)}
@@ -407,7 +409,6 @@ export default function EditEventPage() {
 								maxLength={100}
 								value={formData.title}
 								onChange={(e) => set("title", e.target.value)}
-								placeholder="e.g. Summer Music Festival 2025"
 								className={inpCls(!!errors.title)}
 							/>
 							<div className="flex items-center justify-between gap-2">
@@ -424,7 +425,6 @@ export default function EditEventPage() {
 								maxLength={3000}
 								value={formData.desc}
 								onChange={(e) => set("desc", e.target.value)}
-								placeholder="Describe your event in detail..."
 								className={taCls(!!errors.desc)}
 							/>
 							<div className="flex items-center justify-between gap-2">
@@ -515,43 +515,29 @@ export default function EditEventPage() {
 							/>
 							<ErrMsg msg={errors.whoShouldAttend} />
 						</div>
-					</SectionCard>
 
-					{/* ── 2. Date & Location ── */}
-					<SectionCard title="Date & Location" subtitle="When and where your event takes place">
-						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel required>Event Date</FieldLabel>
-								<DateField
-									id="eventDate"
-									value={formData.eventDate}
-									onChange={(v) => set("eventDate", v)}
-									error={!!errors.eventDate}
-								/>
-								<ErrMsg msg={errors.eventDate} />
-							</div>
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel required>Start Time</FieldLabel>
-								<TimeField
-									id="startTime"
-									value={formData.startTime}
-									onChange={(v) => set("startTime", v)}
-									error={!!errors.startTime}
-								/>
-								<ErrMsg msg={errors.startTime} />
-							</div>
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel required>End Time</FieldLabel>
-								<TimeField
-									id="endTime"
-									value={formData.endTime}
-									onChange={(v) => set("endTime", v)}
-									error={!!errors.endTime}
-								/>
-								<ErrMsg msg={errors.endTime} />
+						<div className="flex flex-col gap-1.5">
+							<FieldLabel required>Special Instructions</FieldLabel>
+							<textarea
+								id="instructions"
+								rows={4}
+								maxLength={3000}
+								value={formData.instructions}
+								onChange={(e) => set("instructions", e.target.value)}
+								className={taCls(!!errors.instructions)}
+							/>
+							<div className="flex items-center justify-between gap-2">
+								<ErrMsg msg={errors.instructions} />
+								<p className="text-caption text-text-muted ml-auto">{formData.instructions.length}/3000</p>
 							</div>
 						</div>
+					</SectionCard>
 
+					{/* ── 2. Venue ── */}
+					<SectionCard
+						title="Venue"
+						subtitle="Changing the venue notifies everyone who already booked, once an admin approves it"
+					>
 						<div className="flex flex-col gap-1.5">
 							<FieldLabel required>Venue Name</FieldLabel>
 							<VenueAutocompleteInput
@@ -575,17 +561,13 @@ export default function EditEventPage() {
 
 						<div id="fullAddress" className="flex flex-col gap-1.5">
 							<FieldLabel required>Full Address</FieldLabel>
-							<div className={iconWrapCls(!!errors.fullAddress)}>
-								<Icon as={MapPointRotateSvg} size="md" color="secondary" />
-								<input
-									type="text"
-									value={formData.fullAddress}
-									onChange={(e) => set("fullAddress", e.target.value)}
-									onBlur={handleAddressBlur}
-									placeholder="Auto-filled from venue name"
-									className="flex-1 bg-transparent text-sm placeholder:text-text-muted text-text-primary outline-none"
-								/>
-							</div>
+							<input
+								type="text"
+								value={formData.fullAddress}
+								onChange={(e) => set("fullAddress", e.target.value)}
+								onBlur={handleAddressBlur}
+								className={inpCls(!!errors.fullAddress)}
+							/>
 							<ErrMsg msg={errors.fullAddress} />
 						</div>
 
@@ -595,10 +577,16 @@ export default function EditEventPage() {
 								type="text"
 								value={formData.city}
 								onChange={(e) => set("city", e.target.value)}
-								placeholder="e.g. Mumbai"
 								className={inpCls(false)}
 							/>
 						</div>
+
+						{venueTouched && (
+							<p className="text-caption text-amber-600 bg-amber-50 border border-amber-200 rounded-action px-3 py-2">
+								Changing the venue will notify everyone who already booked, once an admin approves it.
+								The event date and time stay the same.
+							</p>
+						)}
 					</SectionCard>
 
 					{/* ── 3. Media ── */}
@@ -740,168 +728,39 @@ export default function EditEventPage() {
 						</div>
 					</SectionCard>
 
-					{/* ── 4. Ticket Types ── */}
-					<SectionCard title="Ticket Types" subtitle="Pricing and capacity for your event">
-						<TicketListEditor
-							tickets={formData.tickets}
-							onChange={(updated) => set("tickets", updated)}
-							listError={errors.tickets}
+					{/* ── 4. Locked details ── */}
+					<SectionCard title="Locked Details" subtitle="These can't be changed on a published event">
+						<LockedRow label="Event Date" value={formatDisplayDate(formData.eventDate)} />
+						<LockedRow
+							label="Time"
+							value={formData.startTime && formData.endTime
+								? `${to12Hour(formData.startTime)} – ${to12Hour(formData.endTime)}`
+								: "—"}
 						/>
-					</SectionCard>
-
-					{/* ── 5. Settings ── */}
-					<SectionCard title="Settings" subtitle="Visibility, restrictions, and refund policy">
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel required>Visibility</FieldLabel>
-								<Dropdown
-									value={formData.visibility}
-									onChange={(v) => set("visibility", v)}
-									error={!!errors.visibility}
-									placeholder="Select Visibility"
-									options={[
-										{ value: "PUBLIC",  label: "Public Searchable" },
-										{ value: "PRIVATE", label: "Private" },
-									]}
-								/>
-								<ErrMsg msg={errors.visibility} />
-							</div>
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel required>Age Restriction</FieldLabel>
-								<Dropdown
-									value={formData.ageRestriction}
-									onChange={(v) => set("ageRestriction", v)}
-									error={!!errors.ageRestriction}
-									placeholder="All Ages"
-									options={[
-										{ value: "All Ages", label: "All Ages" },
-										{ value: "18+",      label: "18+" },
-										{ value: "21+",      label: "21+" },
-									]}
-								/>
-								<ErrMsg msg={errors.ageRestriction} />
-							</div>
-						</div>
-
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel required>Refund Policy</FieldLabel>
-							<Dropdown
-								value={formData.refundType}
-								onChange={(v) => set("refundType", v)}
-								error={!!errors.refundType}
-								placeholder="Select Refund Policy"
-								options={[
-									{ value: "NO_REFUND", label: "No Refund" },
-									{ value: "PARTIAL",   label: "Partial Refund" },
-									{ value: "FULL",      label: "Full Refund" },
-								]}
-							/>
-							<ErrMsg msg={errors.refundType} />
-						</div>
-
-						{isPartial && (
-							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-								<div className="flex flex-col gap-1.5">
-									<FieldLabel required>Cutoff Hours</FieldLabel>
-									<div className={iconWrapCls(!!errors.cutoffHours)}>
-										<input
-											id="cutoffHours"
-											type="number"
-											value={formData.cutoffHours}
-											onChange={(e) => set("cutoffHours", e.target.value)}
-											placeholder="24"
-											min={0}
-											className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
-										/>
-										<span className="text-sm text-text-muted shrink-0">hours</span>
-									</div>
-									<ErrMsg msg={errors.cutoffHours} />
-								</div>
-								<div className="flex flex-col gap-1.5">
-									<FieldLabel required>Refund Percent</FieldLabel>
-									<div className={iconWrapCls(!!errors.refundPercent)}>
-										<input
-											id="refundPercent"
-											type="number"
-											value={formData.refundPercent}
-											onChange={(e) => set("refundPercent", e.target.value)}
-											placeholder="50"
-											min={0}
-											max={100}
-											className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
-										/>
-										<span className="text-sm text-text-muted shrink-0">%</span>
-									</div>
-									<ErrMsg msg={errors.refundPercent} />
-								</div>
-							</div>
-						)}
-
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel required>Special Instructions</FieldLabel>
-							<textarea
-								id="instructions"
-								rows={5}
-								maxLength={3000}
-								value={formData.instructions}
-								onChange={(e) => set("instructions", e.target.value)}
-								placeholder="Any special notes for your attendees…"
-								className={taCls(!!errors.instructions)}
-							/>
-							<div className="flex items-center justify-between gap-2">
-								<ErrMsg msg={errors.instructions} />
-								<p className="text-caption text-text-muted ml-auto">{formData.instructions.length}/3000</p>
-							</div>
-						</div>
+						<LockedRow
+							label="Tickets"
+							value={formData.tickets.length > 0
+								? formData.tickets.map((t) => `${t.name} (₹${t.price})`).join(", ")
+								: "—"}
+						/>
+						<LockedRow
+							label="Refund Policy"
+							value={formData.refundType ? (REFUND_LABEL[formData.refundType] ?? formData.refundType) : "—"}
+						/>
+						<LockedRow
+							label="Visibility"
+							value={formData.visibility ? (VISIBILITY_LABEL[formData.visibility] ?? formData.visibility) : "—"}
+						/>
+						<LockedRow label="Age Restriction" value={formData.ageRestriction || "—"} />
 					</SectionCard>
 
 					{/* Bottom action row */}
 					<div className="flex items-center justify-end gap-3 pb-8">
-						{canSubmitForReview && (
-							<button
-								type="button"
-								onClick={() => setShowSubmitConfirm(true)}
-								disabled={submitting}
-								className="px-4 py-2 text-label-sm font-semibold text-white bg-action-primary rounded-action hover:opacity-90 transition-opacity disabled:opacity-50"
-							>
-								Submit for Review
-							</button>
-						)}
-						{saveBtn}
+						{submitBtn}
 					</div>
 
 				</div>
 			</div>
 		</div>
-
-		{/* Submit confirmation modal */}
-		{showSubmitConfirm && (
-			<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-				<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-sm p-6">
-					<h2 className="text-label-lg font-semibold text-text-primary mb-2">Submit for Review?</h2>
-					<p className="text-body-sm text-text-secondary mb-6">
-						Your latest changes will be saved and the event will be sent to the team for review. You won&apos;t be able to edit it until a decision is made.
-					</p>
-					<div className="flex gap-3 justify-end">
-						<button
-							onClick={() => setShowSubmitConfirm(false)}
-							disabled={submitting}
-							className="px-4 py-2 text-label-sm font-medium text-text-primary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors disabled:opacity-50"
-						>
-							Cancel
-						</button>
-						<button
-							onClick={() => { setShowSubmitConfirm(false); handleSubmit() }}
-							disabled={submitting}
-							className="flex items-center gap-2 px-4 py-2 text-label-sm font-semibold text-white bg-action-primary hover:opacity-90 rounded-action transition-opacity disabled:opacity-60"
-						>
-							{submitting && <MiniSpinner />}
-							Submit
-						</button>
-					</div>
-				</div>
-			</div>
-		)}
-		</>
 	)
 }

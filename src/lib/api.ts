@@ -1,5 +1,5 @@
 import apiClient from "./axios"
-import type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus } from "@/types/event"
+import type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus, EventRevision, UpdatePublishedEventPayload } from "@/types/event"
 
 // ─── Errors ───────────────────────────────────────────────────────────────────
 
@@ -301,7 +301,7 @@ export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
 
 // ─── Events ───────────────────────────────────────────────────────────────────
 
-export type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus }
+export type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus, EventRevision, UpdatePublishedEventPayload }
 
 export async function createEventDraft(payload: EventDraftPayload = {}): Promise<Event> {
 	const { data } = await apiClient.post<{ success: boolean; data: Event }>("/events", payload)
@@ -328,6 +328,14 @@ export async function getMyEventDetail(id: string): Promise<Event> {
 export async function updateEventDraft(id: string, payload: EventDraftPayload): Promise<Event> {
 	const { data } = await apiClient.patch<{ success: boolean; data: Event }>(
 		`/events/${id}`,
+		payload,
+	)
+	return data.data
+}
+
+export async function reviseEvent(id: string, payload: UpdatePublishedEventPayload): Promise<EventRevision> {
+	const { data } = await apiClient.patch<{ success: boolean; data: EventRevision }>(
+		`/events/${id}/revision`,
 		payload,
 	)
 	return data.data

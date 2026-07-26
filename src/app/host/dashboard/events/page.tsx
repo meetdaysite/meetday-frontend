@@ -550,15 +550,26 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 							<EyeIcon />
 							View Detail
 						</button>
+						{(event.status === "DRAFT" || event.status === "UNDER_REVIEW") && (
+							<button
+								onClick={() => onNavigate(`/host/dashboard/events/${event.id}/edit`)}
+								className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
+							>
+								<EditIcon />
+								Edit
+							</button>
+						)}
+						{event.status === "PUBLISHED" && (
+							<button
+								onClick={() => onNavigate(`/host/dashboard/events/${event.id}/revise`)}
+								className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
+							>
+								<EditIcon />
+								Edit
+							</button>
+						)}
 						{event.status === "DRAFT" && (
 							<>
-								<button
-									onClick={() => onNavigate(`/host/dashboard/events/${event.id}/edit`)}
-									className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
-								>
-									<EditIcon />
-									Edit
-								</button>
 								<div className="my-1 border-t border-border-default" />
 								<button
 									onClick={e => {
@@ -705,15 +716,26 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 								<EyeIcon />
 								View Detail
 							</button>
+							{(event.status === "DRAFT" || event.status === "UNDER_REVIEW") && (
+								<button
+									onClick={() => onNavigate(`/host/dashboard/events/${event.id}/edit`)}
+									className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
+								>
+									<EditIcon />
+									Edit
+								</button>
+							)}
+							{event.status === "PUBLISHED" && (
+								<button
+									onClick={() => onNavigate(`/host/dashboard/events/${event.id}/revise`)}
+									className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
+								>
+									<EditIcon />
+									Edit
+								</button>
+							)}
 							{event.status === "DRAFT" && (
 								<>
-									<button
-										onClick={() => onNavigate(`/host/dashboard/events/${event.id}/edit`)}
-										className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
-									>
-										<EditIcon />
-										Edit
-									</button>
 									<div className="my-1 border-t border-border-default" />
 									<button
 										onClick={e => {

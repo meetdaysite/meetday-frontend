@@ -1,5 +1,5 @@
 import { storageUrl } from "@/lib/uploadMedia"
-import type { Event, EventDraftPayload, Ticket, RefundPolicy, EventMedia } from "@/types/event"
+import type { Event, EventDraftPayload, Ticket, RefundPolicy, EventMedia, UpdatePublishedEventPayload } from "@/types/event"
 
 export type DraftTicket = {
 	name: string
@@ -124,18 +124,14 @@ export function toDateInput(iso?: string): string {
 
 // ─── Converters ───────────────────────────────────────────────────────────────
 
-// The API returns pre-signed S3 URLs in media[].url. Strip the query string and
-// leading slash to recover the storage key for use in save payloads.
+// The API only ever returns a short-lived presigned url for existing media,
+// never the raw storage key — and a key can't be reliably reconstructed from
+// that url (it carries auth query params and may include the bucket name in
+// its path). So an item only has a usable key here if it was just uploaded in
+// this session; existing, untouched media has none, and buildPayload treats
+// that as "leave media unchanged" rather than resending guessed keys.
 function keyFromMediaItem(m: { key?: string; url?: string }): string {
-	if (m.key) return m.key
-	if (m.url) {
-		try {
-			return new URL(m.url).pathname.slice(1)
-		} catch {
-			return ""
-		}
-	}
-	return ""
+	return m.key ?? ""
 }
 
 function displayUrlFromMediaItem(m: { key?: string; url?: string }): string {
@@ -171,8 +167,8 @@ export function eventToFormData(event: Event): FormData {
 		venueName: event.venueName ?? "",
 		fullAddress: event.fullAddress ?? "",
 		city: event.city ?? "",
-		latitude: event.latitude ?? null,
-		longitude: event.longitude ?? null,
+		latitude: event.latitude != null ? Number(event.latitude) : null,
+		longitude: event.longitude != null ? Number(event.longitude) : null,
 		coverKey: coverMedia ? keyFromMediaItem(coverMedia) : "",
 		coverUrl: coverMedia ? displayUrlFromMediaItem(coverMedia) : "",
 		gallerySlots,
@@ -197,8 +193,35 @@ export function eventToFormData(event: Event): FormData {
 	}
 }
 
+function mediaArrayFromForm(f: FormData): EventMedia[] {
+	const media: EventMedia[] = []
+	if (f.coverKey) media.push({ key: f.coverKey, type: "COVER", order: 0 })
+	f.galleryKeys.forEach((key, i) => {
+		if (key) media.push({ key, type: (f.galleryTypes[i] as "GALLERY" | "VIDEO") || "GALLERY", order: i + 1 })
+	})
+	return media
+}
+
+// Tickets loaded from an existing event (via eventToFormData) keep their `id`
+// and whatever raw type the API returned for numeric fields. The update DTO
+// rejects an `id` on ticket items and requires real numbers, so always
+// re-derive a clean ticket shape here rather than forwarding f.tickets as-is —
+// otherwise saving without touching the Ticket Types section fails validation.
+function sanitizeTickets(tickets: Ticket[]): Ticket[] {
+	return tickets.map((t) => ({
+		name: t.name,
+		price: Number(t.price),
+		totalCapacity: Number(t.totalCapacity),
+		maxPerPerson: Number(t.maxPerPerson),
+		description: t.description || undefined,
+		saleStartDate: t.saleStartDate || undefined,
+		saleEndDate: t.saleEndDate || undefined,
+	}))
+}
+
 export function buildPayload(f: FormData): EventDraftPayload {
-	const isFree = f.tickets.length === 0 || f.tickets.every((t) => t.price === 0)
+	const tickets = sanitizeTickets(f.tickets)
+	const isFree = tickets.length === 0 || tickets.every((t) => t.price === 0)
 
 	const refundPolicy: RefundPolicy | undefined = f.refundType
 		? {
@@ -209,11 +232,7 @@ export function buildPayload(f: FormData): EventDraftPayload {
 		  }
 		: undefined
 
-	const media: EventMedia[] = []
-	if (f.coverKey) media.push({ key: f.coverKey, type: "COVER", order: 0 })
-	f.galleryKeys.forEach((key, i) => {
-		if (key) media.push({ key, type: (f.galleryTypes[i] as "GALLERY" | "VIDEO") || "GALLERY", order: i + 1 })
-	})
+	const media = mediaArrayFromForm(f)
 
 	return {
 		categoryId:          f.category || undefined,
@@ -236,7 +255,7 @@ export function buildPayload(f: FormData): EventDraftPayload {
 		ageRestriction:      f.ageRestriction || undefined,
 		specialInstructions: f.instructions || undefined,
 		isFree,
-		tickets:             f.tickets.length > 0 ? f.tickets : undefined,
+		tickets:             tickets.length > 0 ? tickets : undefined,
 		refundPolicy,
 		media:               media.length > 0 ? media : undefined,
 	}
@@ -284,10 +303,28 @@ export function validateStep2(
 	return e
 }
 
-export function validateStep3(f: { coverKey: string; hasGallery: boolean }): Errors {
+export function validateStep3(f: { hasCover: boolean; hasGallery: boolean }): Errors {
 	const e: Errors = {}
-	if (!f.coverKey) e.coverUrl = "Cover image is required — please upload a file."
+	if (!f.hasCover) e.coverUrl = "Cover image is required — please upload a file."
 	if (!f.hasGallery) e.gallery = "Add at least one gallery image."
+	return e
+}
+
+// When editing an existing event, a slot can show a preview (from the live
+// event) without a usable key, since keys can't be recovered from the API's
+// signed urls (see keyFromMediaItem). That's fine as long as media isn't part
+// of this save — but once the host touches any media slot, every other slot
+// still shown would silently drop out of the replace-all media array. Block
+// that rather than let it happen quietly.
+export function validateMediaKeys(f: FormData, mediaTouched: boolean): Errors {
+	if (!mediaTouched) return {}
+	const e: Errors = {}
+	if (f.coverUrl && !f.coverKey) {
+		e.coverUrl = "Re-upload the cover image — it can't be carried over automatically once you change other media."
+	}
+	if (f.gallerySlots.some((url, i) => url && !f.galleryKeys[i])) {
+		e.gallery = "Re-upload or remove the other gallery items — they can't be carried over automatically once you change one."
+	}
 	return e
 }
 
@@ -317,8 +354,54 @@ export function validateAll(f: FormData, allowPastDate = false): Errors {
 	return {
 		...validateStep1(f),
 		...validateStep2(f, allowPastDate),
-		...validateStep3({ coverKey: f.coverKey, hasGallery: f.galleryKeys.some((k) => k !== "") }),
+		...validateStep3({
+			hasCover: !!(f.coverKey || f.coverUrl),
+			hasGallery: f.galleryKeys.some((k) => k !== "") || f.gallerySlots.some((s) => s !== ""),
+		}),
 		...validateStep4({ tickets: f.tickets }),
 		...validateStep5(f),
 	}
+}
+
+// ─── Published-event revision diff ─────────────────────────────────────────────
+// Only content + venue fields are revisable on a published event (see
+// UpdatePublishedEventDto). The revision endpoint wants just the fields that
+// actually changed, so we diff against the form's initial (live) values.
+
+const VENUE_KEYS = ["venueName", "fullAddress", "city", "latitude", "longitude"] as const
+
+function arraysEqual(a: string[], b: string[]): boolean {
+	return a.length === b.length && a.every((v, i) => v === b[i])
+}
+
+export function venueFieldsChanged(initial: FormData, current: FormData): boolean {
+	return VENUE_KEYS.some((key) => current[key] !== initial[key])
+}
+
+export function buildRevisionPayload(initial: FormData, current: FormData): UpdatePublishedEventPayload {
+	const payload: UpdatePublishedEventPayload = {}
+
+	if (current.category !== initial.category) payload.categoryId = current.category || undefined
+	if (current.title !== initial.title) payload.title = current.title
+	if (current.desc !== initial.desc) payload.description = current.desc
+	if (current.eventType !== initial.eventType) payload.eventType = current.eventType
+	if (current.instructions !== initial.instructions) payload.specialInstructions = current.instructions
+	if (!arraysEqual(current.languages, initial.languages)) payload.languages = current.languages
+	if (!arraysEqual(current.tags, initial.tags)) payload.tags = current.tags
+	if (!arraysEqual(current.whatToExpect, initial.whatToExpect)) payload.whatToExpect = current.whatToExpect
+	if (!arraysEqual(current.whoShouldAttend, initial.whoShouldAttend)) payload.whoShouldAttend = current.whoShouldAttend
+
+	if (venueFieldsChanged(initial, current)) {
+		payload.venueName = current.venueName
+		payload.fullAddress = current.fullAddress
+		payload.city = current.city
+		payload.latitude = current.latitude ?? undefined
+		payload.longitude = current.longitude ?? undefined
+	}
+
+	const currentMedia = mediaArrayFromForm(current)
+	const initialMedia = mediaArrayFromForm(initial)
+	if (JSON.stringify(currentMedia) !== JSON.stringify(initialMedia)) payload.media = currentMedia
+
+	return payload
 }
