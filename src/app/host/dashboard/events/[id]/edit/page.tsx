@@ -32,12 +32,12 @@ import {
 	PillInput,
 } from "@/components/eventForm/shared"
 import { VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
+import { DateField } from "@/components/eventForm/DateField"
+import { TimeField } from "@/components/eventForm/TimeField"
 import { TicketListEditor } from "@/components/eventForm/TicketListEditor"
 import type { ApiEventStatus } from "@/types/event"
 
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
-import CalendarSvg from "@/icons/outlined/calendar.svg"
-import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
 import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
 import CameraAddSvg from "@/icons/outlined/camera-add.svg"
 import DangerTriangleSvg from "@/icons/outlined/danger-triangle.svg"
@@ -140,18 +140,6 @@ export default function EditEventPage() {
 
 	function set<K extends keyof FormData>(key: K, value: FormData[K]) {
 		setFormData((prev) => ({ ...prev, [key]: value }))
-	}
-
-	const eventDateRef = useRef<HTMLInputElement>(null)
-	const startTimeRef = useRef<HTMLInputElement>(null)
-	const endTimeRef = useRef<HTMLInputElement>(null)
-
-	function openPicker(ref: React.RefObject<HTMLInputElement | null>) {
-		try {
-			ref.current?.showPicker?.()
-		} catch {
-			// showPicker isn't supported in every browser — clicking the input directly still works
-		}
 	}
 
 	async function handleAddressBlur() {
@@ -534,44 +522,32 @@ export default function EditEventPage() {
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 							<div className="flex flex-col gap-1.5">
 								<FieldLabel required>Event Date</FieldLabel>
-								<div id="eventDate" className={iconWrapCls(!!errors.eventDate)} onClick={() => openPicker(eventDateRef)}>
-									<Icon as={CalendarSvg} size="md" color="secondary" />
-									<input
-										ref={eventDateRef}
-										type="date"
-										value={formData.eventDate}
-										onChange={(e) => set("eventDate", e.target.value)}
-										className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute"
-									/>
-								</div>
+								<DateField
+									id="eventDate"
+									value={formData.eventDate}
+									onChange={(v) => set("eventDate", v)}
+									error={!!errors.eventDate}
+								/>
 								<ErrMsg msg={errors.eventDate} />
 							</div>
 							<div className="flex flex-col gap-1.5">
 								<FieldLabel required>Start Time</FieldLabel>
-								<div id="startTime" className={iconWrapCls(!!errors.startTime)} onClick={() => openPicker(startTimeRef)}>
-									<Icon as={ClockCircleSvg} size="md" color="secondary" />
-									<input
-										ref={startTimeRef}
-										type="time"
-										value={formData.startTime}
-										onChange={(e) => set("startTime", e.target.value)}
-										className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute"
-									/>
-								</div>
+								<TimeField
+									id="startTime"
+									value={formData.startTime}
+									onChange={(v) => set("startTime", v)}
+									error={!!errors.startTime}
+								/>
 								<ErrMsg msg={errors.startTime} />
 							</div>
 							<div className="flex flex-col gap-1.5">
 								<FieldLabel required>End Time</FieldLabel>
-								<div id="endTime" className={iconWrapCls(!!errors.endTime)} onClick={() => openPicker(endTimeRef)}>
-									<Icon as={ClockCircleSvg} size="md" color="secondary" />
-									<input
-										ref={endTimeRef}
-										type="time"
-										value={formData.endTime}
-										onChange={(e) => set("endTime", e.target.value)}
-										className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute"
-									/>
-								</div>
+								<TimeField
+									id="endTime"
+									value={formData.endTime}
+									onChange={(v) => set("endTime", v)}
+									error={!!errors.endTime}
+								/>
 								<ErrMsg msg={errors.endTime} />
 							</div>
 						</div>

@@ -5,11 +5,11 @@ import { Icon } from "@/components/ui/Icon"
 import { Badge } from "@/components/ui/Badge"
 import {
 	inpCls,
-	iconWrapCls,
 	taCls,
 	FieldLabel,
 	ErrMsg,
 } from "@/components/eventForm/shared"
+import { DateField, parseDateInput } from "@/components/eventForm/DateField"
 import {
 	emptyDraftTicket,
 	validateDraftTicket,
@@ -19,7 +19,6 @@ import {
 } from "@/lib/eventForm"
 import type { Ticket } from "@/types/event"
 
-import CalendarSvg from "@/icons/outlined/calendar.svg"
 import AddCircleSvg from "@/icons/outlined/add-circle.svg"
 import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
 
@@ -142,29 +141,21 @@ function TicketForm({
 				<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 					<div className="flex flex-col gap-1.5">
 						<FieldLabel hint="Optional">Sale Start Date</FieldLabel>
-						<div className={iconWrapCls(!!errors.saleStartDate)}>
-							<Icon as={CalendarSvg} size="sm" color="secondary" />
-							<input
-								type="date"
-								value={draft.saleStartDate}
-								onChange={(e) => set("saleStartDate", e.target.value)}
-								className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute"
-							/>
-						</div>
+						<DateField
+							value={draft.saleStartDate}
+							onChange={(v) => set("saleStartDate", v)}
+							error={!!errors.saleStartDate}
+						/>
 						<ErrMsg msg={errors.saleStartDate} />
 					</div>
 					<div className="flex flex-col gap-1.5">
 						<FieldLabel hint="Optional">Sale End Date</FieldLabel>
-						<div className={iconWrapCls(!!errors.saleEndDate)}>
-							<Icon as={CalendarSvg} size="sm" color="secondary" />
-							<input
-								type="date"
-								value={draft.saleEndDate}
-								min={draft.saleStartDate || undefined}
-								onChange={(e) => set("saleEndDate", e.target.value)}
-								className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute"
-							/>
-						</div>
+						<DateField
+							value={draft.saleEndDate}
+							onChange={(v) => set("saleEndDate", v)}
+							error={!!errors.saleEndDate}
+							minDate={parseDateInput(draft.saleStartDate)}
+						/>
 						<ErrMsg msg={errors.saleEndDate} />
 					</div>
 				</div>
