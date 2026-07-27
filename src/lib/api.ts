@@ -270,6 +270,25 @@ export async function verifyBankAccount(payload: BankVerifyPayload): Promise<Ban
 	return data.data
 }
 
+// ─── Reapply ──────────────────────────────────────────────────────────────────
+
+export type ReapplyResult = {
+	id: string
+	kycStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
+	panVerificationStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
+	bankVerificationStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
+	approvalStatus: "PENDING" | "APPROVED" | "REJECTED"
+	kycFailureReason: string | null
+	rejectionReason: string | null
+}
+
+// Allowed only when kycStatus is FAILED or approvalStatus is REJECTED — resets
+// KYC/approval state so the host can resubmit via the KYC verify endpoints.
+export async function reapplyAsHost(): Promise<ReapplyResult> {
+	const { data } = await apiClient.post<{ success: boolean; data: ReapplyResult }>("/hosts/reapply")
+	return data.data
+}
+
 // ─── Categories ───────────────────────────────────────────────────────────────
 
 export type Category = {
