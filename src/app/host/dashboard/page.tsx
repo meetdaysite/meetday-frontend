@@ -9,6 +9,7 @@ import { useDashboardStore } from "@/store/dashboardStore"
 import { useHostStore } from "@/store/hostStore"
 import type { ApiEventStatus } from "@/types/event"
 import type { DashboardPeriod } from "@/types/dashboard"
+import { formatEventDateRange } from "@/lib/eventForm"
 import { Skeleton } from "@/components/ui/Skeleton"
 
 import FileTextSvg from "@/icons/outlined/file-text.svg"
@@ -215,9 +216,7 @@ export default function DashboardPage() {
 									<tbody className="divide-y divide-border-default">
 										{recentEvents.map((event, idx) => {
 											const statusCfg = STATUS_CONFIG[event.status as ApiEventStatus] ?? STATUS_CONFIG.DRAFT
-											const dateStr = event.eventDate
-												? new Date(event.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-												: "—"
+											const dateStr = formatEventDateRange(event.eventDate ?? undefined, event.endDate)
 											return (
 												<tr key={event.id} className="hover:bg-surface-card-muted transition-colors">
 													<td className="px-5 py-3.5">

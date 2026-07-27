@@ -41,6 +41,7 @@ export interface EventDraftPayload {
 	languages?: string[]
 	tags?: string[]
 	eventDate?: string
+	endDate?: string
 	startTime?: string
 	endTime?: string
 	venueName?: string
@@ -117,6 +118,7 @@ export interface Event {
 	languages?: string[]
 	tags?: string[]
 	eventDate?: string
+	endDate?: string | null
 	startTime?: string
 	endTime?: string
 	venueName?: string

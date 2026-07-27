@@ -8,6 +8,7 @@ import { Dropdown } from "@/components/ui/Dropdown"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { useEventStore } from "@/store/eventStore"
 import { storageUrl } from "@/lib/uploadMedia"
+import { formatEventDateRange } from "@/lib/eventForm"
 import type { Event, ApiEventStatus } from "@/types/event"
 import PlusSvg from "@/icons/outlined/plus.svg"
 import SearchSvg from "@/icons/outlined/search.svg"
@@ -78,13 +79,6 @@ const STATUS_TABS: { value: "ALL" | ApiEventStatus; label: string }[] = [
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatEventDate(iso?: string): string {
-	if (!iso) return "—"
-	const d = new Date(iso)
-	if (isNaN(d.getTime())) return iso
-	return d.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" })
-}
 
 function eventCoverUrl(event: Event): string {
 	if (event.coverImageUrl) return event.coverImageUrl
@@ -610,7 +604,7 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 				</div>
 
 				<p className="text-caption text-text-muted mb-3 line-clamp-1">
-					{formatEventDate(event.eventDate)}
+					{formatEventDateRange(event.eventDate, event.endDate)}
 					{event.venueName && <> &middot; {event.venueName}</>}
 					{event.city && <> &middot; {event.city}</>}
 				</p>
@@ -678,7 +672,7 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 						</span>
 					)}
 					<p className="text-caption text-text-muted line-clamp-1">
-						{formatEventDate(event.eventDate)}
+						{formatEventDateRange(event.eventDate, event.endDate)}
 						{event.venueName && <> &middot; {event.venueName}</>}
 						{event.city && <> &middot; {event.city}</>}
 					</p>

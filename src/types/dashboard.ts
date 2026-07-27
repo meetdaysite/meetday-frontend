@@ -26,6 +26,7 @@ export type DashboardRecentEvent = {
 	coverImageUrl: string | null
 	city: string | null
 	eventDate: string | null
+	endDate: string | null
 	endTime: string | null
 	status: string
 	registrations: number

@@ -9,6 +9,7 @@ import { useEventStore } from "@/store/eventStore"
 import { storageUrl } from "@/lib/uploadMedia"
 import { createScannerSession, getCheckInStats, getEventAttendees } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
+import { formatEventDateRange } from "@/lib/eventForm"
 import type { CheckInStats, EventAttendee, EventAttendeesResponse } from "@/lib/api"
 import type { Event, ApiEventStatus } from "@/types/event"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
@@ -382,7 +383,7 @@ export default function EventDetailPage() {
 									<CalendarIcon className="mt-0.5 shrink-0 text-text-brand" />
 									<div>
 										<p className="text-label-sm font-medium text-text-primary">
-											{formatDate(event.eventDate)}
+											{formatEventDateRange(event.eventDate, event.endDate, "long")}
 										</p>
 										<p className="text-caption text-text-muted">
 											{event.startTime && event.endTime

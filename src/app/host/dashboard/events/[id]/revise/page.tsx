@@ -22,6 +22,7 @@ import {
 	validateStep3,
 	validateMediaKeys,
 	to12Hour,
+	formatEventDateRange,
 	type FormData,
 	type Errors,
 } from "@/lib/eventForm"
@@ -40,13 +41,6 @@ import CameraAddSvg from "@/icons/outlined/camera-add.svg"
 import DangerTriangleSvg from "@/icons/outlined/danger-triangle.svg"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatDisplayDate(dateInput: string): string {
-	if (!dateInput) return "—"
-	const d = new Date(`${dateInput}T00:00:00`)
-	if (isNaN(d.getTime())) return dateInput
-	return d.toLocaleDateString("en-IN", { year: "numeric", month: "long", day: "numeric" })
-}
 
 function formatSubmittedAt(iso: string): string {
 	const d = new Date(iso)
@@ -730,7 +724,7 @@ export default function ReviseEventPage() {
 
 					{/* ── 4. Locked details ── */}
 					<SectionCard title="Locked Details" subtitle="These can't be changed on a published event">
-						<LockedRow label="Event Date" value={formatDisplayDate(formData.eventDate)} />
+						<LockedRow label="Event Date" value={formatEventDateRange(formData.eventDate, formData.endDate, "long")} />
 						<LockedRow
 							label="Time"
 							value={formData.startTime && formData.endTime

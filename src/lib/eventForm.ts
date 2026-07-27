@@ -76,7 +76,7 @@ export const defaultFormData = {
 	title: "", desc: "", category: "", eventType: "",
 	languages: [] as string[], tags: [] as string[],
 	whatToExpect: [] as string[], whoShouldAttend: [] as string[],
-	eventDate: "", startTime: "", endTime: "",
+	eventDate: "", endDate: "", isMultiDay: false, startTime: "", endTime: "",
 	venueName: "", fullAddress: "", city: "",
 	latitude: null as number | null, longitude: null as number | null,
 	coverUrl: "", coverKey: "",
@@ -117,9 +117,46 @@ export function toISODate(dateStr: string): string {
 	return new Date(`${dateStr}T00:00:00`).toISOString()
 }
 
-export function toDateInput(iso?: string): string {
+export function toDateInput(iso?: string | null): string {
 	if (!iso) return ""
 	return iso.split("T")[0]
+}
+
+// Adds one calendar day to a "YYYY-MM-DD" form value, used when an overnight
+// end time auto-promotes an event to multi-day.
+export function addOneDay(dateInput: string): string {
+	const [y, m, d] = dateInput.split("-").map(Number)
+	if (!y || !m || !d) return ""
+	const date = new Date(y, m - 1, d + 1)
+	const yy = date.getFullYear()
+	const mm = String(date.getMonth() + 1).padStart(2, "0")
+	const dd = String(date.getDate()).padStart(2, "0")
+	return `${yy}-${mm}-${dd}`
+}
+
+// Renders "26 Jul 2026" for a single-day event, or a range ("26 – 28 Jul 2026",
+// "30 Jul – 1 Aug 2026", "30 Dec 2026 – 1 Jan 2027") once endDate is set and
+// differs from eventDate.
+export function formatEventDateRange(eventDate?: string, endDate?: string | null, month: "short" | "long" = "short"): string {
+	if (!eventDate) return "—"
+	const start = new Date(eventDate)
+	if (isNaN(start.getTime())) return eventDate
+
+	const single = start.toLocaleDateString("en-IN", { day: "numeric", month, year: "numeric" })
+	if (!endDate) return single
+
+	const end = new Date(endDate)
+	if (isNaN(end.getTime()) || toDateInput(eventDate) === toDateInput(endDate)) return single
+
+	const endLabel = end.toLocaleDateString("en-IN", { day: "numeric", month, year: "numeric" })
+	if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth()) {
+		return `${start.getDate()} – ${endLabel}`
+	}
+	if (start.getFullYear() === end.getFullYear()) {
+		const startLabel = start.toLocaleDateString("en-IN", { day: "numeric", month })
+		return `${startLabel} – ${endLabel}`
+	}
+	return `${single} – ${endLabel}`
 }
 
 // ─── Converters ───────────────────────────────────────────────────────────────
@@ -162,6 +199,8 @@ export function eventToFormData(event: Event): FormData {
 		whatToExpect: event.whatToExpect ?? [],
 		whoShouldAttend: event.whoShouldAttend ?? [],
 		eventDate: toDateInput(event.eventDate),
+		endDate: toDateInput(event.endDate),
+		isMultiDay: !!event.endDate,
 		startTime: from12Hour(event.startTime ?? ""),
 		endTime: from12Hour(event.endTime ?? ""),
 		venueName: event.venueName ?? "",
@@ -242,6 +281,7 @@ export function buildPayload(f: FormData): EventDraftPayload {
 		languages:           f.languages.length > 0 ? f.languages : undefined,
 		tags:                f.tags.length > 0 ? f.tags : undefined,
 		eventDate:           f.eventDate ? toISODate(f.eventDate) : undefined,
+		endDate:             f.isMultiDay && f.endDate ? toISODate(f.endDate) : undefined,
 		startTime:           f.startTime ? to12Hour(f.startTime) : undefined,
 		endTime:             f.endTime ? to12Hour(f.endTime) : undefined,
 		venueName:           f.venueName || undefined,
@@ -269,7 +309,7 @@ function isFutureOrToday(val: string) {
 	return new Date(val) >= today
 }
 
-function timeToMinutes(val: string) {
+export function timeToMinutes(val: string) {
 	const [h, m] = val.split(":").map(Number)
 	return h * 60 + m
 }
@@ -288,7 +328,7 @@ export function validateStep1(f: Pick<FormData, "title" | "desc" | "category" | 
 }
 
 export function validateStep2(
-	f: Pick<FormData, "eventDate" | "startTime" | "endTime" | "venueName" | "fullAddress">,
+	f: Pick<FormData, "eventDate" | "endDate" | "isMultiDay" | "startTime" | "endTime" | "venueName" | "fullAddress">,
 	allowPastDate = false,
 ): Errors {
 	const e: Errors = {}
@@ -296,8 +336,13 @@ export function validateStep2(
 	else if (!allowPastDate && !isFutureOrToday(f.eventDate)) e.eventDate = "Date must be today or in the future."
 	if (!f.startTime) e.startTime = "Start time is required."
 	if (!f.endTime) e.endTime = "End time is required."
-	else if (f.startTime && timeToMinutes(f.endTime) <= timeToMinutes(f.startTime))
+	else if (f.startTime && !f.isMultiDay && timeToMinutes(f.endTime) <= timeToMinutes(f.startTime))
 		e.endTime = "End time must be after start time."
+	if (f.isMultiDay) {
+		if (!f.endDate) e.endDate = "End date is required for a multi-day event."
+		else if (f.eventDate && new Date(f.endDate) < new Date(f.eventDate))
+			e.endDate = "End date cannot be before the event date."
+	}
 	if (!f.venueName.trim()) e.venueName = "Venue name is required."
 	if (!f.fullAddress.trim()) e.fullAddress = "Full address is required."
 	return e
