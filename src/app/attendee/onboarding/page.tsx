@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState, useEffect } from "react"
+import { Suspense, useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import clsx from "clsx"
@@ -11,6 +11,7 @@ import { useAuthStore } from "@/store/authStore"
 import { Button } from "@/components/ui/Button"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { Icon } from "@/components/ui/Icon"
+import { Tooltip } from "@/components/ui/Tooltip"
 import ArrowRightSvg from "@/icons/outlined/arrow-right.svg"
 import CheckSvg from "@/icons/outlined/check.svg"
 import StarSvg from "@/icons/filled/star.svg"
@@ -331,12 +332,20 @@ function SwipeStepContent({ onDone }: SwipeStepProps) {
 	const [loading, setLoading] = useState(true)
 	const [currentIdx, setCurrentIdx] = useState(0)
 	const [affinities, setAffinities] = useState<InterestAffinity[]>([])
+	const [descClamped, setDescClamped] = useState(false)
+	const descRef = useRef<HTMLParagraphElement>(null)
 
 	useEffect(() => {
 		getInterests()
 			.then(setInterests)
 			.finally(() => setLoading(false))
 	}, [])
+
+	useEffect(() => {
+		const el = descRef.current
+		if (!el) return
+		setDescClamped(el.scrollHeight > el.clientHeight)
+	}, [currentIdx, interests])
 
 	function handleAction(action: "like" | "dislike" | "open") {
 		const interest = interests[currentIdx]
@@ -449,8 +458,10 @@ function SwipeStepContent({ onDone }: SwipeStepProps) {
 				>
 					<Image src={interest.image} alt={interest.name} fill sizes="250px" className="object-cover" priority />
 					<div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 via-black/40 to-transparent p-4">
-						<p className="text-label-md font-bold text-white leading-tight">{interest.name}</p>
-						<p className="text-caption text-white/70 mt-0.5 line-clamp-2">{interest.description}</p>
+						<p className="text-body-lg font-bold text-white leading-tight">{interest.name}</p>
+						<Tooltip content={interest.description} disabled={!descClamped}>
+							<p ref={descRef} className="text-label-sm text-white/70 mt-0.5 line-clamp-3">{interest.description}</p>
+						</Tooltip>
 					</div>
 				</div>
 			</div>
