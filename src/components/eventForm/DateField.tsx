@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import clsx from "clsx"
 import { DayPicker } from "react-day-picker"
 import { Icon } from "@/components/ui/Icon"
@@ -74,7 +75,9 @@ export function DateField({ id, value, onChange, error = false, minDate, placeho
 		const selected = parseDateInput(value)
 		return selected ? formatDateTyped(selected) : ""
 	})
+	const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 })
 	const rootRef = useRef<HTMLDivElement>(null)
+	const popoverRef = useRef<HTMLDivElement>(null)
 	const selected = parseDateInput(value)
 
 	// Re-syncs from the committed value (typed commits, calendar picks) without an
@@ -89,7 +92,10 @@ export function DateField({ id, value, onChange, error = false, minDate, placeho
 		if (!open) return
 
 		function handlePointerDown(event: PointerEvent) {
-			if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+			const target = event.target as Node
+			if (rootRef.current?.contains(target)) return
+			if (popoverRef.current?.contains(target)) return
+			setOpen(false)
 		}
 		function handleKeyDown(event: KeyboardEvent) {
 			if (event.key === "Escape") setOpen(false)
@@ -100,6 +106,41 @@ export function DateField({ id, value, onChange, error = false, minDate, placeho
 		return () => {
 			document.removeEventListener("pointerdown", handlePointerDown)
 			document.removeEventListener("keydown", handleKeyDown)
+		}
+	}, [open])
+
+	// Popover is portaled to <body> so ancestor `overflow-hidden` (e.g. the
+	// ticket card) can't clip it — position it against the trigger manually,
+	// flipping above the trigger when there isn't room below (a `fixed` popover
+	// doesn't grow the page's scroll height, so overflowing the viewport bottom
+	// would otherwise be permanently unreachable).
+	useLayoutEffect(() => {
+		if (!open) return
+
+		function updatePosition() {
+			const rect = rootRef.current?.getBoundingClientRect()
+			if (!rect) return
+			const popoverWidth = popoverRef.current?.offsetWidth ?? 280
+			const popoverHeight = popoverRef.current?.offsetHeight ?? 340
+			const margin = 8
+
+			const spaceBelow = window.innerHeight - rect.bottom
+			const spaceAbove = rect.top
+			const top =
+				spaceBelow < popoverHeight + margin && spaceAbove > spaceBelow
+					? Math.max(margin, rect.top - popoverHeight - 4)
+					: rect.bottom + 4
+
+			const left = Math.min(rect.left, window.innerWidth - popoverWidth - margin)
+			setPopoverPos({ top, left: Math.max(margin, left) })
+		}
+
+		updatePosition()
+		window.addEventListener("scroll", updatePosition, true)
+		window.addEventListener("resize", updatePosition)
+		return () => {
+			window.removeEventListener("scroll", updatePosition, true)
+			window.removeEventListener("resize", updatePosition)
 		}
 	}, [open])
 
@@ -142,8 +183,12 @@ export function DateField({ id, value, onChange, error = false, minDate, placeho
 				/>
 			</div>
 
-			{open && (
-				<div className="absolute z-50 mt-1 min-w-70 rounded-action border border-border-default bg-surface-card p-3 shadow-modal">
+			{open && typeof document !== "undefined" && createPortal(
+				<div
+					ref={popoverRef}
+					style={{ top: popoverPos.top, left: popoverPos.left }}
+					className="fixed z-50 min-w-70 rounded-action border border-border-default bg-surface-card p-3 shadow-modal"
+				>
 					<DayPicker
 						mode="single"
 						selected={selected}
@@ -180,7 +225,8 @@ export function DateField({ id, value, onChange, error = false, minDate, placeho
 								),
 						}}
 					/>
-				</div>
+				</div>,
+				document.body,
 			)}
 		</div>
 	)
