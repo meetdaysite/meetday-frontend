@@ -30,10 +30,11 @@ const STATUS_TABS: { value: StatusFilter; label: string }[] = [
 	{ value: "DRAFT", label: "Draft" },
 ]
 
-const STATUS_CONFIG: Record<ApiEventStatus, { label: string; className: string }> = {
+const STATUS_CONFIG: Record<ApiEventStatus | "LIVE", { label: string; className: string }> = {
 	DRAFT: { label: "Draft", className: "bg-neutral-100 text-neutral-700" },
 	UNDER_REVIEW: { label: "Under Review", className: "bg-blue-50 text-blue-700" },
 	PUBLISHED: { label: "Published", className: "bg-green-50 text-green-700" },
+	LIVE: { label: "Live Now", className: "bg-red-100 text-red-700" },
 	CANCELLED: { label: "Cancelled", className: "bg-orange-50 text-orange-700" },
 	REJECTED: { label: "Rejected", className: "bg-red-50 text-red-700" },
 	COMPLETED: { label: "Completed", className: "bg-neutral-900 text-white" },
@@ -224,7 +225,7 @@ export function PublishExperienceModal({
 						</div>
 					) : (
 						filtered.map((ev) => {
-							const statusCfg = STATUS_CONFIG[ev.status]
+							const statusCfg = STATUS_CONFIG[ev.displayStatus ?? ev.status]
 							const dateLabel = ev.eventDate
 								? new Date(ev.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
 								: null

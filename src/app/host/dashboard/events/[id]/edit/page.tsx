@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import clsx from "clsx"
 import { toast } from "sonner"
+import { Switch } from "@/components/ui/Switch"
 import { Dropdown } from "@/components/ui/Dropdown"
 import { Icon } from "@/components/ui/Icon"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
@@ -14,11 +15,13 @@ import { uploadEventMedia } from "@/lib/uploadMedia"
 import {
 	LANGUAGE_OPTIONS,
 	EVENT_TYPE_OPTIONS,
+	addOneDay,
 	defaultFormData,
 	eventToFormData,
 	buildPayload,
+	timeToMinutes,
+	to12Hour,
 	validateAll,
-	validateMediaKeys,
 	type FormData,
 	type Errors,
 } from "@/lib/eventForm"
@@ -32,7 +35,7 @@ import {
 	PillInput,
 } from "@/components/eventForm/shared"
 import { VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
-import { DateField } from "@/components/eventForm/DateField"
+import { DateField, parseDateInput } from "@/components/eventForm/DateField"
 import { TimeField } from "@/components/eventForm/TimeField"
 import { TicketListEditor } from "@/components/eventForm/TicketListEditor"
 import type { ApiEventStatus } from "@/types/event"
@@ -67,17 +70,22 @@ const STATUS_LABEL: Record<ApiEventStatus, string> = {
 function SectionCard({
 	title,
 	subtitle,
+	action,
 	children,
 }: {
 	title: string
 	subtitle?: string
+	action?: React.ReactNode
 	children: React.ReactNode
 }) {
 	return (
 		<div className="border border-border-default rounded-action bg-surface-card overflow-hidden">
-			<div className="px-6 py-4 border-b border-border-default">
-				<h2 className="text-label-md font-semibold text-text-primary">{title}</h2>
-				{subtitle && <p className="text-caption text-text-tertiary mt-0.5">{subtitle}</p>}
+			<div className="px-6 py-4 border-b border-border-default flex items-center justify-between gap-3">
+				<div>
+					<h2 className="text-label-md font-semibold text-text-primary">{title}</h2>
+					{subtitle && <p className="text-caption text-text-tertiary mt-0.5">{subtitle}</p>}
+				</div>
+				{action}
 			</div>
 			<div className="p-6 flex flex-col gap-4">{children}</div>
 		</div>
@@ -101,11 +109,11 @@ export default function EditEventPage() {
 	const [submitting, setSubmitting] = useState(false)
 	const [validated, setValidated] = useState(false)
 	const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
+	const [overnightConfirm, setOvernightConfirm] = useState<{ startTime: string; endTime: string } | null>(null)
 
 	const [coverUploading, setCoverUploading] = useState(false)
 	const [galleryUploading, setGalleryUploading] = useState<boolean[]>(Array(6).fill(false))
 	const [isDraggingOver, setIsDraggingOver] = useState(false)
-	const [mediaTouched, setMediaTouched] = useState(false)
 
 	const coverFileRef = useRef<HTMLInputElement>(null)
 	const galleryFileRef = useRef<HTMLInputElement>(null)
@@ -134,12 +142,34 @@ export default function EditEventPage() {
 	}, [id, router])
 
 	const errors: Errors = useMemo(
-		() => (validated ? { ...validateAll(formData, true), ...validateMediaKeys(formData, mediaTouched) } : {}),
-		[validated, formData, mediaTouched],
+		() => (validated ? validateAll(formData, true) : {}),
+		[validated, formData],
 	)
 
 	function set<K extends keyof FormData>(key: K, value: FormData[K]) {
 		setFormData((prev) => ({ ...prev, [key]: value }))
+	}
+
+	// If start/end times now cross midnight while the event is still marked
+	// single-day, don't silently accept it — the host may have mistyped one of
+	// the times. Ask before promoting to a multi-day listing.
+	function checkOvernight(nextStart: string, nextEnd: string): boolean {
+		if (formData.isMultiDay || !nextStart || !nextEnd) return false
+		if (timeToMinutes(nextEnd) > timeToMinutes(nextStart)) return false
+		setOvernightConfirm({ startTime: nextStart, endTime: nextEnd })
+		return true
+	}
+
+	function confirmOvernight() {
+		if (!overnightConfirm) return
+		setFormData((prev) => ({
+			...prev,
+			startTime: overnightConfirm.startTime,
+			endTime: overnightConfirm.endTime,
+			isMultiDay: true,
+			endDate: prev.eventDate ? addOneDay(prev.eventDate) : prev.endDate,
+		}))
+		setOvernightConfirm(null)
 	}
 
 	async function handleAddressBlur() {
@@ -168,7 +198,7 @@ export default function EditEventPage() {
 
 	async function handleSave() {
 		setValidated(true)
-		const errs = { ...validateAll(formData, true), ...validateMediaKeys(formData, mediaTouched) }
+		const errs = validateAll(formData, true)
 		if (Object.keys(errs).length > 0) {
 			toast.error("Please fix the errors before saving.")
 			const firstErrId = Object.keys(errs)[0]
@@ -194,7 +224,7 @@ export default function EditEventPage() {
 
 	async function handleSubmit() {
 		setValidated(true)
-		const errs = { ...validateAll(formData, true), ...validateMediaKeys(formData, mediaTouched) }
+		const errs = validateAll(formData, true)
 		if (Object.keys(errs).length > 0) {
 			setShowSubmitConfirm(false)
 			toast.error("Please fix the errors before submitting.")
@@ -216,7 +246,6 @@ export default function EditEventPage() {
 
 	async function handleCoverFile(file: File) {
 		if (!file.type.startsWith("image/")) return
-		setMediaTouched(true)
 		const prev = formData.coverUrl
 		if (prev.startsWith("blob:")) URL.revokeObjectURL(prev)
 		set("coverUrl", URL.createObjectURL(file))
@@ -236,7 +265,6 @@ export default function EditEventPage() {
 	async function handleGalleryFile(file: File, slotIndex: number) {
 		const isVideo = file.type.startsWith("video/")
 		if (!isVideo && !file.type.startsWith("image/")) return
-		setMediaTouched(true)
 		const nextSlots = [...formData.gallerySlots]
 		if (nextSlots[slotIndex].startsWith("blob:")) URL.revokeObjectURL(nextSlots[slotIndex])
 		nextSlots[slotIndex] = URL.createObjectURL(file)
@@ -270,14 +298,12 @@ export default function EditEventPage() {
 	}
 
 	function removeCover() {
-		setMediaTouched(true)
 		if (formData.coverUrl.startsWith("blob:")) URL.revokeObjectURL(formData.coverUrl)
 		set("coverUrl", "")
 		set("coverKey", "")
 	}
 
 	function removeGallerySlot(i: number) {
-		setMediaTouched(true)
 		const nextSlots = [...formData.gallerySlots]
 		if (nextSlots[i].startsWith("blob:")) URL.revokeObjectURL(nextSlots[i])
 		nextSlots[i] = ""
@@ -518,8 +544,20 @@ export default function EditEventPage() {
 					</SectionCard>
 
 					{/* ── 2. Date & Location ── */}
-					<SectionCard title="Date & Location" subtitle="When and where your event takes place">
-						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+					<SectionCard
+						title="Date & Location"
+						subtitle="When and where your event takes place"
+						action={
+							<Switch
+								label="Multi-day event"
+								checked={formData.isMultiDay}
+								onChange={(checked) =>
+									setFormData((prev) => ({ ...prev, isMultiDay: checked, endDate: checked ? prev.endDate : "" }))
+								}
+							/>
+						}
+					>
+						<div className={clsx("grid gap-4", formData.isMultiDay ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
 							<div className="flex flex-col gap-1.5">
 								<FieldLabel required>Event Date</FieldLabel>
 								<DateField
@@ -530,12 +568,32 @@ export default function EditEventPage() {
 								/>
 								<ErrMsg msg={errors.eventDate} />
 							</div>
+
+							{formData.isMultiDay && (
+								<div className="flex flex-col gap-1.5">
+									<FieldLabel required>End Date</FieldLabel>
+									<DateField
+										id="endDate"
+										value={formData.endDate}
+										onChange={(v) => set("endDate", v)}
+										error={!!errors.endDate}
+										minDate={parseDateInput(formData.eventDate) ?? undefined}
+									/>
+									<ErrMsg msg={errors.endDate} />
+								</div>
+							)}
+						</div>
+
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 							<div className="flex flex-col gap-1.5">
 								<FieldLabel required>Start Time</FieldLabel>
 								<TimeField
 									id="startTime"
 									value={formData.startTime}
-									onChange={(v) => set("startTime", v)}
+									onChange={(v) => {
+										if (checkOvernight(v, formData.endTime)) return
+										set("startTime", v)
+									}}
 									error={!!errors.startTime}
 								/>
 								<ErrMsg msg={errors.startTime} />
@@ -545,7 +603,10 @@ export default function EditEventPage() {
 								<TimeField
 									id="endTime"
 									value={formData.endTime}
-									onChange={(v) => set("endTime", v)}
+									onChange={(v) => {
+										if (checkOvernight(formData.startTime, v)) return
+										set("endTime", v)
+									}}
 									error={!!errors.endTime}
 								/>
 								<ErrMsg msg={errors.endTime} />
@@ -603,11 +664,6 @@ export default function EditEventPage() {
 
 					{/* ── 3. Media ── */}
 					<SectionCard title="Media" subtitle="Cover and gallery images for your event">
-						<p className="text-caption text-amber-700 bg-amber-50 border border-amber-200 rounded-action px-3 py-2 -mt-1">
-							Changing any image here means you&apos;ll need to re-upload every other image you want
-							to keep — existing images can&apos;t be carried over automatically once you touch this
-							section.
-						</p>
 						{/* Cover */}
 						<div className="flex flex-col gap-2">
 							<FieldLabel required>Cover Image</FieldLabel>
@@ -897,6 +953,33 @@ export default function EditEventPage() {
 						>
 							{submitting && <MiniSpinner />}
 							Submit
+						</button>
+					</div>
+				</div>
+			</div>
+		)}
+
+		{/* Overnight event confirmation modal */}
+		{overnightConfirm && (
+			<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+				<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-sm p-6">
+					<h2 className="text-label-lg font-semibold text-text-primary mb-2">Make this a multi-day event?</h2>
+					<p className="text-body-sm text-text-secondary mb-6">
+						{to12Hour(overnightConfirm.startTime)} to {to12Hour(overnightConfirm.endTime)} runs past midnight.
+						Continuing will list this as a multi-day experience ending the day after your event date.
+					</p>
+					<div className="flex gap-3 justify-end">
+						<button
+							onClick={() => setOvernightConfirm(null)}
+							className="px-4 py-2 text-label-sm font-medium text-text-primary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors"
+						>
+							Cancel
+						</button>
+						<button
+							onClick={confirmOvernight}
+							className="px-4 py-2 text-label-sm font-semibold text-action-primary-text bg-action-primary hover:bg-action-primary-hover rounded-action transition-colors"
+						>
+							Make it multi-day
 						</button>
 					</div>
 				</div>

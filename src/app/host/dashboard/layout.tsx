@@ -3,17 +3,23 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { ApiError } from "@/lib/errors"
+import { toast } from "sonner"
+import { ApiError, getApiErrorMessage } from "@/lib/errors"
 import clsx from "clsx"
 import { LogoutConfirmDialog } from "@/components/ui/LogoutConfirmDialog"
 import { useAuthStore } from "@/store/authStore"
 import { useHostStore } from "@/store/hostStore"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
-import { getHostProfile } from "@/lib/api"
+import { getHostProfile, reapplyAsHost, type HostProfile } from "@/lib/api"
 import { Button } from "@/components/ui/Button"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { Sidebar } from "@/components/dashboard/Sidebar"
+import { CompleteKycScreen } from "@/components/host/CompleteKycScreen"
+import { Icon } from "@/components/ui/Icon"
+import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
+import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
+import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
 
 function HamburgerIcon() {
 	return (
@@ -24,27 +30,36 @@ function HamburgerIcon() {
 }
 
 function CheckIcon({ done }: { done: boolean }) {
-	if (done) {
-		return (
-			<svg viewBox="0 0 20 20" fill="currentColor" className="size-5 text-icon-success shrink-0">
-				<path
-					fillRule="evenodd"
-					d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-					clipRule="evenodd"
-				/>
-			</svg>
-		)
-	}
-	return (
-		<svg viewBox="0 0 20 20" fill="currentColor" className="size-5 text-icon-muted shrink-0">
-			<circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="1.5" fill="none" />
-			<path d="M10 6v5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-		</svg>
-	)
+	if (done) return <Icon as={CheckCircleSvg} size="sm" color="success" className="shrink-0" />
+	return <Icon as={ClockCircleSvg} size="sm" color="muted" className="shrink-0" />
 }
 
-function UnderReviewScreen({ status, onSignOut }: { status: "pending" | "rejected"; onSignOut: () => void }) {
+function UnderReviewScreen({
+	status,
+	profile,
+	onSignOut,
+}: {
+	status: "pending" | "rejected"
+	profile: HostProfile
+	onSignOut: () => void
+}) {
 	const isPending = status === "pending"
+	const setProfile = useHostStore((s) => s.setProfile)
+	const [reapplying, setReapplying] = useState(false)
+
+	async function handleReapply() {
+		setReapplying(true)
+		try {
+			await reapplyAsHost()
+			const fresh = await getHostProfile()
+			setProfile(fresh)
+			toast.success("You can now resubmit your verification details.")
+		} catch (e) {
+			toast.error(getApiErrorMessage(e))
+		} finally {
+			setReapplying(false)
+		}
+	}
 
 	return (
 		<div className="min-h-screen flex items-center justify-center bg-surface-page px-4">
@@ -53,44 +68,13 @@ function UnderReviewScreen({ status, onSignOut }: { status: "pending" | "rejecte
 				<div
 					className={clsx(
 						"size-20 rounded-full flex items-center justify-center",
-						isPending ? "bg-surface-warning-soft" : "bg-surface-danger-soft",
+						isPending ? "bg-surface-warning-soft" : "bg-status-error-bg",
 					)}
 				>
 					{isPending ? (
-						<svg viewBox="0 0 48 48" fill="none" className="size-10">
-							<circle
-								cx="24"
-								cy="24"
-								r="20"
-								stroke="var(--icon-warning)"
-								strokeWidth="2"
-								fill="var(--surface-warning-soft)"
-							/>
-							<path
-								d="M24 14v12l7 4"
-								stroke="var(--icon-warning)"
-								strokeWidth="2.5"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-							/>
-						</svg>
+						<Icon as={ClockCircleSvg} size="2xl" color="warning" />
 					) : (
-						<svg viewBox="0 0 48 48" fill="none" className="size-10">
-							<circle
-								cx="24"
-								cy="24"
-								r="20"
-								stroke="var(--icon-danger)"
-								strokeWidth="2"
-								fill="var(--surface-danger-soft)"
-							/>
-							<path
-								d="M16 16l16 16M32 16L16 32"
-								stroke="var(--icon-danger)"
-								strokeWidth="2.5"
-								strokeLinecap="round"
-							/>
-						</svg>
+						<Icon as={CloseCircleSvg} size="2xl" color="inherit" className="text-status-error-text" />
 					)}
 				</div>
 
@@ -98,21 +82,31 @@ function UnderReviewScreen({ status, onSignOut }: { status: "pending" | "rejecte
 					<h1 className="text-heading-sm text-text-primary font-bold">
 						{isPending ? "Account Under Review" : "Application Not Approved"}
 					</h1>
-					<p className="text-body-sm text-text-secondary mt-2 max-w-xs mx-auto">
+					<p className="text-body-sm text-text-secondary mt-2 max-w-md mx-auto">
 						{isPending
 							? "Your profile has been submitted. Our team will review your application within 2–3 business days."
-							: "Your application was not approved. Please contact support for more information."}
+							: "Your application was not approved. You can review the reason below and reapply."}
 					</p>
+					{!isPending && profile.rejectionReason && (
+						<p className="text-body-sm text-status-error-text bg-status-error-bg border border-status-error-text/20 rounded-action px-4 py-3 mt-4 max-w-md mx-auto text-left">
+							{profile.rejectionReason}
+						</p>
+					)}
 				</div>
+
+				{!isPending && (
+					<Button variant="primary" size="sm" onClick={handleReapply} disabled={reapplying}>
+						{reapplying ? "Submitting…" : "Reapply"}
+					</Button>
+				)}
 
 				{isPending && (
 					<div className="w-full rounded-action border border-border-default overflow-hidden">
 						{[
 							{ label: "Profile submitted", done: true },
-							{ label: "PAN submitted for verification", done: true },
-							{ label: "Bank account verified", done: true },
-							{ label: "Plan selected", done: true },
-							{ label: "Admin approval", done: false },
+							{ label: "PAN verification", done: profile.panVerificationStatus === "VERIFIED" },
+							{ label: "Bank account verification", done: profile.bankVerificationStatus === "VERIFIED" },
+							{ label: "Admin approval", done: profile.approvalStatus === "APPROVED" },
 						].map((item, i, arr) => (
 							<div
 								key={item.label}
@@ -319,11 +313,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 	}
 
 	const approvalStatus = profile?.approvalStatus
-	if (approvalStatus === "PENDING" || approvalStatus === "REJECTED") {
+
+	// KYC must be complete before an application can be sent for admin approval —
+	// a PENDING profile with unverified PAN/bank means the applicant dropped off
+	// mid-onboarding and needs to finish that step first.
+	if (profile && approvalStatus === "PENDING" && profile.kycStatus !== "VERIFIED") {
+		return (
+			<>
+				<CompleteKycScreen profile={profile} onSignOut={() => setShowLogoutConfirm(true)} />
+				<LogoutConfirmDialog
+					open={showLogoutConfirm}
+					onClose={() => setShowLogoutConfirm(false)}
+					onConfirm={handleSignOut}
+				/>
+			</>
+		)
+	}
+
+	if (profile && (approvalStatus === "PENDING" || approvalStatus === "REJECTED")) {
 		return (
 			<>
 				<UnderReviewScreen
 					status={approvalStatus === "PENDING" ? "pending" : "rejected"}
+					profile={profile}
 					onSignOut={() => setShowLogoutConfirm(true)}
 				/>
 				<LogoutConfirmDialog

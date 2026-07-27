@@ -40,6 +40,17 @@ export function EventHero({ event }: { event: PublicEventDetails }) {
 				<span className="px-2.5 py-1 rounded-badge bg-action-primary backdrop-blur-sm text-white text-[11px] font-medium tracking-wide uppercase">
 					{event.category.name}
 				</span>
+				{event.displayStatus === "LIVE" && (
+					<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-badge bg-red-600 backdrop-blur-sm text-white text-[11px] font-semibold tracking-wide uppercase">
+						<span className="size-1.5 rounded-full bg-white animate-pulse" />
+						Live Now
+					</span>
+				)}
+				{event.displayStatus === "COMPLETED" && (
+					<span className="px-2.5 py-1 rounded-badge bg-neutral-900/90 backdrop-blur-sm text-white text-[11px] font-medium tracking-wide uppercase">
+						This event has ended
+					</span>
+				)}
 			</div>
 
 			{/* Bottom content */}
