@@ -38,8 +38,8 @@ export interface RefundPolicy {
 }
 
 export interface EventMedia {
-	key?: string  // storage key — required when sending in payload, absent in API responses
-	url?: string  // pre-signed URL — present in API responses, absent in payload
+	key?: string  // storage key — present in both API responses and save payloads
+	url?: string  // pre-signed URL — present in API responses, absent in payloads
 	type: "COVER" | "GALLERY" | "VIDEO"
 	order: number
 	id?: string

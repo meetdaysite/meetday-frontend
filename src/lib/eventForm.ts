@@ -161,12 +161,9 @@ export function formatEventDateRange(eventDate?: string, endDate?: string | null
 
 // ─── Converters ───────────────────────────────────────────────────────────────
 
-// The API only ever returns a short-lived presigned url for existing media,
-// never the raw storage key — and a key can't be reliably reconstructed from
-// that url (it carries auth query params and may include the bucket name in
-// its path). So an item only has a usable key here if it was just uploaded in
-// this session; existing, untouched media has none, and buildPayload treats
-// that as "leave media unchanged" rather than resending guessed keys.
+// The API returns both the raw storage key and a short-lived signed url for
+// each media item, so existing media can be echoed straight back on save —
+// no need to derive a key from anything.
 function keyFromMediaItem(m: { key?: string; url?: string }): string {
 	return m.key ?? ""
 }
@@ -352,24 +349,6 @@ export function validateStep3(f: { hasCover: boolean; hasGallery: boolean }): Er
 	const e: Errors = {}
 	if (!f.hasCover) e.coverUrl = "Cover image is required — please upload a file."
 	if (!f.hasGallery) e.gallery = "Add at least one gallery image."
-	return e
-}
-
-// When editing an existing event, a slot can show a preview (from the live
-// event) without a usable key, since keys can't be recovered from the API's
-// signed urls (see keyFromMediaItem). That's fine as long as media isn't part
-// of this save — but once the host touches any media slot, every other slot
-// still shown would silently drop out of the replace-all media array. Block
-// that rather than let it happen quietly.
-export function validateMediaKeys(f: FormData, mediaTouched: boolean): Errors {
-	if (!mediaTouched) return {}
-	const e: Errors = {}
-	if (f.coverUrl && !f.coverKey) {
-		e.coverUrl = "Re-upload the cover image — it can't be carried over automatically once you change other media."
-	}
-	if (f.gallerySlots.some((url, i) => url && !f.galleryKeys[i])) {
-		e.gallery = "Re-upload or remove the other gallery items — they can't be carried over automatically once you change one."
-	}
 	return e
 }
 

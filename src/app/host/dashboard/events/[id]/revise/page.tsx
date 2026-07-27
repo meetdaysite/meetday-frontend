@@ -20,7 +20,6 @@ import {
 	venueFieldsChanged,
 	validateStep1,
 	validateStep3,
-	validateMediaKeys,
 	to12Hour,
 	formatEventDateRange,
 	type FormData,
@@ -59,11 +58,10 @@ const REFUND_LABEL: Record<string, string> = {
 	PARTIAL: "Partial Refund",
 }
 
-function validateRevision(f: FormData, venueTouched: boolean, mediaTouched: boolean): Errors {
+function validateRevision(f: FormData, venueTouched: boolean): Errors {
 	const e: Errors = {
 		...validateStep1(f),
 		...validateStep3({ hasCover: !!f.coverUrl, hasGallery: f.gallerySlots.some((s) => s !== "") }),
-		...validateMediaKeys(f, mediaTouched),
 	}
 	if (!f.venueName.trim()) e.venueName = "Venue name is required."
 	if (!f.fullAddress.trim()) e.fullAddress = "Full address is required."
@@ -124,7 +122,6 @@ export default function ReviseEventPage() {
 	const [coverUploading, setCoverUploading] = useState(false)
 	const [galleryUploading, setGalleryUploading] = useState<boolean[]>(Array(6).fill(false))
 	const [isDraggingOver, setIsDraggingOver] = useState(false)
-	const [mediaTouched, setMediaTouched] = useState(false)
 
 	const coverFileRef = useRef<HTMLInputElement>(null)
 	const galleryFileRef = useRef<HTMLInputElement>(null)
@@ -184,13 +181,13 @@ export default function ReviseEventPage() {
 	const hasChanges = Object.keys(revisionPayload).length > 0
 
 	const errors: Errors = useMemo(
-		() => (validated ? validateRevision(formData, venueTouched, mediaTouched) : {}),
-		[validated, formData, venueTouched, mediaTouched],
+		() => (validated ? validateRevision(formData, venueTouched) : {}),
+		[validated, formData, venueTouched],
 	)
 
 	async function handleSubmit() {
 		setValidated(true)
-		const errs = validateRevision(formData, venueTouched, mediaTouched)
+		const errs = validateRevision(formData, venueTouched)
 		if (Object.keys(errs).length > 0) {
 			toast.error("Please fix the errors before submitting.")
 			const firstErrId = Object.keys(errs)[0]
@@ -217,7 +214,6 @@ export default function ReviseEventPage() {
 
 	async function handleCoverFile(file: File) {
 		if (!file.type.startsWith("image/")) return
-		setMediaTouched(true)
 		const prev = formData.coverUrl
 		if (prev.startsWith("blob:")) URL.revokeObjectURL(prev)
 		set("coverUrl", URL.createObjectURL(file))
@@ -237,7 +233,6 @@ export default function ReviseEventPage() {
 	async function handleGalleryFile(file: File, slotIndex: number) {
 		const isVideo = file.type.startsWith("video/")
 		if (!isVideo && !file.type.startsWith("image/")) return
-		setMediaTouched(true)
 		const nextSlots = [...formData.gallerySlots]
 		if (nextSlots[slotIndex].startsWith("blob:")) URL.revokeObjectURL(nextSlots[slotIndex])
 		nextSlots[slotIndex] = URL.createObjectURL(file)
@@ -271,14 +266,12 @@ export default function ReviseEventPage() {
 	}
 
 	function removeCover() {
-		setMediaTouched(true)
 		if (formData.coverUrl.startsWith("blob:")) URL.revokeObjectURL(formData.coverUrl)
 		set("coverUrl", "")
 		set("coverKey", "")
 	}
 
 	function removeGallerySlot(i: number) {
-		setMediaTouched(true)
 		const nextSlots = [...formData.gallerySlots]
 		if (nextSlots[i].startsWith("blob:")) URL.revokeObjectURL(nextSlots[i])
 		nextSlots[i] = ""
@@ -585,11 +578,6 @@ export default function ReviseEventPage() {
 
 					{/* ── 3. Media ── */}
 					<SectionCard title="Media" subtitle="Cover and gallery images for your event">
-						<p className="text-caption text-amber-700 bg-amber-50 border border-amber-200 rounded-action px-3 py-2 -mt-1">
-							Changing any image here means you&apos;ll need to re-upload every other image you want
-							to keep — existing images can&apos;t be carried over automatically once you touch this
-							section.
-						</p>
 						{/* Cover */}
 						<div className="flex flex-col gap-2">
 							<FieldLabel required>Cover Image</FieldLabel>
