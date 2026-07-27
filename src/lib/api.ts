@@ -88,12 +88,12 @@ export type HostProfile = {
 	}
 	portfolioLinks?: string[]
 	pan?: string
-	kycStatus: "PENDING" | "VERIFIED" | "FAILED"
+	kycStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
 	kycVerifiedAt?: string | null
 	kycFailureReason?: string | null
-	panVerificationStatus: "PENDING" | "VERIFIED" | "FAILED"
+	panVerificationStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
 	panVerificationReference?: string
-	bankVerificationStatus: "PENDING" | "VERIFIED" | "FAILED"
+	bankVerificationStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
 	approvalStatus: "PENDING" | "APPROVED" | "REJECTED"
 	approvedAt?: string | null
 	approvedBy?: string | null
@@ -132,6 +132,8 @@ export type UpdateHostProfilePayload = {
 	hostBio?: string
 	tagline?: string
 	gender?: string
+	pan?: string
+	legalName?: string
 	yearsOfExperience?: number
 	totalEventsPreviouslyHosted?: number
 	operatingCities?: string[]

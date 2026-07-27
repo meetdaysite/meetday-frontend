@@ -10,10 +10,11 @@ import { useAuthStore } from "@/store/authStore"
 import { useHostStore } from "@/store/hostStore"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
-import { getHostProfile } from "@/lib/api"
+import { getHostProfile, type HostProfile } from "@/lib/api"
 import { Button } from "@/components/ui/Button"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { Sidebar } from "@/components/dashboard/Sidebar"
+import { CompleteKycScreen } from "@/components/host/CompleteKycScreen"
 
 function HamburgerIcon() {
 	return (
@@ -43,7 +44,15 @@ function CheckIcon({ done }: { done: boolean }) {
 	)
 }
 
-function UnderReviewScreen({ status, onSignOut }: { status: "pending" | "rejected"; onSignOut: () => void }) {
+function UnderReviewScreen({
+	status,
+	profile,
+	onSignOut,
+}: {
+	status: "pending" | "rejected"
+	profile: HostProfile
+	onSignOut: () => void
+}) {
 	const isPending = status === "pending"
 
 	return (
@@ -98,7 +107,7 @@ function UnderReviewScreen({ status, onSignOut }: { status: "pending" | "rejecte
 					<h1 className="text-heading-sm text-text-primary font-bold">
 						{isPending ? "Account Under Review" : "Application Not Approved"}
 					</h1>
-					<p className="text-body-sm text-text-secondary mt-2 max-w-xs mx-auto">
+					<p className="text-body-sm text-text-secondary mt-2 max-w-md mx-auto">
 						{isPending
 							? "Your profile has been submitted. Our team will review your application within 2–3 business days."
 							: "Your application was not approved. Please contact support for more information."}
@@ -109,10 +118,9 @@ function UnderReviewScreen({ status, onSignOut }: { status: "pending" | "rejecte
 					<div className="w-full rounded-action border border-border-default overflow-hidden">
 						{[
 							{ label: "Profile submitted", done: true },
-							{ label: "PAN submitted for verification", done: true },
-							{ label: "Bank account verified", done: true },
-							{ label: "Plan selected", done: true },
-							{ label: "Admin approval", done: false },
+							{ label: "PAN verification", done: profile.panVerificationStatus === "VERIFIED" },
+							{ label: "Bank account verification", done: profile.bankVerificationStatus === "VERIFIED" },
+							{ label: "Admin approval", done: profile.approvalStatus === "APPROVED" },
 						].map((item, i, arr) => (
 							<div
 								key={item.label}
@@ -319,11 +327,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 	}
 
 	const approvalStatus = profile?.approvalStatus
-	if (approvalStatus === "PENDING" || approvalStatus === "REJECTED") {
+
+	// KYC must be complete before an application can be sent for admin approval —
+	// a PENDING profile with unverified PAN/bank means the applicant dropped off
+	// mid-onboarding and needs to finish that step first.
+	if (profile && approvalStatus === "PENDING" && profile.kycStatus !== "VERIFIED") {
+		return (
+			<>
+				<CompleteKycScreen profile={profile} onSignOut={() => setShowLogoutConfirm(true)} />
+				<LogoutConfirmDialog
+					open={showLogoutConfirm}
+					onClose={() => setShowLogoutConfirm(false)}
+					onConfirm={handleSignOut}
+				/>
+			</>
+		)
+	}
+
+	if (profile && (approvalStatus === "PENDING" || approvalStatus === "REJECTED")) {
 		return (
 			<>
 				<UnderReviewScreen
 					status={approvalStatus === "PENDING" ? "pending" : "rejected"}
+					profile={profile}
 					onSignOut={() => setShowLogoutConfirm(true)}
 				/>
 				<LogoutConfirmDialog
