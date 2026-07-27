@@ -23,6 +23,7 @@ import UserSvg from "@/icons/outlined/user.svg"
 import { getPublicEventDetails } from "@/lib/api"
 import { getFullOrderDetail, getOrderTicketUrl } from "@/lib/ordersApi"
 import { getApiErrorMessage } from "@/lib/errors"
+import { parseEventDateTime } from "@/lib/eventDateTime"
 import { useAuthStore } from "@/store/authStore"
 import type { PublicEventDetails } from "@/types/attendee"
 import type { FullOrderDetail } from "@/types/order"
@@ -174,7 +175,7 @@ function TicketPageContent({
 	}
 
 	const ev = order.event
-	const eventHasPassed = new Date(order.event.eventDate) < new Date()
+	const eventHasPassed = parseEventDateTime(order.event.eventDate, order.event.endTime) < new Date()
 	const canReview = order.status === "CONFIRMED" && eventHasPassed
 	const hasCancellableAttendees = order.items.some(item =>
 		item.attendees.some(a => !a.checkedInAt && !a.cancelledAt),

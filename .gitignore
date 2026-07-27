@@ -45,3 +45,4 @@ next-env.d.ts
 
 # design reference exports (not source assets)
 /designs
+docs

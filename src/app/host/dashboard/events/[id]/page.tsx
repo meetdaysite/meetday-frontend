@@ -9,6 +9,7 @@ import { useEventStore } from "@/store/eventStore"
 import { storageUrl } from "@/lib/uploadMedia"
 import { createScannerSession, getCheckInStats, getEventAttendees } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
+import { formatEventDateRange } from "@/lib/eventForm"
 import type { CheckInStats, EventAttendee, EventAttendeesResponse } from "@/lib/api"
 import type { Event, ApiEventStatus } from "@/types/event"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
@@ -26,13 +27,34 @@ import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<ApiEventStatus, { label: string; badge: string }> = {
+const STATUS_CONFIG: Record<ApiEventStatus | "LIVE", { label: string; badge: string }> = {
 	DRAFT: { label: "Draft", badge: "bg-neutral-100/95 text-neutral-700 backdrop-blur-sm shadow-sm" },
 	UNDER_REVIEW: { label: "Under Review", badge: "bg-blue-50/95 text-blue-700 backdrop-blur-sm shadow-sm" },
 	REJECTED: { label: "Rejected", badge: "bg-red-50/95 text-red-700 backdrop-blur-sm shadow-sm" },
 	PUBLISHED: { label: "Published", badge: "bg-green-50/95 text-green-700 backdrop-blur-sm shadow-sm" },
+	LIVE: { label: "Live Now", badge: "bg-red-100/95 text-red-700 backdrop-blur-sm shadow-sm" },
 	CANCELLED: { label: "Cancelled", badge: "bg-orange-50/95 text-orange-700 backdrop-blur-sm shadow-sm" },
 	COMPLETED: { label: "Completed", badge: "bg-neutral-900/90 text-white backdrop-blur-sm shadow-sm" },
+}
+
+// ─── Revision field labels ────────────────────────────────────────────────────
+
+const REVISION_FIELD_LABEL: Record<string, string> = {
+	categoryId: "Category",
+	title: "Title",
+	description: "Description",
+	eventType: "Event Type",
+	languages: "Languages",
+	tags: "Tags",
+	whatToExpect: "What to Expect",
+	whoShouldAttend: "Who Should Attend",
+	specialInstructions: "Special Instructions",
+	media: "Media",
+	venueName: "Venue Name",
+	fullAddress: "Full Address",
+	city: "City",
+	latitude: "Latitude",
+	longitude: "Longitude",
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -109,7 +131,7 @@ export default function EventDetailPage() {
 	}
 
 	const event = currentEvent
-	const cfg = STATUS_CONFIG[event.status]
+	const cfg = STATUS_CONFIG[event.displayStatus ?? event.status]
 	const cover = event.media?.find(m => m.type === "COVER")
 	const coverUrl = cover ? (cover.url ?? storageUrl(cover.key ?? "")) : ""
 	const galleryImages = (event.media?.filter(m => m.type !== "COVER") ?? [])
@@ -184,6 +206,35 @@ export default function EventDetailPage() {
 									Cancellation Reason
 								</p>
 								<p className="text-body-sm text-orange-600">{event.cancellationReason}</p>
+							</div>
+						</div>
+					)}
+
+					{/* Pending revision banner */}
+					{event.pendingRevision && (
+						<div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-action mb-5">
+							<AlertIcon className="text-blue-500 shrink-0 mt-0.5" />
+							<div>
+								<p className="text-label-sm font-semibold text-blue-700 mb-0.5">
+									Edits awaiting review
+								</p>
+								<p className="text-body-sm text-blue-600 mb-2">
+									Submitted on {formatDate(event.pendingRevision.createdAt)}. This event is still
+									showing its currently published version — your changes go live once an admin
+									approves them.
+								</p>
+								{Object.keys(event.pendingRevision.changes).length > 0 && (
+									<div className="flex flex-wrap gap-1.5">
+										{Object.keys(event.pendingRevision.changes).map((field) => (
+											<span
+												key={field}
+												className="text-caption text-blue-700 bg-blue-100 px-2 py-0.5 rounded-badge"
+											>
+												{REVISION_FIELD_LABEL[field] ?? field}
+											</span>
+										))}
+									</div>
+								)}
 							</div>
 						</div>
 					)}
@@ -299,7 +350,13 @@ export default function EventDetailPage() {
 											toast.error(getApiErrorMessage(err))
 										}
 									}}
-									onEdit={() => router.push(`/host/dashboard/events/${event.id}/edit`)}
+									onEdit={() =>
+										router.push(
+											event.status === "PUBLISHED"
+												? `/host/dashboard/events/${event.id}/revise`
+												: `/host/dashboard/events/${event.id}/edit`,
+										)
+									}
 									onCancel={cancelEvent}
 								/>
 							</div>
@@ -327,7 +384,7 @@ export default function EventDetailPage() {
 									<CalendarIcon className="mt-0.5 shrink-0 text-text-brand" />
 									<div>
 										<p className="text-label-sm font-medium text-text-primary">
-											{formatDate(event.eventDate)}
+											{formatEventDateRange(event.eventDate, event.endDate, "long")}
 										</p>
 										<p className="text-caption text-text-muted">
 											{event.startTime && event.endTime
@@ -483,16 +540,35 @@ function EventActions({
 
 		case "UNDER_REVIEW":
 			return (
-				<p className="text-body-sm text-text-muted">
-					Your event is currently under review. We&apos;ll notify you once it&apos;s approved or if
-					changes are needed.
-				</p>
+				<div className="flex flex-col gap-2">
+					<p className="text-[12px] text-text-secondary">
+						Your event is currently under review. We&apos;ll notify you once it&apos;s approved or if
+						changes are needed.
+					</p>
+					<ActionButton variant="secondary" icon={<PenIcon />} onClick={onEdit}>
+						Edit Event
+					</ActionButton>
+					<p className="text-caption text-amber-700 bg-amber-50 border border-amber-200 rounded-action px-3 py-2">
+						Editing will move this event back to draft — you&apos;ll need to submit it for review again.
+					</p>
+				</div>
 			)
 
-		case "PUBLISHED":
+		case "PUBLISHED": {
+			// `status` can lag the real-time `displayStatus` by up to ~30 min, so a
+			// just-started or just-ended event may still read "PUBLISHED" here.
+			// Revision is rejected by the API once the event has ended; cancellation
+			// is rejected once it has started (live) or ended.
+			const canRevise = event.displayStatus !== "COMPLETED"
+			const canCancel = event.displayStatus !== "LIVE" && event.displayStatus !== "COMPLETED"
 			return (
 				<>
 					<div className="flex flex-col gap-2">
+						{canRevise && (
+							<ActionButton variant="secondary" icon={<PenIcon />} onClick={onEdit}>
+								Edit Event
+							</ActionButton>
+						)}
 						<ActionButton
 							variant="secondary"
 							icon={<ScannerStaffIcon />}
@@ -500,13 +576,15 @@ function EventActions({
 						>
 							Add Support Staff
 						</ActionButton>
-						<ActionButton
-							variant="danger"
-							icon={<CancelIcon />}
-							onClick={() => setShowCancelModal(true)}
-						>
-							Cancel Event
-						</ActionButton>
+						{canCancel && (
+							<ActionButton
+								variant="danger"
+								icon={<CancelIcon />}
+								onClick={() => setShowCancelModal(true)}
+							>
+								Cancel Event
+							</ActionButton>
+						)}
 					</div>
 					{showAddStaffModal && (
 						<AddStaffModal eventId={event.id} onClose={() => setShowAddStaffModal(false)} />
@@ -520,6 +598,7 @@ function EventActions({
 					)}
 				</>
 			)
+		}
 
 		case "CANCELLED":
 			return (

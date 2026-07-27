@@ -6,6 +6,18 @@ export type ApiEventStatus =
 	| "REJECTED"
 	| "COMPLETED"
 
+// Real-time label for the badge the user sees — distinct from the persisted
+// `status`, which can lag up to ~30 min behind (e.g. still "PUBLISHED" while
+// displayStatus is already "LIVE" or "COMPLETED"). Render badges from this;
+// gate actions (cancel/edit/etc.) on `status`.
+export type DisplayEventStatus =
+	| "DRAFT"
+	| "UNDER_REVIEW"
+	| "PUBLISHED"
+	| "LIVE"
+	| "COMPLETED"
+	| "CANCELLED"
+
 export interface Ticket {
 	id?: string
 	name: string
@@ -26,8 +38,8 @@ export interface RefundPolicy {
 }
 
 export interface EventMedia {
-	key?: string  // storage key — required when sending in payload, absent in API responses
-	url?: string  // pre-signed URL — present in API responses, absent in payload
+	key?: string  // storage key — present in both API responses and save payloads
+	url?: string  // pre-signed URL — present in API responses, absent in payloads
 	type: "COVER" | "GALLERY" | "VIDEO"
 	order: number
 	id?: string
@@ -41,6 +53,7 @@ export interface EventDraftPayload {
 	languages?: string[]
 	tags?: string[]
 	eventDate?: string
+	endDate?: string
 	startTime?: string
 	endTime?: string
 	venueName?: string
@@ -59,9 +72,44 @@ export interface EventDraftPayload {
 	media?: EventMedia[]
 }
 
+export interface UpdatePublishedEventPayload {
+	categoryId?: string
+	title?: string
+	description?: string
+	eventType?: string
+	languages?: string[]
+	tags?: string[]
+	whatToExpect?: string[]
+	whoShouldAttend?: string[]
+	specialInstructions?: string
+	media?: EventMedia[]
+	venueName?: string
+	fullAddress?: string
+	city?: string
+	latitude?: number
+	longitude?: number
+}
+
+export type EventRevisionChanges = UpdatePublishedEventPayload
+
+export interface EventRevision {
+	id: string
+	eventId: string
+	status: "PENDING"
+	touchesVenue: boolean
+	submittedBy: string
+	changes: EventRevisionChanges
+	adminRemark: string | null
+	reviewedBy: string | null
+	reviewedAt: string | null
+	createdAt: string
+	updatedAt: string
+}
+
 export interface Event {
 	id: string
 	status: ApiEventStatus
+	displayStatus?: DisplayEventStatus
 	hostId: string
 	createdAt: string
 	updatedAt: string
@@ -69,6 +117,7 @@ export interface Event {
 	rejectionReason?: string
 	cancellationReason?: string
 	adminRejectionRemark?: string | null
+	pendingRevision?: EventRevision | null
 	// List-response computed fields
 	coverImageUrl?: string
 	totalCapacity?: number
@@ -82,6 +131,7 @@ export interface Event {
 	languages?: string[]
 	tags?: string[]
 	eventDate?: string
+	endDate?: string | null
 	startTime?: string
 	endTime?: string
 	venueName?: string

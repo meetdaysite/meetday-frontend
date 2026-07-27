@@ -3,28 +3,13 @@
 import { useEffect, useState } from "react"
 import { Icon } from "@/components/ui/Icon"
 import ClockCircleSvg from "@/icons/filled/clock-circle.svg"
+import { parseEventDateTime } from "@/lib/eventDateTime"
 
 interface Remaining {
 	days: number
 	hours: number
 	mins: number
 	secs: number
-}
-
-// Handles both 12-hour ("08:00 AM") and 24-hour ("08:00") time strings.
-function parseEventDateTime(eventDate: string, startTime: string): Date {
-	const target = new Date(`${eventDate.slice(0, 10)}T00:00:00`)
-	const match = startTime.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i)
-	if (!match) return target
-
-	let hours = parseInt(match[1], 10)
-	const minutes = parseInt(match[2], 10)
-	const period = match[3]?.toUpperCase()
-	if (period === "PM" && hours !== 12) hours += 12
-	if (period === "AM" && hours === 12) hours = 0
-
-	target.setHours(hours, minutes, 0, 0)
-	return target
 }
 
 function getRemaining(target: Date): Remaining | null {

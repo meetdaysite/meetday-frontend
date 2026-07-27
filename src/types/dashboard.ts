@@ -1,3 +1,5 @@
+import type { DisplayEventStatus } from "@/types/event"
+
 export type DashboardPeriod = "THIS_MONTH" | "LAST_30_DAYS" | "THIS_YEAR" | "ALL_TIME"
 
 export type EventCounts = {
@@ -26,8 +28,9 @@ export type DashboardRecentEvent = {
 	coverImageUrl: string | null
 	city: string | null
 	eventDate: string | null
+	endDate: string | null
 	endTime: string | null
-	status: string
+	status: DisplayEventStatus
 	registrations: number
 	revenue: number
 }

@@ -80,6 +80,14 @@ export function EventCard({ event, className, communityName }: EventCardProps) {
 					{event.eventType}
 				</span>
 
+				{/* Live badge */}
+				{event.displayStatus === "LIVE" && (
+					<span className="absolute top-2 left-2 inline-flex items-center gap-1 bg-red-600 text-white text-[9px] font-semibold px-2 py-1 uppercase tracking-wide rounded-badge shadow-sm">
+						<span className="size-1.5 rounded-full bg-white animate-pulse" />
+						Live Now
+					</span>
+				)}
+
 				<div className="relative z-10 flex flex-col h-full p-4">
 					<div className="font-medium">
 						<p className="text-white text-body-md leading-tight drop-shadow">

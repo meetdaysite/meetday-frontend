@@ -2,6 +2,8 @@
 
 import { CopilotPanel, type CopilotPanelState, type EventSummaryData } from "@/components/aiCopilot/CopilotPanel"
 import { VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
+import { DateField, parseDateInput } from "@/components/eventForm/DateField"
+import { TimeField } from "@/components/eventForm/TimeField"
 import {
 	ErrMsg,
 	FieldLabel,
@@ -13,6 +15,7 @@ import {
 } from "@/components/eventForm/shared"
 import { TicketListEditor } from "@/components/eventForm/TicketListEditor"
 import { Button } from "@/components/ui/Button"
+import { Switch } from "@/components/ui/Switch"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { Dropdown } from "@/components/ui/Dropdown"
 import { Icon } from "@/components/ui/Icon"
@@ -28,9 +31,12 @@ import {
 import {
 	EVENT_TYPE_OPTIONS,
 	LANGUAGE_OPTIONS,
+	addOneDay,
 	buildPayload,
 	defaultFormData,
 	eventToFormData,
+	timeToMinutes,
+	to12Hour,
 	validateStep1,
 	validateStep2,
 	validateStep3,
@@ -50,17 +56,22 @@ import { toast } from "sonner"
 import AiAvatarSvg from "@/assets/ai-avatar.svg"
 import StarsSvg from "@/icons/filled/stars.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
-import CalendarSvg from "@/icons/outlined/calendar.svg"
 import CameraAddSvg from "@/icons/outlined/camera-add.svg"
-import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
 import FileTextSvg from "@/icons/outlined/file-text.svg"
 import GalleryWideSvg from "@/icons/outlined/gallery-wide.svg"
 import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
 import SettingsSvg from "@/icons/outlined/settings.svg"
 import TicketSvg from "@/icons/outlined/ticket.svg"
 import UploadSvg from "@/icons/outlined/upload.svg"
+import AltXSvg from "@/icons/outlined/close.svg"
 
 import type { ComponentType, SVGProps } from "react"
+
+function startOfToday() {
+	const d = new Date()
+	d.setHours(0, 0, 0, 0)
+	return d
+}
 
 // ─── Step definitions ──────────────────────────────────────────────────────────
 
@@ -523,7 +534,30 @@ function Step2DateTime({
 	registerValidate: (fn: () => boolean) => void
 }) {
 	const [validated, setValidated] = useState(false)
-	const { eventDate, startTime, endTime, venueName, fullAddress, city } = formData
+	const [overnightConfirm, setOvernightConfirm] = useState<{ startTime: string; endTime: string } | null>(null)
+	const { eventDate, endDate, isMultiDay, startTime, endTime, venueName, fullAddress, city } = formData
+
+	// If start/end times now cross midnight while the event is still marked
+	// single-day, don't silently accept it — the host may have mistyped one of
+	// the times. Ask before promoting to a multi-day listing.
+	function checkOvernight(nextStart: string, nextEnd: string): boolean {
+		if (isMultiDay || !nextStart || !nextEnd) return false
+		if (timeToMinutes(nextEnd) > timeToMinutes(nextStart)) return false
+		setOvernightConfirm({ startTime: nextStart, endTime: nextEnd })
+		return true
+	}
+
+	function confirmOvernight() {
+		if (!overnightConfirm) return
+		setFormData(prev => ({
+			...prev,
+			startTime: overnightConfirm.startTime,
+			endTime: overnightConfirm.endTime,
+			isMultiDay: true,
+			endDate: prev.eventDate ? addOneDay(prev.eventDate) : prev.endDate,
+		}))
+		setOvernightConfirm(null)
+	}
 
 	async function handleAddressBlur() {
 		if (!formData.fullAddress.trim() || formData.latitude !== null) return
@@ -544,16 +578,16 @@ function Step2DateTime({
 	}
 
 	const errors = useMemo(
-		() => (validated ? validateStep2({ eventDate, startTime, endTime, venueName, fullAddress }) : {}),
-		[validated, eventDate, startTime, endTime, venueName, fullAddress],
+		() => (validated ? validateStep2({ eventDate, endDate, isMultiDay, startTime, endTime, venueName, fullAddress }) : {}),
+		[validated, eventDate, endDate, isMultiDay, startTime, endTime, venueName, fullAddress],
 	)
 
 	const validate = useCallback(() => {
 		setValidated(true)
 		return (
-			Object.keys(validateStep2({ eventDate, startTime, endTime, venueName, fullAddress })).length === 0
+			Object.keys(validateStep2({ eventDate, endDate, isMultiDay, startTime, endTime, venueName, fullAddress })).length === 0
 		)
-	}, [eventDate, startTime, endTime, venueName, fullAddress])
+	}, [eventDate, endDate, isMultiDay, startTime, endTime, venueName, fullAddress])
 
 	useEffect(() => {
 		registerValidate(validate)
@@ -561,18 +595,6 @@ function Step2DateTime({
 
 	function set<K extends keyof FormData>(key: K, value: FormData[K]) {
 		setFormData(prev => ({ ...prev, [key]: value }))
-	}
-
-	const eventDateRef = useRef<HTMLInputElement>(null)
-	const startTimeRef = useRef<HTMLInputElement>(null)
-	const endTimeRef = useRef<HTMLInputElement>(null)
-
-	function openPicker(ref: React.RefObject<HTMLInputElement | null>) {
-		try {
-			ref.current?.showPicker?.()
-		} catch {
-			// showPicker isn't supported in every browser — clicking the input directly still works
-		}
 	}
 
 	return (
@@ -585,51 +607,66 @@ function Step2DateTime({
 			</div>
 
 			<div className="border border-border-default rounded-action p-5 bg-surface-card flex flex-col gap-4">
-				<h3 className="text-label-md font-semibold text-text-primary">Date & Time</h3>
+				<div className="flex items-center justify-between gap-3">
+					<h3 className="text-label-md font-semibold text-text-primary">Date & Time</h3>
+					<Switch
+						label="Multi-day event"
+						checked={isMultiDay}
+						onChange={checked =>
+							setFormData(prev => ({ ...prev, isMultiDay: checked, endDate: checked ? prev.endDate : "" }))
+						}
+					/>
+				</div>
 
-				<div className="flex flex-col gap-1.5">
-					<FieldLabel required>Event Date</FieldLabel>
-					<div className={iconWrapCls(!!errors.eventDate)} onClick={() => openPicker(eventDateRef)}>
-						<Icon as={CalendarSvg} size="md" color="secondary" />
-						<input
-							ref={eventDateRef}
-							type="date"
+				<div className={clsx("grid gap-4", isMultiDay ? "grid-cols-2" : "grid-cols-1")}>
+					<div className="flex flex-col gap-1.5">
+						<FieldLabel required>Event Date</FieldLabel>
+						<DateField
 							value={eventDate}
-							min={new Date().toISOString().split("T")[0]}
-							onChange={e => set("eventDate", e.target.value)}
-							className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute"
+							onChange={v => set("eventDate", v)}
+							error={!!errors.eventDate}
+							minDate={startOfToday()}
 						/>
+						<ErrMsg msg={errors.eventDate} />
 					</div>
-					<ErrMsg msg={errors.eventDate} />
+
+					{isMultiDay && (
+						<div className="flex flex-col gap-1.5">
+							<FieldLabel required>End Date</FieldLabel>
+							<DateField
+								value={endDate}
+								onChange={v => set("endDate", v)}
+								error={!!errors.endDate}
+								minDate={parseDateInput(eventDate) ?? startOfToday()}
+							/>
+							<ErrMsg msg={errors.endDate} />
+						</div>
+					)}
 				</div>
 
 				<div className="grid grid-cols-2 gap-4">
 					<div className="flex flex-col gap-1.5">
 						<FieldLabel required>Start Time</FieldLabel>
-						<div className={iconWrapCls(!!errors.startTime)} onClick={() => openPicker(startTimeRef)}>
-							<Icon as={ClockCircleSvg} size="md" color="secondary" />
-							<input
-								ref={startTimeRef}
-								type="time"
-								value={startTime}
-								onChange={e => set("startTime", e.target.value)}
-								className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute"
-							/>
-						</div>
+						<TimeField
+							value={startTime}
+							onChange={v => {
+								if (checkOvernight(v, endTime)) return
+								set("startTime", v)
+							}}
+							error={!!errors.startTime}
+						/>
 						<ErrMsg msg={errors.startTime} />
 					</div>
 					<div className="flex flex-col gap-1.5">
 						<FieldLabel required>End Time</FieldLabel>
-						<div className={iconWrapCls(!!errors.endTime)} onClick={() => openPicker(endTimeRef)}>
-							<Icon as={ClockCircleSvg} size="md" color="secondary" />
-							<input
-								ref={endTimeRef}
-								type="time"
-								value={endTime}
-								onChange={e => set("endTime", e.target.value)}
-								className="flex-1 bg-transparent text-sm text-text-primary outline-none cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute"
-							/>
-						</div>
+						<TimeField
+							value={endTime}
+							onChange={v => {
+								if (checkOvernight(startTime, v)) return
+								set("endTime", v)
+							}}
+							error={!!errors.endTime}
+						/>
 						<ErrMsg msg={errors.endTime} />
 					</div>
 				</div>
@@ -701,6 +738,32 @@ function Step2DateTime({
 					Save &amp; Continue
 				</Button>
 			</div>
+
+			{overnightConfirm && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+					<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-sm p-6">
+						<h2 className="text-label-lg font-semibold text-text-primary mb-2">Make this a multi-day event?</h2>
+						<p className="text-body-sm text-text-secondary mb-6">
+							{to12Hour(overnightConfirm.startTime)} to {to12Hour(overnightConfirm.endTime)} runs past midnight.
+							Continuing will list this as a multi-day experience ending the day after your event date.
+						</p>
+						<div className="flex gap-3 justify-end">
+							<button
+								onClick={() => setOvernightConfirm(null)}
+								className="px-4 py-2 text-label-sm font-medium text-text-primary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors"
+							>
+								Cancel
+							</button>
+							<button
+								onClick={confirmOvernight}
+								className="px-4 py-2 text-label-sm font-semibold text-action-primary-text bg-action-primary hover:bg-action-primary-hover rounded-action transition-colors"
+							>
+								Make it multi-day
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }
@@ -733,13 +796,13 @@ function Step3MediaUpload({
 	const hasGallery = galleryKeys.some(k => k !== "")
 
 	const errors = useMemo(
-		() => (validated ? validateStep3({ coverKey, hasGallery }) : {}),
+		() => (validated ? validateStep3({ hasCover: !!coverKey, hasGallery }) : {}),
 		[validated, coverKey, hasGallery],
 	)
 
 	const validate = useCallback(() => {
 		setValidated(true)
-		return Object.keys(validateStep3({ coverKey, hasGallery })).length === 0
+		return Object.keys(validateStep3({ hasCover: !!coverKey, hasGallery })).length === 0
 	}, [coverKey, hasGallery])
 
 	useEffect(() => {
@@ -1543,14 +1606,14 @@ export default function CreateExperiencePage() {
 				<div className="flex items-center justify-between px-6 lg:px-8 py-3 bg-surface-card border-b border-border-default shrink-0">
 					<div className="flex items-center gap-3">
 						<Button
-							type="button"
+							variant="secondary"
+							size="sm"
+							radius="md"
 							onClick={handleLeave}
 							aria-label="Close"
-							className="size-8 p-0 bg-transparent border-0 text-text-secondary hover:text-text-primary hover:bg-surface-card-muted"
+							className="border-0 text-text-secondary hover:text-text-primary"
 						>
-							<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-								<path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-							</svg>
+							<Icon as={AltXSvg} color="inherit" size="lg" aria-hidden />
 						</Button>
 						<h2 className="text-label-md font-semibold text-text-primary">
 							Create New Experience

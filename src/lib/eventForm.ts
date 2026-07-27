@@ -1,5 +1,5 @@
 import { storageUrl } from "@/lib/uploadMedia"
-import type { Event, EventDraftPayload, Ticket, RefundPolicy, EventMedia } from "@/types/event"
+import type { Event, EventDraftPayload, Ticket, RefundPolicy, EventMedia, UpdatePublishedEventPayload } from "@/types/event"
 
 export type DraftTicket = {
 	name: string
@@ -76,7 +76,7 @@ export const defaultFormData = {
 	title: "", desc: "", category: "", eventType: "",
 	languages: [] as string[], tags: [] as string[],
 	whatToExpect: [] as string[], whoShouldAttend: [] as string[],
-	eventDate: "", startTime: "", endTime: "",
+	eventDate: "", endDate: "", isMultiDay: false, startTime: "", endTime: "",
 	venueName: "", fullAddress: "", city: "",
 	latitude: null as number | null, longitude: null as number | null,
 	coverUrl: "", coverKey: "",
@@ -117,25 +117,55 @@ export function toISODate(dateStr: string): string {
 	return new Date(`${dateStr}T00:00:00`).toISOString()
 }
 
-export function toDateInput(iso?: string): string {
+export function toDateInput(iso?: string | null): string {
 	if (!iso) return ""
 	return iso.split("T")[0]
 }
 
+// Adds one calendar day to a "YYYY-MM-DD" form value, used when an overnight
+// end time auto-promotes an event to multi-day.
+export function addOneDay(dateInput: string): string {
+	const [y, m, d] = dateInput.split("-").map(Number)
+	if (!y || !m || !d) return ""
+	const date = new Date(y, m - 1, d + 1)
+	const yy = date.getFullYear()
+	const mm = String(date.getMonth() + 1).padStart(2, "0")
+	const dd = String(date.getDate()).padStart(2, "0")
+	return `${yy}-${mm}-${dd}`
+}
+
+// Renders "26 Jul 2026" for a single-day event, or a range ("26 – 28 Jul 2026",
+// "30 Jul – 1 Aug 2026", "30 Dec 2026 – 1 Jan 2027") once endDate is set and
+// differs from eventDate.
+export function formatEventDateRange(eventDate?: string, endDate?: string | null, month: "short" | "long" = "short"): string {
+	if (!eventDate) return "—"
+	const start = new Date(eventDate)
+	if (isNaN(start.getTime())) return eventDate
+
+	const single = start.toLocaleDateString("en-IN", { day: "numeric", month, year: "numeric" })
+	if (!endDate) return single
+
+	const end = new Date(endDate)
+	if (isNaN(end.getTime()) || toDateInput(eventDate) === toDateInput(endDate)) return single
+
+	const endLabel = end.toLocaleDateString("en-IN", { day: "numeric", month, year: "numeric" })
+	if (start.getFullYear() === end.getFullYear() && start.getMonth() === end.getMonth()) {
+		return `${start.getDate()} – ${endLabel}`
+	}
+	if (start.getFullYear() === end.getFullYear()) {
+		const startLabel = start.toLocaleDateString("en-IN", { day: "numeric", month })
+		return `${startLabel} – ${endLabel}`
+	}
+	return `${single} – ${endLabel}`
+}
+
 // ─── Converters ───────────────────────────────────────────────────────────────
 
-// The API returns pre-signed S3 URLs in media[].url. Strip the query string and
-// leading slash to recover the storage key for use in save payloads.
+// The API returns both the raw storage key and a short-lived signed url for
+// each media item, so existing media can be echoed straight back on save —
+// no need to derive a key from anything.
 function keyFromMediaItem(m: { key?: string; url?: string }): string {
-	if (m.key) return m.key
-	if (m.url) {
-		try {
-			return new URL(m.url).pathname.slice(1)
-		} catch {
-			return ""
-		}
-	}
-	return ""
+	return m.key ?? ""
 }
 
 function displayUrlFromMediaItem(m: { key?: string; url?: string }): string {
@@ -166,13 +196,15 @@ export function eventToFormData(event: Event): FormData {
 		whatToExpect: event.whatToExpect ?? [],
 		whoShouldAttend: event.whoShouldAttend ?? [],
 		eventDate: toDateInput(event.eventDate),
+		endDate: toDateInput(event.endDate),
+		isMultiDay: !!event.endDate,
 		startTime: from12Hour(event.startTime ?? ""),
 		endTime: from12Hour(event.endTime ?? ""),
 		venueName: event.venueName ?? "",
 		fullAddress: event.fullAddress ?? "",
 		city: event.city ?? "",
-		latitude: event.latitude ?? null,
-		longitude: event.longitude ?? null,
+		latitude: event.latitude != null ? Number(event.latitude) : null,
+		longitude: event.longitude != null ? Number(event.longitude) : null,
 		coverKey: coverMedia ? keyFromMediaItem(coverMedia) : "",
 		coverUrl: coverMedia ? displayUrlFromMediaItem(coverMedia) : "",
 		gallerySlots,
@@ -197,8 +229,35 @@ export function eventToFormData(event: Event): FormData {
 	}
 }
 
+function mediaArrayFromForm(f: FormData): EventMedia[] {
+	const media: EventMedia[] = []
+	if (f.coverKey) media.push({ key: f.coverKey, type: "COVER", order: 0 })
+	f.galleryKeys.forEach((key, i) => {
+		if (key) media.push({ key, type: (f.galleryTypes[i] as "GALLERY" | "VIDEO") || "GALLERY", order: i + 1 })
+	})
+	return media
+}
+
+// Tickets loaded from an existing event (via eventToFormData) keep their `id`
+// and whatever raw type the API returned for numeric fields. The update DTO
+// rejects an `id` on ticket items and requires real numbers, so always
+// re-derive a clean ticket shape here rather than forwarding f.tickets as-is —
+// otherwise saving without touching the Ticket Types section fails validation.
+function sanitizeTickets(tickets: Ticket[]): Ticket[] {
+	return tickets.map((t) => ({
+		name: t.name,
+		price: Number(t.price),
+		totalCapacity: Number(t.totalCapacity),
+		maxPerPerson: Number(t.maxPerPerson),
+		description: t.description || undefined,
+		saleStartDate: t.saleStartDate || undefined,
+		saleEndDate: t.saleEndDate || undefined,
+	}))
+}
+
 export function buildPayload(f: FormData): EventDraftPayload {
-	const isFree = f.tickets.length === 0 || f.tickets.every((t) => t.price === 0)
+	const tickets = sanitizeTickets(f.tickets)
+	const isFree = tickets.length === 0 || tickets.every((t) => t.price === 0)
 
 	const refundPolicy: RefundPolicy | undefined = f.refundType
 		? {
@@ -209,11 +268,7 @@ export function buildPayload(f: FormData): EventDraftPayload {
 		  }
 		: undefined
 
-	const media: EventMedia[] = []
-	if (f.coverKey) media.push({ key: f.coverKey, type: "COVER", order: 0 })
-	f.galleryKeys.forEach((key, i) => {
-		if (key) media.push({ key, type: (f.galleryTypes[i] as "GALLERY" | "VIDEO") || "GALLERY", order: i + 1 })
-	})
+	const media = mediaArrayFromForm(f)
 
 	return {
 		categoryId:          f.category || undefined,
@@ -223,6 +278,7 @@ export function buildPayload(f: FormData): EventDraftPayload {
 		languages:           f.languages.length > 0 ? f.languages : undefined,
 		tags:                f.tags.length > 0 ? f.tags : undefined,
 		eventDate:           f.eventDate ? toISODate(f.eventDate) : undefined,
+		endDate:             f.isMultiDay && f.endDate ? toISODate(f.endDate) : undefined,
 		startTime:           f.startTime ? to12Hour(f.startTime) : undefined,
 		endTime:             f.endTime ? to12Hour(f.endTime) : undefined,
 		venueName:           f.venueName || undefined,
@@ -236,7 +292,7 @@ export function buildPayload(f: FormData): EventDraftPayload {
 		ageRestriction:      f.ageRestriction || undefined,
 		specialInstructions: f.instructions || undefined,
 		isFree,
-		tickets:             f.tickets.length > 0 ? f.tickets : undefined,
+		tickets:             tickets.length > 0 ? tickets : undefined,
 		refundPolicy,
 		media:               media.length > 0 ? media : undefined,
 	}
@@ -250,7 +306,7 @@ function isFutureOrToday(val: string) {
 	return new Date(val) >= today
 }
 
-function timeToMinutes(val: string) {
+export function timeToMinutes(val: string) {
 	const [h, m] = val.split(":").map(Number)
 	return h * 60 + m
 }
@@ -269,7 +325,7 @@ export function validateStep1(f: Pick<FormData, "title" | "desc" | "category" | 
 }
 
 export function validateStep2(
-	f: Pick<FormData, "eventDate" | "startTime" | "endTime" | "venueName" | "fullAddress">,
+	f: Pick<FormData, "eventDate" | "endDate" | "isMultiDay" | "startTime" | "endTime" | "venueName" | "fullAddress">,
 	allowPastDate = false,
 ): Errors {
 	const e: Errors = {}
@@ -277,16 +333,21 @@ export function validateStep2(
 	else if (!allowPastDate && !isFutureOrToday(f.eventDate)) e.eventDate = "Date must be today or in the future."
 	if (!f.startTime) e.startTime = "Start time is required."
 	if (!f.endTime) e.endTime = "End time is required."
-	else if (f.startTime && timeToMinutes(f.endTime) <= timeToMinutes(f.startTime))
+	else if (f.startTime && !f.isMultiDay && timeToMinutes(f.endTime) <= timeToMinutes(f.startTime))
 		e.endTime = "End time must be after start time."
+	if (f.isMultiDay) {
+		if (!f.endDate) e.endDate = "End date is required for a multi-day event."
+		else if (f.eventDate && new Date(f.endDate) < new Date(f.eventDate))
+			e.endDate = "End date cannot be before the event date."
+	}
 	if (!f.venueName.trim()) e.venueName = "Venue name is required."
 	if (!f.fullAddress.trim()) e.fullAddress = "Full address is required."
 	return e
 }
 
-export function validateStep3(f: { coverKey: string; hasGallery: boolean }): Errors {
+export function validateStep3(f: { hasCover: boolean; hasGallery: boolean }): Errors {
 	const e: Errors = {}
-	if (!f.coverKey) e.coverUrl = "Cover image is required — please upload a file."
+	if (!f.hasCover) e.coverUrl = "Cover image is required — please upload a file."
 	if (!f.hasGallery) e.gallery = "Add at least one gallery image."
 	return e
 }
@@ -317,8 +378,54 @@ export function validateAll(f: FormData, allowPastDate = false): Errors {
 	return {
 		...validateStep1(f),
 		...validateStep2(f, allowPastDate),
-		...validateStep3({ coverKey: f.coverKey, hasGallery: f.galleryKeys.some((k) => k !== "") }),
+		...validateStep3({
+			hasCover: !!(f.coverKey || f.coverUrl),
+			hasGallery: f.galleryKeys.some((k) => k !== "") || f.gallerySlots.some((s) => s !== ""),
+		}),
 		...validateStep4({ tickets: f.tickets }),
 		...validateStep5(f),
 	}
+}
+
+// ─── Published-event revision diff ─────────────────────────────────────────────
+// Only content + venue fields are revisable on a published event (see
+// UpdatePublishedEventDto). The revision endpoint wants just the fields that
+// actually changed, so we diff against the form's initial (live) values.
+
+const VENUE_KEYS = ["venueName", "fullAddress", "city", "latitude", "longitude"] as const
+
+function arraysEqual(a: string[], b: string[]): boolean {
+	return a.length === b.length && a.every((v, i) => v === b[i])
+}
+
+export function venueFieldsChanged(initial: FormData, current: FormData): boolean {
+	return VENUE_KEYS.some((key) => current[key] !== initial[key])
+}
+
+export function buildRevisionPayload(initial: FormData, current: FormData): UpdatePublishedEventPayload {
+	const payload: UpdatePublishedEventPayload = {}
+
+	if (current.category !== initial.category) payload.categoryId = current.category || undefined
+	if (current.title !== initial.title) payload.title = current.title
+	if (current.desc !== initial.desc) payload.description = current.desc
+	if (current.eventType !== initial.eventType) payload.eventType = current.eventType
+	if (current.instructions !== initial.instructions) payload.specialInstructions = current.instructions
+	if (!arraysEqual(current.languages, initial.languages)) payload.languages = current.languages
+	if (!arraysEqual(current.tags, initial.tags)) payload.tags = current.tags
+	if (!arraysEqual(current.whatToExpect, initial.whatToExpect)) payload.whatToExpect = current.whatToExpect
+	if (!arraysEqual(current.whoShouldAttend, initial.whoShouldAttend)) payload.whoShouldAttend = current.whoShouldAttend
+
+	if (venueFieldsChanged(initial, current)) {
+		payload.venueName = current.venueName
+		payload.fullAddress = current.fullAddress
+		payload.city = current.city
+		payload.latitude = current.latitude ?? undefined
+		payload.longitude = current.longitude ?? undefined
+	}
+
+	const currentMedia = mediaArrayFromForm(current)
+	const initialMedia = mediaArrayFromForm(initial)
+	if (JSON.stringify(currentMedia) !== JSON.stringify(initialMedia)) payload.media = currentMedia
+
+	return payload
 }

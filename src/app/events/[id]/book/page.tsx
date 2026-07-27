@@ -22,6 +22,24 @@ interface PageProps {
 	params: Promise<{ id: string }>
 }
 
+function BookingClosedNotice({ eventId }: { eventId: string }) {
+	return (
+		<main className="flex-1 py-6 md:py-8 pb-12">
+			<div className="max-w-384 mx-auto px-(--space-page-x-mobile) md:px-(--space-page-x-tablet) lg:px-(--space-page-x-desktop)">
+				<div className="flex flex-col items-center justify-center py-20 text-center gap-3">
+					<p className="text-label-lg font-semibold text-text-primary">Booking is closed for this event</p>
+					<p className="text-body-sm text-text-muted max-w-sm">
+						This experience has already ended, so tickets are no longer available.
+					</p>
+					<Link href={`/events/${eventId}`} className="text-label-sm text-text-brand hover:underline mt-2">
+						Back to event details
+					</Link>
+				</div>
+			</div>
+		</main>
+	)
+}
+
 function SelectTicketContent({
 	event,
 	pricingConfig,
@@ -242,6 +260,10 @@ export default function SelectTicketPage({ params }: PageProps) {
 				</div>
 			</main>
 		)
+	}
+
+	if (event.displayStatus === "COMPLETED" || event.status === "CANCELLED") {
+		return <BookingClosedNotice eventId={id} />
 	}
 
 	return <SelectTicketContent event={event} pricingConfig={pricingConfig} availableOffers={availableOffers} />

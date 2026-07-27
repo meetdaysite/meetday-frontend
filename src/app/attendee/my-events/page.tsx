@@ -16,6 +16,7 @@ import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
 import CopySvg from "@/icons/outlined/copy.svg"
 import MapPointSvg from "@/icons/outlined/map-point.svg"
 import { getPublicEventDetails, getPublicEvents, getSavedEvents } from "@/lib/api"
+import { parseEventDateTime } from "@/lib/eventDateTime"
 import { getMyOrders } from "@/lib/ordersApi"
 import { useAuthStore } from "@/store/authStore"
 import type { ExploreEvent, PublicEventDetails, SavedEvent } from "@/types/attendee"
@@ -682,20 +683,24 @@ function MyEventsPageInner() {
 	}
 
 	const allOrders = orders ?? []
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
+	const now = new Date()
 
 	// PARTIALLY_REFUNDED orders still have active tickets, so they bucket with CONFIRMED
 	// (upcoming/past) via isActiveOrderStatus; REFUNDED is a terminal/void state, so it
 	// buckets with CANCELLED. Without this, PARTIALLY_REFUNDED and REFUNDED orders
 	// wouldn't appear in any tab.
+	//
+	// /orders/me doesn't return the event's endTime, only eventDate + startTime, so this
+	// buckets on start time rather than the actual end — the closest available proxy for
+	// "has this event happened yet". The order detail page has endTime and gates the
+	// review CTA on that instead, so this only governs which tab an order appears in.
 	const upcomingOrders = allOrders.filter(
 		(o) =>
-			isActiveOrderStatus(o.status) && new Date(o.event.eventDate).setHours(0, 0, 0, 0) >= today.getTime(),
+			isActiveOrderStatus(o.status) && parseEventDateTime(o.event.eventDate, o.event.startTime) >= now,
 	)
 	const pastOrders = allOrders.filter(
 		(o) =>
-			isActiveOrderStatus(o.status) && new Date(o.event.eventDate).setHours(0, 0, 0, 0) < today.getTime(),
+			isActiveOrderStatus(o.status) && parseEventDateTime(o.event.eventDate, o.event.startTime) < now,
 	)
 	const cancelledOrders = allOrders.filter((o) => o.status === "CANCELLED" || o.status === "REFUNDED")
 

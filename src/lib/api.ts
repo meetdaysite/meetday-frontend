@@ -1,5 +1,5 @@
 import apiClient from "./axios"
-import type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus } from "@/types/event"
+import type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus, EventRevision, UpdatePublishedEventPayload } from "@/types/event"
 
 // ─── Errors ───────────────────────────────────────────────────────────────────
 
@@ -88,12 +88,12 @@ export type HostProfile = {
 	}
 	portfolioLinks?: string[]
 	pan?: string
-	kycStatus: "PENDING" | "VERIFIED" | "FAILED"
+	kycStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
 	kycVerifiedAt?: string | null
 	kycFailureReason?: string | null
-	panVerificationStatus: "PENDING" | "VERIFIED" | "FAILED"
+	panVerificationStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
 	panVerificationReference?: string
-	bankVerificationStatus: "PENDING" | "VERIFIED" | "FAILED"
+	bankVerificationStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
 	approvalStatus: "PENDING" | "APPROVED" | "REJECTED"
 	approvedAt?: string | null
 	approvedBy?: string | null
@@ -132,6 +132,8 @@ export type UpdateHostProfilePayload = {
 	hostBio?: string
 	tagline?: string
 	gender?: string
+	pan?: string
+	legalName?: string
 	yearsOfExperience?: number
 	totalEventsPreviouslyHosted?: number
 	operatingCities?: string[]
@@ -268,6 +270,25 @@ export async function verifyBankAccount(payload: BankVerifyPayload): Promise<Ban
 	return data.data
 }
 
+// ─── Reapply ──────────────────────────────────────────────────────────────────
+
+export type ReapplyResult = {
+	id: string
+	kycStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
+	panVerificationStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
+	bankVerificationStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
+	approvalStatus: "PENDING" | "APPROVED" | "REJECTED"
+	kycFailureReason: string | null
+	rejectionReason: string | null
+}
+
+// Allowed only when kycStatus is FAILED or approvalStatus is REJECTED — resets
+// KYC/approval state so the host can resubmit via the KYC verify endpoints.
+export async function reapplyAsHost(): Promise<ReapplyResult> {
+	const { data } = await apiClient.post<{ success: boolean; data: ReapplyResult }>("/hosts/reapply")
+	return data.data
+}
+
 // ─── Categories ───────────────────────────────────────────────────────────────
 
 export type Category = {
@@ -301,7 +322,7 @@ export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
 
 // ─── Events ───────────────────────────────────────────────────────────────────
 
-export type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus }
+export type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus, EventRevision, UpdatePublishedEventPayload }
 
 export async function createEventDraft(payload: EventDraftPayload = {}): Promise<Event> {
 	const { data } = await apiClient.post<{ success: boolean; data: Event }>("/events", payload)
@@ -328,6 +349,14 @@ export async function getMyEventDetail(id: string): Promise<Event> {
 export async function updateEventDraft(id: string, payload: EventDraftPayload): Promise<Event> {
 	const { data } = await apiClient.patch<{ success: boolean; data: Event }>(
 		`/events/${id}`,
+		payload,
+	)
+	return data.data
+}
+
+export async function reviseEvent(id: string, payload: UpdatePublishedEventPayload): Promise<EventRevision> {
+	const { data } = await apiClient.patch<{ success: boolean; data: EventRevision }>(
+		`/events/${id}/revision`,
 		payload,
 	)
 	return data.data

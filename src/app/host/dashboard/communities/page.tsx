@@ -207,16 +207,18 @@ function CommunityCTA({ community }: { community: HostBrowseCommunity }) {
 
 	if (community.isPending) {
 		return (
-			<span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-action text-label-sm font-medium text-text-muted bg-surface-card-muted border border-border-default cursor-default">
-				<Icon as={LockSvg} size="xs" color="muted" />
-				Requested
-			</span>
+			<Link href={`/host/dashboard/communities/${community.id}`}>
+				<span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-action text-label-sm font-medium text-text-muted bg-surface-card-muted border border-border-default hover:bg-surface-card-muted/80 transition-colors">
+					<Icon as={LockSvg} size="xs" color="muted" />
+					Requested
+				</span>
+			</Link>
 		)
 	}
 
 	if (community.access === "PUBLIC") {
 		return (
-			<Link href={`/communities/${community.slug}`}>
+			<Link href={`/host/dashboard/communities/${community.id}`}>
 				<Button variant="primary" size="sm" radius="md" className="whitespace-nowrap">
 					Join Community
 				</Button>
@@ -226,7 +228,7 @@ function CommunityCTA({ community }: { community: HostBrowseCommunity }) {
 
 	if (community.access === "APPROVAL_REQUIRED") {
 		return (
-			<Link href={`/communities/${community.slug}`}>
+			<Link href={`/host/dashboard/communities/${community.id}`}>
 				<Button variant="primary" size="sm" radius="md" className="whitespace-nowrap">
 					<Icon as={LockSvg} size="xs" color="inherit" />
 					Request Access
