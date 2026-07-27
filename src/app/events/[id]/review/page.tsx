@@ -278,26 +278,6 @@ function SectionHeader({
 	)
 }
 
-// ─── Avatar stack (host + attendees) ─────────────────────────────────────────
-
-function AvatarStack({ hostInitial: _hostInitial }: { hostInitial: string }) {
-	const gradients = ["from-purple-400 to-pink-400", "from-blue-400 to-cyan-400", "from-green-400 to-teal-400", "from-orange-400 to-red-400"]
-	return (
-		<div className="flex items-center gap-2">
-			<div className="flex -space-x-1.5">
-				{gradients.map((g, i) => (
-					<div
-						key={i}
-						className={`size-6 rounded-full bg-linear-to-br ${g} border-2 border-surface-card`}
-						style={{ zIndex: 4 - i }}
-					/>
-				))}
-			</div>
-			<span className="text-caption text-text-muted">+24</span>
-		</div>
-	)
-}
-
 // ─── Review form ──────────────────────────────────────────────────────────────
 
 function ReviewFormContent({
@@ -322,7 +302,9 @@ function ReviewFormContent({
 
 	const coverImageUrl = event.media.find((m) => m.type === "COVER")?.url ?? null
 	const hostInitial = event.hostProfile?.displayName?.charAt(0).toUpperCase() ?? "H"
-	const isEventPast = new Date(event.eventDate) < new Date()
+	// Authoritative from the backend — accounts for overnight/multi-day events
+	// correctly, unlike a client-side eventDate comparison.
+	const isEventCompleted = event.displayStatus === "COMPLETED"
 
 	const toggleHighlight = (key: string) => {
 		setHighlights((prev) => prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key])
@@ -397,7 +379,7 @@ function ReviewFormContent({
 				</div>
 
 				{/* Event not yet happened notice */}
-				{!isEventPast && (
+				{!isEventCompleted && (
 					<div className="mb-5 flex items-start gap-3 rounded-action border border-amber-200 bg-amber-50 px-4 py-3.5">
 						<svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="shrink-0 mt-0.5 text-amber-500" aria-hidden>
 							<path d="M9 1.5L1.5 15h15L9 1.5z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
@@ -466,7 +448,6 @@ function ReviewFormContent({
 												</span>
 												<Icon as={VerifiedCheckSvg} size="sm" color="inherit" className="text-action-primary shrink-0" />
 											</div>
-											<AvatarStack hostInitial={hostInitial} />
 										</div>
 									)}
 								</div>
@@ -607,7 +588,7 @@ function ReviewFormContent({
 									size="lg"
 									radius="md"
 									onClick={handleSubmit}
-									disabled={submitting || !isEventPast || (photos.length > 0 && !confirmed)}
+									disabled={submitting || !isEventCompleted || (photos.length > 0 && !confirmed)}
 									className="w-full justify-center"
 								>
 									{submitting ? (

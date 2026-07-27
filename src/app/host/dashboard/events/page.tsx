@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button"
 import { Dropdown } from "@/components/ui/Dropdown"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { useEventStore } from "@/store/eventStore"
+import { getMyEvents } from "@/lib/api"
 import { storageUrl } from "@/lib/uploadMedia"
 import { formatEventDateRange } from "@/lib/eventForm"
 import type { Event, ApiEventStatus } from "@/types/event"
@@ -30,7 +31,7 @@ import { Tabs } from "@/components/ui/Tabs"
 
 const PAGE_SIZE = 6
 
-const STATUS_CONFIG: Record<ApiEventStatus, { label: string; listPill: string; imageBadge: string }> = {
+const STATUS_CONFIG: Record<ApiEventStatus | "LIVE", { label: string; listPill: string; imageBadge: string }> = {
 	DRAFT: {
 		label: "Draft",
 		listPill: "bg-neutral-100 text-neutral-700",
@@ -50,6 +51,11 @@ const STATUS_CONFIG: Record<ApiEventStatus, { label: string; listPill: string; i
 		label: "Published",
 		listPill: "bg-green-50 text-green-700",
 		imageBadge: "bg-green-50/95 text-green-700 backdrop-blur-sm shadow-sm",
+	},
+	LIVE: {
+		label: "Live Now",
+		listPill: "bg-red-100 text-red-700",
+		imageBadge: "bg-red-100/95 text-red-700 backdrop-blur-sm shadow-sm",
 	},
 	CANCELLED: {
 		label: "Cancelled",
@@ -133,9 +139,22 @@ function MyEventsPageContent() {
 	const [deletingEventId, setDeletingEventId] = useState<string | null>(null)
 	const sentinelRef = useRef<HTMLDivElement>(null)
 
+	// The visible list is now filtered server-side via `status` (so "Completed"
+	// reflects the backend's real-time definition, not a client-side date guess).
+	// Tab badge counts need every status at once though, so they're sourced from
+	// a separate, unfiltered fetch rather than the (now status-scoped) store list.
+	const [countsSource, setCountsSource] = useState<Event[]>([])
+	const refreshCounts = useCallback(() => {
+		getMyEvents({ limit: 100 }).then(res => setCountsSource(res.events)).catch(() => {})
+	}, [])
+
 	useEffect(() => {
-		fetchMyEvents()
-	}, [fetchMyEvents])
+		fetchMyEvents(statusFilter !== "ALL" ? { status: statusFilter, limit: 100 } : { limit: 100 })
+	}, [statusFilter, fetchMyEvents])
+
+	useEffect(() => {
+		refreshCounts()
+	}, [refreshCounts])
 
 	// Reset pagination whenever the status filter (driven by the URL) changes.
 	const [prevStatusFilter, setPrevStatusFilter] = useState(statusFilter)
@@ -168,8 +187,8 @@ function MyEventsPageContent() {
 	}, [])
 
 	const filteredEvents = useMemo(() => {
+		// Status is already applied server-side (see the fetchMyEvents effect above).
 		let result = [...events]
-		if (statusFilter !== "ALL") result = result.filter(e => e.status === statusFilter)
 		if (searchQuery.trim()) {
 			const q = searchQuery.toLowerCase()
 			result = result.filter(
@@ -183,7 +202,7 @@ function MyEventsPageContent() {
 			return sortOrder === "oldest" ? -diff : diff
 		})
 		return result
-	}, [events, statusFilter, searchQuery, sortOrder])
+	}, [events, searchQuery, sortOrder])
 
 	const visibleEvents = filteredEvents.slice(0, visibleCount)
 	const hasMore = visibleCount < filteredEvents.length
@@ -238,6 +257,7 @@ function MyEventsPageContent() {
 		setDeletingEventId(confirmDeleteId)
 		try {
 			await deleteEvent(confirmDeleteId)
+			setCountsSource(prev => prev.filter(e => e.id !== confirmDeleteId))
 			toast.success("Draft deleted")
 			setConfirmDeleteId(null)
 		} catch (err) {
@@ -248,12 +268,12 @@ function MyEventsPageContent() {
 	}, [confirmDeleteId, deleteEvent])
 
 	const tabCounts = useMemo(() => {
-		const counts: Partial<Record<"ALL" | ApiEventStatus, number>> = { ALL: events.length }
-		for (const event of events) {
+		const counts: Partial<Record<"ALL" | ApiEventStatus, number>> = { ALL: countsSource.length }
+		for (const event of countsSource) {
 			counts[event.status] = (counts[event.status] ?? 0) + 1
 		}
 		return counts
-	}, [events])
+	}, [countsSource])
 
 	return (
 		<>
@@ -492,7 +512,7 @@ interface CardProps {
 }
 
 function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDraft }: CardProps) {
-	const cfg = STATUS_CONFIG[event.status]
+	const cfg = STATUS_CONFIG[event.displayStatus ?? event.status]
 	const cap = eventCapacity(event)
 	const price = eventStartingPrice(event)
 	const priceLabel = price === null ? "—" : price === 0 ? "Free" : `₹${price}`
@@ -553,7 +573,7 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 								Edit
 							</button>
 						)}
-						{event.status === "PUBLISHED" && (
+						{event.status === "PUBLISHED" && event.displayStatus !== "COMPLETED" && (
 							<button
 								onClick={() => onNavigate(`/host/dashboard/events/${event.id}/revise`)}
 								className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
@@ -626,7 +646,7 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 // ─── List Card ────────────────────────────────────────────────────────────────
 
 function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDraft }: CardProps) {
-	const cfg = STATUS_CONFIG[event.status]
+	const cfg = STATUS_CONFIG[event.displayStatus ?? event.status]
 	const cap = eventCapacity(event)
 	const price = eventStartingPrice(event)
 	const priceLabel = price === null ? "—" : price === 0 ? "Free" : `₹${price}`
@@ -719,7 +739,7 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 									Edit
 								</button>
 							)}
-							{event.status === "PUBLISHED" && (
+							{event.status === "PUBLISHED" && event.displayStatus !== "COMPLETED" && (
 								<button
 									onClick={() => onNavigate(`/host/dashboard/events/${event.id}/revise`)}
 									className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"

@@ -27,11 +27,12 @@ import { Skeleton } from "@/components/ui/Skeleton"
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<ApiEventStatus, { label: string; badge: string }> = {
+const STATUS_CONFIG: Record<ApiEventStatus | "LIVE", { label: string; badge: string }> = {
 	DRAFT: { label: "Draft", badge: "bg-neutral-100/95 text-neutral-700 backdrop-blur-sm shadow-sm" },
 	UNDER_REVIEW: { label: "Under Review", badge: "bg-blue-50/95 text-blue-700 backdrop-blur-sm shadow-sm" },
 	REJECTED: { label: "Rejected", badge: "bg-red-50/95 text-red-700 backdrop-blur-sm shadow-sm" },
 	PUBLISHED: { label: "Published", badge: "bg-green-50/95 text-green-700 backdrop-blur-sm shadow-sm" },
+	LIVE: { label: "Live Now", badge: "bg-red-100/95 text-red-700 backdrop-blur-sm shadow-sm" },
 	CANCELLED: { label: "Cancelled", badge: "bg-orange-50/95 text-orange-700 backdrop-blur-sm shadow-sm" },
 	COMPLETED: { label: "Completed", badge: "bg-neutral-900/90 text-white backdrop-blur-sm shadow-sm" },
 }
@@ -130,7 +131,7 @@ export default function EventDetailPage() {
 	}
 
 	const event = currentEvent
-	const cfg = STATUS_CONFIG[event.status]
+	const cfg = STATUS_CONFIG[event.displayStatus ?? event.status]
 	const cover = event.media?.find(m => m.type === "COVER")
 	const coverUrl = cover ? (cover.url ?? storageUrl(cover.key ?? "")) : ""
 	const galleryImages = (event.media?.filter(m => m.type !== "COVER") ?? [])
@@ -553,13 +554,21 @@ function EventActions({
 				</div>
 			)
 
-		case "PUBLISHED":
+		case "PUBLISHED": {
+			// `status` can lag the real-time `displayStatus` by up to ~30 min, so a
+			// just-started or just-ended event may still read "PUBLISHED" here.
+			// Revision is rejected by the API once the event has ended; cancellation
+			// is rejected once it has started (live) or ended.
+			const canRevise = event.displayStatus !== "COMPLETED"
+			const canCancel = event.displayStatus !== "LIVE" && event.displayStatus !== "COMPLETED"
 			return (
 				<>
 					<div className="flex flex-col gap-2">
-						<ActionButton variant="secondary" icon={<PenIcon />} onClick={onEdit}>
-							Edit Event
-						</ActionButton>
+						{canRevise && (
+							<ActionButton variant="secondary" icon={<PenIcon />} onClick={onEdit}>
+								Edit Event
+							</ActionButton>
+						)}
 						<ActionButton
 							variant="secondary"
 							icon={<ScannerStaffIcon />}
@@ -567,13 +576,15 @@ function EventActions({
 						>
 							Add Support Staff
 						</ActionButton>
-						<ActionButton
-							variant="danger"
-							icon={<CancelIcon />}
-							onClick={() => setShowCancelModal(true)}
-						>
-							Cancel Event
-						</ActionButton>
+						{canCancel && (
+							<ActionButton
+								variant="danger"
+								icon={<CancelIcon />}
+								onClick={() => setShowCancelModal(true)}
+							>
+								Cancel Event
+							</ActionButton>
+						)}
 					</div>
 					{showAddStaffModal && (
 						<AddStaffModal eventId={event.id} onClose={() => setShowAddStaffModal(false)} />
@@ -587,6 +598,7 @@ function EventActions({
 					)}
 				</>
 			)
+		}
 
 		case "CANCELLED":
 			return (

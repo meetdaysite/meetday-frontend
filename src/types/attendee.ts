@@ -1,3 +1,5 @@
+import type { ApiEventStatus, DisplayEventStatus } from "@/types/event"
+
 export interface VibeCategory {
 	id: string
 	label: string
@@ -16,6 +18,7 @@ export interface ExploreEvent {
 	category: { id: string; name: string }
 	coverImageUrl: string
 	startingPrice: number
+	displayStatus?: DisplayEventStatus
 }
 
 export interface ExploreEventsResponse {
@@ -116,6 +119,8 @@ export interface PublicEventCommunity {
 
 export interface PublicEventDetails {
 	id: string
+	status: ApiEventStatus
+	displayStatus: DisplayEventStatus
 	title: string
 	description: string
 	eventType: string

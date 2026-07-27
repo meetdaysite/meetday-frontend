@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/Icon"
 import { Skeleton } from "@/components/ui/Skeleton"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { getPublicEventDetails } from "@/lib/api"
+import { getMyOrders } from "@/lib/ordersApi"
 import { useAuthStore } from "@/store/authStore"
 import { EventCommunityBanner } from "./_components/EventCommunityBanner"
 import { EventHero } from "./_components/EventHero"
@@ -23,8 +24,9 @@ interface PageProps {
 
 export default function EventDetailsPage({ params }: PageProps) {
 	const { id } = use(params)
-	const { authLoading } = useAuthStore()
+	const { authLoading, user } = useAuthStore()
 	const [event, setEvent] = useState<PublicEventDetails | null | undefined>(undefined)
+	const [reviewOrderId, setReviewOrderId] = useState<string | null>(null)
 
 	useEffect(() => {
 		if (authLoading) return
@@ -33,6 +35,18 @@ export default function EventDetailsPage({ params }: PageProps) {
 			setEvent(res)
 		})
 	}, [id, authLoading])
+
+	// Once the event has ended, check whether the current viewer has a
+	// confirmed order for it so the "Leave a Review" CTA has somewhere to go.
+	useEffect(() => {
+		if (authLoading || !user || event?.displayStatus !== "COMPLETED") return
+		getMyOrders()
+			.then((orders) => {
+				const match = orders.find((o) => o.event.id === id && o.status === "CONFIRMED")
+				setReviewOrderId(match?.id ?? null)
+			})
+			.catch(() => setReviewOrderId(null))
+	}, [id, authLoading, user, event?.displayStatus])
 
 	if (authLoading || event === undefined) {
 		return (
@@ -90,7 +104,12 @@ export default function EventDetailsPage({ params }: PageProps) {
 							<GoodToKnow instructions={event.specialInstructions} />
 						)}
 						<EventGallery media={event.media} />
-						<StickyFooter eventId={event.id} isSaved={event.isSaved} />
+						<StickyFooter
+							eventId={event.id}
+							isSaved={event.isSaved}
+							displayStatus={event.displayStatus}
+							reviewOrderId={reviewOrderId}
+						/>
 					</div>
 
 					{/* Right: side panel (desktop only) */}

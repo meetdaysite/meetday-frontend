@@ -6,6 +6,18 @@ export type ApiEventStatus =
 	| "REJECTED"
 	| "COMPLETED"
 
+// Real-time label for the badge the user sees — distinct from the persisted
+// `status`, which can lag up to ~30 min behind (e.g. still "PUBLISHED" while
+// displayStatus is already "LIVE" or "COMPLETED"). Render badges from this;
+// gate actions (cancel/edit/etc.) on `status`.
+export type DisplayEventStatus =
+	| "DRAFT"
+	| "UNDER_REVIEW"
+	| "PUBLISHED"
+	| "LIVE"
+	| "COMPLETED"
+	| "CANCELLED"
+
 export interface Ticket {
 	id?: string
 	name: string
@@ -97,6 +109,7 @@ export interface EventRevision {
 export interface Event {
 	id: string
 	status: ApiEventStatus
+	displayStatus?: DisplayEventStatus
 	hostId: string
 	createdAt: string
 	updatedAt: string

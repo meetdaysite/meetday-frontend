@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { useDashboardStore } from "@/store/dashboardStore"
 import { useHostStore } from "@/store/hostStore"
-import type { ApiEventStatus } from "@/types/event"
+import type { ApiEventStatus, DisplayEventStatus } from "@/types/event"
 import type { DashboardPeriod } from "@/types/dashboard"
 import { formatEventDateRange } from "@/lib/eventForm"
 import { Skeleton } from "@/components/ui/Skeleton"
@@ -32,13 +32,13 @@ import DangerCircleSvg from "@/icons/outlined/danger-circle.svg"
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<ApiEventStatus, { label: string; className: string }> = {
+const STATUS_CONFIG: Record<DisplayEventStatus, { label: string; className: string }> = {
 	DRAFT: { label: "Draft", className: "bg-surface-card-muted text-text-secondary" },
 	UNDER_REVIEW: { label: "Under Review", className: "bg-status-trending-bg text-status-trending-text" },
 	PUBLISHED: { label: "Published", className: "bg-status-success-bg text-status-success-text" },
+	LIVE: { label: "Live Now", className: "bg-red-100 text-red-700" },
 	COMPLETED: { label: "Completed", className: "bg-surface-inverse text-text-inverse" },
 	CANCELLED: { label: "Cancelled", className: "bg-status-error-bg text-status-error-text" },
-	REJECTED: { label: "Rejected", className: "bg-status-error-bg text-status-error-text" },
 }
 
 const SUMMARY_CONFIG = [
@@ -215,7 +215,7 @@ export default function DashboardPage() {
 									</thead>
 									<tbody className="divide-y divide-border-default">
 										{recentEvents.map((event, idx) => {
-											const statusCfg = STATUS_CONFIG[event.status as ApiEventStatus] ?? STATUS_CONFIG.DRAFT
+											const statusCfg = STATUS_CONFIG[event.status] ?? STATUS_CONFIG.DRAFT
 											const dateStr = formatEventDateRange(event.eventDate ?? undefined, event.endDate)
 											return (
 												<tr key={event.id} className="hover:bg-surface-card-muted transition-colors">
