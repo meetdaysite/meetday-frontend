@@ -1,7 +1,8 @@
 "use client"
 
 import clsx from "clsx"
-import React, { useEffect, useId, useRef, useState } from "react"
+import React, { useEffect, useId, useLayoutEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -113,7 +114,9 @@ export function Dropdown({
 
 	const [open, setOpen] = useState(false)
 	const [focusedIndex, setFocusedIndex] = useState(-1)
+	const [listPos, setListPos] = useState({ top: 0, left: 0, width: 0 })
 	const containerRef = useRef<HTMLDivElement>(null)
+	const triggerWrapRef = useRef<HTMLDivElement>(null)
 	const listRef = useRef<HTMLUListElement>(null)
 
 	const selectedOption = options.find(o => o.value === selectedValue)
@@ -123,12 +126,45 @@ export function Dropdown({
 	useEffect(() => {
 		if (!open) return
 		function handleMouseDown(e: MouseEvent) {
-			if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-				setOpen(false)
-			}
+			const target = e.target as Node
+			if (containerRef.current?.contains(target)) return
+			if (listRef.current?.contains(target)) return
+			setOpen(false)
 		}
 		document.addEventListener("mousedown", handleMouseDown)
 		return () => document.removeEventListener("mousedown", handleMouseDown)
+	}, [open])
+
+	// List is portaled to <body> so ancestor `overflow-hidden` can't clip it —
+	// position it against the trigger manually, flipping above when there
+	// isn't room below (a `fixed` element doesn't grow the page's scroll
+	// height, so overflowing the viewport bottom would be unreachable).
+	useLayoutEffect(() => {
+		if (!open) return
+
+		function updatePosition() {
+			const rect = triggerWrapRef.current?.getBoundingClientRect()
+			if (!rect) return
+			const listHeight = listRef.current?.offsetHeight ?? 240
+			const margin = 8
+
+			const spaceBelow = window.innerHeight - rect.bottom
+			const spaceAbove = rect.top
+			const top =
+				spaceBelow < listHeight + margin && spaceAbove > spaceBelow
+					? Math.max(margin, rect.top - listHeight - 4)
+					: rect.bottom + 4
+
+			setListPos({ top, left: rect.left, width: rect.width })
+		}
+
+		updatePosition()
+		window.addEventListener("scroll", updatePosition, true)
+		window.addEventListener("resize", updatePosition)
+		return () => {
+			window.removeEventListener("scroll", updatePosition, true)
+			window.removeEventListener("resize", updatePosition)
+		}
 	}, [open])
 
 	// Reset focused index when closing
@@ -202,7 +238,7 @@ export function Dropdown({
 			)}
 
 			{/* Trigger */}
-			<div className="relative">
+			<div className="relative" ref={triggerWrapRef}>
 				<button
 					type="button"
 					id={inputId}
@@ -255,14 +291,15 @@ export function Dropdown({
 				</button>
 
 				{/* Dropdown list */}
-				{open && (
+				{open && typeof document !== "undefined" && createPortal(
 					<ul
 						ref={listRef}
 						id={listboxId}
 						role="listbox"
 						aria-label={label}
+						style={{ top: listPos.top, left: listPos.left, width: listPos.width }}
 						className={clsx(
-							"absolute z-50 left-0 right-0 mt-1",
+							"fixed z-50",
 							"bg-surface-card border border-border-default rounded-action shadow-modal",
 							"max-h-60 overflow-y-auto py-1",
 						)}
@@ -313,7 +350,8 @@ export function Dropdown({
 								</li>
 							)
 						})}
-					</ul>
+					</ul>,
+					document.body,
 				)}
 			</div>
 
