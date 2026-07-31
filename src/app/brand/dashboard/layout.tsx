@@ -11,11 +11,11 @@ import { useAuthStore } from "@/store/authStore"
 import { useHostStore } from "@/store/hostStore"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
-import { getHostProfile, reapplyAsHost, type HostProfile } from "@/lib/api"
+import { getBrandProfile, reapplyAsHost, type BrandProfile } from "@/lib/api"
 import { Button } from "@/components/ui/Button"
 import { Skeleton } from "@/components/ui/Skeleton"
-import { Sidebar } from "@/components/dashboard/Sidebar"
-import { CompleteKycScreen } from "@/components/host/CompleteKycScreen"
+import { BrandSidebar } from "@/components/brand/BrandSidebar"
+import { CompleteKycScreen } from "@/components/brand/CompleteKycScreen"
 import { Icon } from "@/components/ui/Icon"
 import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
 import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
@@ -40,7 +40,7 @@ function UnderReviewScreen({
 	onSignOut,
 }: {
 	status: "pending" | "rejected"
-	profile: HostProfile
+	profile: BrandProfile
 	onSignOut: () => void
 }) {
 	const isPending = status === "pending"
@@ -51,7 +51,7 @@ function UnderReviewScreen({
 		setReapplying(true)
 		try {
 			await reapplyAsHost()
-			const fresh = await getHostProfile()
+			const fresh = await getBrandProfile()
 			setProfile(fresh)
 			toast.success("You can now resubmit your verification details.")
 		} catch (e) {
@@ -192,14 +192,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 	async function handleSignOut() {
 		clearProfile()
 		await signOut()
-		router.replace("/host/login")
+		router.replace("/brand/login")
 	}
 
 	useEffect(() => {
 		if (authLoading) return
 
 		if (!user) {
-			router.replace("/host/login")
+			router.replace("/brand/login")
 			return
 		}
 
@@ -210,7 +210,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		let cancelled = false
 		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setProfileError(false)
-		getHostProfile()
+		getBrandProfile()
 			.then(p => {
 				if (cancelled) return
 				setProfile(p)
@@ -221,14 +221,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 					// If the signed-in user has an attendee profile they're not a host — send to
 					// their portal. Wait for the attendee-profile fetch to actually settle first —
 					// reading it immediately here raced a still-in-flight fetch and could send a
-					// genuine attendee to /host/onboarding instead of /attendee.
+					// genuine attendee to /brand/onboarding instead of /attendee.
 					await useAttendeeProfileStore.getState().waitUntilLoaded()
 					if (cancelled) return
 					const meProfile = useAttendeeProfileStore.getState().profile
 					if (meProfile?.attendeeProfile != null) {
 						router.replace("/attendee")
 					} else {
-						router.replace("/host/onboarding")
+						router.replace("/brand/onboarding")
 					}
 				} else {
 					// Don't redirect to /login — the user is still authenticated in Firebase,
@@ -242,7 +242,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user, authLoading])
 
-	// Init notifications once the host profile is confirmed APPROVED
+	// Init notifications once the brand profile is confirmed APPROVED
 	useEffect(() => {
 		if (profile?.approvalStatus === "APPROVED") {
 			initNotifications()
@@ -286,7 +286,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 									Failed to load profile
 								</h1>
 								<p className="text-body-sm text-text-secondary mt-2 max-w-sm">
-									We couldn&apos;t load your host profile. Check your connection and try
+									We couldn&apos;t load your brand profile. Check your connection and try
 									again.
 								</p>
 							</div>
@@ -351,7 +351,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 	return (
 		<div className="min-h-screen flex bg-surface-page">
-			<Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+			<BrandSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
 			<div className="flex-1 flex flex-col min-w-0">
 				{/* Mobile top bar */}

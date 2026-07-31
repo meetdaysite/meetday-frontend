@@ -28,14 +28,14 @@ const OPTIONS = [
 		tone: "purple" as const,
 	},
 	{
-		key: "website",
-		image: "/assets/landing/website.svg",
-		title: "Visit Website",
-		titleClass: "text-text-primary",
-		description: "Explore Meetday, learn more about our mission, features, and how it all works.",
-		cta: "Visit Website",
-		href: "https://meetday.ai",
-		tone: "outline" as const,
+		key: "brand",
+		image: "/assets/landing/brand.svg",
+		title: "Brand",
+		titleClass: "text-text-vibe",
+		description: "Sign up, create campaigns or RFPs, and match with the right events and communities.",
+		cta: "Continue as Brand",
+		href: "/brand/login",
+		tone: "purple" as const,
 	},
 ]
 

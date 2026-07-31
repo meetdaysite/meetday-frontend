@@ -14,7 +14,7 @@ import {
 	taCls,
 } from "@/components/eventForm/shared"
 import { TicketListEditor } from "@/components/eventForm/TicketListEditor"
-import { HostDetailsPrompt } from "@/components/host/HostDetailsPrompt"
+import { BrandDetailsPrompt } from "@/components/brand/BrandDetailsPrompt"
 import { Button } from "@/components/ui/Button"
 import { Switch } from "@/components/ui/Switch"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
@@ -1614,7 +1614,7 @@ export default function CreateExperiencePage() {
 			localStorage.removeItem(DRAFT_KEY)
 			localStorage.removeItem(DRAFT_ID_KEY)
 			toast.success("Experience submitted for review!")
-			router.push("/host/dashboard/events")
+			router.push("/brand/dashboard/events")
 		} catch (err) {
 			toast.error(getApiErrorMessage(err))
 			setSubmitting(false)
@@ -1636,13 +1636,13 @@ export default function CreateExperiencePage() {
 		if (hasData && !draftId) {
 			setShowLeaveConfirm(true)
 		} else {
-			router.push("/host/dashboard/events")
+			router.push("/brand/dashboard/events")
 		}
 	}
 
 	async function handleSaveAndLeave() {
 		await saveDraft()
-		router.push("/host/dashboard/events")
+		router.push("/brand/dashboard/events")
 	}
 
 	// Hide the top-bar "Next step" only on the very last screen of the finish phase,
@@ -1654,7 +1654,7 @@ export default function CreateExperiencePage() {
 	return (
 		<>
 			{/* Collects the host-profile fields that the 2-step onboarding no longer asks for. */}
-			<HostDetailsPrompt onClose={() => router.push("/host/dashboard")} />
+			<BrandDetailsPrompt onClose={() => router.push("/brand/dashboard")} />
 			<div className="flex flex-col h-screen overflow-hidden">
 				<DashboardTopBar />
 
@@ -1904,7 +1904,7 @@ export default function CreateExperiencePage() {
 								onClick={() => {
 									localStorage.removeItem(DRAFT_KEY)
 									localStorage.removeItem(DRAFT_ID_KEY)
-									router.push("/host/dashboard/events")
+									router.push("/brand/dashboard/events")
 								}}
 								size="sm"
 								radius="md"

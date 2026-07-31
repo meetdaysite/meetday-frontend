@@ -14,7 +14,6 @@ import {
 	taCls,
 } from "@/components/eventForm/shared"
 import { TicketListEditor } from "@/components/eventForm/TicketListEditor"
-import { HostDetailsPrompt } from "@/components/host/HostDetailsPrompt"
 import { Button } from "@/components/ui/Button"
 import { Switch } from "@/components/ui/Switch"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
@@ -76,9 +75,6 @@ function startOfToday() {
 
 // ─── Step definitions ──────────────────────────────────────────────────────────
 
-// Creating an experience takes three steps and ten fields. Media and the
-// publishing settings moved to the "Finish your listing" phase, which runs after
-// the draft exists and before it can be submitted for review.
 const STEPS = [
 	{
 		id: 1,
@@ -94,28 +90,23 @@ const STEPS = [
 	},
 	{
 		id: 3,
+		title: "Media Upload",
+		subtitle: "Add cover and gallery images",
+		icon: GalleryWideSvg as ComponentType<SVGProps<SVGSVGElement>>,
+	},
+	{
+		id: 4,
 		title: "Ticket Types",
 		subtitle: "Set up pricing and capacity",
 		icon: TicketSvg as ComponentType<SVGProps<SVGSVGElement>>,
 	},
-]
-
-const FINISH_STEPS = [
 	{
-		id: 1,
-		title: "Media Upload",
-		subtitle: "Add a cover image and gallery",
-		icon: GalleryWideSvg as ComponentType<SVGProps<SVGSVGElement>>,
-	},
-	{
-		id: 2,
+		id: 5,
 		title: "Setting & Review",
 		subtitle: "Finalize and submit for review",
 		icon: SettingsSvg as ComponentType<SVGProps<SVGSVGElement>>,
 	},
 ]
-
-const BUILD_TOTAL = STEPS.length
 
 // ─── Copilot state ─────────────────────────────────────────────────────────────
 
@@ -159,25 +150,17 @@ function StepCircle({
 
 // ─── Experience Builder sidebar ────────────────────────────────────────────────
 
-function ExperienceBuilderSidebar({
-	currentStep,
-	steps = STEPS,
-	heading = "Experience Builder",
-	caption = "Three steps to create your draft",
-}: {
-	currentStep: number
-	steps?: typeof STEPS
-	heading?: string
-	caption?: string
-}) {
+function ExperienceBuilderSidebar({ currentStep }: { currentStep: number }) {
 	return (
 		<aside className="hidden lg:flex flex-col w-72 shrink-0 border-r border-border-default bg-surface-card px-6 py-8 gap-6 overflow-y-auto">
 			<div>
-				<h2 className="text-label-md font-semibold text-text-primary">{heading}</h2>
-				<p className="text-caption text-text-tertiary mt-1">{caption}</p>
+				<h2 className="text-label-md font-semibold text-text-primary">Experience Builder</h2>
+				<p className="text-caption text-text-tertiary mt-1">
+					Complete all steps to submit for review
+				</p>
 			</div>
 			<div className="flex flex-col gap-5">
-				{steps.map(({ id, title, subtitle, icon }) => {
+				{STEPS.map(({ id, title, subtitle, icon }) => {
 					const state: "completed" | "active" | "upcoming" =
 						id < currentStep ? "completed" : id === currentStep ? "active" : "upcoming"
 					return (
@@ -1189,13 +1172,13 @@ function Step5SettingsReview({
 		() =>
 			validated
 				? validateStep5({
-					visibility,
-					ageRestriction,
-					refundType,
-					cutoffHours,
-					refundPercent,
-					instructions,
-				})
+						visibility,
+						ageRestriction,
+						refundType,
+						cutoffHours,
+						refundPercent,
+						instructions,
+					})
 				: {},
 		[validated, visibility, ageRestriction, refundType, cutoffHours, refundPercent, instructions],
 	)
@@ -1378,8 +1361,8 @@ function Step5SettingsReview({
 								<span className="text-caption font-semibold text-text-primary">
 									{formData.tickets.length > 0
 										? formData.tickets
-											.reduce((s, t) => s + t.totalCapacity, 0)
-											.toLocaleString("en-IN")
+												.reduce((s, t) => s + t.totalCapacity, 0)
+												.toLocaleString("en-IN")
 										: "—"}
 								</span>
 							</div>
@@ -1415,10 +1398,6 @@ function Step5SettingsReview({
 export default function CreateExperiencePage() {
 	const router = useRouter()
 	const [currentStep, setCurrentStep] = useState(1)
-	// "build" = the 3 creation steps; "finish" = media + settings, shown once the
-	// draft exists and required before the listing can be submitted for review.
-	const [phase, setPhase] = useState<"build" | "finish">("build")
-	const [finishStep, setFinishStep] = useState(1)
 	const [formData, setFormData] = useState<FormData>(() => {
 		try {
 			const saved = localStorage.getItem(DRAFT_KEY)
@@ -1463,7 +1442,7 @@ export default function CreateExperiencePage() {
 
 		getCategories()
 			.then(cats => setCategories(cats))
-			.catch(() => { })
+			.catch(() => {})
 			.finally(() => setCategoriesLoading(false))
 	}, [])
 
@@ -1480,22 +1459,13 @@ export default function CreateExperiencePage() {
 	}
 
 	function goNext() {
-		setCurrentStep(s => Math.min(s + 1, BUILD_TOTAL))
+		setCurrentStep(s => Math.min(s + 1, 5))
 	}
 	function goBack() {
 		setCurrentStep(s => Math.max(s - 1, 1))
 	}
 	function handleTopNext() {
-		if (!stepValidateRef.current()) return
-		if (phase === "finish") {
-			if (finishStep === 1) setFinishStep(2)
-			return
-		}
-		if (currentStep === BUILD_TOTAL) {
-			void handleCreateDraft()
-			return
-		}
-		goNext()
+		if (stepValidateRef.current()) goNext()
 	}
 
 	// Language ISO code → display name mapping
@@ -1576,28 +1546,6 @@ export default function CreateExperiencePage() {
 		}
 	}
 
-	// End of the 3-step build phase: persist the draft so the event exists, then
-	// hand off to the finish phase for media + publishing settings.
-	async function handleCreateDraft() {
-		setSubmitting(true)
-		try {
-			if (draftId) {
-				await updateEventDraft(draftId, buildPayload(formData))
-			} else {
-				const event = await createEventDraft(buildPayload(formData))
-				setDraftId(event.id)
-				localStorage.setItem(DRAFT_ID_KEY, event.id)
-			}
-			setPhase("finish")
-			setFinishStep(1)
-			toast.success("Draft saved — just a few finishing touches left.")
-		} catch (err) {
-			toast.error(getApiErrorMessage(err))
-		} finally {
-			setSubmitting(false)
-		}
-	}
-
 	async function handleSubmit() {
 		setSubmitting(true)
 		try {
@@ -1645,16 +1593,12 @@ export default function CreateExperiencePage() {
 		router.push("/host/dashboard/events")
 	}
 
-	// Hide the top-bar "Next step" only on the very last screen of the finish phase,
-	// where Step5SettingsReview renders its own submit button.
-	const isLastStep = phase === "finish" && finishStep === 2
+	const isLastStep = currentStep === 5
 	const sharedProps = { formData, setFormData }
 	const copilotActive = copilot.mode !== "idle"
 
 	return (
 		<>
-			{/* Collects the host-profile fields that the 2-step onboarding no longer asks for. */}
-			<HostDetailsPrompt onClose={() => router.push("/host/dashboard")} />
 			<div className="flex flex-col h-screen overflow-hidden">
 				<DashboardTopBar />
 
@@ -1672,7 +1616,7 @@ export default function CreateExperiencePage() {
 							<Icon as={AltXSvg} color="inherit" size="lg" aria-hidden />
 						</Button>
 						<h2 className="text-label-md font-semibold text-text-primary">
-							{phase === "finish" ? "Finish your listing" : "Create New Experience"}
+							Create New Experience
 						</h2>
 					</div>
 
@@ -1693,13 +1637,8 @@ export default function CreateExperiencePage() {
 								radius="md"
 								rightIcon={<AltArrowRightSvg size="sm" aria-hidden />}
 								className="bg-neutral-900"
-								disabled={submitting}
 							>
-								{phase === "build" && currentStep === BUILD_TOTAL
-									? submitting
-										? "Saving…"
-										: "Create experience"
-									: "Next step"}
+								Next step
 							</Button>
 						)}
 					</div>
@@ -1707,16 +1646,7 @@ export default function CreateExperiencePage() {
 
 				{/* Body */}
 				<div className="flex flex-1 overflow-hidden">
-					{phase === "build" ? (
-						<ExperienceBuilderSidebar currentStep={currentStep} />
-					) : (
-						<ExperienceBuilderSidebar
-							currentStep={finishStep}
-							steps={FINISH_STEPS}
-							heading="Finish your listing"
-							caption="Required before submitting for review"
-						/>
-					)}
+					<ExperienceBuilderSidebar currentStep={currentStep} />
 
 					<div className="flex-1 px-6 lg:px-10 py-8 overflow-y-auto bg-surface-page">
 						<div className="relative max-w-4xl">
@@ -1731,7 +1661,7 @@ export default function CreateExperiencePage() {
 							/>
 							<div className="relative">
 								{/* Step 1 */}
-								{phase === "build" && currentStep === 1 && (
+								{currentStep === 1 && (
 									<>
 										{copilot.mode === "idle" && (
 											<CopilotIdleBanner
@@ -1760,7 +1690,7 @@ export default function CreateExperiencePage() {
 								)}
 
 								{/* Step 2 */}
-								{phase === "build" && currentStep === 2 && (
+								{currentStep === 2 && (
 									<>
 										{copilotActive && (
 											<AIStepBanner
@@ -1777,20 +1707,8 @@ export default function CreateExperiencePage() {
 									</>
 								)}
 
-								{/* Step 3 — tickets, last of the build phase */}
-								{phase === "build" && currentStep === 3 && (
-									<Step4TicketTypes
-										{...sharedProps}
-										onNext={() => void handleCreateDraft()}
-										onBack={goBack}
-										registerValidate={registerValidate}
-										aiInitialDrafts={aiInitialDrafts}
-										aiSuggested={copilot.mode === "generated"}
-									/>
-								)}
-
-								{/* Finish 1 — media */}
-								{phase === "finish" && finishStep === 1 && (
+								{/* Step 3 */}
+								{currentStep === 3 && (
 									<>
 										{copilotActive && (
 											<AIStepBanner
@@ -1800,21 +1718,30 @@ export default function CreateExperiencePage() {
 										)}
 										<Step3MediaUpload
 											{...sharedProps}
-											onNext={() => setFinishStep(2)}
-											onBack={() => {
-												setPhase("build")
-												setCurrentStep(BUILD_TOTAL)
-											}}
+											onNext={goNext}
+											onBack={goBack}
 											registerValidate={registerValidate}
 										/>
 									</>
 								)}
 
-								{/* Finish 2 — settings & review */}
-								{phase === "finish" && finishStep === 2 && (
+								{/* Step 4 */}
+								{currentStep === 4 && (
+									<Step4TicketTypes
+										{...sharedProps}
+										onNext={goNext}
+										onBack={goBack}
+										registerValidate={registerValidate}
+										aiInitialDrafts={aiInitialDrafts}
+										aiSuggested={copilot.mode === "generated"}
+									/>
+								)}
+
+								{/* Step 5 */}
+								{currentStep === 5 && (
 									<Step5SettingsReview
 										{...sharedProps}
-										onBack={() => setFinishStep(1)}
+										onBack={goBack}
 										registerValidate={registerValidate}
 										onSubmit={requestSubmit}
 										submitting={submitting}
@@ -1829,8 +1756,8 @@ export default function CreateExperiencePage() {
 					{copilotActive && (
 						<CopilotPanel
 							copilot={copilot as CopilotPanelState}
-							currentStep={phase === "finish" ? BUILD_TOTAL + finishStep : currentStep}
-							summary={phase === "finish" && finishStep === 2 ? {
+							currentStep={currentStep}
+							summary={currentStep === 5 ? {
 								coverUrl: formData.coverUrl,
 								title: formData.title,
 								eventDate: formData.eventDate,

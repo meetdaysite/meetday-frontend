@@ -55,8 +55,11 @@ function buildRegisterPayload(values: FormValues, phone?: string): RegisterPaylo
 		hostBio: values.bio || undefined,
 		tagline: values.tagline || undefined,
 		gender: values.gender || undefined,
-		legalName: values.legalName,
-		pan: values.pan,
+		// Commented out original assignment for legalName and pan
+		// legalName: values.legalName,
+		// pan: values.pan,
+		legalName: values.legalName || undefined,
+		pan: values.pan || undefined,
 		languages: values.languages?.length ? values.languages : undefined,
 		address: values.addressLine1
 			? {
@@ -100,8 +103,11 @@ const schema = z.object({
 	linkedin: z.string().optional(),
 	youtube: z.string().optional(),
 	portfolio: z.string().optional(),
-	legalName: z.string().min(1, "Required"),
-	pan: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Enter a valid PAN (e.g. ABCDE1234F)"),
+	// Commented out original fields and made them optional
+	// legalName: z.string().min(1, "Required"),
+	// pan: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]$/, "Enter a valid PAN (e.g. ABCDE1234F)"),
+	legalName: z.string().optional(),
+	pan: z.string().optional(),
 	languages: z.array(z.string()).optional(),
 	addressLine1: z.string().optional(),
 	addressLine2: z.string().optional(),
@@ -110,22 +116,36 @@ const schema = z.object({
 	addressPincode: z.string().optional(),
 	addressCountry: z.string().optional(),
 	// Step 4
-	yearsOfExperience: z.coerce.number({ error: "Required" }).min(0, "Required"),
-	totalEventsHosted: z.coerce.number({ error: "Required" }).min(0, "Required"),
+	// Commented out original fields and made them optional
+	// yearsOfExperience: z.coerce.number({ error: "Required" }).min(0, "Required"),
+	// totalEventsHosted: z.coerce.number({ error: "Required" }).min(0, "Required"),
+	yearsOfExperience: z.coerce.number().optional(),
+	totalEventsHosted: z.coerce.number().optional(),
 	categoryIds: z.array(z.string()).min(1, "Select at least one"),
-	operatingCities: z.array(z.string()).min(1, "Add at least one city"),
+	// Commented out original fields and made them optional
+	// operatingCities: z.array(z.string()).min(1, "Add at least one city"),
+	operatingCities: z.array(z.string()).optional(),
 	portfolioLinks: z.array(z.string()).optional(),
 	// Step 5
-	reviewConfirmed: z.boolean().refine(v => v === true, "Please confirm to continue"),
+	// Commented out original fields and made them optional
+	// reviewConfirmed: z.boolean().refine(v => v === true, "Please confirm to continue"),
+	reviewConfirmed: z.boolean().optional(),
 	// Step 6
-	accountHolderName: z.string().min(1, "Required"),
-	accountNumber: z.string().min(1, "Required"),
-	ifscCode: z.string().min(1, "Required"),
-	bankName: z.string().min(1, "Required"),
+	// Commented out original fields and made them optional
+	// accountHolderName: z.string().min(1, "Required"),
+	// accountNumber: z.string().min(1, "Required"),
+	// ifscCode: z.string().min(1, "Required"),
+	// bankName: z.string().min(1, "Required"),
+	accountHolderName: z.string().optional(),
+	accountNumber: z.string().optional(),
+	ifscCode: z.string().optional(),
+	bankName: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof schema>
 
+// Commented out original STEP_FIELDS config
+/*
 const STEP_FIELDS: (keyof FormValues)[][] = [
 	["firstName", "lastName", "accountType", "email"],
 	[],
@@ -136,7 +156,14 @@ const STEP_FIELDS: (keyof FormValues)[][] = [
 	[],
 	[],
 ]
+*/
+const STEP_FIELDS: (keyof FormValues)[][] = [
+	["firstName", "lastName", "gender", "accountType"],
+	["bio", "email", "categoryIds"],
+]
 
+// Commented out original STEP_BUTTON_LABELS config
+/*
 const STEP_BUTTON_LABELS = [
 	"Save & Continue",
 	"Save & Continue",
@@ -147,7 +174,14 @@ const STEP_BUTTON_LABELS = [
 	"Save & Continue",
 	"",
 ]
+*/
+const STEP_BUTTON_LABELS = [
+	"Save & Continue",
+	"Submit",
+]
 
+// Commented out original STEP_SUBTITLES config
+/*
 const STEP_SUBTITLES = [
 	"This helps us tailor your meetday experience to fit your goals and style.",
 	"This helps us tailor your meetday experience to fit your goals and style.",
@@ -157,6 +191,52 @@ const STEP_SUBTITLES = [
 	"Almost there! Please verify your account to receive payouts.",
 	"Almost there! Please verify your account to receive payouts.",
 	"We'll review your application and notify you by email once it's approved.",
+]
+*/
+const STEP_SUBTITLES = [
+	"This helps us tailor your meetday experience to fit your goals and style.",
+	"Tell us about your hosting journey and social presence.",
+]
+
+// ─── Custom STEP_PANEL_CONFIGS for 2-step onboarding ──────────────────────────
+const TWO_STEP_PANEL_CONFIGS = [
+	{
+		headingPlain: "Your story",
+		headingHighlight: "shapes the experience",
+		description: "Hosts like you build more than events. You build trust, community, and moment that matter",
+		personImage: "/onboarding/person-2.png",
+		cards: [
+			{
+				icon: "/icons/onboarding/shield-check.svg",
+				iconBg: "#EFF6FF",
+				title: "Trusted by real people",
+				body: "Build credibility that lasts.",
+				position: { bottom: "44%", left: "4%" } as React.CSSProperties,
+			},
+			{
+				icon: "/icons/onboarding/users-group-two.svg",
+				iconBg: "#FEF2F2",
+				title: "Your identity, your way",
+				body: "Show up how you want.",
+				position: { top: "38%", right: "6%" } as React.CSSProperties,
+			},
+		],
+	},
+	{
+		headingPlain: "Make your",
+		headingHighlight: "profile feel human",
+		description: "A little about you goes a long way. Help people connect with the human behind the host.",
+		personImage: "/onboarding/person-3.png",
+		cards: [
+			{
+				icon: "/icons/onboarding/heart.svg",
+				iconBg: "#FEF2F2",
+				title: "First impressions",
+				body: "A great profile helps people connect.",
+				position: { top: "36%", right: "2%" } as React.CSSProperties,
+			},
+		],
+	},
 ]
 
 function CheckIcon() {
@@ -975,10 +1055,291 @@ function StepUnderReview({ onGoToDashboard }: { onGoToDashboard: () => void }) {
 	)
 }
 
+// ─── StepOne and StepTwo Components ───────────────────────────────────────────
+
+// ─── Combined Step 1 Component ───────────────────────────────────────────────
+function StepOne() {
+	const {
+		register,
+		control,
+		formState: { errors },
+	} = useFormContext<FormValues>()
+
+	const genderOptions = [
+		{ value: "MALE", label: "Male" },
+		{ value: "FEMALE", label: "Female" },
+		{ value: "NON_BINARY", label: "Non-binary" },
+		{ value: "PREFER_NOT_TO_SAY", label: "Prefer not to say" },
+	]
+
+	return (
+		<div className="flex flex-col gap-6">
+			<div className="flex gap-3">
+				<TextField
+					label="First name"
+					placeholder="Enter your first name"
+					{...register("firstName")}
+					error={!!errors.firstName}
+					helperText={errors.firstName?.message}
+					size="md"
+					className="flex-1"
+				/>
+				<TextField
+					label="Last name"
+					placeholder="Enter your last name"
+					{...register("lastName")}
+					error={!!errors.lastName}
+					helperText={errors.lastName?.message}
+					size="md"
+					className="flex-1"
+				/>
+			</div>
+
+			<Controller
+				control={control}
+				name="gender"
+				render={({ field }) => (
+					<Dropdown
+						label="Gender"
+						placeholder="Select gender"
+						options={genderOptions}
+						value={field.value}
+						onChange={field.onChange}
+						size="md"
+					/>
+				)}
+			/>
+
+			<div>
+				<p className="text-label-sm font-semibold text-text-primary mb-3">What best describes you?</p>
+				<Controller
+					control={control}
+					name="accountType"
+					render={({ field }) => (
+						<div className="grid grid-cols-2 gap-3">
+							{(["Individual", "Business"] as const).map(type => {
+								const selected = field.value === type
+								return (
+									<button
+										key={type}
+										type="button"
+										onClick={() => field.onChange(type)}
+										className={clsx(
+											"relative flex flex-col items-center gap-3 rounded-action border-2 px-4 py-5 text-center transition-all duration-(--duration-120)",
+											selected
+												? "border-border-focus bg-surface-brand-soft"
+												: "border-border-default bg-surface-canvas hover:border-border-strong",
+										)}
+									>
+										{selected && (
+											<span className="absolute top-2.5 right-2.5 flex size-5 items-center justify-center rounded-avatar bg-action-primary">
+												<svg viewBox="0 0 12 12" fill="none" className="size-3">
+													<path
+														d="M2 6l2.5 2.5L10 3.5"
+														stroke="white"
+														strokeWidth={1.5}
+														strokeLinecap="round"
+														strokeLinejoin="round"
+													/>
+												</svg>
+											</span>
+										)}
+										<Image
+											src={
+												type === "Individual"
+													? "/onboarding/individual.svg"
+													: "/onboarding/business.svg"
+											}
+											alt=""
+											width={100}
+											height={100}
+											className="w-auto"
+											aria-hidden
+										/>
+										<div className="mt-2">
+											<p className="text-label-md text-text-primary font-semibold">{type}</p>
+											<p className="text-[10px] text-text-secondary mt-0.5">
+												{type === "Individual"
+													? "I host events on my own"
+													: "I represent a company or organization"}
+											</p>
+										</div>
+									</button>
+								)
+							})}
+						</div>
+					)}
+				/>
+				{errors.accountType && (
+					<p className="text-caption text-text-danger mt-2">{errors.accountType.message}</p>
+				)}
+				<p className="flex items-center gap-1.5 text-caption text-text-muted mt-3">
+					<svg
+						viewBox="0 0 16 16"
+						fill="currentColor"
+						className="size-3.5 shrink-0 text-icon-muted"
+					>
+						<path
+							fillRule="evenodd"
+							d="M8 15A7 7 0 108 1a7 7 0 000 14zm.75-10a.75.75 0 00-1.5 0v4a.75.75 0 001.5 0V5zm-.75 6.5a.875.875 0 100 1.75.875.875 0 000-1.75z"
+							clipRule="evenodd"
+						/>
+					</svg>
+					Don&apos;t worry - you can change this later. Next steps will adapt to your choice.
+				</p>
+			</div>
+		</div>
+	)
+}
+
+// ─── Combined Step 2 Component ───────────────────────────────────────────────
+function StepTwo({ isEmailReadOnly, categories }: { isEmailReadOnly: boolean; categories: Category[] }) {
+	const {
+		register,
+		control,
+		formState: { errors },
+	} = useFormContext<FormValues>()
+
+	return (
+		<div className="flex flex-col gap-6">
+			<div className="flex flex-col gap-1.5">
+				<div className="flex items-center justify-between">
+					<label className="text-label-sm font-semibold text-text-primary">Bio</label>
+					<span className="text-caption text-text-muted font-normal">(Optional)</span>
+				</div>
+				<textarea
+					placeholder="Tell us a little about yourself"
+					{...register("bio")}
+					rows={3}
+					className={clsx(
+						"w-full rounded-input border bg-surface-canvas px-4 py-3",
+						"text-body-sm text-text-primary placeholder:text-text-muted outline-none resize-none",
+						"hover:border-border-strong focus:border-border-focused transition-colors duration-(--duration-120)",
+						errors.bio ? "border-border-brand" : "border-border-default",
+					)}
+				/>
+			</div>
+
+			<TextField
+				label="Email address"
+				placeholder="Enter your email address"
+				type="email"
+				{...register("email")}
+				error={!!errors.email}
+				helperText={errors.email?.message}
+				size="md"
+				disabled={isEmailReadOnly}
+				hint={isEmailReadOnly ? "From your Google account" : undefined}
+			/>
+
+			{/* Interests & focus areas */}
+			<div className="flex flex-col gap-3">
+				<div className="flex items-center justify-between">
+					<p className="text-label-sm font-semibold text-text-primary">Interests & focus areas</p>
+					<span className="text-caption text-text-muted font-normal">(Pick all that apply)</span>
+				</div>
+				{categories.length === 0 ? (
+					<p className="text-caption text-text-muted">Loading categories…</p>
+				) : (
+					<Controller
+						control={control}
+						name="categoryIds"
+						render={({ field }) => {
+							const selected = field.value ?? []
+							function toggle(id: string) {
+								field.onChange(
+									selected.includes(id)
+										? selected.filter((i: string) => i !== id)
+										: [...selected, id],
+								)
+							}
+							return (
+								<div className="flex flex-wrap gap-2">
+									{categories.map(cat => {
+										const active = selected.includes(cat.id)
+										return (
+											<button
+												key={cat.id}
+												type="button"
+												onClick={() => toggle(cat.id)}
+												className={clsx(
+													"px-3.5 py-1.5 rounded-avatar border-2 text-label-sm transition-all duration-(--duration-120)",
+													active
+														? "border-border-focus bg-surface-brand-soft text-text-brand font-semibold"
+														: "border-border-default bg-surface-canvas text-text-secondary hover:border-border-strong",
+												)}
+											>
+												{cat.name}
+											</button>
+										)
+									})}
+								</div>
+							)
+						}}
+					/>
+				)}
+				{errors.categoryIds && (
+					<p className="text-caption text-text-danger">{errors.categoryIds.message}</p>
+				)}
+			</div>
+
+			<div className="flex flex-col gap-3">
+				<p className="text-label-sm font-semibold text-text-primary">Social media links</p>
+				<div className="flex justify-center items-center gap-2">
+					<div className="border border-border-default p-2 rounded-xl bg-action-secondary-hover">
+						<Icon as={InstagramSvg} size="lg" />
+					</div>
+					<TextField
+						placeholder="instagram.com/yourhandle"
+						{...register("instagram")}
+						size="md"
+						className="flex-1"
+					/>
+				</div>
+				<div className="flex justify-center items-center gap-2">
+					<div className="border border-border-default p-2 rounded-xl bg-action-secondary-hover">
+						<Icon as={LinkedinSvg} size="lg" />
+					</div>
+					<TextField
+						placeholder="linkedin.com/in/yourprofile"
+						{...register("linkedin")}
+						size="md"
+						className="flex-1"
+					/>
+				</div>
+				<div className="flex justify-center items-center gap-2">
+					<div className="border border-border-default p-2 rounded-xl bg-action-secondary-hover">
+						<Icon as={YoutubeSvg} size="lg" />
+					</div>
+					<TextField
+						placeholder="youtube.com/@yourusername"
+						{...register("youtube")}
+						size="md"
+						className="flex-1"
+					/>
+				</div>
+				<div className="flex justify-center items-center gap-2">
+					<div className="border border-border-default p-2 rounded-xl bg-action-secondary-hover">
+						<Icon as={LinkSvg} size="lg" />
+					</div>
+					<TextField
+						placeholder="yourwebsite.com"
+						{...register("portfolio")}
+						size="md"
+						className="flex-1"
+					/>
+				</div>
+			</div>
+		</div>
+	)
+}
+
 // ─── Step heading config ──────────────────────────────────────────────────────
 
 type HeadingConfig = { plain: string; highlight: string } | { full: string }
 
+// Commented out original STEP_HEADINGS config
+/*
 const STEP_HEADINGS: HeadingConfig[] = [
 	{ plain: "Tell us", highlight: "about you" },
 	{ plain: "Set up your", highlight: "host profile" },
@@ -988,6 +1349,11 @@ const STEP_HEADINGS: HeadingConfig[] = [
 	{ full: "Verify payout details" },
 	{ full: "Review payout details" },
 	{ full: "Your account is under review" },
+]
+*/
+const STEP_HEADINGS: HeadingConfig[] = [
+	{ plain: "Tell us", highlight: "about you" },
+	{ full: "Profile details & social links" },
 ]
 
 // ─── Main page ────────────────────────────────────────────────────────────────
@@ -1060,90 +1426,46 @@ export default function OnboardingPage() {
 	})
 
 	const { handleSubmit, trigger, getValues } = methods
+	// Commented out original step configs
+	/*
 	const TOTAL = STEP_PANEL_CONFIGS.length
 	const isLast = step === TOTAL - 1
 	const panelConfig = STEP_PANEL_CONFIGS[step]
+	*/
+	const TOTAL = TWO_STEP_PANEL_CONFIGS.length
+	const isLast = step === TOTAL - 1
+	const panelConfig = TWO_STEP_PANEL_CONFIGS[step]
 	const heading = STEP_HEADINGS[step]
 
 	async function handleNext() {
-		if (isLast) {
-			try {
-				const profile = await getHostProfile()
-				setProfile(profile)
-			} catch {
-				// profile fetch failure shouldn't block navigation
-			}
-			clearSession()
-			router.push("/host/dashboard")
-			return
-		}
-
 		const fields = STEP_FIELDS[step]
 		if (fields.length > 0) {
 			const valid = await trigger(fields as (keyof FormValues)[])
 			if (!valid) return
 		}
 
-		// Step 4 (Review): register host then verify PAN — both blocking
-		if (step === 4) {
+		if (isLast) {
 			setLoadingMessage("Setting up your profile…")
 			try {
 				const values = getValues()
+				// Register the host with the data collected
 				try {
 					await registerHost(buildRegisterPayload(values, phone))
 				} catch (e) {
-					// 409 = host already registered (e.g. re-submitted after navigating back) — treat as success
+					// 409 = host already registered — treat as success
 					if (!(e instanceof ApiError && e.statusCode === 409)) throw e
 				}
 
-				setLoadingMessage("Verifying your PAN…")
 				try {
-					await verifyPan()
-				} catch (e) {
-					// 409 = PAN already verified — treat as success
-					if (!(e instanceof ApiError && e.statusCode === 409)) throw e
+					const profile = await getHostProfile()
+					setProfile(profile)
+				} catch {
+					// profile fetch failure shouldn't block navigation
 				}
-
-				setIsRegistered(true)
-				setStep(s => s + 1)
+				clearSession()
+				router.push("/host/dashboard")
 			} catch (e) {
 				toast.error(getApiErrorMessage(e))
-			} finally {
-				setLoadingMessage(null)
-			}
-			return
-		}
-
-		// Step 5 (Payout): verify bank account — blocking
-		if (step === 5) {
-			setLoadingMessage("Verifying your bank account…")
-			try {
-				const values = getValues()
-				const result = await verifyBankAccount({
-					bankAccount: {
-						accountNumber: values.accountNumber,
-						ifscCode: values.ifscCode,
-						accountHolderName: values.accountHolderName,
-						bankName: values.bankName,
-					},
-				})
-				setBankKycResult(result)
-				setStep(s => s + 1)
-			} catch (e) {
-				if (e instanceof ApiError && e.statusCode === 409) {
-					// KYC already verified
-					setBankKycResult({
-						panReferenceId: "",
-						pennyDropReference: null,
-						kycStatus: "VERIFIED",
-						panVerificationStatus: "VERIFIED",
-						bankVerificationStatus: "VERIFIED",
-						kycFailureReason: null,
-					})
-					setStep(s => s + 1)
-				} else {
-					toast.error(getApiErrorMessage(e))
-				}
 			} finally {
 				setLoadingMessage(null)
 			}
@@ -1155,6 +1477,8 @@ export default function OnboardingPage() {
 
 	const isEmailReadOnly = !!sessionEmail
 
+	// Commented out original step components list
+	/*
 	const stepComponents = [
 		<StepAboutYou key={0} isEmailReadOnly={isEmailReadOnly} />,
 		<StepHostProfile key={1} />,
@@ -1164,6 +1488,11 @@ export default function OnboardingPage() {
 		<StepPayoutDetails key={5} />,
 		<StepReviewPayout key={6} bankKycResult={bankKycResult} />,
 		<StepUnderReview key={7} onGoToDashboard={handleNext} />,
+	]
+	*/
+	const stepComponents = [
+		<StepOne key={0} />,
+		<StepTwo key={1} isEmailReadOnly={isEmailReadOnly} categories={categories} />,
 	]
 
 	return (
@@ -1220,13 +1549,15 @@ export default function OnboardingPage() {
 					</div>
 
 					<FormProvider {...methods}>
-						<form onSubmit={handleSubmit(() => {})} noValidate>
+						<form onSubmit={handleSubmit(() => { })} noValidate>
 							{stepComponents[step]}
 						</form>
 					</FormProvider>
 
 					{/* Navigation */}
-					{!isLast && (
+					{/* Commented out original condition for rendering navigation */}
+					{/* {!isLast && ( */}
+					{step < TOTAL && (
 						<div className="flex gap-3 mt-8">
 							{step > 0 && !(step === 5 && isRegistered) && (
 								<Button
@@ -1252,7 +1583,7 @@ export default function OnboardingPage() {
 							>
 								{loadingMessage
 									? "Please wait…"
-									: <>{STEP_BUTTON_LABELS[step]} <AltArrowRightSvg className="size-4" aria-hidden /></>
+									: <>{step === TOTAL - 1 ? "Create Account" : STEP_BUTTON_LABELS[step]} <AltArrowRightSvg className="size-4" aria-hidden /></>
 								}
 							</Button>
 						</div>

@@ -12,3 +12,9 @@ const firebaseConfig = {
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig)
 export const auth = getAuth(app)
+
+if (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+	console.log("Firebase: Disabling app verification for testing on localhost.");
+	auth.settings.appVerificationDisabledForTesting = true
+}
+

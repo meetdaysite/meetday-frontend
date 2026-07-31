@@ -102,8 +102,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 		try {
 			_confirmation = await signInWithPhoneNumber(auth, phone, _recaptcha)
 		} catch (err) {
-			resetRecaptcha(recaptchaContainerId)
-			throw toFriendlyAuthError(err)
+			const error = err as { code?: string; message?: string }
+			console.log("Firebase error:", error);
+			console.log("Code:", error.code);
+			console.log("Message:", error.message);
+
+			resetRecaptcha(recaptchaContainerId);
+			throw toFriendlyAuthError(err);
 		}
 	},
 

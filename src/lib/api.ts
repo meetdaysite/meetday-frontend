@@ -164,6 +164,19 @@ export async function updateHostProfile(payload: UpdateHostProfilePayload): Prom
 	return data.data
 }
 
+export type BrandProfile = HostProfile
+export type UpdateBrandProfilePayload = UpdateHostProfilePayload
+
+export async function getBrandProfile(): Promise<BrandProfile> {
+	const { data } = await apiClient.get<{ success: boolean; data: BrandProfile }>("/hosts/me")
+	return data.data
+}
+
+export async function updateBrandProfile(payload: UpdateBrandProfilePayload): Promise<BrandProfile> {
+	const { data } = await apiClient.patch<{ success: boolean; data: BrandProfile }>("/hosts/profile", payload)
+	return data.data
+}
+
 // ─── Registration ─────────────────────────────────────────────────────────────
 
 export type RegisterPayload = {
@@ -177,8 +190,8 @@ export type RegisterPayload = {
 	hostBio?: string
 	tagline?: string
 	gender?: string
-	legalName: string
-	pan: string
+	legalName?: string
+	pan?: string
 	languages?: string[]
 	address?: {
 		addressLine1: string
@@ -203,6 +216,14 @@ export type RegisterPayload = {
 
 export async function registerHost(payload: RegisterPayload): Promise<void> {
 	await apiClient.post("/auth/register", payload)
+}
+
+export type BrandRegisterPayload = Omit<RegisterPayload, "accountType"> & {
+	accountType: "BRAND"
+}
+
+export async function registerBrand(payload: BrandRegisterPayload): Promise<void> {
+	await apiClient.post("/auth/register", { ...payload, accountType: "HOST" })
 }
 
 // ─── Attendee registration ────────────────────────────────────────────────────
