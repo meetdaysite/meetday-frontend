@@ -421,8 +421,8 @@ export default function ProfilePage() {
 				onDeleted={async () => {
 					setShowDeleteModal(false)
 					clearProfile()
+					router.replace("/")
 					await signOut()
-					router.replace("/brand/login")
 				}}
 			/>
 		</div>

@@ -16,7 +16,7 @@ import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
 import { useAuth } from "@/context/AuthContext"
 import { useAuthSessionStore } from "@/store/authSessionStore"
 import { useHostStore } from "@/store/hostStore"
-import { checkPhone, getHostProfile } from "@/lib/api"
+import { checkPhone, getAuthMe, getHostProfile } from "@/lib/api"
 import { CountrySelect } from "@/components/auth/PhoneField"
 import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/countries"
 import { getApiErrorMessage } from "@/lib/errors"
@@ -106,6 +106,16 @@ export default function VerifyPage() {
 			}
 
 			const { exists } = await checkPhone(phone)
+
+			if (exists) {
+				const me = await getAuthMe()
+				if (me.attendeeProfile !== null) {
+					await signOut()
+					toast.error("An attendee account exists for this number. You cannot login as a host.")
+					router.replace("/host/login")
+					return
+				}
+			}
 
 			if (intent === "login") {
 				if (exists) {

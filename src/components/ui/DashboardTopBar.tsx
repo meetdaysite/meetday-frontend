@@ -39,8 +39,8 @@ export function DashboardTopBar() {
 
 	async function handleSignOut() {
 		clearProfile()
+		router.replace("/")
 		await signOut()
-		router.replace("/host/login")
 	}
 
 	useClickOutside(userRef, () => setUserOpen(false))

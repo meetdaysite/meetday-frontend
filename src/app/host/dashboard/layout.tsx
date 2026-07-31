@@ -191,8 +191,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 	async function handleSignOut() {
 		clearProfile()
+		router.replace("/")
 		await signOut()
-		router.replace("/host/login")
 	}
 
 	useEffect(() => {

@@ -519,8 +519,8 @@ function ProfilePageInner() {
 				onClose={() => setShowDeleteModal(false)}
 				onDeleted={async () => {
 					setShowDeleteModal(false)
+					router.replace("/")
 					await signOut()
-					router.replace("/attendee/login")
 				}}
 			/>
 		</main>

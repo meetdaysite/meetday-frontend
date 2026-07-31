@@ -63,8 +63,8 @@ export function AttendeeHeader({ hideAuthButtons }: { hideAuthButtons?: boolean 
 
 	async function handleSignOut() {
 		setDropdownOpen(false)
+		router.push("/")
 		await signOut()
-		router.push("/attendee/login")
 	}
 
 	// Derive display name from /auth/me firstName/lastName, fallback to Firebase

@@ -9,7 +9,7 @@ import { Icon } from "@/components/ui/Icon"
 import { useAuth } from "@/context/AuthContext"
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
 import LockKeyholeSvg from "@/icons/outlined/lock-keyhole.svg"
-import { checkPhone, registerAttendee, type AttendeeSocialStyle, type AttendeeVibeType } from "@/lib/api"
+import { checkPhone, getAuthMe, registerAttendee, type AttendeeSocialStyle, type AttendeeVibeType } from "@/lib/api"
 import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/countries"
 import { getApiErrorMessage } from "@/lib/errors"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
@@ -117,6 +117,16 @@ export default function AttendeeVerifyPage() {
 			}
 
 			const { exists } = await checkPhone(phone)
+
+			if (exists) {
+				const me = await getAuthMe()
+				if (me.attendeeProfile === null) {
+					await signOut()
+					toast.error("A host account exists for this number. You cannot login as an attendee.")
+					router.replace("/attendee/login")
+					return
+				}
+			}
 
 			if (intent === "login") {
 				if (exists) {
