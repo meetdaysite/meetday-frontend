@@ -23,11 +23,10 @@ import CalendarFillSvg from "@/icons/filled/calendar.svg"
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
 const NAV_ITEMS: { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; dot?: boolean }[] = [
-	{ label: "Dashboard", href: "/host/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
+	{ label: "My Profile", href: "/host/dashboard/profile", outlined: UserSvg, filled: UserSvg },
 	{ label: "My Experiences", href: "/host/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg },
-	{ label: "Communities", href: "/host/dashboard/communities", outlined: UsersGroupOutSvg, filled: UsersGroupFillSvg },
-	{ label: "Proposal", href: "/host/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
-	{ label: "Profile", href: "/host/dashboard/profile", outlined: UserSvg, filled: UserSvg },
+	{ label: "My Sponsorships", href: "/host/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Dashboard", href: "/host/dashboard/overview", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "Support", href: "/host/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
 ]
 
@@ -42,20 +41,14 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	return (
 		<div className="flex flex-col h-full">
 			<div className="px-5 pt-6 pb-5">
-				<Image
-					src="/assets/brand_logo.svg"
-					alt="Meetday"
-					width={120}
-					height={32}
-					className="h-8 w-auto"
-				/>
-			</div>
-
-			<div className="px-4 pb-5">
-				<Link href="/host/dashboard/create" onClick={onClose}>
-					<Button variant="primary" size="md" radius="md" className="w-full">
-						Create new experience
-					</Button>
+				<Link href="/host/dashboard">
+					<Image
+						src="/assets/brand_logo.svg"
+						alt="Meetday"
+						width={120}
+						height={32}
+						className="h-8 w-auto cursor-pointer"
+					/>
 				</Link>
 			</div>
 

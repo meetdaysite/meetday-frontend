@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -356,13 +357,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 			<div className="flex-1 flex flex-col min-w-0">
 				{/* Mobile top bar */}
 				<header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-surface-card border-b border-border-default">
-					<Image
-						src="/assets/brand_logo.svg"
-						alt="Meetday"
-						width={100}
-						height={28}
-						className="h-7 w-auto"
-					/>
+					<Link href="/host/dashboard">
+						<Image
+							src="/assets/brand_logo.svg"
+							alt="Meetday"
+							width={100}
+							height={28}
+							className="h-7 w-auto cursor-pointer"
+						/>
+					</Link>
 					<button
 						onClick={() => setSidebarOpen(true)}
 						className="text-text-primary p-1.5 rounded-action hover:bg-surface-card-muted transition-colors"
