@@ -1,9 +1,11 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { toast } from "sonner"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/Button"
+import { Tabs } from "@/components/ui/Tabs"
+import clsx from "clsx"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
@@ -12,6 +14,8 @@ import { getCategories, type Category } from "@/lib/api"
 import UploadSvg from "@/icons/outlined/upload.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
+import DotsSvg from "@/icons/outlined/dots.svg"
+import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
 
 // ─── IndexedDB Config ────────────────────────────────────────────────────────
 const DB_NAME = "MeetdayProposalDB"
@@ -28,7 +32,7 @@ export interface StoredProposal {
     date: string
     venue: string
     city: string
-    audienceProfile: string
+    audienceProfile: string | string[]
     ageGroup: string
     guestCount: string
     docFile: File | Blob
@@ -36,6 +40,7 @@ export interface StoredProposal {
     docType: string
     docSize: number
     uploadedAt: string
+    status?: "DRAFT" | "PUBLISHED"
 }
 
 interface ActivatedCommunity {
@@ -198,14 +203,22 @@ export default function ProposalPage() {
     const [projDate, setProjDate] = useState("")
     const [projVenue, setProjVenue] = useState("")
     const [projCity, setProjCity] = useState("")
-    const [projAudience, setProjAudience] = useState("")
+    const [projAudience, setProjAudience] = useState<string[]>([])
+    const [newAudience, setNewAudience] = useState("")
+    const [previewSlide, setPreviewSlide] = useState(0)
     const [projAgeGroup, setProjAgeGroup] = useState("")
     const [projGuestCount, setProjGuestCount] = useState("")
     const [projDoc, setProjDoc] = useState<File | null>(null)
     const projImageInputRef = useRef<HTMLInputElement>(null)
     const projDocInputRef = useRef<HTMLInputElement>(null)
     const updateDocInputRef = useRef<HTMLInputElement>(null)
+    const previewContainerRef = useRef<HTMLDivElement>(null)
 
+    const [docxRenderer, setDocxRenderer] = useState<any>(null)
+    const [pptxViewerClass, setPptxViewerClass] = useState<any>(null)
+
+    const [activeTab, setActiveTab] = useState<"ALL" | "DRAFT" | "PUBLISHED">("ALL")
+    const [openKebabId, setOpenKebabId] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
     const [isUploading, setIsUploading] = useState(false)
     const [uploadProgress, setUploadProgress] = useState(0)
@@ -230,8 +243,20 @@ export default function ProposalPage() {
 
     const [categories, setCategories] = useState<Category[]>([])
 
+    const draftCount = useMemo(() => proposals.filter(p => p.status === "DRAFT").length, [proposals])
+    const publishedCount = useMemo(() => proposals.filter(p => p.status === "PUBLISHED" || !p.status).length, [proposals])
+    const allCount = proposals.length
+
+    const filteredProposals = useMemo(() => {
+        return proposals.filter(p => {
+            if (activeTab === "ALL") return true
+            if (activeTab === "DRAFT") return p.status === "DRAFT"
+            return p.status === "PUBLISHED" || !p.status
+        })
+    }, [proposals, activeTab])
+
     useEffect(() => {
-        getCategories().then(setCategories).catch(() => {})
+        getCategories().then(setCategories).catch(() => { })
     }, [])
 
     useEffect(() => {
@@ -245,7 +270,6 @@ export default function ProposalPage() {
                     const found = p.find(item => item.id === urlProposalId)
                     if (found) {
                         setSelectedProposal(found)
-                        setShowProjectModal(true)
                     }
                 }
             })
@@ -259,7 +283,16 @@ export default function ProposalPage() {
 
     useEffect(() => {
         if (selectedProposal?.docFile) {
-            const url = URL.createObjectURL(selectedProposal.docFile)
+            let mimeType = selectedProposal.docType
+            if (selectedProposal.docName.toLowerCase().endsWith(".pdf")) {
+                mimeType = "application/pdf"
+            } else if (selectedProposal.docName.toLowerCase().endsWith(".docx")) {
+                mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            } else if (selectedProposal.docName.toLowerCase().endsWith(".pptx")) {
+                mimeType = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            }
+            const docBlob = new Blob([selectedProposal.docFile], { type: mimeType })
+            const url = URL.createObjectURL(docBlob)
             setPreviewUrl(url)
             return () => {
                 URL.revokeObjectURL(url)
@@ -317,6 +350,61 @@ export default function ProposalPage() {
         }
     }, [projImage])
 
+    useEffect(() => {
+        if (!openKebabId) return
+        const handler = () => setOpenKebabId(null)
+        window.addEventListener("click", handler)
+        return () => window.removeEventListener("click", handler)
+    }, [openKebabId])
+
+    useEffect(() => {
+        import("docx-preview").then((mod) => {
+            setDocxRenderer(() => mod)
+        })
+        import("pptx-viewer").then((mod) => {
+            setPptxViewerClass(() => mod.PPTXViewer)
+        })
+    }, [])
+
+    useEffect(() => {
+        if (!selectedProposal || !previewContainerRef.current) return
+
+        const isDoc = selectedProposal.docType.includes("msword") ||
+            selectedProposal.docType.includes("wordprocessingml") ||
+            selectedProposal.docName.toLowerCase().endsWith(".doc") ||
+            selectedProposal.docName.toLowerCase().endsWith(".docx")
+
+        const isPpt = selectedProposal.docType.includes("presentation") ||
+            selectedProposal.docType.includes("powerpoint") ||
+            selectedProposal.docName.toLowerCase().endsWith(".ppt") ||
+            selectedProposal.docName.toLowerCase().endsWith(".pptx")
+
+        if (isDoc && docxRenderer) {
+            previewContainerRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-xs text-text-tertiary">Loading document preview...</div>'
+            docxRenderer.renderAsync(selectedProposal.docFile, previewContainerRef.current)
+                .catch((err: any) => {
+                    console.error("Error rendering docx:", err)
+                    if (previewContainerRef.current) {
+                        previewContainerRef.current.innerHTML = '<div class="p-6 text-center text-xs text-red-500">Failed to load preview. Please download the file to view.</div>'
+                    }
+                })
+        } else if (isPpt && pptxViewerClass) {
+            previewContainerRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-xs text-text-tertiary">Loading presentation preview...</div>'
+            try {
+                const viewer = new pptxViewerClass(previewContainerRef.current)
+                viewer.load(selectedProposal.docFile)
+                    .catch((err: any) => {
+                        console.error("Error loading pptx:", err)
+                        if (previewContainerRef.current) {
+                            previewContainerRef.current.innerHTML = '<div class="p-6 text-center text-xs text-red-500">Failed to load preview. Please download the file to view.</div>'
+                        }
+                    })
+            } catch (err) {
+                console.error("Error initializing pptx viewer:", err)
+            }
+        }
+    }, [selectedProposal, docxRenderer, pptxViewerClass])
+
     const openProposalForm = (p?: StoredProposal) => {
         if (p) {
             setProjName(p.name)
@@ -325,7 +413,7 @@ export default function ProposalPage() {
             setProjDate(p.date)
             setProjVenue(p.venue)
             setProjCity(p.city)
-            setProjAudience(p.audienceProfile)
+            setProjAudience(Array.isArray(p.audienceProfile) ? p.audienceProfile : p.audienceProfile ? p.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
             setProjAgeGroup(p.ageGroup)
             setProjGuestCount(p.guestCount)
             setProjDoc(p.docFile as File | null)
@@ -337,12 +425,13 @@ export default function ProposalPage() {
             setProjDate("")
             setProjVenue("")
             setProjCity("")
-            setProjAudience("")
+            setProjAudience([])
             setProjAgeGroup("")
             setProjGuestCount("")
             setProjDoc(null)
             setSelectedProposal(null)
         }
+        setNewAudience("")
         setShowProposalForm(true)
     }
 
@@ -369,17 +458,19 @@ export default function ProposalPage() {
     const handleProjDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0]
-            const allowedExtensions = [".pdf", ".doc", ".docx"]
+            const allowedExtensions = [".pdf", ".doc", ".docx", ".ppt", ".pptx"]
             const allowedTypes = [
                 "application/pdf",
                 "application/msword",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/vnd.ms-powerpoint",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
             ]
             const fileExtension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase()
             const isValid = allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension)
 
             if (!isValid) {
-                toast.error("Only PDF or DOC/DOCX files are accepted.")
+                toast.error("Only PDF, DOC/DOCX, or PPT/PPTX files are accepted.")
                 return
             }
             if (file.size > 10 * 1024 * 1024) {
@@ -390,7 +481,7 @@ export default function ProposalPage() {
         }
     }
 
-    const handleProposalSubmit = (e: React.FormEvent) => {
+    const handleProposalSubmit = (e: React.FormEvent, forceStatus?: "DRAFT" | "PUBLISHED") => {
         e.preventDefault()
 
         if (!projName.trim()) {
@@ -417,8 +508,8 @@ export default function ProposalPage() {
             toast.error("City is required.")
             return
         }
-        if (!projAudience.trim()) {
-            toast.error("Audience Profile is required.")
+        if (projAudience.length === 0) {
+            toast.error("At least one Audience Profile tag is required.")
             return
         }
         if (!projAgeGroup.trim()) {
@@ -463,6 +554,7 @@ export default function ProposalPage() {
                                     docType: projDoc ? projDoc.type : p.docType,
                                     docSize: projDoc ? projDoc.size : p.docSize,
                                     uploadedAt: new Date().toISOString(),
+                                    status: forceStatus || p.status || "PUBLISHED",
                                 }
                             }
                             return p
@@ -486,6 +578,7 @@ export default function ProposalPage() {
                             docType: projDoc!.type,
                             docSize: projDoc!.size,
                             uploadedAt: new Date().toISOString(),
+                            status: forceStatus || "PUBLISHED",
                         }
                         updatedProposals = [...proposals, newProposal]
                     }
@@ -513,17 +606,19 @@ export default function ProposalPage() {
     const handleUpdateFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && selectedProposal) {
             const file = e.target.files[0]
-            const allowedExtensions = [".pdf", ".doc", ".docx"]
+            const allowedExtensions = [".pdf", ".doc", ".docx", ".ppt", ".pptx"]
             const allowedTypes = [
                 "application/pdf",
                 "application/msword",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/vnd.ms-powerpoint",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
             ]
             const fileExtension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase()
             const isValid = allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension)
 
             if (!isValid) {
-                toast.error("Only PDF or DOC/DOCX files are accepted.")
+                toast.error("Only PDF, DOC/DOCX, or PPT/PPTX files are accepted.")
                 return
             }
             if (file.size > 10 * 1024 * 1024) {
@@ -559,6 +654,24 @@ export default function ProposalPage() {
         }
     }
 
+    const toggleDraftStatus = (proposal: StoredProposal) => {
+        const newStatus: "DRAFT" | "PUBLISHED" = proposal.status === "DRAFT" ? "PUBLISHED" : "DRAFT"
+        const updatedProposals: StoredProposal[] = proposals.map(p => {
+            if (p.id === proposal.id) {
+                return { ...p, status: newStatus }
+            }
+            return p
+        })
+        saveProposalsList(updatedProposals, hostId)
+            .then((saved) => {
+                setProposals(saved)
+                toast.success(`Proposal status updated to ${newStatus === "DRAFT" ? "Draft" : "Published"}`)
+            })
+            .catch(() => {
+                toast.error("Failed to update status.")
+            })
+    }
+
     const resetProposalForm = () => {
         setProjName("")
         setProjAbout("")
@@ -566,7 +679,8 @@ export default function ProposalPage() {
         setProjDate("")
         setProjVenue("")
         setProjCity("")
-        setProjAudience("")
+        setProjAudience([])
+        setNewAudience("")
         setProjAgeGroup("")
         setProjGuestCount("")
         setProjDoc(null)
@@ -582,7 +696,8 @@ export default function ProposalPage() {
         setProjDate(selectedProposal.date)
         setProjVenue(selectedProposal.venue)
         setProjCity(selectedProposal.city)
-        setProjAudience(selectedProposal.audienceProfile)
+        setProjAudience(Array.isArray(selectedProposal.audienceProfile) ? selectedProposal.audienceProfile : selectedProposal.audienceProfile ? selectedProposal.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
+        setNewAudience("")
         setProjAgeGroup(selectedProposal.ageGroup)
         setProjGuestCount(selectedProposal.guestCount)
         setProjDoc(selectedProposal.docFile as File | null)
@@ -614,8 +729,8 @@ export default function ProposalPage() {
             toast.error("City is required.")
             return
         }
-        if (!projAudience.trim()) {
-            toast.error("Audience Profile is required.")
+        if (projAudience.length === 0) {
+            toast.error("At least one Audience Profile tag is required.")
             return
         }
         if (!projAgeGroup.trim()) {
@@ -653,6 +768,7 @@ export default function ProposalPage() {
             .then((saved) => {
                 setProposals(saved)
                 setIsEditingInPlace(false)
+                setShowProjectModal(false)
                 toast.success("Project details updated successfully!")
             })
             .catch((err) => {
@@ -853,6 +969,155 @@ export default function ProposalPage() {
                                 </Button>
                             </div>
                         </>
+                    ) : selectedProposal && !isEditingInPlace ? (
+                        /* Proposal Details Section - rendered inline instead of a modal! */
+                        <div className="flex flex-col gap-6 animate-in fade-in duration-150">
+                            {/* Header */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-2 border-b border-border-default gap-4">
+                                <div className="flex flex-col gap-1">
+                                    <button
+                                        onClick={() => setSelectedProposal(null)}
+                                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-text-brand hover:text-text-brand-hover transition-colors mb-1"
+                                    >
+                                        ← Back to Sponsorships
+                                    </button>
+                                    <h1 className="text-heading-sm font-semibold text-text-primary">{selectedProposal.name}</h1>
+                                    <p className="text-caption text-text-tertiary">Project Overview & Details</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        ref={updateDocInputRef}
+                                        type="file"
+                                        accept=".pdf,.doc,.docx,.ppt,.pptx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                                        className="hidden"
+                                        onChange={handleUpdateFile}
+                                    />
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
+                                        radius="pill"
+                                        onClick={() => {
+                                            handleEditDetails()
+                                            setShowProjectModal(true)
+                                        }}
+                                    >
+                                        Edit details
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        radius="pill"
+                                        onClick={() => {
+                                            toggleDraftStatus(selectedProposal)
+                                            const newStatus = selectedProposal.status === "DRAFT" ? "PUBLISHED" : "DRAFT"
+                                            setSelectedProposal(prev => prev ? { ...prev, status: newStatus } : null)
+                                        }}
+                                    >
+                                        {selectedProposal.status === "DRAFT" ? "Publish" : "Save as Draft"}
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        radius="pill"
+                                        onClick={() => updateDocInputRef.current?.click()}
+                                    >
+                                        Update file
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        radius="pill"
+                                        className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
+                                        onClick={() => {
+                                            handleDelete(selectedProposal.id);
+                                        }}
+                                    >
+                                        Delete
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Body */}
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                {/* Left column - Metadata */}
+                                <div className="lg:col-span-3 flex flex-col gap-6">
+                                    {projectImageUrl && (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={projectImageUrl} alt={selectedProposal.name} className="w-full h-40 object-cover rounded-xl border border-border-default shadow-sm" />
+                                    )}
+                                    <div className="bg-surface-card-muted border border-border-default rounded-action p-5 flex flex-col gap-4">
+                                        <div>
+                                            <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Date & City</p>
+                                            <p className="text-label-sm font-semibold text-text-primary mt-0.5">{selectedProposal.date} • {selectedProposal.city}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Venue</p>
+                                            <p className="text-label-sm font-semibold text-text-primary mt-0.5">{selectedProposal.venue}</p>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border-default/50">
+                                            <div>
+                                                <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Guests</p>
+                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5">{selectedProposal.guestCount}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Age Group</p>
+                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5">{selectedProposal.ageGroup}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Audience</p>
+                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5 truncate" title={Array.isArray(selectedProposal.audienceProfile) ? selectedProposal.audienceProfile.join(", ") : selectedProposal.audienceProfile}>
+                                                    {Array.isArray(selectedProposal.audienceProfile) ? selectedProposal.audienceProfile.join(", ") : selectedProposal.audienceProfile}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-surface-card border border-border-default rounded-action p-5">
+                                        <h4 className="text-label-sm font-semibold text-text-primary mb-2">About the Project</h4>
+                                        <p className="text-body-sm text-text-secondary leading-relaxed whitespace-pre-wrap">{selectedProposal.about}</p>
+                                    </div>
+                                </div>
+
+                                {/* Right column - PDF Preview */}
+                                <div className="lg:col-span-9 flex flex-col gap-3">
+                                    <h4 className="text-label-md font-semibold text-text-primary">Document Preview</h4>
+                                    {selectedProposal.docType.includes("pdf") || selectedProposal.docName.toLowerCase().endsWith(".pdf") ? (
+                                        <div className="border border-border-default rounded-action overflow-hidden bg-surface-card shadow-sm h-[750px]">
+                                            <iframe
+                                                src={previewUrl || undefined}
+                                                className="w-full h-full border-none"
+                                                title="Proposal Preview"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="border border-border-default rounded-action bg-surface-card shadow-sm h-[750px] flex flex-col bg-white overflow-hidden">
+                                            {/* Container for DOCX/PPTX Client-side rendering */}
+                                            <div ref={previewContainerRef} className="flex-1 overflow-auto p-6 docx-preview-container select-text" />
+                                            {/* Download toolbar */}
+                                            <div className="h-12 border-t border-border-default bg-surface-card-muted flex items-center justify-between px-4 shrink-0">
+                                                <span className="text-[10px] text-text-tertiary truncate max-w-xs font-medium">{selectedProposal.docName}</span>
+                                                <Button
+                                                    variant="secondary"
+                                                    size="xs"
+                                                    radius="md"
+                                                    onClick={() => {
+                                                        if (!previewUrl) return
+                                                        const link = document.createElement("a")
+                                                        link.href = previewUrl
+                                                        link.download = selectedProposal.docName
+                                                        document.body.appendChild(link)
+                                                        link.click()
+                                                        document.body.removeChild(link)
+                                                    }}
+                                                >
+                                                    Download Original
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     ) : (
                         /* Community activated. Now they can view/edit details and upload/view the proposal. */
                         <div className="flex flex-col gap-8">
@@ -860,14 +1125,14 @@ export default function ProposalPage() {
                                 <h1 className="text-heading-sm font-semibold text-text-primary mb-4">Community profile</h1>
 
                                 {/* Activated Community Details Card */}
-                                <div className="bg-surface-card border border-border-default rounded-action p-4 max-w-2xl shadow-sm">
+                                <div className="bg-surface-card border border-border-default rounded-action p-4 w-full shadow-sm">
                                     <div className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-border-default">
                                         <div className="flex items-center gap-3">
                                             {communityLogoUrl ? (
                                                 // eslint-disable-next-line @next/next/no-img-element
-                                                <img src={communityLogoUrl} alt={community.name} className="size-10 rounded-xl object-cover border border-border-default" />
+                                                <img src={communityLogoUrl} alt={community.name} className="size-8 rounded-lg object-cover border border-border-default" />
                                             ) : (
-                                                <div className="size-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-700 text-title-xs font-bold">
+                                                <div className="size-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-700 text-[10px] font-bold">
                                                     {community.name.substring(0, 2).toUpperCase()}
                                                 </div>
                                             )}
@@ -957,17 +1222,12 @@ export default function ProposalPage() {
                                 </div>
                             </div>
 
-                            <hr className="border-border-default max-w-2xl" />
+                            <hr className="border-border-default" />
 
                             {/* Proposal upload/display section */}
-                            <div className="flex flex-col gap-4">
-                                <div className="mb-2">
-                                    <h1 className="text-heading-sm font-semibold text-text-primary">Sponsorships</h1>
-                                    <p className="text-body-sm text-text-secondary mt-0.5">Upload and manage your sponsorship proposal document</p>
-                                </div>
-
+                            <div className="flex flex-col gap-4 w-full">
                                 {isUploading ? (
-                                    <div className="bg-surface-card border border-border-default rounded-action p-8 text-center flex flex-col items-center max-w-2xl">
+                                    <div className="bg-surface-card border border-border-default rounded-action p-8 text-center flex flex-col items-center w-full max-w-2xl mx-auto">
                                         <div className="w-16 h-16 rounded-full bg-surface-brand-soft flex items-center justify-center mb-4 animate-bounce">
                                             <Icon as={UploadSvg} size="lg" color="brand" />
                                         </div>
@@ -981,245 +1241,151 @@ export default function ProposalPage() {
                                         </div>
                                         <span className="text-label-sm font-semibold text-text-brand">{uploadProgress}%</span>
                                     </div>
-                                ) : showProposalForm ? (
-                                    /* State 2a: Form open to fill in details */
-                                    <form onSubmit={handleProposalSubmit} className="bg-surface-card border border-border-default rounded-action p-6 max-w-2xl flex flex-col gap-4 animate-in fade-in duration-150">
-                                        <div className="flex justify-between items-center pb-2 border-b border-border-default">
-                                            <h3 className="text-label-lg font-semibold text-text-primary">
-                                                {selectedProposal ? "Edit Sponsorship Proposal" : "Create Sponsorship Proposal"}
-                                            </h3>
-                                            <Button type="button" variant="secondary" size="xs" radius="pill" onClick={resetProposalForm}>
-                                                Cancel
-                                            </Button>
-                                        </div>
-
-                                        {/* Name */}
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-label-sm font-semibold text-text-primary">Project Name *</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                value={projName}
-                                                onChange={(e) => setProjName(e.target.value)}
-                                                placeholder="e.g. Annual Charity Gala"
-                                                className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                            />
-                                        </div>
-
-                                        {/* About */}
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-label-sm font-semibold text-text-primary">About the Project *</label>
-                                            <textarea
-                                                required
-                                                value={projAbout}
-                                                onChange={(e) => setProjAbout(e.target.value)}
-                                                placeholder="Describe what the event/experience is about..."
-                                                rows={3}
-                                                className="p-3 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors resize-y"
-                                            />
-                                        </div>
-
-                                        {/* Image */}
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-label-sm font-semibold text-text-primary">Project Image *</label>
-                                            <div className="flex items-center gap-4">
-                                                {projImagePreview ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img src={projImagePreview} alt="Preview" className="size-16 rounded-xl object-cover border border-border-default" />
-                                                ) : selectedProposal?.image ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img src={URL.createObjectURL(selectedProposal.image)} alt="Current" className="size-16 rounded-xl object-cover border border-border-default" />
-                                                ) : (
-                                                    <div className="size-16 rounded-xl bg-surface-card-muted border border-dashed border-border-default flex items-center justify-center text-text-tertiary text-xs">
-                                                        No Image
-                                                    </div>
-                                                )}
-                                                <div className="flex flex-col gap-1">
-                                                    <input
-                                                        ref={projImageInputRef}
-                                                        type="file"
-                                                        accept="image/jpeg,image/jpg,image/png"
-                                                        className="hidden"
-                                                        onChange={handleProjImageChange}
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="secondary"
-                                                        size="xs"
-                                                        radius="md"
-                                                        onClick={() => projImageInputRef.current?.click()}
-                                                    >
-                                                        Choose Image
-                                                    </Button>
-                                                    <span className="text-[10px] text-text-tertiary">JPEG, JPG, PNG accepted. Max 5MB.</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Date, City */}
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-label-sm font-semibold text-text-primary">Date *</label>
-                                                <input
-                                                    type="date"
-                                                    required
-                                                    value={projDate}
-                                                    onChange={(e) => setProjDate(e.target.value)}
-                                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                                />
-                                            </div>
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-label-sm font-semibold text-text-primary">City *</label>
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    value={projCity}
-                                                    onChange={(e) => setProjCity(e.target.value)}
-                                                    placeholder="e.g. San Francisco"
-                                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Venue */}
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-label-sm font-semibold text-text-primary">Venue *</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                value={projVenue}
-                                                onChange={(e) => setProjVenue(e.target.value)}
-                                                placeholder="e.g. Palace of Fine Arts"
-                                                className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                            />
-                                        </div>
-
-                                        {/* Audience Profile, Age Group, Number of Guests */}
-                                        <div className="grid grid-cols-3 gap-3">
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-label-sm font-semibold text-text-primary">Audience Profile *</label>
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    value={projAudience}
-                                                    onChange={(e) => setProjAudience(e.target.value)}
-                                                    placeholder="e.g. Tech Founders"
-                                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                                />
-                                            </div>
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-label-sm font-semibold text-text-primary">Age Group *</label>
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    value={projAgeGroup}
-                                                    onChange={(e) => setProjAgeGroup(e.target.value)}
-                                                    placeholder="e.g. 21-40"
-                                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                                />
-                                            </div>
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-label-sm font-semibold text-text-primary">Guests Count *</label>
-                                                <input
-                                                    type="number"
-                                                    required
-                                                    min="1"
-                                                    value={projGuestCount}
-                                                    onChange={(e) => setProjGuestCount(e.target.value)}
-                                                    placeholder="e.g. 150"
-                                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        {/* Upload Proposal Doc */}
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-label-sm font-semibold text-text-primary">Upload Proposal (PDF/DOC) {selectedProposal ? "" : "*"}</label>
-                                            <div className="flex items-center gap-4">
-                                                <input
-                                                    ref={projDocInputRef}
-                                                    type="file"
-                                                    accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                                                    className="hidden"
-                                                    onChange={handleProjDocChange}
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    size="xs"
-                                                    radius="md"
-                                                    onClick={() => projDocInputRef.current?.click()}
-                                                >
-                                                    Choose Proposal File
-                                                </Button>
-                                                {projDoc ? (
-                                                    <span className="text-xs text-text-secondary font-medium truncate max-w-xs">{projDoc.name}</span>
-                                                ) : selectedProposal ? (
-                                                    <span className="text-xs text-text-secondary font-medium truncate max-w-xs">{selectedProposal.docName} (unchanged)</span>
-                                                ) : (
-                                                    <span className="text-[10px] text-text-tertiary">PDF, DOC, DOCX accepted. Max 10MB.</span>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Submit */}
-                                        <Button type="submit" variant="primary" size="sm" radius="pill" className="mt-2 self-end">
-                                            {selectedProposal ? "Update Proposal" : "Submit Proposal"}
-                                        </Button>
-                                    </form>
                                 ) : proposals.length > 0 ? (
-                                    /* State 3: Show list/grid of proposals overview cards */
-                                    <div className="flex flex-col gap-4 max-w-2xl animate-in fade-in duration-150">
+                                    /* State 3: Show list/grid of proposals overview cards styled like My Events */
+                                    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-150">
                                         <div className="flex justify-between items-center">
-                                            <h3 className="text-label-md font-semibold text-text-secondary">Your proposals ({proposals.length})</h3>
-                                            <Button variant="primary" size="xs" radius="pill" onClick={() => openProposalForm()}>
-                                                + Add proposal
+                                            <div>
+                                                <h1 className="text-heading-sm font-semibold text-text-primary">My Sponsorships</h1>
+                                                <p className="text-body-sm text-text-secondary mt-0.5">Manage and organize your sponsorship proposals</p>
+                                            </div>
+                                            <Button variant="primary" size="sm" radius="pill" onClick={() => openProposalForm()}>
+                                                + Create New Proposal
                                             </Button>
                                         </div>
-                                        <div className="grid grid-cols-1 gap-4">
-                                            {proposals.map((p) => {
-                                                const imgUrl = p.image ? URL.createObjectURL(p.image) : null
-                                                return (
-                                                    <div
-                                                        key={p.id}
-                                                        onClick={() => {
-                                                            setSelectedProposal(p);
-                                                            setShowProjectModal(true);
-                                                        }}
-                                                        className="bg-surface-card border border-border-default rounded-action p-4 shadow-sm hover:border-border-strong cursor-pointer transition-all flex gap-4 animate-in fade-in duration-150"
-                                                    >
-                                                        {imgUrl ? (
-                                                            // eslint-disable-next-line @next/next/no-img-element
-                                                            <img
-                                                                src={imgUrl}
-                                                                alt={p.name}
-                                                                className="size-20 rounded-xl object-cover border border-border-default shrink-0"
-                                                                onLoad={() => URL.revokeObjectURL(imgUrl)}
-                                                            />
-                                                        ) : (
-                                                            <div className="size-20 rounded-xl bg-orange-100 flex items-center justify-center text-orange-700 text-title-sm font-bold shrink-0">
-                                                                {p.name.substring(0, 2).toUpperCase()}
-                                                            </div>
-                                                        )}
-                                                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+
+                                        {/* Status tabs */}
+                                        <Tabs
+                                            items={[
+                                                { value: "ALL", label: "All", count: allCount },
+                                                { value: "DRAFT", label: "Draft", count: draftCount },
+                                                { value: "PUBLISHED", label: "Published", count: publishedCount }
+                                            ]}
+                                            value={activeTab}
+                                            onChange={(val: any) => setActiveTab(val)}
+                                            variant="pill"
+                                            className="w-fit"
+                                        />
+
+                                        {filteredProposals.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center py-20 text-center gap-3 bg-surface-card border border-border-default rounded-action">
+                                                <div className="size-12 rounded-full bg-surface-card-muted flex items-center justify-center">
+                                                    <Icon as={DocumentTextSvg} size="md" color="secondary" />
+                                                </div>
+                                                <p className="text-label-md font-semibold text-text-primary">No proposals found</p>
+                                                <p className="text-body-sm text-text-muted max-w-xs">
+                                                    No proposals in this category yet.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5">
+                                                {filteredProposals.map((p) => {
+                                                    const imgUrl = p.image ? URL.createObjectURL(p.image) : null
+                                                    return (
+                                                        <div
+                                                            key={p.id}
+                                                            onClick={() => setSelectedProposal(p)}
+                                                            className="group relative cursor-pointer bg-surface-card border border-border-default rounded-action hover:border-border-strong hover:shadow-card-hover transition-all overflow-hidden flex flex-col justify-between"
+                                                        >
                                                             <div>
-                                                                <h3 className="text-label-md font-semibold text-text-primary truncate">{p.name}</h3>
-                                                                <p className="text-caption text-text-secondary mt-0.5">{p.city} • {p.venue}</p>
-                                                                <p className="text-[11px] text-text-tertiary truncate mt-1">{p.about}</p>
+                                                                {/* Image */}
+                                                                <div className="relative aspect-16/10 overflow-hidden bg-surface-card-muted border-b border-border-default">
+                                                                    {imgUrl ? (
+                                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                                        <img
+                                                                            src={imgUrl}
+                                                                            alt={p.name}
+                                                                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                                                                            onLoad={() => imgUrl && URL.revokeObjectURL(imgUrl)}
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="w-full h-full bg-linear-to-br from-surface-card-muted to-border-default flex items-center justify-center text-text-tertiary font-bold text-lg">
+                                                                            {p.name.substring(0, 2).toUpperCase()}
+                                                                        </div>
+                                                                    )}
+                                                                    <span
+                                                                        className={clsx(
+                                                                            "absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-badge uppercase tracking-wider",
+                                                                            p.status === "DRAFT"
+                                                                                ? "bg-neutral-100 text-neutral-700 border border-neutral-300"
+                                                                                : "bg-green-50 text-green-700 border border-green-200"
+                                                                        )}
+                                                                    >
+                                                                        {p.status === "DRAFT" ? "Draft" : "Published"}
+                                                                    </span>
+
+                                                                    {/* Kebab button */}
+                                                                    <div className="absolute top-3 right-3 z-10" onClick={(e) => e.stopPropagation()}>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setOpenKebabId(openKebabId === p.id ? null : p.id)}
+                                                                            className="flex items-center justify-center size-7 rounded-full bg-white/95 shadow-sm border border-border-default hover:bg-white text-text-secondary hover:text-text-primary transition-colors"
+                                                                        >
+                                                                            <Icon as={DotsSvg} size="xs" />
+                                                                        </button>
+                                                                        {openKebabId === p.id && (
+                                                                            <div className="absolute right-0 top-8 z-20 w-36 bg-surface-card border border-border-default rounded-action shadow-floating py-1 flex flex-col">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        setSelectedProposal(p)
+                                                                                        setOpenKebabId(null)
+                                                                                    }}
+                                                                                    className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-surface-card-muted transition-colors font-medium"
+                                                                                >
+                                                                                    View details
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        toggleDraftStatus(p)
+                                                                                        setOpenKebabId(null)
+                                                                                    }}
+                                                                                    className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-surface-card-muted transition-colors font-medium"
+                                                                                >
+                                                                                    {p.status === "DRAFT" ? "Publish" : "Save as Draft"}
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        handleDelete(p.id)
+                                                                                        setOpenKebabId(null)
+                                                                                    }}
+                                                                                    className="px-3 py-1.5 text-left text-xs text-red-600 hover:bg-red-50 transition-colors font-semibold"
+                                                                                >
+                                                                                    Delete
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Content */}
+                                                                <div className="p-4 flex flex-col gap-1.5">
+                                                                    <h3 className="text-label-md font-semibold text-text-primary truncate group-hover:text-text-brand transition-colors">{p.name}</h3>
+                                                                    <p className="text-caption text-text-secondary">{p.city} • {p.venue}</p>
+                                                                    <p className="text-[11px] text-text-tertiary truncate mt-1">{p.about}</p>
+                                                                </div>
                                                             </div>
-                                                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-default">
-                                                                <span className="text-[11px] text-text-brand font-medium">Click to view details & PDF</span>
-                                                                <span className="text-[10px] text-text-tertiary">Date: {p.date}</span>
+
+                                                            {/* Footer info */}
+                                                            <div className="p-4 pt-0">
+                                                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-default">
+                                                                    <span className="text-[10px] text-text-tertiary">Date: {p.date}</span>
+                                                                    <span className="text-[10px] font-semibold text-text-brand bg-surface-brand-soft px-2 py-0.5 rounded-badge border border-border-brand">
+                                                                        {p.guestCount} guests
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     /* State 2b: CTA to open details form */
-                                    <div className="bg-surface-card border border-border-default rounded-action p-8 text-center max-w-2xl flex flex-col items-center">
+                                    <div className="bg-surface-card border border-border-default rounded-action p-8 text-center w-full max-w-2xl mx-auto flex flex-col items-center">
                                         <div className="size-16 rounded-full bg-surface-brand-soft flex items-center justify-center mb-4">
                                             <Icon as={DocumentTextSvg} size="lg" color="brand" />
                                         </div>
@@ -1391,11 +1557,10 @@ export default function ProposalPage() {
                                                                 : [...prev, cat.id]
                                                         )
                                                     }}
-                                                    className={`px-3 py-1.5 rounded-avatar border text-xs font-medium transition-colors ${
-                                                        active
-                                                            ? "border-border-focus bg-surface-brand-soft text-text-brand font-semibold"
-                                                            : "border-border-default bg-surface-canvas text-text-secondary hover:border-border-strong"
-                                                    }`}
+                                                    className={`px-3 py-1.5 rounded-avatar border text-xs font-medium transition-colors ${active
+                                                        ? "border-border-focus bg-surface-brand-soft text-text-brand font-semibold"
+                                                        : "border-border-default bg-surface-canvas text-text-secondary hover:border-border-strong"
+                                                        }`}
                                                 >
                                                     {cat.name}
                                                 </button>
@@ -1477,313 +1642,515 @@ export default function ProposalPage() {
                 </div>
             )}
             {/* ─── Project Details & PDF Modal ────────────────────────────────────────── */}
-            {showProjectModal && selectedProposal && (
+            {showProjectModal && selectedProposal && isEditingInPlace && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
-                    {isEditingInPlace ? (
-                        <form
-                            onSubmit={handleSaveInPlace}
-                            className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-2xl p-6 my-8 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150"
-                        >
-                            {/* Modal Header */}
-                            <div className="flex justify-between items-center pb-4 mb-4 border-b border-border-default shrink-0">
-                                <div>
-                                    <h2 className="text-heading-xs font-semibold text-text-primary">Edit Project Details</h2>
-                                    <p className="text-caption text-text-tertiary">Modify project overview fields</p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsEditingInPlace(false)}
-                                    className="text-text-secondary hover:text-text-primary size-8 rounded-full flex items-center justify-center hover:bg-surface-card-muted transition-colors"
-                                >
-                                    ✕
-                                </button>
+                    <form
+                        onSubmit={handleSaveInPlace}
+                        className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-2xl p-6 my-8 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150"
+                    >
+                        {/* Modal Header */}
+                        <div className="flex justify-between items-center pb-4 mb-4 border-b border-border-default shrink-0">
+                            <div>
+                                <h2 className="text-heading-xs font-semibold text-text-primary">Edit Project Details</h2>
+                                <p className="text-caption text-text-tertiary">Modify project overview fields</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsEditingInPlace(false)}
+                                className="text-text-secondary hover:text-text-primary size-8 rounded-full flex items-center justify-center hover:bg-surface-card-muted transition-colors"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4">
+                            {/* Name */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-label-sm font-semibold text-text-primary">Project Name *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={projName}
+                                    onChange={(e) => setProjName(e.target.value)}
+                                    placeholder="Project Name"
+                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                />
                             </div>
 
-                            {/* Modal Body */}
-                            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4">
-                                {/* Name */}
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">Project Name *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={projName}
-                                        onChange={(e) => setProjName(e.target.value)}
-                                        placeholder="Project Name"
-                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                    />
-                                </div>
-
-                                {/* About */}
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">About the Project *</label>
-                                    <textarea
-                                        required
-                                        value={projAbout}
-                                        onChange={(e) => setProjAbout(e.target.value)}
-                                        placeholder="Describe the project..."
-                                        rows={3}
-                                        className="p-3 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors resize-y"
-                                    />
-                                </div>
-
-                                {/* Image picker */}
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">Project Image *</label>
-                                    <div className="flex items-center gap-4">
-                                        {projImagePreview ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={projImagePreview} alt="Preview" className="size-16 rounded-xl object-cover border border-border-default" />
-                                        ) : projectImageUrl ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={projectImageUrl} alt="Current" className="size-16 rounded-xl object-cover border border-border-default" />
-                                        ) : (
-                                            <div className="size-16 rounded-xl bg-surface-card-muted border border-dashed border-border-default flex items-center justify-center text-text-tertiary text-xs">
-                                                No Image
-                                            </div>
-                                        )}
-                                        <div className="flex flex-col gap-1">
-                                            <input
-                                                ref={projImageInputRef}
-                                                type="file"
-                                                accept="image/jpeg,image/jpg,image/png"
-                                                className="hidden"
-                                                onChange={handleProjImageChange}
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="secondary"
-                                                size="xs"
-                                                radius="md"
-                                                onClick={() => projImageInputRef.current?.click()}
-                                            >
-                                                Change Image
-                                            </Button>
-                                            <span className="text-[10px] text-text-tertiary">JPEG, JPG, PNG accepted. Max 5MB.</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Date, City */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-label-sm font-semibold text-text-primary">Date *</label>
-                                        <input
-                                            type="date"
-                                            required
-                                            value={projDate}
-                                            onChange={(e) => setProjDate(e.target.value)}
-                                            className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                        />
-                                    </div>
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-label-sm font-semibold text-text-primary">City *</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={projCity}
-                                            onChange={(e) => setProjCity(e.target.value)}
-                                            placeholder="City"
-                                            className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Venue */}
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">Venue *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={projVenue}
-                                        onChange={(e) => setProjVenue(e.target.value)}
-                                        placeholder="Venue"
-                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                    />
-                                </div>
-
-                                {/* Audience, Age Group, Guests */}
-                                <div className="grid grid-cols-3 gap-3">
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-label-sm font-semibold text-text-primary">Audience Profile *</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={projAudience}
-                                            onChange={(e) => setProjAudience(e.target.value)}
-                                            placeholder="Audience Profile"
-                                            className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                        />
-                                    </div>
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-label-sm font-semibold text-text-primary">Age Group *</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={projAgeGroup}
-                                            onChange={(e) => setProjAgeGroup(e.target.value)}
-                                            placeholder="Age Group"
-                                            className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                        />
-                                    </div>
-                                    <div className="flex flex-col gap-1.5">
-                                        <label className="text-label-sm font-semibold text-text-primary">Guests Count *</label>
-                                        <input
-                                            type="number"
-                                            required
-                                            min="1"
-                                            value={projGuestCount}
-                                            onChange={(e) => setProjGuestCount(e.target.value)}
-                                            placeholder="Guests"
-                                            className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                        />
-                                    </div>
-                                </div>
+                            {/* About */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-label-sm font-semibold text-text-primary">About the Project *</label>
+                                <textarea
+                                    required
+                                    value={projAbout}
+                                    onChange={(e) => setProjAbout(e.target.value)}
+                                    placeholder="Describe the project..."
+                                    rows={3}
+                                    className="p-3 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors resize-y"
+                                />
                             </div>
 
-                            {/* Modal Footer */}
-                            <div className="flex gap-3 justify-end mt-4 pt-4 border-t border-border-default shrink-0">
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="sm"
-                                    radius="md"
-                                    onClick={() => setIsEditingInPlace(false)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    variant="primary"
-                                    size="sm"
-                                    radius="md"
-                                >
-                                    Save details
-                                </Button>
-                            </div>
-                        </form>
-                    ) : (
-                        <div className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-4xl p-6 my-8 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
-                            {/* Header */}
-                            <div className="flex justify-between items-center pb-4 mb-4 border-b border-border-default shrink-0">
-                                <div>
-                                    <h2 className="text-heading-xs font-semibold text-text-primary">{selectedProposal.name}</h2>
-                                    <p className="text-caption text-text-tertiary">Project Overview & Details</p>
-                                </div>
-                                <button
-                                    onClick={() => setShowProjectModal(false)}
-                                    className="text-text-secondary hover:text-text-primary size-8 rounded-full flex items-center justify-center hover:bg-surface-card-muted transition-colors"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-
-                            {/* Body */}
-                            <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-1 md:grid-cols-12 gap-6">
-                                {/* Left column - Metadata */}
-                                <div className="md:col-span-5 flex flex-col gap-4">
-                                    {projectImageUrl && (
+                            {/* Image picker */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-label-sm font-semibold text-text-primary">Project Image *</label>
+                                <div className="flex items-center gap-4">
+                                    {projImagePreview ? (
                                         // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={projectImageUrl} alt={selectedProposal.name} className="w-full h-48 object-cover rounded-xl border border-border-default shadow-sm" />
+                                        <img src={projImagePreview} alt="Preview" className="size-16 rounded-xl object-cover border border-border-default" />
+                                    ) : projectImageUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={projectImageUrl} alt="Current" className="size-16 rounded-xl object-cover border border-border-default" />
+                                    ) : (
+                                        <div className="size-16 rounded-xl bg-surface-card-muted border border-dashed border-border-default flex items-center justify-center text-text-tertiary text-xs">
+                                            No Image
+                                        </div>
                                     )}
-                                    <div className="bg-surface-card-muted border border-border-default rounded-action p-4 flex flex-col gap-3">
-                                        <div>
-                                            <p className="text-[10px] text-text-tertiary">Date & City</p>
-                                            <p className="text-label-sm font-semibold text-text-primary">{selectedProposal.date} • {selectedProposal.city}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] text-text-tertiary">Venue</p>
-                                            <p className="text-label-sm font-semibold text-text-primary">{selectedProposal.venue}</p>
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border-default/50">
-                                            <div>
-                                                <p className="text-[10px] text-text-tertiary">Guests</p>
-                                                <p className="text-label-sm font-semibold text-text-primary">{selectedProposal.guestCount}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] text-text-tertiary">Age Group</p>
-                                                <p className="text-label-sm font-semibold text-text-primary">{selectedProposal.ageGroup}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[10px] text-text-tertiary">Audience</p>
-                                                <p className="text-label-sm font-semibold text-text-primary truncate">{selectedProposal.audienceProfile}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center gap-2 mt-auto pt-4 border-t border-border-default">
+                                    <div className="flex flex-col gap-1">
                                         <input
-                                            ref={updateDocInputRef}
+                                            ref={projImageInputRef}
                                             type="file"
-                                            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                            accept="image/jpeg,image/jpg,image/png"
                                             className="hidden"
-                                            onChange={handleUpdateFile}
+                                            onChange={handleProjImageChange}
                                         />
                                         <Button
-                                            variant="primary"
-                                            size="sm"
-                                            radius="pill"
-                                            className="flex-1"
-                                            onClick={handleEditDetails}
-                                        >
-                                            Edit details
-                                        </Button>
-                                        <Button
+                                            type="button"
                                             variant="secondary"
-                                            size="sm"
-                                            radius="pill"
-                                            onClick={() => updateDocInputRef.current?.click()}
+                                            size="xs"
+                                            radius="md"
+                                            onClick={() => projImageInputRef.current?.click()}
                                         >
-                                            Update file
+                                            Change Image
                                         </Button>
-                                        <Button
-                                            variant="secondary"
-                                            size="sm"
-                                            radius="pill"
-                                            className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
-                                            onClick={() => {
-                                                handleDelete(selectedProposal.id);
-                                                setShowProjectModal(false);
-                                            }}
-                                        >
-                                            Delete
-                                        </Button>
+                                        <span className="text-[10px] text-text-tertiary">JPEG, JPG, PNG accepted. Max 5MB.</span>
                                     </div>
                                 </div>
+                            </div>
 
-                                {/* Right column - About & PDF Preview */}
-                                <div className="md:col-span-7 flex flex-col gap-4">
-                                    <div>
-                                        <h4 className="text-label-sm font-semibold text-text-primary mb-1">About the Project</h4>
-                                        <p className="text-body-sm text-text-secondary leading-relaxed whitespace-pre-wrap">{selectedProposal.about}</p>
-                                    </div>
+                            {/* Date, City */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-label-sm font-semibold text-text-primary">Date *</label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={projDate}
+                                        onChange={(e) => setProjDate(e.target.value)}
+                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-label-sm font-semibold text-text-primary">City *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={projCity}
+                                        onChange={(e) => setProjCity(e.target.value)}
+                                        placeholder="City"
+                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                    />
+                                </div>
+                            </div>
 
-                                    <div className="flex-1 min-h-[300px] flex flex-col">
-                                        <h4 className="text-label-sm font-semibold text-text-primary mb-2">Document Preview</h4>
-                                        {selectedProposal.docType.includes("pdf") ? (
-                                            <div className="border border-border-default rounded-action overflow-hidden bg-surface-card flex-1 shadow-sm h-[350px]">
-                                                <iframe
-                                                    src={previewUrl || undefined}
-                                                    className="w-full h-full border-none"
-                                                    title="Proposal Preview"
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div className="border border-border-default rounded-action p-6 bg-surface-card-muted text-center flex flex-col items-center justify-center flex-1">
-                                                <Icon as={DocumentTextSvg} size="lg" color="secondary" className="mb-2" />
-                                                <h5 className="text-label-sm font-semibold text-text-primary mb-1">
-                                                    Preview not supported
-                                                </h5>
-                                                <p className="text-[11px] text-text-secondary max-w-xs">
-                                                    Word files (.doc, .docx) cannot be previewed in-app. Please download the file to view.
-                                                </p>
-                                            </div>
-                                        )}
+                            {/* Venue */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-label-sm font-semibold text-text-primary">Venue *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={projVenue}
+                                    onChange={(e) => setProjVenue(e.target.value)}
+                                    placeholder="Venue"
+                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                />
+                            </div>
+
+                            {/* Audience Profile (Multiple Submission Input Box) */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-label-sm font-semibold text-text-primary">Audience Profile *</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={newAudience}
+                                        onChange={(e) => setNewAudience(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault()
+                                                const trimmed = newAudience.trim()
+                                                if (trimmed && !projAudience.includes(trimmed)) {
+                                                    setProjAudience([...projAudience, trimmed])
+                                                    setNewAudience("")
+                                                }
+                                            }
+                                        }}
+                                        placeholder="e.g. Tech Founders (press Add or Enter)"
+                                        className="flex-1 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="sm"
+                                        radius="md"
+                                        onClick={() => {
+                                            const trimmed = newAudience.trim()
+                                            if (trimmed && !projAudience.includes(trimmed)) {
+                                                setProjAudience([...projAudience, trimmed])
+                                                setNewAudience("")
+                                            }
+                                        }}
+                                    >
+                                        Add
+                                    </Button>
+                                </div>
+                                {projAudience.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {projAudience.map((aud, idx) => (
+                                            <span
+                                                key={idx}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-badge text-label-sm font-medium bg-surface-brand-soft text-text-brand border border-border-brand animate-in fade-in duration-100"
+                                            >
+                                                {aud}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setProjAudience(projAudience.filter((_, i) => i !== idx))}
+                                                    className="size-4 hover:bg-surface-brand-hover rounded-full flex items-center justify-center text-text-brand text-xs font-bold transition-colors"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </span>
+                                        ))}
                                     </div>
+                                ) : (
+                                    <p className="text-[11px] text-text-tertiary">Add at least one targeted audience profile.</p>
+                                )}
+                            </div>
+
+                            {/* Age Group, Guests */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-label-sm font-semibold text-text-primary">Age Group *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={projAgeGroup}
+                                        onChange={(e) => setProjAgeGroup(e.target.value)}
+                                        placeholder="Age Group"
+                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-label-sm font-semibold text-text-primary">Guests Count *</label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="1"
+                                        value={projGuestCount}
+                                        onChange={(e) => setProjGuestCount(e.target.value)}
+                                        placeholder="Guests"
+                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                    />
                                 </div>
                             </div>
                         </div>
-                    )}
+
+                        {/* Modal Footer */}
+                        <div className="flex gap-3 justify-end mt-4 pt-4 border-t border-border-default shrink-0">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                radius="md"
+                                onClick={() => setIsEditingInPlace(false)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                size="sm"
+                                radius="md"
+                            >
+                                Save details
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            )}
+            {showProposalForm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
+                    <form
+                        onSubmit={handleProposalSubmit}
+                        className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-2xl p-6 my-8 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150"
+                    >
+                        {/* Modal Header */}
+                        <div className="flex justify-between items-center pb-4 mb-4 border-b border-border-default shrink-0">
+                            <div>
+                                <h2 className="text-heading-xs font-semibold text-text-primary">
+                                    {selectedProposal ? "Edit Sponsorship Proposal" : "Create Sponsorship Proposal"}
+                                </h2>
+                                <p className="text-caption text-text-tertiary">Provide details and upload your proposal document</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={resetProposalForm}
+                                className="text-text-secondary hover:text-text-primary size-8 rounded-full flex items-center justify-center hover:bg-surface-card-muted transition-colors"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4">
+                            {/* Name */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-label-sm font-semibold text-text-primary">Project Name *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={projName}
+                                    onChange={(e) => setProjName(e.target.value)}
+                                    placeholder="e.g. Annual Charity Gala"
+                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                />
+                            </div>
+
+                            {/* About */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-label-sm font-semibold text-text-primary">About the Project *</label>
+                                <textarea
+                                    required
+                                    value={projAbout}
+                                    onChange={(e) => setProjAbout(e.target.value)}
+                                    placeholder="Describe what the event/experience is about..."
+                                    rows={3}
+                                    className="p-3 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors resize-y"
+                                />
+                            </div>
+
+                            {/* Image */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-label-sm font-semibold text-text-primary">Project Image *</label>
+                                <div className="flex items-center gap-4">
+                                    {projImagePreview ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={projImagePreview} alt="Preview" className="size-16 rounded-xl object-cover border border-border-default" />
+                                    ) : selectedProposal?.image ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={URL.createObjectURL(selectedProposal.image)} alt="Current" className="size-16 rounded-xl object-cover border border-border-default" />
+                                    ) : (
+                                        <div className="size-16 rounded-xl bg-surface-card-muted border border-dashed border-border-default flex items-center justify-center text-text-tertiary text-xs">
+                                            No Image
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col gap-1">
+                                        <input
+                                            ref={projImageInputRef}
+                                            type="file"
+                                            accept="image/jpeg,image/jpg,image/png"
+                                            className="hidden"
+                                            onChange={handleProjImageChange}
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="secondary"
+                                            size="xs"
+                                            radius="md"
+                                            onClick={() => projImageInputRef.current?.click()}
+                                        >
+                                            Choose Image
+                                        </Button>
+                                        <span className="text-[10px] text-text-tertiary">JPEG, JPG, PNG accepted. Max 5MB.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Date, City */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-label-sm font-semibold text-text-primary">Date *</label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={projDate}
+                                        onChange={(e) => setProjDate(e.target.value)}
+                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-label-sm font-semibold text-text-primary">City *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={projCity}
+                                        onChange={(e) => setProjCity(e.target.value)}
+                                        placeholder="e.g. San Francisco"
+                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Venue */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-label-sm font-semibold text-text-primary">Venue *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={projVenue}
+                                    onChange={(e) => setProjVenue(e.target.value)}
+                                    placeholder="e.g. Palace of Fine Arts"
+                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                />
+                            </div>
+
+                            {/* Audience Profile (Multiple Submission Input Box) */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-label-sm font-semibold text-text-primary">Audience Profile *</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={newAudience}
+                                        onChange={(e) => setNewAudience(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault()
+                                                const trimmed = newAudience.trim()
+                                                if (trimmed && !projAudience.includes(trimmed)) {
+                                                    setProjAudience([...projAudience, trimmed])
+                                                    setNewAudience("")
+                                                }
+                                            }
+                                        }}
+                                        placeholder="e.g. Tech Founders (press Add or Enter)"
+                                        className="flex-1 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="sm"
+                                        radius="md"
+                                        onClick={() => {
+                                            const trimmed = newAudience.trim()
+                                            if (trimmed && !projAudience.includes(trimmed)) {
+                                                setProjAudience([...projAudience, trimmed])
+                                                setNewAudience("")
+                                            }
+                                        }}
+                                    >
+                                        Add
+                                    </Button>
+                                </div>
+                                {projAudience.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {projAudience.map((aud, idx) => (
+                                            <span
+                                                key={idx}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-badge text-label-sm font-medium bg-surface-brand-soft text-text-brand border border-border-brand animate-in fade-in duration-100"
+                                            >
+                                                {aud}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setProjAudience(projAudience.filter((_, i) => i !== idx))}
+                                                    className="size-4 hover:bg-surface-brand-hover rounded-full flex items-center justify-center text-text-brand text-xs font-bold transition-colors"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-[11px] text-text-tertiary">Add at least one targeted audience profile.</p>
+                                )}
+                            </div>
+
+                            {/* Age Group, Number of Guests */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-label-sm font-semibold text-text-primary">Age Group *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={projAgeGroup}
+                                        onChange={(e) => setProjAgeGroup(e.target.value)}
+                                        placeholder="e.g. 21-40"
+                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-label-sm font-semibold text-text-primary">Guests Count *</label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="1"
+                                        value={projGuestCount}
+                                        onChange={(e) => setProjGuestCount(e.target.value)}
+                                        placeholder="e.g. 150"
+                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Upload Proposal Doc */}
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-label-sm font-semibold text-text-primary">Upload Proposal (PDF/DOC/PPT) {selectedProposal ? "" : "*"}</label>
+                                <div className="flex items-center gap-4">
+                                    <input
+                                        ref={projDocInputRef}
+                                        type="file"
+                                        accept=".pdf,.doc,.docx,.ppt,.pptx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                                        className="hidden"
+                                        onChange={handleProjDocChange}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="xs"
+                                        radius="md"
+                                        onClick={() => projDocInputRef.current?.click()}
+                                    >
+                                        Choose Proposal File
+                                    </Button>
+                                    {projDoc ? (
+                                        <span className="text-xs text-text-secondary font-medium truncate max-w-xs">{projDoc.name}</span>
+                                    ) : selectedProposal ? (
+                                        <span className="text-xs text-text-secondary font-medium truncate max-w-xs">{selectedProposal.docName} (unchanged)</span>
+                                    ) : (
+                                        <span className="text-[10px] text-text-tertiary">PDF, DOC, DOCX, PPT, PPTX accepted. Max 10MB.</span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="flex gap-3 justify-end mt-4 pt-4 border-t border-border-default shrink-0">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                radius="pill"
+                                onClick={resetProposalForm}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                radius="pill"
+                                onClick={(e) => handleProposalSubmit(e, "DRAFT")}
+                            >
+                                Save as Draft
+                            </Button>
+                            <Button
+                                type="submit"
+                                variant="primary"
+                                size="sm"
+                                radius="pill"
+                            >
+                                {selectedProposal ? "Update Proposal" : "Submit Proposal"}
+                            </Button>
+                        </div>
+                    </form>
                 </div>
             )}
         </div>
