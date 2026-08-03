@@ -1277,31 +1277,6 @@ export default function ProposalPage() {
                                     >
                                         Delete
                                     </Button>
-
-                                    {/* Mock Admin controls */}
-                                    {(selectedProposal.status === "UNDER_REVIEW" || selectedProposal.pendingRevision != null) && (
-                                        <div className="flex items-center gap-2 border-l border-border-default pl-2 ml-2">
-                                            <span className="text-[10px] uppercase font-bold text-text-tertiary">Mock Admin:</span>
-                                            <Button
-                                                variant="primary"
-                                                size="xs"
-                                                radius="pill"
-                                                className="bg-green-600 hover:bg-green-700 text-white border-green-600"
-                                                onClick={() => handleMockAdminApprove(selectedProposal)}
-                                            >
-                                                Approve
-                                            </Button>
-                                            <Button
-                                                variant="secondary"
-                                                size="xs"
-                                                radius="pill"
-                                                className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
-                                                onClick={() => handleMockAdminReject(selectedProposal)}
-                                            >
-                                                Reject
-                                            </Button>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
 

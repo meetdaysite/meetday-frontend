@@ -65,7 +65,7 @@ export default function DashboardWelcomePage() {
 				{/* Welcome Header */}
 				<div className="animate-fade-in text-left">
 					<h1 className="text-3xl md:text-5xl font-black tracking-tight text-text-primary leading-tight">
-						Hey {displayName}, <span className="bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">what are we building today?</span>
+						Hey {displayName}, <span className="text-red-600">what are we building today?</span>
 					</h1>
 					<p className="text-md md:text-lg text-text-secondary mt-3 max-w-2xl font-medium">
 						Start something new, or pick up where you left off.
@@ -77,19 +77,19 @@ export default function DashboardWelcomePage() {
 					{/* CTA 1: Raise Sponsorship */}
 					<Link
 						href="/host/dashboard/proposal"
-						className="group relative flex flex-col items-start text-left p-6 rounded-3xl border border-border-default bg-surface-card shadow-md hover:shadow-xl hover:border-orange-500/50 hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out overflow-hidden"
+						className="group relative flex flex-col items-start text-left p-6 rounded-3xl border border-border-default bg-surface-card shadow-md hover:shadow-xl hover:border-red-500/50 hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out overflow-hidden"
 					>
-						<div className="absolute -right-16 -top-16 size-48 rounded-full bg-orange-500/10 blur-3xl group-hover:bg-orange-500/20 transition-all duration-300" />
-						<div className="size-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+						<div className="absolute -right-16 -top-16 size-48 rounded-full bg-red-500/10 blur-3xl group-hover:bg-red-500/20 transition-all duration-300" />
+						<div className="size-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
 							<Icon as={DocumentTextSvg} size="md" color="inherit" />
 						</div>
-						<h2 className="text-xl font-bold text-text-primary leading-snug group-hover:text-orange-600 transition-colors duration-300">
+						<h2 className="text-xl font-bold text-text-primary leading-snug group-hover:text-red-600 transition-colors duration-300">
 							Raise Sponsorship
 						</h2>
 						<p className="text-body-sm text-text-secondary mt-2 mb-6 flex-1">
 							Create a professional proposal, connect with top brands, and secure funding for your upcoming events.
 						</p>
-						<div className="flex items-center gap-2 text-label-sm font-bold text-orange-600 group-hover:translate-x-2 transition-transform duration-300">
+						<div className="flex items-center gap-2 text-label-sm font-bold text-red-600 group-hover:translate-x-2 transition-transform duration-300">
 							Get Sponsored
 							<AltArrowRightSvg className="size-4" aria-hidden />
 						</div>
@@ -128,7 +128,7 @@ export default function DashboardWelcomePage() {
 								<h2 className="text-label-md font-semibold text-text-primary">Approved Sponsorships</h2>
 								<p className="text-caption text-text-secondary mt-0.5">Your published sponsorship proposals.</p>
 							</div>
-							<Link href="/host/dashboard/proposal" className="text-label-sm text-text-brand hover:underline inline-flex items-center gap-1">
+							<Link href="/host/dashboard/proposal" className="text-label-sm text-red-600 hover:text-red-700 hover:underline inline-flex items-center gap-1">
 								View All Proposals
 								<AltArrowRightSvg className="size-3.5" aria-hidden />
 							</Link>
@@ -178,12 +178,12 @@ export default function DashboardWelcomePage() {
 														/>
 													</div>
 												) : (
-													<div className="size-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 group-hover/item:scale-115 group-hover/item:rotate-3 transition-transform duration-300">
+													<div className="size-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0 group-hover/item:scale-115 group-hover/item:rotate-3 transition-transform duration-300">
 														<Icon as={DocumentTextSvg} size="md" color="inherit" />
 													</div>
 												)}
 												<div className="min-w-0">
-													<p className="text-label-md font-semibold text-text-primary truncate group-hover/item:text-orange-600 transition-colors duration-300">{prop.name}</p>
+													<p className="text-label-md font-semibold text-text-primary truncate group-hover/item:text-red-600 transition-colors duration-300">{prop.name}</p>
 													<p className="text-caption text-text-tertiary mt-0.5">{prop.venue} • {prop.city}</p>
 												</div>
 											</div>
@@ -209,7 +209,7 @@ export default function DashboardWelcomePage() {
 								<h2 className="text-label-md font-semibold text-text-primary">Upcoming Events</h2>
 								<p className="text-caption text-text-secondary mt-0.5">Your published or live experiences.</p>
 							</div>
-							<Link href="/host/dashboard/events" className="text-label-sm text-text-brand hover:underline inline-flex items-center gap-1">
+							<Link href="/host/dashboard/events" className="text-label-sm text-red-600 hover:text-red-700 hover:underline inline-flex items-center gap-1">
 								View All Events
 								<AltArrowRightSvg className="size-3.5" aria-hidden />
 							</Link>
@@ -255,7 +255,7 @@ export default function DashboardWelcomePage() {
 														<img src={event.coverImageUrl} alt="" className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-300" />
 													</div>
 												) : (
-													<div className="size-12 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 group-hover/item:scale-115 group-hover/item:rotate-3 transition-transform duration-300">
+													<div className="size-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0 group-hover/item:scale-115 group-hover/item:rotate-3 transition-transform duration-300">
 														<Icon as={CalendarOutSvg} size="md" color="inherit" />
 													</div>
 												)}
