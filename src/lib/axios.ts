@@ -49,6 +49,10 @@ apiClient.interceptors.response.use(
 			const match = url.match(uuidRegex)
 			if (match) {
 				eventId = match[0]
+			} else if (error.config?.method?.toLowerCase() === "post") {
+				eventId = typeof crypto !== "undefined" && crypto.randomUUID
+					? crypto.randomUUID()
+					: `mock-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 			}
 			let payload = {}
 			try {
