@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/Switch"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { Dropdown } from "@/components/ui/Dropdown"
 import { Icon } from "@/components/ui/Icon"
+import { useHostStore } from "@/store/hostStore"
 import {
 	createEventDraft,
 	generateEventDraft,
@@ -27,6 +28,8 @@ import {
 	getMyEventDetail,
 	submitEventForReview,
 	updateEventDraft,
+	getHostProfile,
+	updateHostProfile,
 	type Category,
 } from "@/lib/api"
 import {
@@ -1103,6 +1106,7 @@ function Step4TicketTypes({
 	registerValidate,
 	aiInitialDrafts,
 	aiSuggested,
+	isFreeEvent = false,
 }: {
 	formData: FormData
 	setFormData: Dispatch<SetStateAction<FormData>>
@@ -1111,11 +1115,36 @@ function Step4TicketTypes({
 	registerValidate: (fn: () => boolean) => void
 	aiInitialDrafts?: DraftTicket[]
 	aiSuggested?: boolean
+	isFreeEvent?: boolean
 }) {
 	const [validated, setValidated] = useState(false)
 	const { tickets } = formData
 
 	const errors = useMemo(() => (validated ? validateStep4({ tickets }) : {}), [validated, tickets])
+
+	useEffect(() => {
+		if (isFreeEvent) {
+			if (tickets.length === 0) {
+				setFormData(prev => ({
+					...prev,
+					tickets: [{
+						name: "Free Entry",
+						price: 0,
+						totalCapacity: 100,
+						maxPerPerson: 5,
+						description: "Free admission ticket.",
+						saleStartDate: "",
+						saleEndDate: ""
+					}]
+				}))
+			} else if (tickets.some(t => t.price !== 0)) {
+				setFormData(prev => ({
+					...prev,
+					tickets: prev.tickets.map(t => ({ ...t, price: 0 }))
+				}))
+			}
+		}
+	}, [isFreeEvent, tickets, setFormData])
 
 	const validate = useCallback(() => {
 		setValidated(true)
@@ -1134,6 +1163,7 @@ function Step4TicketTypes({
 				listError={errors.tickets}
 				initialDrafts={aiInitialDrafts}
 				aiSuggested={aiSuggested}
+				isFreeEvent={isFreeEvent}
 				headerSlot={
 					<div>
 						<h1 className="text-heading-sm font-semibold text-text-primary">Ticket Types</h1>
@@ -1414,6 +1444,18 @@ function Step5SettingsReview({
 
 export default function CreateExperiencePage() {
 	const router = useRouter()
+	const { profile, setProfile } = useHostStore()
+	const [experienceType, setExperienceType] = useState<"TICKETED" | "NON_TICKETED" | null>(null)
+	const [showSocialModal, setShowSocialModal] = useState(false)
+
+
+
+	useEffect(() => {
+		if (!profile) {
+			getHostProfile().then(setProfile).catch(() => {})
+		}
+	}, [profile, setProfile])
+
 	const [currentStep, setCurrentStep] = useState(1)
 	// "build" = the 3 creation steps; "finish" = media + settings, shown once the
 	// draft exists and required before the listing can be submitted for review.
@@ -1651,10 +1693,89 @@ export default function CreateExperiencePage() {
 	const sharedProps = { formData, setFormData }
 	const copilotActive = copilot.mode !== "idle"
 
+	if (experienceType === null) {
+		return (
+			<div className="flex flex-col min-h-screen bg-surface-page animate-in fade-in duration-150">
+				<DashboardTopBar />
+				<div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 max-w-4xl mx-auto">
+					<div className="text-center mb-8">
+						<h1 className="text-2xl sm:text-heading-sm font-bold text-text-primary">Choose Experience Type</h1>
+						<p className="text-body-sm text-text-secondary mt-2">
+							Select the format of your experience to proceed with verification.
+						</p>
+					</div>
+
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+						{/* Ticketed Card */}
+						<div
+							onClick={() => {
+								setExperienceType("TICKETED")
+							}}
+							className="group relative cursor-pointer flex flex-col items-start p-6 rounded-3xl border border-border-default bg-surface-card shadow-md hover:shadow-xl hover:border-red-500/30 transition-all duration-300 overflow-hidden"
+						>
+							<div className="absolute -right-16 -top-16 size-48 rounded-full bg-red-500/10 blur-3xl group-hover:bg-red-500/20 transition-all duration-300" />
+							<div className="size-12 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+								<Icon as={TicketSvg} size="md" color="inherit" />
+							</div>
+							<h2 className="text-lg font-bold text-text-primary leading-snug">
+								Ticketed Experience
+							</h2>
+							<p className="text-body-xs text-text-secondary mt-2 mb-6 leading-relaxed">
+								For paid or priced experiences. Allows configuring multiple ticket tiers, price levels, and receiving ticket payouts. Requires host KYC verification.
+							</p>
+							<div className="flex items-center gap-2 text-label-sm font-bold text-red-600 group-hover:translate-x-1.5 transition-transform duration-300">
+								Choose Ticketed
+								<Icon as={AltArrowRightSvg} size="xs" color="inherit" />
+							</div>
+						</div>
+
+						{/* Non-Ticketed Card */}
+						<div
+							onClick={() => {
+								setExperienceType("NON_TICKETED")
+								const hasInstagram = !!profile?.socialLinks?.instagram
+								if (!hasInstagram) {
+									setShowSocialModal(true)
+								}
+							}}
+							className="group relative cursor-pointer flex flex-col items-start p-6 rounded-3xl border border-border-default bg-surface-card shadow-md hover:shadow-xl hover:border-red-500/30 transition-all duration-300 overflow-hidden"
+						>
+							<div className="absolute -right-16 -top-16 size-48 rounded-full bg-red-500/10 blur-3xl group-hover:bg-red-500/20 transition-all duration-300" />
+							<div className="size-12 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+								<Icon as={FileTextSvg} size="md" color="inherit" />
+							</div>
+							<h2 className="text-lg font-bold text-text-primary leading-snug">
+								Non-Ticketed Experience
+							</h2>
+							<p className="text-body-xs text-text-secondary mt-2 mb-6 leading-relaxed">
+								For free entry experiences. Requires providing a valid Instagram profile link for verification.
+							</p>
+							<div className="flex items-center gap-2 text-label-sm font-bold text-red-600 group-hover:translate-x-1.5 transition-transform duration-300">
+								Choose Non-Ticketed
+								<Icon as={AltArrowRightSvg} size="xs" color="inherit" />
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		)
+	}
+
 	return (
 		<>
 			{/* Collects the host-profile fields that the 2-step onboarding no longer asks for. */}
-			<HostDetailsPrompt onClose={() => router.push("/host/dashboard")} />
+			{experienceType === "TICKETED" && (
+				<HostDetailsPrompt onClose={() => setExperienceType(null)} />
+			)}
+			{experienceType === "NON_TICKETED" && showSocialModal && (
+				<SocialLinksPrompt
+					onSuccess={() => setShowSocialModal(false)}
+					onClose={() => {
+						setExperienceType(null)
+						setShowSocialModal(false)
+					}}
+				/>
+			)}
 			<div className="flex flex-col h-screen overflow-hidden">
 				<DashboardTopBar />
 
@@ -1786,6 +1907,7 @@ export default function CreateExperiencePage() {
 										registerValidate={registerValidate}
 										aiInitialDrafts={aiInitialDrafts}
 										aiSuggested={copilot.mode === "generated"}
+										isFreeEvent={experienceType === "NON_TICKETED"}
 									/>
 								)}
 
@@ -1919,5 +2041,114 @@ export default function CreateExperiencePage() {
 				</div>
 			)}
 		</>
+	)
+}
+
+function SocialLinksPrompt({
+	onClose,
+	onSuccess,
+}: {
+	onClose: () => void
+	onSuccess: () => void
+}) {
+	const { profile, setProfile } = useHostStore()
+	const [instagram, setInstagram] = useState(profile?.socialLinks?.instagram ?? "")
+	const [linkedin, setLinkedin] = useState(profile?.socialLinks?.linkedin ?? "")
+	const [youtube, setYoutube] = useState(profile?.socialLinks?.youtube ?? "")
+	const [portfolio, setPortfolio] = useState(profile?.socialLinks?.portfolio ?? "")
+	const [saving, setSaving] = useState(false)
+
+	const handleSubmit = async () => {
+		if (!instagram.trim()) {
+			toast.error("Instagram profile link is required.")
+			return
+		}
+
+		setSaving(true)
+		try {
+			const updated = await updateHostProfile({
+				socialLinks: {
+					instagram: instagram.trim() || undefined,
+					linkedin: linkedin.trim() || undefined,
+					youtube: youtube.trim() || undefined,
+					portfolio: portfolio.trim() || undefined,
+				}
+			})
+			setProfile(updated)
+			toast.success("Social links updated successfully!")
+			onSuccess()
+		} catch (err) {
+			toast.error("Failed to update social links. Please check the network and try again.")
+		} finally {
+			setSaving(false)
+		}
+	}
+
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+			<div className="relative w-full max-w-md bg-surface-card rounded-action shadow-modal p-6 flex flex-col gap-6 border border-border-default">
+				<div>
+					<h3 className="text-lg font-bold text-text-primary">Social Media Verification</h3>
+					<p className="text-body-sm text-text-secondary mt-1">
+						Please provide a valid Instagram profile link (e.g. instagram.com/username) to verify your host profile. Other fields are optional.
+					</p>
+				</div>
+
+				<div className="flex flex-col gap-4">
+					<div>
+						<label className="text-xs font-semibold text-text-secondary block mb-1">Instagram Link</label>
+						<input
+							type="text"
+							value={instagram}
+							onChange={(e) => setInstagram(e.target.value)}
+							placeholder="https://instagram.com/yourprofile"
+							className="w-full px-3 py-2 border border-border-default rounded-lg text-sm bg-surface-canvas text-text-primary outline-none focus:border-border-focused"
+						/>
+					</div>
+
+					<div>
+						<label className="text-xs font-semibold text-text-secondary block mb-1">LinkedIn Link</label>
+						<input
+							type="text"
+							value={linkedin}
+							onChange={(e) => setLinkedin(e.target.value)}
+							placeholder="https://linkedin.com/in/yourprofile"
+							className="w-full px-3 py-2 border border-border-default rounded-lg text-sm bg-surface-canvas text-text-primary outline-none focus:border-border-focused"
+						/>
+					</div>
+
+					<div>
+						<label className="text-xs font-semibold text-text-secondary block mb-1">YouTube Link</label>
+						<input
+							type="text"
+							value={youtube}
+							onChange={(e) => setYoutube(e.target.value)}
+							placeholder="https://youtube.com/@yourchannel"
+							className="w-full px-3 py-2 border border-border-default rounded-lg text-sm bg-surface-canvas text-text-primary outline-none focus:border-border-focused"
+						/>
+					</div>
+
+					<div>
+						<label className="text-xs font-semibold text-text-secondary block mb-1">Website / Portfolio</label>
+						<input
+							type="text"
+							value={portfolio}
+							onChange={(e) => setPortfolio(e.target.value)}
+							placeholder="https://yourwebsite.com"
+							className="w-full px-3 py-2 border border-border-default rounded-lg text-sm bg-surface-canvas text-text-primary outline-none focus:border-border-focused"
+						/>
+					</div>
+				</div>
+
+				<div className="flex justify-end gap-3 pt-2">
+					<Button variant="secondary" size="sm" radius="pill" onClick={onClose} disabled={saving}>
+						Cancel
+					</Button>
+					<Button variant="primary" size="sm" radius="pill" onClick={handleSubmit} disabled={saving}>
+						{saving ? "Saving..." : "Verify & Proceed"}
+					</Button>
+				</div>
+			</div>
+		</div>
 	)
 }

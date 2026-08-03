@@ -9,7 +9,7 @@ import clsx from "clsx"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
-import { getCategories, type Category } from "@/lib/api"
+import { getCategories, updateHostProfile, type Category } from "@/lib/api"
 
 import UploadSvg from "@/icons/outlined/upload.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
@@ -40,7 +40,24 @@ export interface StoredProposal {
     docType: string
     docSize: number
     uploadedAt: string
-    status?: "DRAFT" | "PUBLISHED"
+    status?: "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED"
+    pendingRevision?: {
+        name: string
+        about: string
+        image: File | Blob | null
+        imageName: string
+        date: string
+        venue: string
+        city: string
+        audienceProfile: string | string[]
+        ageGroup: string
+        guestCount: string
+        docFile: File | Blob
+        docName: string
+        docType: string
+        docSize: number
+        uploadedAt: string
+    }
 }
 
 interface ActivatedCommunity {
@@ -180,7 +197,7 @@ function formatBytes(bytes: number, decimals = 2) {
 }
 
 export default function ProposalPage() {
-    const profile = useHostStore((s) => s.profile)
+    const { profile, setProfile } = useHostStore()
     const hostId = profile?.id || ""
     const searchParams = useSearchParams()
     const urlProposalId = searchParams ? searchParams.get("proposalId") : null
@@ -217,7 +234,7 @@ export default function ProposalPage() {
     const [docxRenderer, setDocxRenderer] = useState<any>(null)
     const [pptxViewerClass, setPptxViewerClass] = useState<any>(null)
 
-    const [activeTab, setActiveTab] = useState<"ALL" | "DRAFT" | "PUBLISHED">("ALL")
+    const [activeTab, setActiveTab] = useState<"ALL" | "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED">("ALL")
     const [openKebabId, setOpenKebabId] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
     const [isUploading, setIsUploading] = useState(false)
@@ -243,7 +260,51 @@ export default function ProposalPage() {
 
     const [categories, setCategories] = useState<Category[]>([])
 
+    const displayDetails = useMemo(() => {
+        if (!selectedProposal) return null
+        if ((activeTab === "UNDER_REVIEW" || selectedProposal.status === "UNDER_REVIEW") && selectedProposal.pendingRevision) {
+            return {
+                name: selectedProposal.pendingRevision.name,
+                about: selectedProposal.pendingRevision.about,
+                image: selectedProposal.pendingRevision.image,
+                imageName: selectedProposal.pendingRevision.imageName,
+                date: selectedProposal.pendingRevision.date,
+                venue: selectedProposal.pendingRevision.venue,
+                city: selectedProposal.pendingRevision.city,
+                audienceProfile: selectedProposal.pendingRevision.audienceProfile,
+                ageGroup: selectedProposal.pendingRevision.ageGroup,
+                guestCount: selectedProposal.pendingRevision.guestCount,
+                docFile: selectedProposal.pendingRevision.docFile || selectedProposal.docFile,
+                docName: selectedProposal.pendingRevision.docName || selectedProposal.docName,
+                docType: selectedProposal.pendingRevision.docType || selectedProposal.docType,
+                docSize: selectedProposal.pendingRevision.docSize || selectedProposal.docSize,
+                uploadedAt: selectedProposal.pendingRevision.uploadedAt,
+                isRevision: true,
+            }
+        }
+        return {
+            name: selectedProposal.name,
+            about: selectedProposal.about,
+            image: selectedProposal.image,
+            imageName: selectedProposal.imageName,
+            date: selectedProposal.date,
+            venue: selectedProposal.venue,
+            city: selectedProposal.city,
+            audienceProfile: selectedProposal.audienceProfile,
+            ageGroup: selectedProposal.ageGroup,
+            guestCount: selectedProposal.guestCount,
+            docFile: selectedProposal.docFile,
+            docName: selectedProposal.docName,
+            docType: selectedProposal.docType,
+            docSize: selectedProposal.docSize,
+            uploadedAt: selectedProposal.uploadedAt,
+            isRevision: false,
+        }
+    }, [selectedProposal, activeTab])
+
     const draftCount = useMemo(() => proposals.filter(p => p.status === "DRAFT").length, [proposals])
+    const underReviewCount = useMemo(() => proposals.filter(p => p.status === "UNDER_REVIEW" || p.pendingRevision != null).length, [proposals])
+    const rejectedCount = useMemo(() => proposals.filter(p => p.status === "REJECTED").length, [proposals])
     const publishedCount = useMemo(() => proposals.filter(p => p.status === "PUBLISHED" || !p.status).length, [proposals])
     const allCount = proposals.length
 
@@ -251,6 +312,8 @@ export default function ProposalPage() {
         return proposals.filter(p => {
             if (activeTab === "ALL") return true
             if (activeTab === "DRAFT") return p.status === "DRAFT"
+            if (activeTab === "UNDER_REVIEW") return p.status === "UNDER_REVIEW" || p.pendingRevision != null
+            if (activeTab === "REJECTED") return p.status === "REJECTED"
             return p.status === "PUBLISHED" || !p.status
         })
     }, [proposals, activeTab])
@@ -282,16 +345,16 @@ export default function ProposalPage() {
     }, [hostId, urlProposalId])
 
     useEffect(() => {
-        if (selectedProposal?.docFile) {
-            let mimeType = selectedProposal.docType
-            if (selectedProposal.docName.toLowerCase().endsWith(".pdf")) {
+        if (displayDetails?.docFile) {
+            let mimeType = displayDetails.docType
+            if (displayDetails.docName.toLowerCase().endsWith(".pdf")) {
                 mimeType = "application/pdf"
-            } else if (selectedProposal.docName.toLowerCase().endsWith(".docx")) {
+            } else if (displayDetails.docName.toLowerCase().endsWith(".docx")) {
                 mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            } else if (selectedProposal.docName.toLowerCase().endsWith(".pptx")) {
+            } else if (displayDetails.docName.toLowerCase().endsWith(".pptx")) {
                 mimeType = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
             }
-            const docBlob = new Blob([selectedProposal.docFile], { type: mimeType })
+            const docBlob = new Blob([displayDetails.docFile], { type: mimeType })
             const url = URL.createObjectURL(docBlob)
             setPreviewUrl(url)
             return () => {
@@ -300,11 +363,11 @@ export default function ProposalPage() {
         } else {
             setPreviewUrl(null)
         }
-    }, [selectedProposal])
+    }, [displayDetails])
 
     useEffect(() => {
-        if (selectedProposal?.image) {
-            const url = URL.createObjectURL(selectedProposal.image)
+        if (displayDetails?.image) {
+            const url = URL.createObjectURL(displayDetails.image)
             setProjectImageUrl(url)
             return () => {
                 URL.revokeObjectURL(url)
@@ -312,7 +375,7 @@ export default function ProposalPage() {
         } else {
             setProjectImageUrl(null)
         }
-    }, [selectedProposal])
+    }, [displayDetails])
 
     useEffect(() => {
         if (community?.logo) {
@@ -367,21 +430,21 @@ export default function ProposalPage() {
     }, [])
 
     useEffect(() => {
-        if (!selectedProposal || !previewContainerRef.current) return
+        if (!displayDetails || !previewContainerRef.current) return
 
-        const isDoc = selectedProposal.docType.includes("msword") ||
-            selectedProposal.docType.includes("wordprocessingml") ||
-            selectedProposal.docName.toLowerCase().endsWith(".doc") ||
-            selectedProposal.docName.toLowerCase().endsWith(".docx")
+        const isDoc = displayDetails.docType.includes("msword") ||
+            displayDetails.docType.includes("wordprocessingml") ||
+            displayDetails.docName.toLowerCase().endsWith(".doc") ||
+            displayDetails.docName.toLowerCase().endsWith(".docx")
 
-        const isPpt = selectedProposal.docType.includes("presentation") ||
-            selectedProposal.docType.includes("powerpoint") ||
-            selectedProposal.docName.toLowerCase().endsWith(".ppt") ||
-            selectedProposal.docName.toLowerCase().endsWith(".pptx")
+        const isPpt = displayDetails.docType.includes("presentation") ||
+            displayDetails.docType.includes("powerpoint") ||
+            displayDetails.docName.toLowerCase().endsWith(".ppt") ||
+            displayDetails.docName.toLowerCase().endsWith(".pptx")
 
         if (isDoc && docxRenderer) {
             previewContainerRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-xs text-text-tertiary">Loading document preview...</div>'
-            docxRenderer.renderAsync(selectedProposal.docFile, previewContainerRef.current)
+            docxRenderer.renderAsync(displayDetails.docFile, previewContainerRef.current)
                 .catch((err: any) => {
                     console.error("Error rendering docx:", err)
                     if (previewContainerRef.current) {
@@ -392,7 +455,7 @@ export default function ProposalPage() {
             previewContainerRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-xs text-text-tertiary">Loading presentation preview...</div>'
             try {
                 const viewer = new pptxViewerClass(previewContainerRef.current)
-                viewer.load(selectedProposal.docFile)
+                viewer.load(displayDetails.docFile)
                     .catch((err: any) => {
                         console.error("Error loading pptx:", err)
                         if (previewContainerRef.current) {
@@ -403,20 +466,23 @@ export default function ProposalPage() {
                 console.error("Error initializing pptx viewer:", err)
             }
         }
-    }, [selectedProposal, docxRenderer, pptxViewerClass])
+    }, [displayDetails, docxRenderer, pptxViewerClass])
 
     const openProposalForm = (p?: StoredProposal) => {
         if (p) {
-            setProjName(p.name)
-            setProjAbout(p.about)
-            setProjImage(p.image as File | null)
-            setProjDate(p.date)
-            setProjVenue(p.venue)
-            setProjCity(p.city)
-            setProjAudience(Array.isArray(p.audienceProfile) ? p.audienceProfile : p.audienceProfile ? p.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
-            setProjAgeGroup(p.ageGroup)
-            setProjGuestCount(p.guestCount)
-            setProjDoc(p.docFile as File | null)
+            const data = ((activeTab === "UNDER_REVIEW" || p.status === "UNDER_REVIEW") && p.pendingRevision) 
+                ? p.pendingRevision 
+                : p;
+            setProjName(data.name)
+            setProjAbout(data.about)
+            setProjImage(data.image as File | null)
+            setProjDate(data.date)
+            setProjVenue(data.venue)
+            setProjCity(data.city)
+            setProjAudience(Array.isArray(data.audienceProfile) ? data.audienceProfile : data.audienceProfile ? data.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
+            setProjAgeGroup(data.ageGroup)
+            setProjGuestCount(data.guestCount)
+            setProjDoc(data.docFile as File | null)
             setSelectedProposal(p)
         } else {
             setProjName("")
@@ -481,7 +547,7 @@ export default function ProposalPage() {
         }
     }
 
-    const handleProposalSubmit = (e: React.FormEvent, forceStatus?: "DRAFT" | "PUBLISHED") => {
+    const handleProposalSubmit = (e: React.FormEvent, forceStatus?: "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED") => {
         e.preventDefault()
 
         if (!projName.trim()) {
@@ -537,24 +603,53 @@ export default function ProposalPage() {
                         // Editing existing proposal details
                         updatedProposals = proposals.map(p => {
                             if (p.id === selectedProposal.id) {
-                                return {
-                                    ...p,
-                                    name: projName,
-                                    about: projAbout,
-                                    image: projImage || p.image,
-                                    imageName: projImage ? projImage.name : p.imageName,
-                                    date: projDate,
-                                    venue: projVenue,
-                                    city: projCity,
-                                    audienceProfile: projAudience,
-                                    ageGroup: projAgeGroup,
-                                    guestCount: projGuestCount,
-                                    docFile: projDoc || p.docFile,
-                                    docName: projDoc ? projDoc.name : p.docName,
-                                    docType: projDoc ? projDoc.type : p.docType,
-                                    docSize: projDoc ? projDoc.size : p.docSize,
-                                    uploadedAt: new Date().toISOString(),
-                                    status: forceStatus || p.status || "PUBLISHED",
+                                if (p.status === "PUBLISHED" || !p.status || (p.status === "UNDER_REVIEW" && p.pendingRevision != null)) {
+                                    const baseImage = p.pendingRevision?.image || p.image;
+                                    const baseImageName = p.pendingRevision?.imageName || p.imageName;
+                                    const baseDocFile = p.pendingRevision?.docFile || p.docFile;
+                                    const baseDocName = p.pendingRevision?.docName || p.docName;
+                                    const baseDocType = p.pendingRevision?.docType || p.docType;
+                                    const baseDocSize = p.pendingRevision?.docSize || p.docSize;
+                                    return {
+                                        ...p,
+                                        pendingRevision: {
+                                            name: projName,
+                                            about: projAbout,
+                                            image: projImage || baseImage,
+                                            imageName: projImage ? projImage.name : baseImageName,
+                                            date: projDate,
+                                            venue: projVenue,
+                                            city: projCity,
+                                            audienceProfile: projAudience,
+                                            ageGroup: projAgeGroup,
+                                            guestCount: projGuestCount,
+                                            docFile: projDoc || baseDocFile,
+                                            docName: projDoc ? projDoc.name : baseDocName,
+                                            docType: projDoc ? projDoc.type : baseDocType,
+                                            docSize: projDoc ? projDoc.size : baseDocSize,
+                                            uploadedAt: new Date().toISOString(),
+                                        }
+                                    }
+                                } else {
+                                    return {
+                                        ...p,
+                                        name: projName,
+                                        about: projAbout,
+                                        image: projImage || p.image,
+                                        imageName: projImage ? projImage.name : p.imageName,
+                                        date: projDate,
+                                        venue: projVenue,
+                                        city: projCity,
+                                        audienceProfile: projAudience,
+                                        ageGroup: projAgeGroup,
+                                        guestCount: projGuestCount,
+                                        docFile: projDoc || p.docFile,
+                                        docName: projDoc ? projDoc.name : p.docName,
+                                        docType: projDoc ? projDoc.type : p.docType,
+                                        docSize: projDoc ? projDoc.size : p.docSize,
+                                        uploadedAt: new Date().toISOString(),
+                                        status: forceStatus || p.status || "UNDER_REVIEW",
+                                    }
                                 }
                             }
                             return p
@@ -578,7 +673,7 @@ export default function ProposalPage() {
                             docType: projDoc!.type,
                             docSize: projDoc!.size,
                             uploadedAt: new Date().toISOString(),
-                            status: forceStatus || "PUBLISHED",
+                            status: forceStatus || "UNDER_REVIEW",
                         }
                         updatedProposals = [...proposals, newProposal]
                     }
@@ -628,16 +723,41 @@ export default function ProposalPage() {
 
             const updatedProposals = proposals.map(p => {
                 if (p.id === selectedProposal.id) {
-                    const updated = {
-                        ...p,
-                        docFile: file,
-                        docName: file.name,
-                        docType: file.type,
-                        docSize: file.size,
-                        uploadedAt: new Date().toISOString(),
+                    if (p.status === "PUBLISHED" || !p.status || (p.status === "UNDER_REVIEW" && p.pendingRevision != null)) {
+                        const updated = {
+                            ...p,
+                            pendingRevision: {
+                                name: p.pendingRevision?.name || p.name,
+                                about: p.pendingRevision?.about || p.about,
+                                image: p.pendingRevision?.image || p.image,
+                                imageName: p.pendingRevision?.imageName || p.imageName,
+                                date: p.pendingRevision?.date || p.date,
+                                venue: p.pendingRevision?.venue || p.venue,
+                                city: p.pendingRevision?.city || p.city,
+                                audienceProfile: p.pendingRevision?.audienceProfile || p.audienceProfile,
+                                ageGroup: p.pendingRevision?.ageGroup || p.ageGroup,
+                                guestCount: p.pendingRevision?.guestCount || p.guestCount,
+                                docFile: file,
+                                docName: file.name,
+                                docType: file.type,
+                                docSize: file.size,
+                                uploadedAt: new Date().toISOString(),
+                            }
+                        }
+                        setSelectedProposal(updated)
+                        return updated
+                    } else {
+                        const updated = {
+                            ...p,
+                            docFile: file,
+                            docName: file.name,
+                            docType: file.type,
+                            docSize: file.size,
+                            uploadedAt: new Date().toISOString(),
+                        }
+                        setSelectedProposal(updated)
+                        return updated
                     }
-                    setSelectedProposal(updated)
-                    return updated
                 }
                 return p
             })
@@ -654,21 +774,91 @@ export default function ProposalPage() {
         }
     }
 
-    const toggleDraftStatus = (proposal: StoredProposal) => {
-        const newStatus: "DRAFT" | "PUBLISHED" = proposal.status === "DRAFT" ? "PUBLISHED" : "DRAFT"
+    const submitProposalForApproval = (proposal: StoredProposal) => {
         const updatedProposals: StoredProposal[] = proposals.map(p => {
             if (p.id === proposal.id) {
-                return { ...p, status: newStatus }
+                return { ...p, status: "UNDER_REVIEW" }
             }
             return p
         })
         saveProposalsList(updatedProposals, hostId)
             .then((saved) => {
                 setProposals(saved)
-                toast.success(`Proposal status updated to ${newStatus === "DRAFT" ? "Draft" : "Published"}`)
+                toast.success("Proposal submitted for admin approval!")
             })
             .catch(() => {
-                toast.error("Failed to update status.")
+                toast.error("Failed to submit proposal.")
+            })
+    }
+
+    const handleMockAdminApprove = (proposal: StoredProposal) => {
+        const updatedProposals = proposals.map(p => {
+            if (p.id === proposal.id) {
+                if (p.pendingRevision) {
+                    return {
+                        ...p,
+                        name: p.pendingRevision.name,
+                        about: p.pendingRevision.about,
+                        image: p.pendingRevision.image,
+                        imageName: p.pendingRevision.imageName,
+                        date: p.pendingRevision.date,
+                        venue: p.pendingRevision.venue,
+                        city: p.pendingRevision.city,
+                        audienceProfile: p.pendingRevision.audienceProfile,
+                        ageGroup: p.pendingRevision.ageGroup,
+                        guestCount: p.pendingRevision.guestCount,
+                        docFile: p.pendingRevision.docFile || p.docFile,
+                        docName: p.pendingRevision.docName || p.docName,
+                        docType: p.pendingRevision.docType || p.docType,
+                        docSize: p.pendingRevision.docSize || p.docSize,
+                        uploadedAt: new Date().toISOString(),
+                        status: "PUBLISHED" as const,
+                        pendingRevision: undefined,
+                    }
+                } else {
+                    return {
+                        ...p,
+                        status: "PUBLISHED" as const,
+                    }
+                }
+            }
+            return p
+        })
+
+        saveProposalsList(updatedProposals, hostId)
+            .then((saved) => {
+                setProposals(saved)
+                const fresh = saved.find(item => item.id === proposal.id) || null
+                setSelectedProposal(fresh)
+                toast.success("Proposal approved by Admin!")
+            })
+            .catch(() => {
+                toast.error("Failed to approve proposal.")
+            })
+    }
+
+    const handleMockAdminReject = (proposal: StoredProposal) => {
+        const updatedProposals = proposals.map(p => {
+            if (p.id === proposal.id) {
+                const wasPublished = p.status === "PUBLISHED" || p.pendingRevision != null;
+                return {
+                    ...p,
+                    status: wasPublished ? ("PUBLISHED" as const) : ("REJECTED" as const),
+                    pendingRevision: undefined,
+                }
+            }
+            return p
+        })
+
+        saveProposalsList(updatedProposals, hostId)
+            .then((saved) => {
+                setProposals(saved)
+                const fresh = saved.find(item => item.id === proposal.id) || null
+                setSelectedProposal(fresh)
+                toast.error("Proposal rejected by Admin!")
+            })
+            .catch(() => {
+                toast.error("Failed to reject proposal.")
             })
     }
 
@@ -689,18 +879,18 @@ export default function ProposalPage() {
     }
 
     const handleEditDetails = () => {
-        if (!selectedProposal) return
-        setProjName(selectedProposal.name)
-        setProjAbout(selectedProposal.about)
-        setProjImage(selectedProposal.image as File | null)
-        setProjDate(selectedProposal.date)
-        setProjVenue(selectedProposal.venue)
-        setProjCity(selectedProposal.city)
-        setProjAudience(Array.isArray(selectedProposal.audienceProfile) ? selectedProposal.audienceProfile : selectedProposal.audienceProfile ? selectedProposal.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
+        if (!selectedProposal || !displayDetails) return
+        setProjName(displayDetails.name)
+        setProjAbout(displayDetails.about)
+        setProjImage(displayDetails.image as File | null)
+        setProjDate(displayDetails.date)
+        setProjVenue(displayDetails.venue)
+        setProjCity(displayDetails.city)
+        setProjAudience(Array.isArray(displayDetails.audienceProfile) ? displayDetails.audienceProfile : displayDetails.audienceProfile ? displayDetails.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
         setNewAudience("")
-        setProjAgeGroup(selectedProposal.ageGroup)
-        setProjGuestCount(selectedProposal.guestCount)
-        setProjDoc(selectedProposal.docFile as File | null)
+        setProjAgeGroup(displayDetails.ageGroup)
+        setProjGuestCount(displayDetails.guestCount)
+        setProjDoc(displayDetails.docFile as File | null)
 
         setIsEditingInPlace(true)
     }
@@ -744,22 +934,49 @@ export default function ProposalPage() {
 
         const updatedProposals = proposals.map(p => {
             if (p.id === selectedProposal.id) {
-                const updated = {
-                    ...p,
-                    name: projName,
-                    about: projAbout,
-                    image: projImage || p.image,
-                    imageName: projImage ? projImage.name : p.imageName,
-                    date: projDate,
-                    venue: projVenue,
-                    city: projCity,
-                    audienceProfile: projAudience,
-                    ageGroup: projAgeGroup,
-                    guestCount: projGuestCount,
-                    uploadedAt: new Date().toISOString(),
+                if (p.status === "PUBLISHED" || !p.status || (p.status === "UNDER_REVIEW" && p.pendingRevision != null)) {
+                    const baseImage = p.pendingRevision?.image || p.image;
+                    const baseImageName = p.pendingRevision?.imageName || p.imageName;
+                    const updated = {
+                        ...p,
+                        pendingRevision: {
+                            name: projName,
+                            about: projAbout,
+                            image: projImage || baseImage,
+                            imageName: projImage ? projImage.name : baseImageName,
+                            date: projDate,
+                            venue: projVenue,
+                            city: projCity,
+                            audienceProfile: projAudience,
+                            ageGroup: projAgeGroup,
+                            guestCount: projGuestCount,
+                            docFile: p.pendingRevision?.docFile || p.docFile,
+                            docName: p.pendingRevision?.docName || p.docName,
+                            docType: p.pendingRevision?.docType || p.docType,
+                            docSize: p.pendingRevision?.docSize || p.docSize,
+                            uploadedAt: new Date().toISOString(),
+                        }
+                    }
+                    setSelectedProposal(updated)
+                    return updated
+                } else {
+                    const updated = {
+                        ...p,
+                        name: projName,
+                        about: projAbout,
+                        image: projImage || p.image,
+                        imageName: projImage ? projImage.name : p.imageName,
+                        date: projDate,
+                        venue: projVenue,
+                        city: projCity,
+                        audienceProfile: projAudience,
+                        ageGroup: projAgeGroup,
+                        guestCount: projGuestCount,
+                        uploadedAt: new Date().toISOString(),
+                    }
+                    setSelectedProposal(updated)
+                    return updated
                 }
-                setSelectedProposal(updated)
-                return updated
             }
             return p
         })
@@ -807,10 +1024,10 @@ export default function ProposalPage() {
             setAvgGuestCount(community.avgGuestCount)
             setExperiencesPerYear(community.experiencesPerYear)
             setCategoryIds(community.categoryIds || [])
-            setInstagram(community.instagram || "")
-            setLinkedin(community.linkedin || "")
-            setYoutube(community.youtube || "")
-            setPortfolio(community.portfolio || "")
+            setInstagram(community.instagram || profile?.socialLinks?.instagram || "")
+            setLinkedin(community.linkedin || profile?.socialLinks?.linkedin || "")
+            setYoutube(community.youtube || profile?.socialLinks?.youtube || "")
+            setPortfolio(community.portfolio || profile?.socialLinks?.portfolio || "")
             setLogoFile(community.logo as File | null)
         } else {
             setCommunityName("")
@@ -819,10 +1036,10 @@ export default function ProposalPage() {
             setAvgGuestCount("")
             setExperiencesPerYear("")
             setCategoryIds([])
-            setInstagram("")
-            setLinkedin("")
-            setYoutube("")
-            setPortfolio("")
+            setInstagram(profile?.socialLinks?.instagram || "")
+            setLinkedin(profile?.socialLinks?.linkedin || "")
+            setYoutube(profile?.socialLinks?.youtube || "")
+            setPortfolio(profile?.socialLinks?.portfolio || "")
             setLogoFile(null)
         }
         setShowActivateModal(true)
@@ -889,6 +1106,11 @@ export default function ProposalPage() {
             return
         }
 
+        if (!instagram.trim()) {
+            toast.error("Instagram profile link is required.")
+            return
+        }
+
         const communityData: ActivatedCommunity = {
             name: communityName,
             about: aboutCommunity,
@@ -898,17 +1120,30 @@ export default function ProposalPage() {
             avgGuestCount: avgGuestCount,
             experiencesPerYear: experiencesPerYear,
             categoryIds: categoryIds,
-            instagram: instagram || undefined,
-            linkedin: linkedin || undefined,
-            youtube: youtube || undefined,
-            portfolio: portfolio || undefined,
+            instagram: instagram.trim() || undefined,
+            linkedin: linkedin.trim() || undefined,
+            youtube: youtube.trim() || undefined,
+            portfolio: portfolio.trim() || undefined,
             activatedAt: community?.activatedAt || new Date().toISOString(),
         }
 
         saveCommunity(communityData, hostId)
-            .then((saved) => {
+            .then(async (saved) => {
                 setCommunity(saved)
                 setShowActivateModal(false)
+                try {
+                    const updated = await updateHostProfile({
+                        socialLinks: {
+                            instagram: instagram.trim() || undefined,
+                            linkedin: linkedin.trim() || undefined,
+                            youtube: youtube.trim() || undefined,
+                            portfolio: portfolio.trim() || undefined,
+                        }
+                    })
+                    setProfile(updated)
+                } catch (e) {
+                    console.error("Failed to sync social links to host profile", e)
+                }
                 toast.success(community ? "Community details updated!" : "Community activated successfully!")
             })
             .catch((err) => {
@@ -981,10 +1216,17 @@ export default function ProposalPage() {
                                     >
                                         ← Back to Sponsorships
                                     </button>
-                                    <h1 className="text-heading-sm font-semibold text-text-primary">{selectedProposal.name}</h1>
+                                    <div className="flex items-center gap-2">
+                                        <h1 className="text-heading-sm font-semibold text-text-primary">{displayDetails?.name}</h1>
+                                        {displayDetails?.isRevision && (
+                                            <span className="text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-badge uppercase tracking-wider">
+                                                Revision Under Review
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="text-caption text-text-tertiary">Project Overview & Details</p>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
                                     <input
                                         ref={updateDocInputRef}
                                         type="file"
@@ -1003,18 +1245,19 @@ export default function ProposalPage() {
                                     >
                                         Edit details
                                     </Button>
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        radius="pill"
-                                        onClick={() => {
-                                            toggleDraftStatus(selectedProposal)
-                                            const newStatus = selectedProposal.status === "DRAFT" ? "PUBLISHED" : "DRAFT"
-                                            setSelectedProposal(prev => prev ? { ...prev, status: newStatus } : null)
-                                        }}
-                                    >
-                                        {selectedProposal.status === "DRAFT" ? "Publish" : "Save as Draft"}
-                                    </Button>
+                                    {(selectedProposal.status === "DRAFT" || selectedProposal.status === "REJECTED") && (
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            radius="pill"
+                                            onClick={() => {
+                                                submitProposalForApproval(selectedProposal)
+                                                setSelectedProposal(prev => prev ? { ...prev, status: "UNDER_REVIEW" } : null)
+                                            }}
+                                        >
+                                            Submit for Approval
+                                        </Button>
+                                    )}
                                     <Button
                                         variant="secondary"
                                         size="sm"
@@ -1034,8 +1277,48 @@ export default function ProposalPage() {
                                     >
                                         Delete
                                     </Button>
+
+                                    {/* Mock Admin controls */}
+                                    {(selectedProposal.status === "UNDER_REVIEW" || selectedProposal.pendingRevision != null) && (
+                                        <div className="flex items-center gap-2 border-l border-border-default pl-2 ml-2">
+                                            <span className="text-[10px] uppercase font-bold text-text-tertiary">Mock Admin:</span>
+                                            <Button
+                                                variant="primary"
+                                                size="xs"
+                                                radius="pill"
+                                                className="bg-green-600 hover:bg-green-700 text-white border-green-600"
+                                                onClick={() => handleMockAdminApprove(selectedProposal)}
+                                            >
+                                                Approve
+                                            </Button>
+                                            <Button
+                                                variant="secondary"
+                                                size="xs"
+                                                radius="pill"
+                                                className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
+                                                onClick={() => handleMockAdminReject(selectedProposal)}
+                                            >
+                                                Reject
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
+
+                            {/* Banners */}
+                            {displayDetails?.isRevision && (
+                                <div className="p-3 bg-amber-50 border border-amber-200 rounded-action text-xs text-amber-800 font-medium">
+                                    You are viewing the pending revision of this proposal, which is under review by the admin.
+                                </div>
+                            )}
+                            {(selectedProposal.pendingRevision != null && !displayDetails?.isRevision) && (
+                                <div className="p-3 bg-amber-50 border border-amber-200 rounded-action text-xs text-amber-800 font-medium flex items-center justify-between">
+                                    <span>This proposal has a pending revision under review by the admin.</span>
+                                    <button onClick={() => setActiveTab("UNDER_REVIEW")} className="text-text-brand hover:underline font-semibold">
+                                        View Revision
+                                    </button>
+                                </div>
+                            )}
 
                             {/* Body */}
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -1043,30 +1326,30 @@ export default function ProposalPage() {
                                 <div className="lg:col-span-3 flex flex-col gap-6">
                                     {projectImageUrl && (
                                         // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={projectImageUrl} alt={selectedProposal.name} className="w-full h-40 object-cover rounded-xl border border-border-default shadow-sm" />
+                                        <img src={projectImageUrl} alt={displayDetails?.name} className="w-full h-40 object-cover rounded-xl border border-border-default shadow-sm" />
                                     )}
                                     <div className="bg-surface-card-muted border border-border-default rounded-action p-5 flex flex-col gap-4">
                                         <div>
                                             <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Date & City</p>
-                                            <p className="text-label-sm font-semibold text-text-primary mt-0.5">{selectedProposal.date} • {selectedProposal.city}</p>
+                                            <p className="text-label-sm font-semibold text-text-primary mt-0.5">{displayDetails?.date} • {displayDetails?.city}</p>
                                         </div>
                                         <div>
                                             <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Venue</p>
-                                            <p className="text-label-sm font-semibold text-text-primary mt-0.5">{selectedProposal.venue}</p>
+                                            <p className="text-label-sm font-semibold text-text-primary mt-0.5">{displayDetails?.venue}</p>
                                         </div>
                                         <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border-default/50">
                                             <div>
                                                 <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Guests</p>
-                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5">{selectedProposal.guestCount}</p>
+                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5">{displayDetails?.guestCount}</p>
                                             </div>
                                             <div>
                                                 <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Age Group</p>
-                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5">{selectedProposal.ageGroup}</p>
+                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5">{displayDetails?.ageGroup}</p>
                                             </div>
                                             <div>
                                                 <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Audience</p>
-                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5 truncate" title={Array.isArray(selectedProposal.audienceProfile) ? selectedProposal.audienceProfile.join(", ") : selectedProposal.audienceProfile}>
-                                                    {Array.isArray(selectedProposal.audienceProfile) ? selectedProposal.audienceProfile.join(", ") : selectedProposal.audienceProfile}
+                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5 truncate" title={Array.isArray(displayDetails?.audienceProfile) ? displayDetails.audienceProfile.join(", ") : displayDetails?.audienceProfile}>
+                                                    {Array.isArray(displayDetails?.audienceProfile) ? displayDetails.audienceProfile.join(", ") : displayDetails?.audienceProfile}
                                                 </p>
                                             </div>
                                         </div>
@@ -1074,20 +1357,24 @@ export default function ProposalPage() {
 
                                     <div className="bg-surface-card border border-border-default rounded-action p-5">
                                         <h4 className="text-label-sm font-semibold text-text-primary mb-2">About the Project</h4>
-                                        <p className="text-body-sm text-text-secondary leading-relaxed whitespace-pre-wrap">{selectedProposal.about}</p>
+                                        <p className="text-body-sm text-text-secondary leading-relaxed whitespace-pre-wrap">{displayDetails?.about}</p>
                                     </div>
                                 </div>
 
                                 {/* Right column - PDF Preview */}
                                 <div className="lg:col-span-9 flex flex-col gap-3">
                                     <h4 className="text-label-md font-semibold text-text-primary">Document Preview</h4>
-                                    {selectedProposal.docType.includes("pdf") || selectedProposal.docName.toLowerCase().endsWith(".pdf") ? (
+                                    {displayDetails?.docType?.includes("pdf") || displayDetails?.docName?.toLowerCase().endsWith(".pdf") ? (
                                         <div className="border border-border-default rounded-action overflow-hidden bg-surface-card shadow-sm h-[750px]">
-                                            <iframe
-                                                src={previewUrl || undefined}
-                                                className="w-full h-full border-none"
-                                                title="Proposal Preview"
-                                            />
+                                            {previewUrl ? (
+                                                <iframe
+                                                    src={previewUrl}
+                                                    className="w-full h-full border-none"
+                                                    title="Proposal Preview"
+                                                />
+                                            ) : (
+                                                <div className="flex items-center justify-center h-full text-xs text-text-tertiary">Loading document preview...</div>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="border border-border-default rounded-action bg-surface-card shadow-sm h-[750px] flex flex-col bg-white overflow-hidden">
@@ -1095,7 +1382,7 @@ export default function ProposalPage() {
                                             <div ref={previewContainerRef} className="flex-1 overflow-auto p-6 docx-preview-container select-text" />
                                             {/* Download toolbar */}
                                             <div className="h-12 border-t border-border-default bg-surface-card-muted flex items-center justify-between px-4 shrink-0">
-                                                <span className="text-[10px] text-text-tertiary truncate max-w-xs font-medium">{selectedProposal.docName}</span>
+                                                <span className="text-[10px] text-text-tertiary truncate max-w-xs font-medium">{displayDetails?.docName ?? ""}</span>
                                                 <Button
                                                     variant="secondary"
                                                     size="xs"
@@ -1104,7 +1391,7 @@ export default function ProposalPage() {
                                                         if (!previewUrl) return
                                                         const link = document.createElement("a")
                                                         link.href = previewUrl
-                                                        link.download = selectedProposal.docName
+                                                        link.download = displayDetails?.docName ?? ""
                                                         document.body.appendChild(link)
                                                         link.click()
                                                         document.body.removeChild(link)
@@ -1259,6 +1546,8 @@ export default function ProposalPage() {
                                             items={[
                                                 { value: "ALL", label: "All", count: allCount },
                                                 { value: "DRAFT", label: "Draft", count: draftCount },
+                                                { value: "UNDER_REVIEW", label: "Under Review", count: underReviewCount },
+                                                { value: "REJECTED", label: "Rejected", count: rejectedCount },
                                                 { value: "PUBLISHED", label: "Published", count: publishedCount }
                                             ]}
                                             value={activeTab}
@@ -1280,7 +1569,9 @@ export default function ProposalPage() {
                                         ) : (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5">
                                                 {filteredProposals.map((p) => {
-                                                    const imgUrl = p.image ? URL.createObjectURL(p.image) : null
+                                                    const isViewingRevision = activeTab === "UNDER_REVIEW" && p.pendingRevision != null;
+                                                    const cardData = isViewingRevision ? p.pendingRevision! : p;
+                                                    const imgUrl = cardData.image ? URL.createObjectURL(cardData.image) : null;
                                                     return (
                                                         <div
                                                             key={p.id}
@@ -1294,24 +1585,30 @@ export default function ProposalPage() {
                                                                         // eslint-disable-next-line @next/next/no-img-element
                                                                         <img
                                                                             src={imgUrl}
-                                                                            alt={p.name}
+                                                                            alt={cardData.name}
                                                                             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
                                                                             onLoad={() => imgUrl && URL.revokeObjectURL(imgUrl)}
                                                                         />
                                                                     ) : (
                                                                         <div className="w-full h-full bg-linear-to-br from-surface-card-muted to-border-default flex items-center justify-center text-text-tertiary font-bold text-lg">
-                                                                            {p.name.substring(0, 2).toUpperCase()}
+                                                                            {cardData.name.substring(0, 2).toUpperCase()}
                                                                         </div>
                                                                     )}
                                                                     <span
                                                                         className={clsx(
-                                                                            "absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-badge uppercase tracking-wider",
-                                                                            p.status === "DRAFT"
-                                                                                ? "bg-neutral-100 text-neutral-700 border border-neutral-300"
-                                                                                : "bg-green-50 text-green-700 border border-green-200"
+                                                                            "absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-badge uppercase tracking-wider border",
+                                                                            p.status === "DRAFT" && "bg-neutral-100 text-neutral-700 border-neutral-300",
+                                                                            isViewingRevision && "bg-amber-50 text-amber-700 border-amber-200",
+                                                                            (!isViewingRevision && p.status === "UNDER_REVIEW") && "bg-amber-50 text-amber-700 border-amber-200",
+                                                                            p.status === "REJECTED" && "bg-rose-50 text-rose-700 border-rose-200",
+                                                                            (!isViewingRevision && (p.status === "PUBLISHED" || !p.status)) && "bg-green-50 text-green-700 border-green-200"
                                                                         )}
                                                                     >
-                                                                        {p.status === "DRAFT" ? "Draft" : "Published"}
+                                                                        {p.status === "DRAFT" && "Draft"}
+                                                                        {isViewingRevision && "Revision Under Review"}
+                                                                        {!isViewingRevision && p.status === "UNDER_REVIEW" && "Under Review"}
+                                                                        {p.status === "REJECTED" && "Rejected"}
+                                                                        {!isViewingRevision && (p.status === "PUBLISHED" || !p.status) && "Published"}
                                                                     </span>
 
                                                                     {/* Kebab button */}
@@ -1335,16 +1632,18 @@ export default function ProposalPage() {
                                                                                 >
                                                                                     View details
                                                                                 </button>
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => {
-                                                                                        toggleDraftStatus(p)
-                                                                                        setOpenKebabId(null)
-                                                                                    }}
-                                                                                    className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-surface-card-muted transition-colors font-medium"
-                                                                                >
-                                                                                    {p.status === "DRAFT" ? "Publish" : "Save as Draft"}
-                                                                                </button>
+                                                                                {(p.status === "DRAFT" || p.status === "REJECTED") && (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => {
+                                                                                            submitProposalForApproval(p)
+                                                                                            setOpenKebabId(null)
+                                                                                        }}
+                                                                                        className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-surface-card-muted transition-colors font-medium"
+                                                                                    >
+                                                                                        Submit for Approval
+                                                                                    </button>
+                                                                                )}
                                                                                 <button
                                                                                     type="button"
                                                                                     onClick={() => {
@@ -1361,19 +1660,20 @@ export default function ProposalPage() {
                                                                 </div>
 
                                                                 {/* Content */}
+                                                                {/* Content */}
                                                                 <div className="p-4 flex flex-col gap-1.5">
-                                                                    <h3 className="text-label-md font-semibold text-text-primary truncate group-hover:text-text-brand transition-colors">{p.name}</h3>
-                                                                    <p className="text-caption text-text-secondary">{p.city} • {p.venue}</p>
-                                                                    <p className="text-[11px] text-text-tertiary truncate mt-1">{p.about}</p>
+                                                                    <h3 className="text-label-md font-semibold text-text-primary truncate group-hover:text-text-brand transition-colors">{cardData.name}</h3>
+                                                                    <p className="text-caption text-text-secondary">{cardData.city} • {cardData.venue}</p>
+                                                                    <p className="text-[11px] text-text-tertiary truncate mt-1">{cardData.about}</p>
                                                                 </div>
                                                             </div>
 
                                                             {/* Footer info */}
                                                             <div className="p-4 pt-0">
                                                                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-default">
-                                                                    <span className="text-[10px] text-text-tertiary">Date: {p.date}</span>
+                                                                    <span className="text-[10px] text-text-tertiary">Date: {cardData.date}</span>
                                                                     <span className="text-[10px] font-semibold text-text-brand bg-surface-brand-soft px-2 py-0.5 rounded-badge border border-border-brand">
-                                                                        {p.guestCount} guests
+                                                                        {cardData.guestCount} guests
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -2132,20 +2432,28 @@ export default function ProposalPage() {
                             >
                                 Cancel
                             </Button>
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                radius="pill"
-                                onClick={(e) => handleProposalSubmit(e, "DRAFT")}
-                            >
-                                Save as Draft
-                            </Button>
+                            {(!selectedProposal || selectedProposal.status === "DRAFT" || selectedProposal.status === "REJECTED") && (
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="sm"
+                                    radius="pill"
+                                    onClick={(e) => handleProposalSubmit(e, "DRAFT")}
+                                >
+                                    Save as Draft
+                                </Button>
+                            )}
                             <Button
                                 type="submit"
                                 variant="primary"
                                 size="sm"
                                 radius="pill"
+                                onClick={(e) => {
+                                    const nextStatus = (selectedProposal && (selectedProposal.status === "UNDER_REVIEW" || selectedProposal.status === "PUBLISHED")) 
+                                        ? selectedProposal.status 
+                                        : "UNDER_REVIEW";
+                                    handleProposalSubmit(e, nextStatus);
+                                }}
                             >
                                 {selectedProposal ? "Update Proposal" : "Submit Proposal"}
                             </Button>

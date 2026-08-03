@@ -32,6 +32,7 @@ function TicketForm({
 	aiSuggested,
 	onChange,
 	onDelete,
+	isFreeEvent = false,
 }: {
 	draft: DraftTicket
 	index: number
@@ -40,6 +41,7 @@ function TicketForm({
 	aiSuggested: boolean
 	onChange: (d: DraftTicket) => void
 	onDelete: () => void
+	isFreeEvent?: boolean
 }) {
 	const errors = showErrors ? validateDraftTicket(draft) : {}
 
@@ -90,12 +92,14 @@ function TicketForm({
 						<FieldLabel required>Price (INR)</FieldLabel>
 						<input
 							type="number"
-							value={draft.price}
+							value={isFreeEvent ? "0" : draft.price}
 							onChange={(e) => set("price", e.target.value)}
 							placeholder="₹ 0"
 							min={0}
+							disabled={isFreeEvent}
 							className={inpCls(!!errors.price)}
 						/>
+						{isFreeEvent && <span className="text-[10px] text-text-secondary mt-0.5">Fixed to 0 for Free/Non-Ticketed Experience</span>}
 						<ErrMsg msg={errors.price} />
 					</div>
 				</div>
@@ -173,6 +177,7 @@ export function TicketListEditor({
 	headerSlot,
 	initialDrafts,
 	aiSuggested = false,
+	isFreeEvent = false,
 }: {
 	tickets: Ticket[]
 	onChange: (tickets: Ticket[]) => void
@@ -180,6 +185,7 @@ export function TicketListEditor({
 	headerSlot?: ReactNode
 	initialDrafts?: DraftTicket[]
 	aiSuggested?: boolean
+	isFreeEvent?: boolean
 }) {
 	const [drafts, setDrafts] = useState<DraftTicket[]>(() => {
 		if (initialDrafts && initialDrafts.length > 0) return initialDrafts
@@ -232,6 +238,7 @@ export function TicketListEditor({
 						aiSuggested={aiSuggested}
 						onChange={(d) => updateDraft(i, d)}
 						onDelete={() => removeTicket(i)}
+						isFreeEvent={isFreeEvent}
 					/>
 				))}
 			</div>

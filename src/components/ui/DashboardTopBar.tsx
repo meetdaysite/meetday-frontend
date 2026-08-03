@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import Image from "next/image"
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
@@ -31,6 +31,9 @@ export function DashboardTopBar() {
 	const { signOut } = useAuthStore()
 	const { profile, clearProfile } = useHostStore()
 	const router = useRouter()
+	const pathname = usePathname()
+	const isBrand = pathname?.startsWith("/brand")
+	const profilePath = isBrand ? "/brand/dashboard/profile" : "/host/dashboard/profile"
 
 	const displayName = profile?.displayName || "Host"
 	const initials = displayName.split(" ").filter(Boolean).map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "H"
@@ -58,7 +61,7 @@ export function DashboardTopBar() {
 				{/* User menu */}
 				<div ref={userRef} className="relative">
 					<button
-						onClick={() => setUserOpen((o) => !o)}
+						onClick={() => router.push(profilePath)}
 						className="flex items-center gap-2 cursor-pointer hover:bg-surface-card-muted px-2 py-1.5 rounded-action transition-colors"
 					>
 						{profile?.avatarUrl ? (
@@ -77,27 +80,7 @@ export function DashboardTopBar() {
 							</div>
 						)}
 						<span className="text-label-md text-text-primary">{displayName}</span>
-						<Icon
-							as={AltArrowDownSvg}
-							size="sm"
-							color="secondary"
-							className={clsx("transition-transform duration-150", userOpen && "rotate-180")}
-						/>
 					</button>
-
-					{userOpen && (
-						<div className="absolute right-0 top-full mt-2 z-50 bg-surface-card border border-border-default rounded-action shadow-floating py-1 min-w-36">
-							<button
-								onClick={() => {
-									setUserOpen(false)
-									setShowLogoutConfirm(true)
-								}}
-								className="w-full text-left px-4 py-2.5 text-label-sm font-medium text-text-brand hover:bg-surface-card-muted transition-colors"
-							>
-								Sign Out
-							</button>
-						</div>
-					)}
 				</div>
 			</div>
 		</div>

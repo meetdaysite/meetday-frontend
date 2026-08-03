@@ -130,6 +130,12 @@ export default function ProfilePage() {
 	const signOut = useAuthStore((s) => s.signOut)
 	const [showDeleteModal, setShowDeleteModal] = useState(false)
 
+	const handleSignOut = () => {
+		signOut()
+		clearProfile()
+		router.push("/")
+	}
+
 	// const [notifs, setNotifs] = useState<Record<string, boolean>>(
 	// 	Object.fromEntries(NOTIFICATION_PREFS.map(n => [n.id, n.defaultOn])),
 	// )
@@ -158,9 +164,20 @@ export default function ProfilePage() {
 
 			<div className="flex-1 px-4 sm:px-6 lg:px-8 py-6 lg:py-8 bg-surface-page">
 				{/* Header */}
-				<div className="mb-6">
-					<h1 className="text-heading-sm font-semibold text-text-primary">Profile</h1>
-					<p className="text-body-sm text-text-secondary mt-0.5">Your host identity and account details</p>
+				<div className="flex items-center justify-between gap-4 mb-6">
+					<div>
+						<h1 className="text-heading-sm font-semibold text-text-primary">Profile</h1>
+						<p className="text-body-sm text-text-secondary mt-0.5">Your host identity and account details</p>
+					</div>
+					<Button
+						variant="secondary"
+						size="sm"
+						radius="pill"
+						className="text-text-primary hover:bg-surface-card-muted shrink-0"
+						onClick={handleSignOut}
+					>
+						Sign Out
+					</Button>
 				</div>
 
 				{/* 2-column grid */}

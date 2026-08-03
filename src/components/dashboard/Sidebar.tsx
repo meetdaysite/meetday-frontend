@@ -23,10 +23,10 @@ import CalendarFillSvg from "@/icons/filled/calendar.svg"
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
 const NAV_ITEMS: { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; dot?: boolean }[] = [
+	{ label: "Dashboard", href: "/host/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "My Profile", href: "/host/dashboard/profile", outlined: UserSvg, filled: UserSvg },
 	{ label: "My Experiences", href: "/host/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg },
 	{ label: "My Sponsorships", href: "/host/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
-	{ label: "Dashboard", href: "/host/dashboard/overview", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "Support", href: "/host/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
 ]
 
