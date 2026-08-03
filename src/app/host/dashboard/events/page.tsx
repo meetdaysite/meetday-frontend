@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button"
 import { Dropdown } from "@/components/ui/Dropdown"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { useEventStore } from "@/store/eventStore"
+import { useHostStore } from "@/store/hostStore"
 import { getMyEvents } from "@/lib/api"
 import { storageUrl } from "@/lib/uploadMedia"
 import { formatEventDateRange } from "@/lib/eventForm"
@@ -116,6 +117,7 @@ export default function MyEventsPage() {
 function MyEventsPageContent() {
 	const router = useRouter()
 	const searchParams = useSearchParams()
+	const { profile } = useHostStore()
 	const { events, eventsLoading, eventsError, fetchMyEvents, deleteEvent } = useEventStore()
 
 	const [viewMode, setViewMode] = useState<"list" | "grid">(() => {
@@ -145,7 +147,7 @@ function MyEventsPageContent() {
 	// a separate, unfiltered fetch rather than the (now status-scoped) store list.
 	const [countsSource, setCountsSource] = useState<Event[]>([])
 	const refreshCounts = useCallback(() => {
-		getMyEvents({ limit: 100 }).then(res => setCountsSource(res.events)).catch(() => {})
+		getMyEvents({ limit: 100 }).then(res => setCountsSource(res.events)).catch(() => { })
 	}, [])
 
 	useEffect(() => {
@@ -284,10 +286,35 @@ function MyEventsPageContent() {
 					{/* Header */}
 					<div className="flex items-start justify-between gap-4 mb-6">
 						<div>
-							<h1 className="text-heading-sm font-semibold text-text-primary">My Events</h1>
-							<p className="text-body-sm text-text-secondary mt-0.5">
-								Manage events across all statuses.
-							</p>
+							<h1 className="text-heading-sm font-semibold text-text-primary">Curated Experiences</h1>
+							{profile && (
+								<div className="flex items-center gap-2 mt-1.5 bg-surface-card border border-border-default px-3 py-1.5 rounded-full w-fit shadow-sm">
+									<div className="size-6 rounded-full bg-red-100 flex items-center justify-center text-red-700 text-xs font-bold select-none overflow-hidden border border-border-default">
+										{profile.avatarUrl ? (
+											// eslint-disable-next-line @next/next/no-img-element
+											<img src={profile.avatarUrl} alt={profile.displayName} className="size-full object-cover" />
+										) : (
+											profile.displayName?.[0]?.toUpperCase() || "H"
+										)}
+									</div>
+									<span className="text-label-sm font-medium text-text-primary">{profile.displayName}</span>
+									{profile.socialLinks?.instagram && (
+										<>
+											<span className="text-text-muted">•</span>
+											<a
+												href={profile.socialLinks.instagram.startsWith("http") ? profile.socialLinks.instagram : `https://instagram.com/${profile.socialLinks.instagram.replace(/^@/, "")}`}
+												target="_blank"
+												rel="noopener noreferrer"
+												className="text-caption text-text-brand hover:underline font-medium"
+											>
+												{profile.socialLinks.instagram.includes("instagram.com")
+													? `@${profile.socialLinks.instagram.split("instagram.com/")[1]?.split("/")[0] || profile.socialLinks.instagram}`
+													: profile.socialLinks.instagram.startsWith("@") ? profile.socialLinks.instagram : `@${profile.socialLinks.instagram}`}
+											</a>
+										</>
+									)}
+								</div>
+							)}
 						</div>
 						<Button
 							leftIcon={<PlusIcon />}

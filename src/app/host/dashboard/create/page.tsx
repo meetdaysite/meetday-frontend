@@ -1698,9 +1698,37 @@ export default function CreateExperiencePage() {
 			<div className="flex flex-col min-h-screen bg-surface-page animate-in fade-in duration-150">
 				<DashboardTopBar />
 				<div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 max-w-4xl mx-auto">
-					<div className="text-center mb-8">
+					<div className="text-center mb-8 flex flex-col items-center">
 						<h1 className="text-2xl sm:text-heading-sm font-bold text-text-primary">Choose Experience Type</h1>
-						<p className="text-body-sm text-text-secondary mt-2">
+						{profile && (
+							<div className="flex items-center gap-2 mt-2 bg-surface-card border border-border-default px-3 py-1.5 rounded-full w-fit shadow-sm text-xs">
+								<div className="size-5 rounded-full bg-red-100 flex items-center justify-center text-red-700 text-[10px] font-bold select-none overflow-hidden border border-border-default">
+									{profile.avatarUrl ? (
+										// eslint-disable-next-line @next/next/no-img-element
+										<img src={profile.avatarUrl} alt={profile.displayName} className="size-full object-cover" />
+									) : (
+										profile.displayName?.[0]?.toUpperCase() || "H"
+									)}
+								</div>
+								<span className="font-medium text-text-primary">{profile.displayName}</span>
+								{profile.socialLinks?.instagram && (
+									<>
+										<span className="text-text-muted">•</span>
+										<a
+											href={profile.socialLinks.instagram.startsWith("http") ? profile.socialLinks.instagram : `https://instagram.com/${profile.socialLinks.instagram.replace(/^@/, "")}`}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-text-brand hover:underline font-medium"
+										>
+											{profile.socialLinks.instagram.includes("instagram.com") 
+												? `@${profile.socialLinks.instagram.split("instagram.com/")[1]?.split("/")[0] || profile.socialLinks.instagram}` 
+												: profile.socialLinks.instagram.startsWith("@") ? profile.socialLinks.instagram : `@${profile.socialLinks.instagram}`}
+										</a>
+									</>
+								)}
+							</div>
+						)}
+						<p className="text-body-sm text-text-secondary mt-3">
 							Select the format of your experience to proceed with verification.
 						</p>
 					</div>
@@ -1795,6 +1823,34 @@ export default function CreateExperiencePage() {
 						<h2 className="text-label-md font-semibold text-text-primary">
 							{phase === "finish" ? "Finish your listing" : "Create New Experience"}
 						</h2>
+						{profile && (
+							<div className="flex items-center gap-2 bg-surface-card border border-border-default px-2.5 py-1 rounded-full shadow-sm text-[10px]">
+								<div className="size-5 rounded-full bg-red-100 flex items-center justify-center text-red-700 text-[9px] font-bold select-none overflow-hidden border border-border-default">
+									{profile.avatarUrl ? (
+										// eslint-disable-next-line @next/next/no-img-element
+										<img src={profile.avatarUrl} alt={profile.displayName} className="size-full object-cover" />
+									) : (
+										profile.displayName?.[0]?.toUpperCase() || "H"
+									)}
+								</div>
+								<span className="font-medium text-text-primary">{profile.displayName}</span>
+								{profile.socialLinks?.instagram && (
+									<>
+										<span className="text-text-muted">•</span>
+										<a
+											href={profile.socialLinks.instagram.startsWith("http") ? profile.socialLinks.instagram : `https://instagram.com/${profile.socialLinks.instagram.replace(/^@/, "")}`}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-text-brand hover:underline font-medium"
+										>
+											{profile.socialLinks.instagram.includes("instagram.com") 
+												? `@${profile.socialLinks.instagram.split("instagram.com/")[1]?.split("/")[0] || profile.socialLinks.instagram}` 
+												: profile.socialLinks.instagram.startsWith("@") ? profile.socialLinks.instagram : `@${profile.socialLinks.instagram}`}
+										</a>
+									</>
+								)}
+							</div>
+						)}
 					</div>
 
 					<div className="flex items-center gap-3">

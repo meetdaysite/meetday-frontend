@@ -255,7 +255,8 @@ export default function EventDetailPage() {
 								<Section title="Gallery">
 									<div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
 										{galleryImages.map((item, i) => {
-											const url = item.url ?? storageUrl(item.key ?? "")
+											const url = item.url || (item.key ? storageUrl(item.key) : null)
+											if (!url) return null
 											return item.type === "VIDEO" ? (
 												<video
 													key={item.id ?? i}

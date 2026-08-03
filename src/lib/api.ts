@@ -355,16 +355,55 @@ export async function getMyEvents(params?: {
 	page?: number
 	limit?: number
 }): Promise<EventsListResponse> {
-	const { data } = await apiClient.get<{ success: boolean; data: EventsListResponse }>(
-		"/events/me",
-		{ params },
-	)
-	return data.data
+	let response: EventsListResponse = { events: [], total: 0, page: params?.page || 1, limit: params?.limit || 10 }
+	try {
+		const { data } = await apiClient.get<{ success: boolean; data: EventsListResponse }>(
+			"/events/me",
+			{ params },
+		)
+		response = data.data
+	} catch (err) {
+		/* ignore and fallback to local mocks */
+	}
+
+	try {
+		const stored = localStorage.getItem("mock_created_events")
+		if (stored) {
+			const mockEventsMap: Record<string, Event> = JSON.parse(stored)
+			const mockEventsList = Object.values(mockEventsMap)
+			const filteredMock = params?.status
+				? mockEventsList.filter(e => e.status === params.status)
+				: mockEventsList
+
+			// Merge so locally created events show up at the top
+			response.events = [...filteredMock, ...response.events.filter(e => !mockEventsMap[e.id])]
+			response.total = response.total + filteredMock.length
+		}
+	} catch {
+		/* ignore */
+	}
+
+	return response
 }
 
 export async function getMyEventDetail(id: string): Promise<Event> {
-	const { data } = await apiClient.get<{ success: boolean; data: Event }>(`/events/me/${id}`)
-	return data.data
+	try {
+		const { data } = await apiClient.get<{ success: boolean; data: Event }>(`/events/me/${id}`)
+		return data.data
+	} catch (err) {
+		try {
+			const stored = localStorage.getItem("mock_created_events")
+			if (stored) {
+				const mockEventsMap: Record<string, Event> = JSON.parse(stored)
+				if (mockEventsMap[id]) {
+					return mockEventsMap[id]
+				}
+			}
+		} catch {
+			/* ignore */
+		}
+		throw err
+	}
 }
 
 export async function updateEventDraft(id: string, payload: EventDraftPayload): Promise<Event> {

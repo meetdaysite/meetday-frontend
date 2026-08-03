@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import clsx from "clsx"
@@ -10,6 +10,50 @@ import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
 import { useHostStore } from "@/store/hostStore"
 import { useAuthStore } from "@/store/authStore"
+import { getCategories, type Category } from "@/lib/api"
+
+const DB_NAME = "MeetdayProposalDB"
+const STORE_NAME = "proposals"
+const COMMUNITY_KEY = "activated_community"
+
+interface ActivatedCommunity {
+	name: string
+	about: string
+	logo: File | Blob | null
+	logoName: string
+	size: string
+	avgGuestCount: string
+	experiencesPerYear: string
+	categoryIds: string[]
+	instagram?: string
+	linkedin?: string
+	youtube?: string
+	portfolio?: string
+	activatedAt: string
+}
+
+function initDB(): Promise<IDBDatabase> {
+	return new Promise((resolve, reject) => {
+		const request = indexedDB.open(DB_NAME, 1)
+		request.onerror = () => reject(request.error)
+		request.onsuccess = () => resolve(request.result)
+		request.onupgradeneeded = () => {
+			request.result.createObjectStore(STORE_NAME)
+		}
+	})
+}
+
+function getCommunity(hostId: string): Promise<ActivatedCommunity | null> {
+	return initDB().then((db) => {
+		return new Promise<ActivatedCommunity | null>((resolve, reject) => {
+			const transaction = db.transaction(STORE_NAME, "readonly")
+			const store = transaction.objectStore(STORE_NAME)
+			const request = store.get(`${COMMUNITY_KEY}_${hostId}`)
+			request.onerror = () => reject(request.error)
+			request.onsuccess = () => resolve(request.result || null)
+		})
+	})
+}
 
 import UserSvg from "@/icons/outlined/user.svg"
 import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
@@ -130,6 +174,31 @@ export default function ProfilePage() {
 	const signOut = useAuthStore((s) => s.signOut)
 	const [showDeleteModal, setShowDeleteModal] = useState(false)
 
+	const [community, setCommunity] = useState<ActivatedCommunity | null>(null)
+	const [categories, setCategories] = useState<Category[]>([])
+	const [logoUrl, setLogoUrl] = useState<string | null>(null)
+
+	const hostId = profile?.id || ""
+
+	useEffect(() => {
+		getCategories().then(setCategories).catch(() => {})
+	}, [])
+
+	useEffect(() => {
+		if (!hostId) return
+		getCommunity(hostId).then(setCommunity).catch((err) => console.error(err))
+	}, [hostId])
+
+	useEffect(() => {
+		if (community?.logo) {
+			const url = URL.createObjectURL(community.logo)
+			setLogoUrl(url)
+			return () => URL.revokeObjectURL(url)
+		} else {
+			setLogoUrl(null)
+		}
+	}, [community])
+
 	const handleSignOut = () => {
 		signOut()
 		clearProfile()
@@ -155,7 +224,12 @@ export default function ProfilePage() {
 		].filter(Boolean).join(", ")
 		: null
 
-	const hasSocial = profile?.socialLinks && Object.values(profile.socialLinks).some(Boolean)
+	const communityCategoryNames = community?.categoryIds
+		? community.categoryIds.map(id => categories.find(c => c.id === id)?.name).filter(Boolean).join(", ")
+		: ""
+
+	const hasSocial = (profile?.socialLinks && Object.values(profile.socialLinks).some(Boolean)) ||
+		!!community?.instagram || !!community?.linkedin || !!community?.youtube || !!community?.portfolio
 	const hasExtra = hasSocial || (profile?.languages?.length ?? 0) > 0 || (profile?.portfolioLinks?.length ?? 0) > 0
 
 	return (
@@ -212,11 +286,12 @@ export default function ProfilePage() {
 							{/* Avatar row */}
 							<div className="flex items-center gap-4 mb-6 pb-6 border-b border-border-default">
 								<div className="size-20 rounded-full shrink-0 overflow-hidden bg-red-100 flex items-center justify-center text-red-700 text-heading-sm font-bold select-none">
-									{profile?.avatarUrl
+									{profile?.avatarUrl || logoUrl ? (
 										// eslint-disable-next-line @next/next/no-img-element
-										? <img src={profile.avatarUrl} alt={displayName} className="size-full object-cover" />
-										: initials
-									}
+										<img src={profile?.avatarUrl || logoUrl || ""} alt={displayName} className="size-full object-cover" />
+									) : (
+										initials
+									)}
 								</div>
 								<div>
 									<p className="text-title-sm font-semibold text-text-primary">{displayName}</p>
@@ -236,12 +311,7 @@ export default function ProfilePage() {
 								{profile?.gender && (
 									<InfoRow label="Gender" value={<p className="text-label-sm text-text-primary">{GENDER_LABELS[profile.gender] ?? profile.gender}</p>} />
 								)}
-								{profile?.tagline && (
-									<InfoRow label="Tagline" value={<p className="text-label-sm text-text-primary">{profile.tagline}</p>} />
-								)}
-								{profile?.hostBio && (
-									<InfoRow label="Bio" value={<p className="text-label-sm text-text-primary max-w-xs text-right leading-snug">{profile.hostBio}</p>} />
-								)}
+
 								{profile?.pan && (
 									<InfoRow label="PAN" value={<p className="text-label-sm text-text-primary font-mono">{profile.pan}</p>} />
 								)}
@@ -251,51 +321,39 @@ export default function ProfilePage() {
 							</div>
 						</SectionCard>
 
-						{/* Categories */}
-						{profile?.categories && profile.categories.length > 0 && (
-							<SectionCard icon={<Icon as={Chart2OutSvg} size="md" color="brand" />} title="Experience Categories">
-								<div className="flex flex-wrap gap-2">
-									{profile.categories.map(({ category }) => (
-										<span key={category.id} className="inline-flex items-center px-3 py-1 rounded-badge text-label-sm font-medium bg-surface-brand-soft text-text-brand border border-border-brand">
-											{category.name}
-										</span>
-									))}
-								</div>
-							</SectionCard>
-						)}
-
-						{/* Experience & Cities */}
-						{profile && (
-							profile.yearsOfExperience != null ||
-							profile.totalEventsPreviouslyHosted != null ||
-							(profile.operatingCities?.length ?? 0) > 0 ||
-							profile.totalEventsHosted != null ||
-							profile.averageRating != null
-						) && (
-							<SectionCard icon={<Icon as={MapPointRotateSvg} size="md" color="brand" />} title="Experience & Cities">
+						{/* About Community and Experiences */}
+						{(profile || community) && (
+							<SectionCard icon={<Icon as={MapPointRotateSvg} size="md" color="brand" />} title="About Community and Experiences">
+								{(profile?.hostBio || community?.about) && (
+									<div className="mb-5 pb-5 border-b border-border-default">
+										<p className="text-body-sm text-text-secondary leading-relaxed">
+											{profile?.hostBio || community?.about}
+										</p>
+									</div>
+								)}
 								<div className="-my-3">
-									{profile?.yearsOfExperience != null && (
-										<InfoRow
-											label="Years of experience"
-											value={<p className="text-label-sm text-text-primary">{profile.yearsOfExperience} yr{profile.yearsOfExperience !== 1 ? "s" : ""}</p>}
-										/>
-									)}
-									{profile?.totalEventsPreviouslyHosted != null && (
-										<InfoRow
-											label="Experiences hosted before"
-											value={<p className="text-label-sm text-text-primary">{profile.totalEventsPreviouslyHosted}</p>}
-										/>
-									)}
-									{profile?.totalEventsHosted != null && (
-										<InfoRow
-											label="Experiences hosted on Meetday"
-											value={<p className="text-label-sm text-text-primary">{profile.totalEventsHosted}</p>}
-										/>
-									)}
 									{profile?.averageRating != null && (
 										<InfoRow
 											label="Average rating"
 											value={<p className="text-label-sm text-text-primary">{profile.averageRating.toFixed(1)} ★ ({profile.totalReviews ?? 0} reviews)</p>}
+										/>
+									)}
+									{community?.size && (
+										<InfoRow
+											label="Community size"
+											value={<p className="text-label-sm text-text-primary">{community.size} members</p>}
+										/>
+									)}
+									{community?.avgGuestCount && (
+										<InfoRow
+											label="Average event guest count"
+											value={<p className="text-label-sm text-text-primary">{community.avgGuestCount} guests</p>}
+										/>
+									)}
+									{community?.experiencesPerYear && (
+										<InfoRow
+											label="Curated experiences per year"
+											value={<p className="text-label-sm text-text-primary">{community.experiencesPerYear} events</p>}
 										/>
 									)}
 									{profile?.operatingCities && profile.operatingCities.length > 0 && (
@@ -317,21 +375,44 @@ export default function ProfilePage() {
 							</SectionCard>
 						)}
 
+						{/* Categories */}
+						{((profile?.categories && profile.categories.length > 0) || (community?.categoryIds && community.categoryIds.length > 0)) && (
+							<SectionCard icon={<Icon as={Chart2OutSvg} size="md" color="brand" />} title="Experience Categories">
+								<div className="flex flex-wrap gap-2">
+									{profile?.categories?.map(({ category }) => (
+										<span key={category.id} className="inline-flex items-center px-3 py-1 rounded-badge text-label-sm font-medium bg-surface-brand-soft text-text-brand border border-border-brand">
+											{category.name}
+										</span>
+									))}
+									{community?.categoryIds?.map(id => {
+										const catName = categories.find(c => c.id === id)?.name
+										if (!catName) return null
+										if (profile?.categories?.some(c => c.categoryId === id)) return null
+										return (
+											<span key={id} className="inline-flex items-center px-3 py-1 rounded-badge text-label-sm font-medium bg-surface-brand-soft text-text-brand border border-border-brand">
+												{catName}
+											</span>
+										)
+									})}
+								</div>
+							</SectionCard>
+						)}
+
 						{/* Social & Links */}
 						{hasExtra && (
 							<SectionCard icon={<Icon as={UserSvg} size="md" color="brand" />} title="Social & Links">
 								<div className="-my-3">
-									{profile?.socialLinks?.youtube && (
-										<InfoRow label="YouTube" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile.socialLinks.youtube}</p>} />
+									{(profile?.socialLinks?.youtube || community?.youtube) && (
+										<InfoRow label="YouTube" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile?.socialLinks?.youtube || community?.youtube}</p>} />
 									)}
-									{profile?.socialLinks?.instagram && (
-										<InfoRow label="Instagram" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile.socialLinks.instagram}</p>} />
+									{(profile?.socialLinks?.instagram || community?.instagram) && (
+										<InfoRow label="Instagram" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile?.socialLinks?.instagram || community?.instagram}</p>} />
 									)}
-									{profile?.socialLinks?.linkedin && (
-										<InfoRow label="LinkedIn" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile.socialLinks.linkedin}</p>} />
+									{(profile?.socialLinks?.linkedin || community?.linkedin) && (
+										<InfoRow label="LinkedIn" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile?.socialLinks?.linkedin || community?.linkedin}</p>} />
 									)}
-									{profile?.socialLinks?.portfolio && (
-										<InfoRow label="Portfolio" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile.socialLinks.portfolio}</p>} />
+									{(profile?.socialLinks?.portfolio || community?.portfolio) && (
+										<InfoRow label="Portfolio" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile?.socialLinks?.portfolio || community?.portfolio}</p>} />
 									)}
 									{profile?.languages && profile.languages.length > 0 && (
 										<InfoRow
@@ -376,10 +457,7 @@ export default function ProfilePage() {
 						{profile && (
 							<SectionCard icon={<Icon as={CheckCircleSvg} size="md" color="brand" />} title="Verification">
 								<div className="-my-3">
-									<InfoRow label="Approval" value={<StatusBadge status={profile.approvalStatus} />} />
-									{profile.rejectionReason && (
-										<InfoRow label="Reason" value={<p className="text-label-sm text-status-error-text max-w-50 text-right leading-snug">{profile.rejectionReason}</p>} />
-									)}
+
 									<InfoRow label="KYC" value={<StatusBadge status={profile.kycStatus} />} />
 									{profile.kycFailureReason && (
 										<InfoRow label="KYC reason" value={<p className="text-label-sm text-status-error-text max-w-50 text-right leading-snug">{profile.kycFailureReason}</p>} />

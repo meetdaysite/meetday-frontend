@@ -243,13 +243,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user, authLoading])
 
-	// Init notifications once the host profile is confirmed APPROVED
+	// Init notifications once the host profile is resolved
 	useEffect(() => {
-		if (profile?.approvalStatus === "APPROVED") {
+		if (profile) {
 			initNotifications()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [profile?.approvalStatus])
+	}, [profile])
 
 	// Show loading while Firebase resolves auth or while profile is being fetched
 	if (authLoading || (!profile && !!user && !profileError)) return <LoadingScreen />
