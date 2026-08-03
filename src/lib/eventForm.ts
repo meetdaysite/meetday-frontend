@@ -86,6 +86,9 @@ export const defaultFormData = {
 	tickets: [] as Ticket[],
 	visibility: "", ageRestriction: "", refundType: "",
 	cutoffHours: "", refundPercent: "", instructions: "",
+	// New fields for redesigned 2-step flow
+	customQuestions: [] as string[],
+	totalCapacity: "100",
 }
 
 export type FormData = typeof defaultFormData
@@ -226,6 +229,8 @@ export function eventToFormData(event: Event): FormData {
 		cutoffHours: event.refundPolicy?.cutoffHours != null ? String(event.refundPolicy.cutoffHours) : "",
 		refundPercent: event.refundPolicy?.refundPercent != null ? String(event.refundPolicy.refundPercent) : "",
 		instructions: event.specialInstructions ?? "",
+		customQuestions: [],
+		totalCapacity: "100",
 	}
 }
 
@@ -311,6 +316,47 @@ export function timeToMinutes(val: string) {
 	return h * 60 + m
 }
 
+// ─── New 2-step flow validators ───────────────────────────────────────────────
+
+export function validateNewStep1(
+	f: Pick<FormData, "title" | "desc" | "category" | "eventDate" | "endDate" | "isMultiDay" | "startTime" | "endTime">,
+	allowPastDate = false,
+): Errors {
+	const e: Errors = {}
+	if (!f.title.trim()) e.title = "Event title is required."
+	else if (f.title.trim().length < 3) e.title = "Title must be at least 3 characters."
+	if (!f.desc.trim()) e.desc = "Description is required."
+	else if (f.desc.trim().length < 20) e.desc = "Description must be at least 20 characters."
+	if (!f.category) e.category = "Please select a category."
+	if (!f.eventDate) e.eventDate = "Event date is required."
+	else if (!allowPastDate && !isFutureOrToday(f.eventDate)) e.eventDate = "Date must be today or in the future."
+	if (!f.startTime) e.startTime = "Start time is required."
+	if (!f.endTime) e.endTime = "End time is required."
+	else if (f.startTime && !f.isMultiDay && timeToMinutes(f.endTime) <= timeToMinutes(f.startTime))
+		e.endTime = "End time must be after start time."
+	if (f.isMultiDay) {
+		if (!f.endDate) e.endDate = "End date is required for a multi-day event."
+		else if (f.eventDate && new Date(f.endDate) < new Date(f.eventDate))
+			e.endDate = "End date cannot be before the event date."
+	}
+	return e
+}
+
+export function validateNewStep2(
+	f: Pick<FormData, "eventType" | "venueName" | "fullAddress" | "totalCapacity">,
+): Errors {
+	const e: Errors = {}
+	if (!f.eventType) e.eventType = "Please select an event type."
+	if (!f.venueName.trim()) e.venueName = "Venue name is required."
+	if (!f.fullAddress.trim()) e.fullAddress = "Full address is required."
+	const cap = Number(f.totalCapacity)
+	if (!f.totalCapacity || isNaN(cap) || cap < 1 || !Number.isInteger(cap))
+		e.totalCapacity = "Total capacity must be a whole number of at least 1."
+	return e
+}
+
+// ─── Legacy validators (kept for compatibility) ────────────────────────────────
+
 export function validateStep1(f: Pick<FormData, "title" | "desc" | "category" | "eventType" | "whatToExpect" | "whoShouldAttend">): Errors {
 	const e: Errors = {}
 	if (!f.title.trim()) e.title = "Event title is required."
@@ -348,7 +394,6 @@ export function validateStep2(
 export function validateStep3(f: { hasCover: boolean; hasGallery: boolean }): Errors {
 	const e: Errors = {}
 	if (!f.hasCover) e.coverUrl = "Cover image is required — please upload a file."
-	if (!f.hasGallery) e.gallery = "Add at least one gallery image."
 	return e
 }
 
@@ -358,19 +403,21 @@ export function validateStep4(f: Pick<FormData, "tickets">): Errors {
 	return e
 }
 
-export function validateStep5(f: Pick<FormData, "visibility" | "ageRestriction" | "refundType" | "cutoffHours" | "refundPercent" | "instructions">): Errors {
+export function validateStep5(
+	f: Pick<FormData, "visibility" | "ageRestriction" | "refundType" | "cutoffHours" | "refundPercent" | "instructions">,
+	isFreeEvent = false,
+): Errors {
 	const e: Errors = {}
-	if (!f.visibility) e.visibility = "Please select a visibility option."
-	if (!f.ageRestriction) e.ageRestriction = "Please select an age restriction."
-	if (!f.refundType) e.refundType = "Please select a refund type."
-	if (f.refundType === "PARTIAL") {
-		if (!f.cutoffHours.trim()) e.cutoffHours = "Cutoff hours is required."
-		else if (isNaN(Number(f.cutoffHours)) || Number(f.cutoffHours) < 0) e.cutoffHours = "Enter a valid number of hours."
-		if (!f.refundPercent.trim()) e.refundPercent = "Refund percent is required."
-		else if (isNaN(Number(f.refundPercent)) || Number(f.refundPercent) < 0 || Number(f.refundPercent) > 100)
-			e.refundPercent = "Enter a value between 0 and 100."
+	if (!isFreeEvent) {
+		if (!f.refundType) e.refundType = "Please select a refund type."
+		if (f.refundType === "PARTIAL") {
+			if (!f.cutoffHours.trim()) e.cutoffHours = "Cutoff hours is required."
+			else if (isNaN(Number(f.cutoffHours)) || Number(f.cutoffHours) < 0) e.cutoffHours = "Enter a valid number of hours."
+			if (!f.refundPercent.trim()) e.refundPercent = "Refund percent is required."
+			else if (isNaN(Number(f.refundPercent)) || Number(f.refundPercent) < 0 || Number(f.refundPercent) > 100)
+				e.refundPercent = "Enter a value between 0 and 100."
+		}
 	}
-	if (!f.instructions.trim()) e.instructions = "Special instructions are required."
 	return e
 }
 

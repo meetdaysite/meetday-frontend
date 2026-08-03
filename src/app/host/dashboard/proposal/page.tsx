@@ -23,6 +23,11 @@ const STORE_NAME = "proposals"
 const RECORD_KEY = "current_proposal"
 const COMMUNITY_KEY = "activated_community"
 
+export interface SponsorPrice {
+    name: string
+    price: string
+}
+
 export interface StoredProposal {
     id: string
     name: string
@@ -41,6 +46,7 @@ export interface StoredProposal {
     docSize: number
     uploadedAt: string
     status?: "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED"
+    sponsorPrices?: SponsorPrice[]
     pendingRevision?: {
         name: string
         about: string
@@ -57,6 +63,7 @@ export interface StoredProposal {
         docType: string
         docSize: number
         uploadedAt: string
+        sponsorPrices?: SponsorPrice[]
     }
 }
 
@@ -226,6 +233,7 @@ export default function ProposalPage() {
     const [projAgeGroup, setProjAgeGroup] = useState("")
     const [projGuestCount, setProjGuestCount] = useState("")
     const [projDoc, setProjDoc] = useState<File | null>(null)
+    const [sponsorPrices, setSponsorPrices] = useState<SponsorPrice[]>([{ name: "", price: "" }])
     const projImageInputRef = useRef<HTMLInputElement>(null)
     const projDocInputRef = useRef<HTMLInputElement>(null)
     const updateDocInputRef = useRef<HTMLInputElement>(null)
@@ -279,6 +287,7 @@ export default function ProposalPage() {
                 docType: selectedProposal.pendingRevision.docType || selectedProposal.docType,
                 docSize: selectedProposal.pendingRevision.docSize || selectedProposal.docSize,
                 uploadedAt: selectedProposal.pendingRevision.uploadedAt,
+                sponsorPrices: selectedProposal.pendingRevision.sponsorPrices || selectedProposal.sponsorPrices || [],
                 isRevision: true,
             }
         }
@@ -298,6 +307,7 @@ export default function ProposalPage() {
             docType: selectedProposal.docType,
             docSize: selectedProposal.docSize,
             uploadedAt: selectedProposal.uploadedAt,
+            sponsorPrices: selectedProposal.sponsorPrices || [],
             isRevision: false,
         }
     }, [selectedProposal, activeTab])
@@ -483,6 +493,7 @@ export default function ProposalPage() {
             setProjAgeGroup(data.ageGroup)
             setProjGuestCount(data.guestCount)
             setProjDoc(data.docFile as File | null)
+            setSponsorPrices(data.sponsorPrices && data.sponsorPrices.length > 0 ? data.sponsorPrices : [{ name: "", price: "" }])
             setSelectedProposal(p)
         } else {
             setProjName("")
@@ -495,6 +506,7 @@ export default function ProposalPage() {
             setProjAgeGroup("")
             setProjGuestCount("")
             setProjDoc(null)
+            setSponsorPrices([{ name: "", price: "" }])
             setSelectedProposal(null)
         }
         setNewAudience("")
@@ -586,6 +598,16 @@ export default function ProposalPage() {
             toast.error("Number of Guests is required.")
             return
         }
+        if (sponsorPrices.length === 0) {
+            toast.error("At least one Sponsor Price entry is required.")
+            return
+        }
+        for (const sp of sponsorPrices) {
+            if (!sp.name.trim() || !sp.price.trim()) {
+                toast.error("All Sponsor Price names and prices must be filled out.")
+                return
+            }
+        }
         if (!projDoc && !selectedProposal) {
             toast.error("Proposal Document file is required.")
             return
@@ -628,6 +650,7 @@ export default function ProposalPage() {
                                             docType: projDoc ? projDoc.type : baseDocType,
                                             docSize: projDoc ? projDoc.size : baseDocSize,
                                             uploadedAt: new Date().toISOString(),
+                                            sponsorPrices: sponsorPrices,
                                         }
                                     }
                                 } else {
@@ -649,6 +672,7 @@ export default function ProposalPage() {
                                         docSize: projDoc ? projDoc.size : p.docSize,
                                         uploadedAt: new Date().toISOString(),
                                         status: forceStatus || p.status || "UNDER_REVIEW",
+                                        sponsorPrices: sponsorPrices,
                                     }
                                 }
                             }
@@ -674,6 +698,7 @@ export default function ProposalPage() {
                             docSize: projDoc!.size,
                             uploadedAt: new Date().toISOString(),
                             status: forceStatus || "UNDER_REVIEW",
+                            sponsorPrices: sponsorPrices,
                         }
                         updatedProposals = [...proposals, newProposal]
                     }
@@ -813,6 +838,7 @@ export default function ProposalPage() {
                         docSize: p.pendingRevision.docSize || p.docSize,
                         uploadedAt: new Date().toISOString(),
                         status: "PUBLISHED" as const,
+                        sponsorPrices: p.pendingRevision.sponsorPrices || p.sponsorPrices,
                         pendingRevision: undefined,
                     }
                 } else {
@@ -874,6 +900,7 @@ export default function ProposalPage() {
         setProjAgeGroup("")
         setProjGuestCount("")
         setProjDoc(null)
+        setSponsorPrices([{ name: "", price: "" }])
         setShowProposalForm(false)
         setIsEditingInPlace(false)
     }
@@ -891,6 +918,7 @@ export default function ProposalPage() {
         setProjAgeGroup(displayDetails.ageGroup)
         setProjGuestCount(displayDetails.guestCount)
         setProjDoc(displayDetails.docFile as File | null)
+        setSponsorPrices(displayDetails.sponsorPrices && displayDetails.sponsorPrices.length > 0 ? displayDetails.sponsorPrices : [{ name: "", price: "" }])
 
         setIsEditingInPlace(true)
     }
@@ -932,6 +960,17 @@ export default function ProposalPage() {
             return
         }
 
+        if (sponsorPrices.length === 0) {
+            toast.error("At least one Sponsor Price entry is required.")
+            return
+        }
+        for (const sp of sponsorPrices) {
+            if (!sp.name.trim() || !sp.price.trim()) {
+                toast.error("All Sponsor Price names and prices must be filled out.")
+                return
+            }
+        }
+
         const updatedProposals = proposals.map(p => {
             if (p.id === selectedProposal.id) {
                 if (p.status === "PUBLISHED" || !p.status || (p.status === "UNDER_REVIEW" && p.pendingRevision != null)) {
@@ -955,6 +994,7 @@ export default function ProposalPage() {
                             docType: p.pendingRevision?.docType || p.docType,
                             docSize: p.pendingRevision?.docSize || p.docSize,
                             uploadedAt: new Date().toISOString(),
+                            sponsorPrices: sponsorPrices,
                         }
                     }
                     setSelectedProposal(updated)
@@ -973,6 +1013,7 @@ export default function ProposalPage() {
                         ageGroup: projAgeGroup,
                         guestCount: projGuestCount,
                         uploadedAt: new Date().toISOString(),
+                        sponsorPrices: sponsorPrices,
                     }
                     setSelectedProposal(updated)
                     return updated
@@ -1334,6 +1375,20 @@ export default function ProposalPage() {
                                         <h4 className="text-label-sm font-semibold text-text-primary mb-2">About the Project</h4>
                                         <p className="text-body-sm text-text-secondary leading-relaxed whitespace-pre-wrap">{displayDetails?.about}</p>
                                     </div>
+
+                                    {displayDetails?.sponsorPrices && displayDetails.sponsorPrices.length > 0 && (
+                                        <div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-3">
+                                            <h4 className="text-label-sm font-semibold text-text-primary">Sponsor Pricing Tiers</h4>
+                                            <div className="flex flex-col gap-2">
+                                                {displayDetails.sponsorPrices.map((sp: any, idx: number) => (
+                                                    <div key={idx} className="flex justify-between items-center text-sm border-b border-border-default/40 pb-1.5 last:border-b-0 last:pb-0">
+                                                        <span className="text-text-secondary font-medium">{sp.name}</span>
+                                                        <span className="text-text-brand font-semibold">{sp.price}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Right column - PDF Preview */}
@@ -1635,7 +1690,6 @@ export default function ProposalPage() {
                                                                 </div>
 
                                                                 {/* Content */}
-                                                                {/* Content */}
                                                                 <div className="p-4 flex flex-col gap-1.5">
                                                                     <h3 className="text-label-md font-semibold text-text-primary truncate group-hover:text-text-brand transition-colors">{cardData.name}</h3>
                                                                     <p className="text-caption text-text-secondary">{cardData.city} • {cardData.venue}</p>
@@ -1647,6 +1701,11 @@ export default function ProposalPage() {
                                                             <div className="p-4 pt-0">
                                                                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-default">
                                                                     <span className="text-[10px] text-text-tertiary">Date: {cardData.date}</span>
+                                                                    {cardData.sponsorPrices && cardData.sponsorPrices[0] && (
+                                                                        <span className="text-[10px] font-semibold text-text-secondary bg-surface-card-muted px-2 py-0.5 rounded-badge border border-border-default mr-1.5">
+                                                                            {cardData.sponsorPrices[0].name}: {cardData.sponsorPrices[0].price}
+                                                                        </span>
+                                                                    )}
                                                                     <span className="text-[10px] font-semibold text-text-brand bg-surface-brand-soft px-2 py-0.5 rounded-badge border border-border-brand">
                                                                         {cardData.guestCount} guests
                                                                     </span>
@@ -2127,6 +2186,61 @@ export default function ProposalPage() {
                                     />
                                 </div>
                             </div>
+
+                            {/* Sponsor Price Tiers */}
+                            <div className="flex flex-col gap-2.5">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-label-sm font-semibold text-text-primary">Sponsor Pricing *</label>
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="xs"
+                                        radius="md"
+                                        onClick={() => setSponsorPrices([...sponsorPrices, { name: "", price: "" }])}
+                                    >
+                                        + Add Sponsor Price
+                                    </Button>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    {sponsorPrices.map((sp, idx) => (
+                                        <div key={idx} className="flex gap-2 items-center animate-in fade-in duration-100">
+                                            <input
+                                                type="text"
+                                                required
+                                                value={sp.name}
+                                                onChange={(e) => {
+                                                    const next = [...sponsorPrices]
+                                                    next[idx] = { ...next[idx], name: e.target.value }
+                                                    setSponsorPrices(next)
+                                                }}
+                                                placeholder="Sponsor Tier Name (e.g. Gold)"
+                                                className="flex-1 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                            />
+                                            <input
+                                                type="text"
+                                                required
+                                                value={sp.price}
+                                                onChange={(e) => {
+                                                    const next = [...sponsorPrices]
+                                                    next[idx] = { ...next[idx], price: e.target.value }
+                                                    setSponsorPrices(next)
+                                                }}
+                                                placeholder="Price (e.g. $5,000)"
+                                                className="w-48 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                            />
+                                            {sponsorPrices.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSponsorPrices(sponsorPrices.filter((_, i) => i !== idx))}
+                                                    className="size-10 rounded-input border border-border-default bg-surface-canvas flex items-center justify-center text-text-secondary hover:text-red-600 hover:border-red-200 transition-colors shrink-0 text-lg font-bold"
+                                                >
+                                                    ×
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Modal Footer */}
@@ -2362,6 +2476,61 @@ export default function ProposalPage() {
                                         placeholder="e.g. 150"
                                         className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
                                     />
+                                </div>
+                            </div>
+
+                            {/* Sponsor Price Tiers */}
+                            <div className="flex flex-col gap-2.5">
+                                <div className="flex justify-between items-center">
+                                    <label className="text-label-sm font-semibold text-text-primary">Sponsor Pricing *</label>
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="xs"
+                                        radius="md"
+                                        onClick={() => setSponsorPrices([...sponsorPrices, { name: "", price: "" }])}
+                                    >
+                                        + Add Sponsor Price
+                                    </Button>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    {sponsorPrices.map((sp, idx) => (
+                                        <div key={idx} className="flex gap-2 items-center animate-in fade-in duration-100">
+                                            <input
+                                                type="text"
+                                                required
+                                                value={sp.name}
+                                                onChange={(e) => {
+                                                    const next = [...sponsorPrices]
+                                                    next[idx] = { ...next[idx], name: e.target.value }
+                                                    setSponsorPrices(next)
+                                                }}
+                                                placeholder="Sponsor Tier Name (e.g. Gold)"
+                                                className="flex-1 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                            />
+                                            <input
+                                                type="text"
+                                                required
+                                                value={sp.price}
+                                                onChange={(e) => {
+                                                    const next = [...sponsorPrices]
+                                                    next[idx] = { ...next[idx], price: e.target.value }
+                                                    setSponsorPrices(next)
+                                                }}
+                                                placeholder="Price (e.g. $5,000)"
+                                                className="w-48 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                            />
+                                            {sponsorPrices.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSponsorPrices(sponsorPrices.filter((_, i) => i !== idx))}
+                                                    className="size-10 rounded-input border border-border-default bg-surface-canvas flex items-center justify-center text-text-secondary hover:text-red-600 hover:border-red-200 transition-colors shrink-0 text-lg font-bold"
+                                                >
+                                                    ×
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 

@@ -41,8 +41,8 @@ import {
 	eventToFormData,
 	timeToMinutes,
 	to12Hour,
-	validateStep1,
-	validateStep2,
+	validateNewStep1,
+	validateNewStep2,
 	validateStep3,
 	validateStep4,
 	validateStep5,
@@ -70,6 +70,7 @@ import UploadSvg from "@/icons/outlined/upload.svg"
 import AltXSvg from "@/icons/outlined/close.svg"
 
 import type { ComponentType, SVGProps } from "react"
+import React from "react"
 
 function startOfToday() {
 	const d = new Date()
@@ -85,29 +86,23 @@ function startOfToday() {
 const STEPS = [
 	{
 		id: 1,
-		title: "Basic Info",
-		subtitle: "Name and describe your experience",
+		title: "Event Details",
+		subtitle: "Poster, title, description & dates",
 		icon: FileTextSvg as ComponentType<SVGProps<SVGSVGElement>>,
 	},
 	{
 		id: 2,
-		title: "Date & Location",
-		subtitle: "When and where it happens",
+		title: "Venue & Logistics",
+		subtitle: "Location, capacity & custom questions",
 		icon: MapPointRotateSvg as ComponentType<SVGProps<SVGSVGElement>>,
-	},
-	{
-		id: 3,
-		title: "Ticket Types",
-		subtitle: "Set up pricing and capacity",
-		icon: TicketSvg as ComponentType<SVGProps<SVGSVGElement>>,
 	},
 ]
 
 const FINISH_STEPS = [
 	{
 		id: 1,
-		title: "Media Upload",
-		subtitle: "Add a cover image and gallery",
+		title: "Gallery Upload",
+		subtitle: "Add gallery images & videos",
 		icon: GalleryWideSvg as ComponentType<SVGProps<SVGSVGElement>>,
 	},
 	{
@@ -346,15 +341,21 @@ function PromptScreen({
 	)
 }
 
-// ─── Step 1: Basic Information ─────────────────────────────────────────────────
+// ─── Step 1: Event Details (Poster + Title + Desc + Category + Dates/Times) ──────
 
-function Step1BasicInfo({
+function NewStep1EventDetails({
 	formData,
 	setFormData,
 	onNext,
 	registerValidate,
 	categories,
 	categoriesLoading,
+	coverUploading,
+	onCoverFile,
+	onRemoveCover,
+	isDraggingOver,
+	setIsDraggingOver,
+	coverFileRef,
 }: {
 	formData: FormData
 	setFormData: Dispatch<SetStateAction<FormData>>
@@ -362,204 +363,34 @@ function Step1BasicInfo({
 	registerValidate: (fn: () => boolean) => void
 	categories: Category[]
 	categoriesLoading: boolean
+	coverUploading: boolean
+	onCoverFile: (f: File) => void
+	onRemoveCover: () => void
+	isDraggingOver: boolean
+	setIsDraggingOver: (v: boolean) => void
+	coverFileRef: React.RefObject<HTMLInputElement | null>
 }) {
 	const [validated, setValidated] = useState(false)
+	const [overnightConfirm, setOvernightConfirm] = useState<{ startTime: string; endTime: string } | null>(null)
 
-	const { title, desc, category, eventType, languages, tags, whatToExpect, whoShouldAttend } = formData
+	const { title, desc, category, coverUrl, eventDate, endDate, isMultiDay, startTime, endTime } = formData
 
 	const errors = useMemo(
-		() =>
-			validated
-				? validateStep1({ title, desc, category, eventType, whatToExpect, whoShouldAttend })
-				: {},
-		[validated, title, desc, category, eventType, whatToExpect, whoShouldAttend],
+		() => validated ? validateNewStep1({ title, desc, category, eventDate, endDate, isMultiDay, startTime, endTime }) : {},
+		[validated, title, desc, category, eventDate, endDate, isMultiDay, startTime, endTime],
 	)
 
 	const validate = useCallback(() => {
 		setValidated(true)
-		return (
-			Object.keys(validateStep1({ title, desc, category, eventType, whatToExpect, whoShouldAttend }))
-				.length === 0
-		)
-	}, [title, desc, category, eventType, whatToExpect, whoShouldAttend])
+		return Object.keys(validateNewStep1({ title, desc, category, eventDate, endDate, isMultiDay, startTime, endTime })).length === 0
+	}, [title, desc, category, eventDate, endDate, isMultiDay, startTime, endTime])
 
-	useEffect(() => {
-		registerValidate(validate)
-	}, [validate, registerValidate])
+	useEffect(() => { registerValidate(validate) }, [validate, registerValidate])
 
 	function set<K extends keyof FormData>(key: K, value: FormData[K]) {
 		setFormData(prev => ({ ...prev, [key]: value }))
 	}
 
-	const categoryOptions = useMemo(() => categories.map(c => ({ value: c.id, label: c.name })), [categories])
-	const availableLanguages = LANGUAGE_OPTIONS.filter(o => !languages.includes(o.value))
-
-	return (
-		<div className="flex flex-col gap-6">
-			<div>
-				<h1 className="text-heading-sm font-semibold text-text-primary">Basic Information</h1>
-				<p className="text-body-sm text-text-secondary mt-1">
-					Let&apos;s start with the core details of your experience.
-				</p>
-			</div>
-
-			<div className="flex flex-col gap-1.5">
-				<FieldLabel required>Event Title</FieldLabel>
-				<input
-					type="text"
-					maxLength={100}
-					value={title}
-					onChange={e => set("title", e.target.value)}
-					placeholder="e.g. Summer Music Festival 2025"
-					className={inpCls(!!errors.title)}
-				/>
-				<div className="flex items-center justify-between gap-2">
-					<ErrMsg msg={errors.title} />
-					<p className="text-caption text-text-muted ml-auto">{title.length}/100</p>
-				</div>
-			</div>
-
-			<div className="flex flex-col gap-1.5">
-				<FieldLabel required>Description</FieldLabel>
-				<textarea
-					rows={5}
-					maxLength={3000}
-					value={desc}
-					onChange={e => set("desc", e.target.value)}
-					placeholder="Describe your event in detail..."
-					className={taCls(!!errors.desc)}
-				/>
-				<div className="flex items-center justify-between gap-2">
-					<ErrMsg msg={errors.desc} />
-					<p className="text-caption text-text-muted ml-auto">{desc.length}/3000</p>
-				</div>
-			</div>
-
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-				<div className="flex flex-col gap-1.5">
-					<FieldLabel required>Category</FieldLabel>
-					<Dropdown
-						value={category}
-						onChange={v => set("category", v)}
-						error={!!errors.category}
-						placeholder={categoriesLoading ? "Loading…" : "Select Category"}
-						disabled={categoriesLoading}
-						options={categoryOptions}
-					/>
-					<ErrMsg msg={errors.category} />
-				</div>
-				<div className="flex flex-col gap-1.5">
-					<FieldLabel required>Event Type</FieldLabel>
-					<Dropdown
-						value={eventType}
-						onChange={v => set("eventType", v)}
-						error={!!errors.eventType}
-						placeholder="Select Experience Type"
-						options={EVENT_TYPE_OPTIONS}
-					/>
-					<ErrMsg msg={errors.eventType} />
-				</div>
-			</div>
-
-			<div className="flex flex-col gap-1.5">
-				<FieldLabel>Languages</FieldLabel>
-				<Dropdown
-					value=""
-					onChange={v => {
-						if (v && !languages.includes(v)) set("languages", [...languages, v])
-					}}
-					placeholder="Add a language…"
-					options={availableLanguages}
-					disabled={availableLanguages.length === 0}
-				/>
-				{languages.length > 0 && (
-					<div className="flex flex-wrap gap-1.5 mt-1">
-						{languages.map(lang => {
-							const label = LANGUAGE_OPTIONS.find(o => o.value === lang)?.label ?? lang
-							return (
-								<span
-									key={lang}
-									className="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-card-muted rounded-badge text-caption text-text-primary"
-								>
-									{label}
-									<Button
-										type="button"
-										onClick={() => set("languages", languages.filter(l => l !== lang))}
-										aria-label={`Remove ${lang}`}
-										className="size-4 p-0 bg-transparent border-0 text-text-tertiary hover:text-text-primary hover:bg-transparent leading-none min-h-0"
-									>
-										×
-									</Button>
-								</span>
-							)
-						})}
-					</div>
-				)}
-			</div>
-
-			<div className="flex flex-col gap-1.5">
-				<FieldLabel>Tags / Keywords</FieldLabel>
-				<PillInput values={tags} onChange={v => set("tags", v)} placeholder="Add tags…" />
-			</div>
-
-			<div className="flex flex-col gap-1.5">
-				<FieldLabel required>What to Expect</FieldLabel>
-				<PillInput
-					values={whatToExpect}
-					onChange={v => set("whatToExpect", v)}
-					placeholder="e.g. Guided walk"
-				/>
-				<ErrMsg msg={errors.whatToExpect} />
-			</div>
-
-			<div className="flex flex-col gap-1.5">
-				<FieldLabel required>Who Should Attend</FieldLabel>
-				<PillInput
-					values={whoShouldAttend}
-					onChange={v => set("whoShouldAttend", v)}
-					placeholder="e.g. Photography enthusiasts"
-				/>
-				<ErrMsg msg={errors.whoShouldAttend} />
-			</div>
-
-			<div className="flex justify-end pt-4">
-				<Button
-					type="button"
-					size="lg"
-					radius="md"
-					onClick={() => { if (validate()) onNext() }}
-					rightIcon={<Icon as={AltArrowRightSvg} size="sm" aria-hidden />}
-					className="bg-surface-inverse text-text-inverse hover:opacity-90 font-semibold"
-				>
-					Save &amp; Continue
-				</Button>
-			</div>
-		</div>
-	)
-}
-
-// ─── Step 2: Date & Location ───────────────────────────────────────────────────
-
-function Step2DateTime({
-	formData,
-	setFormData,
-	onNext,
-	onBack,
-	registerValidate,
-}: {
-	formData: FormData
-	setFormData: Dispatch<SetStateAction<FormData>>
-	onNext: () => void
-	onBack: () => void
-	registerValidate: (fn: () => boolean) => void
-}) {
-	const [validated, setValidated] = useState(false)
-	const [overnightConfirm, setOvernightConfirm] = useState<{ startTime: string; endTime: string } | null>(null)
-	const { eventDate, endDate, isMultiDay, startTime, endTime, venueName, fullAddress, city } = formData
-
-	// If start/end times now cross midnight while the event is still marked
-	// single-day, don't silently accept it — the host may have mistyped one of
-	// the times. Ask before promoting to a multi-day listing.
 	function checkOvernight(nextStart: string, nextEnd: string): boolean {
 		if (isMultiDay || !nextStart || !nextEnd) return false
 		if (timeToMinutes(nextEnd) > timeToMinutes(nextStart)) return false
@@ -579,53 +410,138 @@ function Step2DateTime({
 		setOvernightConfirm(null)
 	}
 
-	async function handleAddressBlur() {
-		if (!formData.fullAddress.trim() || formData.latitude !== null) return
-		try {
-			const res = await fetch(`/api/geocode?address=${encodeURIComponent(formData.fullAddress)}`)
-			const data = await res.json()
-			if (data.lat) {
-				setFormData(prev => ({
-					...prev,
-					latitude: data.lat,
-					longitude: data.lng,
-					city: data.city || prev.city,
-				}))
-			}
-		} catch {
-			// geocoding is best-effort
-		}
-	}
-
-	const errors = useMemo(
-		() => (validated ? validateStep2({ eventDate, endDate, isMultiDay, startTime, endTime, venueName, fullAddress }) : {}),
-		[validated, eventDate, endDate, isMultiDay, startTime, endTime, venueName, fullAddress],
-	)
-
-	const validate = useCallback(() => {
-		setValidated(true)
-		return (
-			Object.keys(validateStep2({ eventDate, endDate, isMultiDay, startTime, endTime, venueName, fullAddress })).length === 0
-		)
-	}, [eventDate, endDate, isMultiDay, startTime, endTime, venueName, fullAddress])
-
-	useEffect(() => {
-		registerValidate(validate)
-	}, [validate, registerValidate])
-
-	function set<K extends keyof FormData>(key: K, value: FormData[K]) {
-		setFormData(prev => ({ ...prev, [key]: value }))
-	}
+	const categoryOptions = useMemo(() => categories.map(c => ({ value: c.id, label: c.name })), [categories])
 
 	return (
 		<div className="flex flex-col gap-6">
 			<div>
-				<h1 className="text-heading-sm font-semibold text-text-primary">Date & Location</h1>
+				<h1 className="text-heading-sm font-semibold text-text-primary">Event Details</h1>
 				<p className="text-body-sm text-text-secondary mt-1">
-					Specify when and where your experience will take place.
+					Set up your event poster, title, description, and schedule.
 				</p>
 			</div>
 
+			{/* Inline cover poster upload */}
+			<div className="flex flex-col gap-2">
+				<FieldLabel>Event Poster</FieldLabel>
+				<input
+					ref={coverFileRef}
+					type="file"
+					accept="image/jpeg,image/png,image/webp"
+					className="hidden"
+					onChange={e => {
+						const f = e.target.files?.[0]
+						if (f) onCoverFile(f)
+						e.target.value = ""
+					}}
+				/>
+				<div
+					onClick={() => !coverUploading && coverFileRef.current?.click()}
+					onDragOver={e => { e.preventDefault(); setIsDraggingOver(true) }}
+					onDragLeave={() => setIsDraggingOver(false)}
+					onDrop={e => {
+						e.preventDefault()
+						setIsDraggingOver(false)
+						const f = e.dataTransfer.files[0]
+						if (f) onCoverFile(f)
+					}}
+					className={clsx(
+						"border-2 border-dashed rounded-action transition-colors overflow-hidden",
+						coverUploading ? "cursor-wait opacity-70" : "cursor-pointer",
+						coverUrl ? "aspect-video" : "py-10 flex flex-col items-center justify-center gap-2",
+						isDraggingOver
+							? "border-border-focused bg-surface-brand-soft"
+							: "border-border-default bg-surface-card-muted hover:bg-surface-card",
+					)}
+				>
+					{coverUrl ? (
+						<div className="relative w-full h-full">
+							{/* eslint-disable-next-line @next/next/no-img-element */}
+							<img
+								src={coverUrl || undefined}
+								alt="Cover preview"
+								className="w-full h-full object-cover"
+								loading="lazy"
+							/>
+							{coverUploading && (
+								<div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+									<MiniSpinner />
+								</div>
+							)}
+							{!coverUploading && (
+								<Button
+									type="button"
+									onClick={e => { e.stopPropagation(); onRemoveCover() }}
+									aria-label="Remove cover"
+									className="absolute top-2 right-2 size-7 p-0 rounded-full bg-black/50 text-white text-sm hover:bg-black/70 border-0"
+								>
+									×
+								</Button>
+							)}
+						</div>
+					) : (
+						<>
+							<div className="size-11 rounded-full bg-surface-card flex items-center justify-center">
+								<Icon as={CameraAddSvg} size="lg" color="muted" />
+							</div>
+							<div className="text-center">
+								<p className="text-label-sm font-medium text-text-secondary">Click or drop your event poster here</p>
+								<p className="text-caption text-text-muted mt-0.5">JPG / PNG / WebP · Max 5MB · 16:9 ratio recommended</p>
+							</div>
+						</>
+					)}
+				</div>
+			</div>
+
+			{/* Title */}
+			<div className="flex flex-col gap-1.5">
+				<FieldLabel required>Event Title</FieldLabel>
+				<input
+					type="text"
+					maxLength={100}
+					value={title}
+					onChange={e => set("title", e.target.value)}
+					placeholder="e.g. Rooftop Jazz Night — Mumbai 2026"
+					className={inpCls(!!errors.title)}
+				/>
+				<div className="flex items-center justify-between gap-2">
+					<ErrMsg msg={errors.title} />
+					<p className="text-caption text-text-muted ml-auto">{title.length}/100</p>
+				</div>
+			</div>
+
+			{/* Description */}
+			<div className="flex flex-col gap-1.5">
+				<FieldLabel required>Description</FieldLabel>
+				<textarea
+					rows={5}
+					maxLength={3000}
+					value={desc}
+					onChange={e => set("desc", e.target.value)}
+					placeholder="Describe what makes this experience special…"
+					className={taCls(!!errors.desc)}
+				/>
+				<div className="flex items-center justify-between gap-2">
+					<ErrMsg msg={errors.desc} />
+					<p className="text-caption text-text-muted ml-auto">{desc.length}/3000</p>
+				</div>
+			</div>
+
+			{/* Category */}
+			<div className="flex flex-col gap-1.5">
+				<FieldLabel required>Category</FieldLabel>
+				<Dropdown
+					value={category}
+					onChange={v => set("category", v)}
+					error={!!errors.category}
+					placeholder={categoriesLoading ? "Loading…" : "Select Category"}
+					disabled={categoriesLoading}
+					options={categoryOptions}
+				/>
+				<ErrMsg msg={errors.category} />
+			</div>
+
+			{/* Date & Time card */}
 			<div className="border border-border-default rounded-action p-5 bg-surface-card flex flex-col gap-4">
 				<div className="flex items-center justify-between gap-3">
 					<h3 className="text-label-md font-semibold text-text-primary">Date & Time</h3>
@@ -640,7 +556,7 @@ function Step2DateTime({
 
 				<div className={clsx("grid gap-4", isMultiDay ? "grid-cols-2" : "grid-cols-1")}>
 					<div className="flex flex-col gap-1.5">
-						<FieldLabel required>Event Date</FieldLabel>
+						<FieldLabel required>Start Date</FieldLabel>
 						<DateField
 							value={eventDate}
 							onChange={v => set("eventDate", v)}
@@ -649,7 +565,6 @@ function Step2DateTime({
 						/>
 						<ErrMsg msg={errors.eventDate} />
 					</div>
-
 					{isMultiDay && (
 						<div className="flex flex-col gap-1.5">
 							<FieldLabel required>End Date</FieldLabel>
@@ -692,8 +607,148 @@ function Step2DateTime({
 				</div>
 			</div>
 
+			<div className="flex justify-end pt-4">
+				<Button
+					type="button"
+					size="lg"
+					radius="md"
+					onClick={() => { if (validate()) onNext() }}
+					rightIcon={<Icon as={AltArrowRightSvg} size="sm" aria-hidden />}
+					className="bg-surface-inverse text-text-inverse hover:opacity-90 font-semibold"
+				>
+					Save &amp; Continue
+				</Button>
+			</div>
+
+			{overnightConfirm && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+					<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-sm p-6">
+						<h2 className="text-label-lg font-semibold text-text-primary mb-2">Make this a multi-day event?</h2>
+						<p className="text-body-sm text-text-secondary mb-6">
+							{to12Hour(overnightConfirm.startTime)} to {to12Hour(overnightConfirm.endTime)} runs past midnight.
+							Continuing will list this as a multi-day experience ending the day after your event date.
+						</p>
+						<div className="flex gap-3 justify-end">
+							<button
+								onClick={() => setOvernightConfirm(null)}
+								className="px-4 py-2 text-label-sm font-medium text-text-primary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors"
+							>
+								Cancel
+							</button>
+							<button
+								onClick={confirmOvernight}
+								className="px-4 py-2 text-label-sm font-semibold text-action-primary-text bg-action-primary hover:bg-action-primary-hover rounded-action transition-colors"
+							>
+								Make it multi-day
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
+	)
+}
+
+// ─── Step 2: Venue & Logistics (Event Type + Location + Capacity + Questions) ──
+
+function NewStep2VenueLogistics({
+	formData,
+	setFormData,
+	onNext,
+	onBack,
+	registerValidate,
+}: {
+	formData: FormData
+	setFormData: Dispatch<SetStateAction<FormData>>
+	onNext: () => void
+	onBack: () => void
+	registerValidate: (fn: () => boolean) => void
+}) {
+	const [validated, setValidated] = useState(false)
+	const [newQuestion, setNewQuestion] = useState("")
+	const { eventType, venueName, fullAddress, city, customQuestions, totalCapacity } = formData
+
+	const errors = useMemo(
+		() => validated ? validateNewStep2({ eventType, venueName, fullAddress, totalCapacity }) : {},
+		[validated, eventType, venueName, fullAddress, totalCapacity],
+	)
+
+	const validate = useCallback(() => {
+		setValidated(true)
+		return Object.keys(validateNewStep2({ eventType, venueName, fullAddress, totalCapacity })).length === 0
+	}, [eventType, venueName, fullAddress, totalCapacity])
+
+	useEffect(() => { registerValidate(validate) }, [validate, registerValidate])
+
+	function set<K extends keyof FormData>(key: K, value: FormData[K]) {
+		setFormData(prev => ({ ...prev, [key]: value }))
+	}
+
+	async function handleAddressBlur() {
+		if (!formData.fullAddress.trim() || formData.latitude !== null) return
+		try {
+			const res = await fetch(`/api/geocode?address=${encodeURIComponent(formData.fullAddress)}`)
+			const data = await res.json()
+			if (data.lat) {
+				setFormData(prev => ({ ...prev, latitude: data.lat, longitude: data.lng, city: data.city || prev.city }))
+			}
+		} catch { /* best-effort */ }
+	}
+
+	function addQuestion() {
+		const q = newQuestion.trim()
+		if (!q) return
+		set("customQuestions", [...customQuestions, q])
+		setNewQuestion("")
+	}
+
+	function removeQuestion(idx: number) {
+		set("customQuestions", customQuestions.filter((_, i) => i !== idx))
+	}
+
+	const capacityVal = Math.max(1, Math.min(10000, Number(totalCapacity) || 100))
+	const EVENT_TYPE_PILLS = [
+		{ value: "In-Person", label: "In-Person", emoji: "📍" },
+		{ value: "Online", label: "Online", emoji: "💻" },
+		{ value: "Hybrid", label: "Hybrid", emoji: "🔀" },
+	]
+
+	return (
+		<div className="flex flex-col gap-6">
+			<div>
+				<h1 className="text-heading-sm font-semibold text-text-primary">Venue & Logistics</h1>
+				<p className="text-body-sm text-text-secondary mt-1">
+					Set where your event takes place and how many people can attend.
+				</p>
+			</div>
+
+			{/* Event Type pill selector */}
+			<div className="flex flex-col gap-2">
+				<FieldLabel required>Event Type</FieldLabel>
+				<div className="flex gap-3 flex-wrap">
+					{EVENT_TYPE_PILLS.map(opt => (
+						<button
+							key={opt.value}
+							type="button"
+							onClick={() => set("eventType", opt.value)}
+							className={clsx(
+								"flex items-center gap-2 px-4 py-2.5 rounded-action border text-label-sm font-medium transition-all",
+								eventType === opt.value
+									? "border-border-focused bg-surface-brand-soft text-text-primary ring-1 ring-border-focused"
+									: "border-border-default bg-surface-card text-text-secondary hover:border-border-muted hover:bg-surface-card-muted",
+							)}
+						>
+							<span className="text-base leading-none">{opt.emoji}</span>
+							{opt.label}
+						</button>
+					))}
+				</div>
+				<ErrMsg msg={errors.eventType} />
+			</div>
+
+			{/* Location card */}
 			<div className="border border-border-default rounded-action p-5 bg-surface-card flex flex-col gap-4">
-				<h3 className="text-label-md font-semibold text-text-primary">Location Details</h3>
+				<h3 className="text-label-md font-semibold text-text-primary">Event Location</h3>
 
 				<div className="flex flex-col gap-1.5">
 					<FieldLabel required>Venue Name</FieldLabel>
@@ -743,6 +798,106 @@ function Step2DateTime({
 				</div>
 			</div>
 
+			{/* Total Capacity seekbar */}
+			<div className="border border-border-default rounded-action p-5 bg-surface-card flex flex-col gap-4">
+				<div className="flex items-center justify-between gap-3">
+					<div>
+						<h3 className="text-label-md font-semibold text-text-primary">Total Capacity</h3>
+						<p className="text-caption text-text-tertiary mt-0.5">Maximum number of attendees for this event</p>
+					</div>
+					<div className="flex items-center gap-2 shrink-0">
+						<input
+							type="number"
+							min={1}
+							max={10000}
+							value={totalCapacity}
+							onChange={e => {
+								const v = e.target.value
+								set("totalCapacity", v)
+							}}
+							className="w-20 text-center text-label-md font-semibold bg-surface-page border border-border-default rounded-action px-2 py-1.5 text-text-primary outline-none focus:border-border-focused"
+						/>
+						<span className="text-caption text-text-muted">people</span>
+					</div>
+				</div>
+				<div className="flex flex-col gap-2">
+					<input
+						type="range"
+						min={1}
+						max={10000}
+						step={1}
+						value={capacityVal}
+						onChange={e => set("totalCapacity", e.target.value)}
+						className="w-full h-2 rounded-full appearance-none cursor-pointer accent-action-primary"
+						style={{ background: `linear-gradient(to right, var(--color-action-primary) ${(capacityVal / 10000) * 100}%, var(--color-surface-card-muted) ${(capacityVal / 10000) * 100}%)` }}
+					/>
+					<div className="flex justify-between text-caption text-text-muted">
+						<span>1</span>
+						<span>2,500</span>
+						<span>5,000</span>
+						<span>7,500</span>
+						<span>10,000</span>
+					</div>
+				</div>
+				<ErrMsg msg={errors.totalCapacity} />
+			</div>
+
+			{/* Custom Questions */}
+			<div className="border border-border-default rounded-action p-5 bg-surface-card flex flex-col gap-4">
+				<div>
+					<h3 className="text-label-md font-semibold text-text-primary">Custom Attendee Questions</h3>
+					<p className="text-caption text-text-tertiary mt-0.5">
+						Ask attendees custom questions when they RSVP or register (e.g. dietary needs, T-shirt size).
+					</p>
+				</div>
+
+				{customQuestions.length > 0 && (
+					<div className="flex flex-col gap-2">
+						{customQuestions.map((q, idx) => (
+							<div
+								key={idx}
+								className="flex items-center gap-3 px-3 py-2.5 bg-surface-page rounded-action border border-border-default"
+							>
+								<span className="flex-1 text-body-sm text-text-primary">{q}</span>
+								<button
+									type="button"
+									onClick={() => removeQuestion(idx)}
+									aria-label={`Remove question ${idx + 1}`}
+									className="size-6 flex items-center justify-center rounded-full text-text-muted hover:text-text-primary hover:bg-surface-card-muted transition-colors shrink-0"
+								>
+									<Icon as={AltXSvg} size="sm" color="inherit" />
+								</button>
+							</div>
+						))}
+					</div>
+				)}
+
+				<div className="flex gap-2">
+					<input
+						type="text"
+						value={newQuestion}
+						onChange={e => setNewQuestion(e.target.value)}
+						onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addQuestion() } }}
+						placeholder="e.g. What is your dietary preference?"
+						className={clsx(inpCls(false), "flex-1")}
+						maxLength={200}
+					/>
+					<Button
+						type="button"
+						variant="secondary"
+						size="md"
+						radius="md"
+						onClick={addQuestion}
+						disabled={!newQuestion.trim()}
+					>
+						Add
+					</Button>
+				</div>
+				{customQuestions.length > 0 && (
+					<p className="text-caption text-text-muted">{customQuestions.length} question{customQuestions.length !== 1 ? "s" : ""} added</p>
+				)}
+			</div>
+
 			<div className="flex items-center justify-between pt-4">
 				<Button type="button" variant="secondary" size="md" radius="md" onClick={onBack}>
 					Back
@@ -758,37 +913,11 @@ function Step2DateTime({
 					Save &amp; Continue
 				</Button>
 			</div>
-
-			{overnightConfirm && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-					<div className="bg-surface-card rounded-action border border-border-default shadow-floating w-full max-w-sm p-6">
-						<h2 className="text-label-lg font-semibold text-text-primary mb-2">Make this a multi-day event?</h2>
-						<p className="text-body-sm text-text-secondary mb-6">
-							{to12Hour(overnightConfirm.startTime)} to {to12Hour(overnightConfirm.endTime)} runs past midnight.
-							Continuing will list this as a multi-day experience ending the day after your event date.
-						</p>
-						<div className="flex gap-3 justify-end">
-							<button
-								onClick={() => setOvernightConfirm(null)}
-								className="px-4 py-2 text-label-sm font-medium text-text-primary border border-border-default rounded-action hover:bg-surface-card-muted transition-colors"
-							>
-								Cancel
-							</button>
-							<button
-								onClick={confirmOvernight}
-								className="px-4 py-2 text-label-sm font-semibold text-action-primary-text bg-action-primary hover:bg-action-primary-hover rounded-action transition-colors"
-							>
-								Make it multi-day
-							</button>
-						</div>
-					</div>
-				</div>
-			)}
 		</div>
 	)
 }
 
-// ─── Step 3: Media Upload ──────────────────────────────────────────────────────
+
 
 function Step3MediaUpload({
 	formData,
@@ -813,17 +942,16 @@ function Step3MediaUpload({
 	const targetSlotRef = useRef<number>(0)
 
 	const { coverUrl, coverKey, gallerySlots, galleryKeys, galleryTypes } = formData
-	const hasGallery = galleryKeys.some(k => k !== "")
 
 	const errors = useMemo(
-		() => (validated ? validateStep3({ hasCover: !!coverKey, hasGallery }) : {}),
-		[validated, coverKey, hasGallery],
+		() => (validated ? validateStep3({ hasCover: !!coverKey, hasGallery: false }) : {}),
+		[validated, coverKey],
 	)
 
 	const validate = useCallback(() => {
 		setValidated(true)
-		return Object.keys(validateStep3({ hasCover: !!coverKey, hasGallery })).length === 0
-	}, [coverKey, hasGallery])
+		return Object.keys(validateStep3({ hasCover: !!coverKey, hasGallery: false })).length === 0
+	}, [coverKey])
 
 	useEffect(() => {
 		registerValidate(validate)
@@ -1000,7 +1128,7 @@ function Step3MediaUpload({
 			</div>
 
 			<div className="flex flex-col gap-3">
-				<FieldLabel required>Gallery Images & Videos</FieldLabel>
+				<FieldLabel>Gallery Images & Videos</FieldLabel>
 				<p className="text-caption text-text-muted -mt-1">
 					Click any slot to pick an image or video from your device.
 				</p>
@@ -1203,6 +1331,7 @@ function Step5SettingsReview({
 	onSubmit,
 	submitting,
 	hideSummary,
+	isFreeEvent = false,
 }: {
 	formData: FormData
 	setFormData: Dispatch<SetStateAction<FormData>>
@@ -1211,6 +1340,7 @@ function Step5SettingsReview({
 	onSubmit: () => void
 	submitting: boolean
 	hideSummary?: boolean
+	isFreeEvent?: boolean
 }) {
 	const [validated, setValidated] = useState(false)
 	const { visibility, ageRestriction, refundType, cutoffHours, refundPercent, instructions } = formData
@@ -1218,38 +1348,43 @@ function Step5SettingsReview({
 	const errors = useMemo(
 		() =>
 			validated
-				? validateStep5({
-					visibility,
-					ageRestriction,
-					refundType,
-					cutoffHours,
-					refundPercent,
-					instructions,
-				})
+				? validateStep5(
+					{
+						visibility,
+						ageRestriction,
+						refundType,
+						cutoffHours,
+						refundPercent,
+						instructions,
+					},
+					isFreeEvent,
+				)
 				: {},
-		[validated, visibility, ageRestriction, refundType, cutoffHours, refundPercent, instructions],
+		[validated, visibility, ageRestriction, refundType, cutoffHours, refundPercent, instructions, isFreeEvent],
 	)
 
 	const validate = useCallback(() => {
 		setValidated(true)
 		return (
 			Object.keys(
-				validateStep5({
-					visibility,
-					ageRestriction,
-					refundType,
-					cutoffHours,
-					refundPercent,
-					instructions,
-				}),
+				validateStep5(
+					{
+						visibility,
+						ageRestriction,
+						refundType,
+						cutoffHours,
+						refundPercent,
+						instructions,
+					},
+					isFreeEvent,
+				),
 			).length === 0
 		)
-	}, [visibility, ageRestriction, refundType, cutoffHours, refundPercent, instructions])
+	}, [visibility, ageRestriction, refundType, cutoffHours, refundPercent, instructions, isFreeEvent])
 
 	useEffect(() => {
 		registerValidate(validate)
 	}, [validate, registerValidate])
-
 	function set<K extends keyof FormData>(key: K, value: FormData[K]) {
 		setFormData(prev => ({ ...prev, [key]: value }))
 	}
@@ -1262,92 +1397,76 @@ function Step5SettingsReview({
 				<div className="border border-border-default rounded-action bg-surface-card p-5 flex flex-col gap-5">
 					<h2 className="text-label-md font-semibold text-text-primary">Event Settings</h2>
 
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel required>Visibility</FieldLabel>
-							<Dropdown
-								value={visibility}
-								onChange={v => set("visibility", v)}
-								error={!!errors.visibility}
-								placeholder="Select Visibility"
-								options={[
-									{ value: "PUBLIC", label: "Public Searchable" },
-									{ value: "PRIVATE", label: "Private" },
-								]}
-							/>
-							<ErrMsg msg={errors.visibility} />
-						</div>
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel required>Age Restriction</FieldLabel>
-							<Dropdown
-								value={ageRestriction}
-								onChange={v => set("ageRestriction", v)}
-								error={!!errors.ageRestriction}
-								placeholder="All Ages"
-								options={[
-									{ value: "All Ages", label: "All Ages" },
-									{ value: "18+", label: "18+" },
-									{ value: "21+", label: "21+" },
-								]}
-							/>
-							<ErrMsg msg={errors.ageRestriction} />
-						</div>
-					</div>
 
-					<div className="flex flex-col gap-1.5">
-						<FieldLabel required>Refund Policy</FieldLabel>
-						<Dropdown
-							value={refundType}
-							onChange={v => set("refundType", v)}
-							error={!!errors.refundType}
-							placeholder="Select Refund Policy"
-							options={[
-								{ value: "NO_REFUND", label: "No Refund" },
-								{ value: "PARTIAL", label: "Partial Refund" },
-								{ value: "FULL", label: "Full Refund" },
-							]}
-						/>
-						<ErrMsg msg={errors.refundType} />
-					</div>
 
-					{isPartial && (
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+					{/* Refund Policy — only for ticketed (paid) events */}
+					{!isFreeEvent && (
+						<>
 							<div className="flex flex-col gap-1.5">
-								<FieldLabel required>Cutoff Hours</FieldLabel>
-								<div className={iconWrapCls(!!errors.cutoffHours)}>
-									<input
-										type="number"
-										value={cutoffHours}
-										onChange={e => set("cutoffHours", e.target.value)}
-										placeholder="24"
-										min={0}
-										className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
-									/>
-									<span className="text-sm text-text-muted shrink-0">hours</span>
-								</div>
-								<ErrMsg msg={errors.cutoffHours} />
+								<FieldLabel required>Refund Policy</FieldLabel>
+								<Dropdown
+									value={refundType}
+									onChange={v => set("refundType", v)}
+									error={!!errors.refundType}
+									placeholder="Select Refund Policy"
+									options={[
+										{ value: "NO_REFUND", label: "No Refund" },
+										{ value: "PARTIAL", label: "Partial Refund" },
+										{ value: "FULL", label: "Full Refund" },
+									]}
+								/>
+								<ErrMsg msg={errors.refundType} />
 							</div>
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel required>Refund Percent</FieldLabel>
-								<div className={iconWrapCls(!!errors.refundPercent)}>
-									<input
-										type="number"
-										value={refundPercent}
-										onChange={e => set("refundPercent", e.target.value)}
-										placeholder="50"
-										min={0}
-										max={100}
-										className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
-									/>
-									<span className="text-sm text-text-muted shrink-0">%</span>
+
+							{isPartial && (
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+									<div className="flex flex-col gap-1.5">
+										<FieldLabel required>Cutoff Hours</FieldLabel>
+										<div className={iconWrapCls(!!errors.cutoffHours)}>
+											<input
+												type="number"
+												value={cutoffHours}
+												onChange={e => set("cutoffHours", e.target.value)}
+												placeholder="24"
+												min={0}
+												className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
+											/>
+											<span className="text-sm text-text-muted shrink-0">hours</span>
+										</div>
+										<ErrMsg msg={errors.cutoffHours} />
+									</div>
+									<div className="flex flex-col gap-1.5">
+										<FieldLabel required>Refund Percent</FieldLabel>
+										<div className={iconWrapCls(!!errors.refundPercent)}>
+											<input
+												type="number"
+												value={refundPercent}
+												onChange={e => set("refundPercent", e.target.value)}
+												placeholder="50"
+												min={0}
+												max={100}
+												className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
+											/>
+											<span className="text-sm text-text-muted shrink-0">%</span>
+										</div>
+										<ErrMsg msg={errors.refundPercent} />
+									</div>
 								</div>
-								<ErrMsg msg={errors.refundPercent} />
-							</div>
+							)}
+						</>
+					)}
+
+					{isFreeEvent && (
+						<div className="flex items-center gap-3 px-4 py-3 rounded-action bg-surface-card-muted border border-border-default">
+							<span className="text-lg">🎟️</span>
+							<p className="text-caption text-text-secondary">
+								Refund policy is not required for free (non-ticketed) events.
+							</p>
 						</div>
 					)}
 
 					<div className="flex flex-col gap-1.5">
-						<FieldLabel required>Special Instructions</FieldLabel>
+						<FieldLabel>Special Instructions</FieldLabel>
 						<textarea
 							rows={5}
 							maxLength={3000}
@@ -1381,36 +1500,22 @@ function Step5SettingsReview({
 							{[
 								{ label: "Title", value: formData.title || "—" },
 								{ label: "Date", value: formData.eventDate || "—" },
-								{ label: "Location", value: formData.venueName || "—" },
+								{ label: "Venue", value: formData.venueName || "—" },
 							].map(({ label, value }) => (
 								<div
 									key={label}
 									className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
 								>
 									<span className="text-caption text-text-tertiary shrink-0">{label}</span>
-									<span className="text-caption font-semibold text-text-primary text-right">
-										{value}
-									</span>
+									<span className="text-caption font-semibold text-text-primary text-right">{value}</span>
 								</div>
 							))}
 						</div>
 						<div className="border-t border-border-default pt-3 flex flex-col gap-2.5">
 							<div className="flex items-start justify-between gap-3">
-								<span className="text-caption text-text-tertiary shrink-0">Ticket Types</span>
+								<span className="text-caption text-text-tertiary shrink-0">Capacity</span>
 								<span className="text-caption font-semibold text-text-primary">
-									{formData.tickets.length > 0
-										? `${formData.tickets.length} type${formData.tickets.length > 1 ? "s" : ""}`
-										: "—"}
-								</span>
-							</div>
-							<div className="flex items-start justify-between gap-3">
-								<span className="text-caption text-text-tertiary shrink-0">Total Capacity</span>
-								<span className="text-caption font-semibold text-text-primary">
-									{formData.tickets.length > 0
-										? formData.tickets
-											.reduce((s, t) => s + t.totalCapacity, 0)
-											.toLocaleString("en-IN")
-										: "—"}
+									{formData.totalCapacity ? Number(formData.totalCapacity).toLocaleString("en-IN") : "—"}
 								</span>
 							</div>
 						</div>
@@ -1439,7 +1544,6 @@ function Step5SettingsReview({
 		</div>
 	)
 }
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CreateExperiencePage() {
@@ -1457,7 +1561,7 @@ export default function CreateExperiencePage() {
 	}, [profile, setProfile])
 
 	const [currentStep, setCurrentStep] = useState(1)
-	// "build" = the 3 creation steps; "finish" = media + settings, shown once the
+	// "build" = the 2 creation steps; "finish" = gallery + settings, shown once the
 	// draft exists and required before the listing can be submitted for review.
 	const [phase, setPhase] = useState<"build" | "finish">("build")
 	const [finishStep, setFinishStep] = useState(1)
@@ -1478,6 +1582,34 @@ export default function CreateExperiencePage() {
 	const [categories, setCategories] = useState<Category[]>([])
 	const [categoriesLoading, setCategoriesLoading] = useState(true)
 	const stepValidateRef = useRef<() => boolean>(() => true)
+
+	// Cover upload state — managed at page level so Step 1 can upload and pass down
+	const [coverUploading, setCoverUploading] = useState(false)
+	const [isDraggingOver, setIsDraggingOver] = useState(false)
+	const coverFileRef = useRef<HTMLInputElement>(null)
+
+	async function handleCoverFile(file: File) {
+		if (!file.type.startsWith("image/")) return
+		if (formData.coverUrl.startsWith("blob:")) URL.revokeObjectURL(formData.coverUrl)
+		const previewUrl = URL.createObjectURL(file)
+		setFormData(prev => ({ ...prev, coverUrl: previewUrl, coverKey: "" }))
+		setCoverUploading(true)
+		try {
+			const { uploadEventMedia } = await import("@/lib/uploadMedia")
+			const key = await uploadEventMedia(file, "COVER")
+			setFormData(prev => ({ ...prev, coverKey: key }))
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
+			setFormData(prev => ({ ...prev, coverUrl: "", coverKey: "" }))
+		} finally {
+			setCoverUploading(false)
+		}
+	}
+
+	function handleRemoveCover() {
+		if (formData.coverUrl.startsWith("blob:")) URL.revokeObjectURL(formData.coverUrl)
+		setFormData(prev => ({ ...prev, coverUrl: "", coverKey: "" }))
+	}
 
 	// AI copilot state
 	const [copilot, setCopilot] = useState<CopilotState>({ mode: "idle" })
@@ -1907,7 +2039,7 @@ export default function CreateExperiencePage() {
 								aria-hidden
 							/>
 							<div className="relative">
-								{/* Step 1 */}
+									{/* Step 1 — Event Details (poster + title + desc + category + dates/times) */}
 								{phase === "build" && currentStep === 1 && (
 									<>
 										{copilot.mode === "idle" && (
@@ -1925,55 +2057,48 @@ export default function CreateExperiencePage() {
 												loading={copilotLoading}
 											/>
 										) : (
-											<Step1BasicInfo
+											<NewStep1EventDetails
 												{...sharedProps}
 												onNext={goNext}
 												registerValidate={registerValidate}
 												categories={categories}
 												categoriesLoading={categoriesLoading}
+												coverUploading={coverUploading}
+												onCoverFile={handleCoverFile}
+												onRemoveCover={handleRemoveCover}
+												isDraggingOver={isDraggingOver}
+												setIsDraggingOver={setIsDraggingOver}
+												coverFileRef={coverFileRef}
 											/>
 										)}
 									</>
 								)}
 
-								{/* Step 2 */}
+								{/* Step 2 — Venue & Logistics (type + location + capacity + questions) */}
 								{phase === "build" && currentStep === 2 && (
 									<>
 										{copilotActive && (
 											<AIStepBanner
-												title="AI Suggested Schedule & Venue Details"
-												desc="Meetday AI Copilot has prefilled these details based on your prompt. Check the suggestions panel for timing recommendations."
+												title="AI Suggested Venue Details"
+												desc="Meetday AI Copilot has prefilled these details based on your prompt. Review and adjust as needed."
 											/>
 										)}
-										<Step2DateTime
+										<NewStep2VenueLogistics
 											{...sharedProps}
-											onNext={goNext}
+											onNext={() => void handleCreateDraft()}
 											onBack={goBack}
 											registerValidate={registerValidate}
 										/>
 									</>
 								)}
 
-								{/* Step 3 — tickets, last of the build phase */}
-								{phase === "build" && currentStep === 3 && (
-									<Step4TicketTypes
-										{...sharedProps}
-										onNext={() => void handleCreateDraft()}
-										onBack={goBack}
-										registerValidate={registerValidate}
-										aiInitialDrafts={aiInitialDrafts}
-										aiSuggested={copilot.mode === "generated"}
-										isFreeEvent={experienceType === "NON_TICKETED"}
-									/>
-								)}
-
-								{/* Finish 1 — media */}
+								{/* Finish 1 — gallery images (cover was uploaded in Step 1) */}
 								{phase === "finish" && finishStep === 1 && (
 									<>
 										{copilotActive && (
 											<AIStepBanner
-												title="Media Upload"
-												desc="Copilot helps build your event details, but cover images, gallery photos, and videos must be uploaded manually."
+												title="Gallery Upload"
+												desc="Add gallery images and videos to showcase your event. Cover was already uploaded in Step 1."
 											/>
 										)}
 										<Step3MediaUpload
@@ -1988,7 +2113,7 @@ export default function CreateExperiencePage() {
 									</>
 								)}
 
-								{/* Finish 2 — settings & review */}
+								{/* Finish 2 — settings & review (no refund for non-ticketed) */}
 								{phase === "finish" && finishStep === 2 && (
 									<Step5SettingsReview
 										{...sharedProps}
@@ -1997,6 +2122,7 @@ export default function CreateExperiencePage() {
 										onSubmit={requestSubmit}
 										submitting={submitting}
 										hideSummary={copilotActive}
+										isFreeEvent={experienceType === "NON_TICKETED"}
 									/>
 								)}
 							</div>

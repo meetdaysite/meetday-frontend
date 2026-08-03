@@ -125,7 +125,7 @@ export default function DashboardWelcomePage() {
 					<div className="bg-surface-card rounded-action border border-border-default shadow-card overflow-hidden flex flex-col w-full">
 						<div className="flex items-center justify-between px-5 py-4 border-b border-border-default bg-surface-card-muted/50 shrink-0">
 							<div>
-								<h2 className="text-label-md font-semibold text-text-primary">Approved Sponsorships</h2>
+								<h2 className="text-label-md font-semibold text-text-primary">Upcoming Sponsor Experiences</h2>
 								<p className="text-caption text-text-secondary mt-0.5">Your published sponsorship proposals.</p>
 							</div>
 							<Link href="/host/dashboard/proposal" className="text-label-sm text-red-600 hover:text-red-700 hover:underline inline-flex items-center gap-1">
