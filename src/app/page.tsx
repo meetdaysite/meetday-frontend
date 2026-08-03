@@ -7,14 +7,14 @@ import { Icon } from "@/components/ui/Icon"
 
 const OPTIONS = [
 	{
-		key: "attendee",
+		key: "about-us",
 		image: "/assets/landing/attendee.svg",
-		title: "Attendee",
+		title: "About Us",
 		titleClass: "text-text-brand",
 		description:
-			"Discover curated experiences, meet like-minded people, and be part of real-world moments.",
-		cta: "Continue as Attendee",
-		href: "/attendee/login",
+			"Discover more about Meetday, our vision, and how we are redefining real-world experiences.",
+		cta: "Visit meetday.ai",
+		href: "https://meetday.ai",
 		tone: "red" as const,
 	},
 	{
@@ -91,13 +91,25 @@ export default function RootPage() {
 						<p className="text-body-sm text-text-secondary leading-relaxed mb-8 flex-1">
 							{option.description}
 						</p>
-						<Link
-							href={option.href}
-							className={clsx(CTA_BASE_CLASS, CTA_TONE_CLASS[option.tone])}
-						>
-							{option.cta}
-							<Icon as={ArrowRightSvg} className="ml-2" />
-						</Link>
+						{option.href.startsWith("http") ? (
+							<a
+								href={option.href}
+								target="_blank"
+								rel="noopener noreferrer"
+								className={clsx(CTA_BASE_CLASS, CTA_TONE_CLASS[option.tone])}
+							>
+								{option.cta}
+								<Icon as={ArrowRightSvg} className="ml-2" />
+							</a>
+						) : (
+							<Link
+								href={option.href}
+								className={clsx(CTA_BASE_CLASS, CTA_TONE_CLASS[option.tone])}
+							>
+								{option.cta}
+								<Icon as={ArrowRightSvg} className="ml-2" />
+							</Link>
+						)}
 					</div>
 				))}
 			</div>
