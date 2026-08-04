@@ -127,13 +127,17 @@ export type HostProfile = {
 }
 
 export type UpdateHostProfilePayload = {
-	avatarUrl?: string
+	avatarUrl?: string | null
 	displayName?: string
+	email?: string
 	hostBio?: string
 	tagline?: string
 	gender?: string
 	pan?: string
 	legalName?: string
+	gstin?: string | null
+	languages?: string[]
+	portfolioLinks?: string[]
 	yearsOfExperience?: number
 	totalEventsPreviouslyHosted?: number
 	operatingCities?: string[]

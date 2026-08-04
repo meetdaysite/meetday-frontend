@@ -54,13 +54,13 @@ apiClient.interceptors.response.use(
 					? crypto.randomUUID()
 					: `mock-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 			}
-			let payload = {}
+			let payload: any = {}
 			try {
 				payload = typeof error.config?.data === "string" ? JSON.parse(error.config.data) : (error.config?.data || {})
 			} catch {
 				/* ignore */
 			}
-			let existingEvent = {}
+			let existingEvent: any = {}
 			try {
 				const stored = localStorage.getItem("mock_created_events")
 				if (stored) {
@@ -74,8 +74,6 @@ apiClient.interceptors.response.use(
 			}
 			const mockEvent = {
 				id: eventId,
-				status: url.endsWith("/submit") ? "UNDER_REVIEW" : "DRAFT",
-				displayStatus: url.endsWith("/submit") ? "UNDER_REVIEW" : "DRAFT",
 				hostId: "mock-host-id",
 				createdAt: new Date().toISOString(),
 				updatedAt: new Date().toISOString(),
@@ -83,6 +81,8 @@ apiClient.interceptors.response.use(
 				description: "This event draft was successfully created/submitted via the local bypass because devapi requires manual admin host approval.",
 				...existingEvent,
 				...payload,
+				status: url.endsWith("/submit") ? "UNDER_REVIEW" : (payload.status ?? existingEvent.status ?? "DRAFT"),
+				displayStatus: url.endsWith("/submit") ? "UNDER_REVIEW" : (payload.displayStatus ?? existingEvent.displayStatus ?? "DRAFT"),
 			}
 			try {
 				const stored = localStorage.getItem("mock_created_events")

@@ -29,6 +29,7 @@ import { useAuthStore } from "@/store/authStore"
 import type { ReviewHighlight } from "@/types/review"
 import type { PublicEventDetails } from "@/types/attendee"
 import { Skeleton } from "@/components/ui/Skeleton"
+import { storageUrl } from "@/lib/uploadMedia"
 
 interface PageProps {
 	params: Promise<{ id: string }>
@@ -300,7 +301,8 @@ function ReviewFormContent({
 	const [submitting, setSubmitting] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 
-	const coverImageUrl = event.media.find((m) => m.type === "COVER")?.url ?? null
+	const cover = event.media.find((m) => m.type === "COVER")
+	const coverImageUrl = cover ? (cover.url || (cover.key ? storageUrl(cover.key) : null)) : null
 	const hostInitial = event.hostProfile?.displayName?.charAt(0).toUpperCase() ?? "H"
 	// Authoritative from the backend — accounts for overnight/multi-day events
 	// correctly, unlike a client-side eventDate comparison.

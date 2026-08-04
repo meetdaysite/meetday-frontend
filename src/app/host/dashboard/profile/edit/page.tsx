@@ -7,11 +7,14 @@ import { TextField } from "@/components/ui/TextField"
 import { Button } from "@/components/ui/Button"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { useHostStore } from "@/store/hostStore"
+import { useAuthStore } from "@/store/authStore"
 import { updateHostProfile, getHostProfile, getCategories, getUploadUrl } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import type { Category } from "@/lib/api"
 
+import { Icon } from "@/components/ui/Icon"
 import CloseSvg from "@/icons/outlined/close.svg"
+import UserSvg from "@/icons/outlined/user.svg"
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
@@ -204,11 +207,12 @@ export default function EditProfilePage() {
 	const { profile, setProfile } = useHostStore()
 
 	const [displayName, setDisplayName] = useState("")
-	const [tagline, setTagline] = useState("")
+	const [email, setEmail] = useState("")
 	const [hostBio, setHostBio] = useState("")
 	const [gender, setGender] = useState("")
-	const [yearsOfExperience, setYearsOfExperience] = useState("")
-	const [totalEventsPreviouslyHosted, setTotalEventsPreviouslyHosted] = useState("")
+	const [gstin, setGstin] = useState("")
+	const [languages, setLanguages] = useState<string[]>([])
+	const [portfolioLinks, setPortfolioLinks] = useState<string[]>([])
 	const [operatingCities, setOperatingCities] = useState<string[]>([])
 	const [categoryIds, setCategoryIds] = useState<string[]>([])
 	const [youtube, setYoutube] = useState("")
@@ -236,11 +240,12 @@ export default function EditProfilePage() {
 		if (!profile) return
 		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setDisplayName(profile.displayName ?? "")
-		setTagline(profile.tagline ?? "")
+		setEmail((profile as any).email || useAuthStore.getState().user?.email || "")
 		setHostBio(profile.hostBio ?? "")
 		setGender(profile.gender ?? "")
-		setYearsOfExperience(profile.yearsOfExperience?.toString() ?? "")
-		setTotalEventsPreviouslyHosted(profile.totalEventsPreviouslyHosted?.toString() ?? "")
+		setGstin(profile.gstin ?? "")
+		setLanguages(profile.languages ?? [])
+		setPortfolioLinks(profile.portfolioLinks ?? [])
 		setOperatingCities(profile.operatingCities ?? [])
 		setCategoryIds(profile.categories?.map(c => c.categoryId) ?? [])
 		setYoutube(profile.socialLinks?.youtube ?? "")
@@ -295,17 +300,23 @@ export default function EditProfilePage() {
 		}
 	}
 
+	function handleRemovePhoto() {
+		setAvatarPreview(null)
+		setAvatarKey("")
+	}
+
 	async function handleSave() {
 		setSaving(true)
 		try {
 			await updateHostProfile({
-				avatarUrl: avatarKey ?? undefined,
+				avatarUrl: avatarKey === "" ? null : (avatarKey ?? undefined),
 				displayName: displayName.trim() || undefined,
-				tagline: tagline.trim() || undefined,
+				email: email.trim() || undefined,
 				hostBio: hostBio.trim() || undefined,
 				gender: gender || undefined,
-				yearsOfExperience: yearsOfExperience ? Number(yearsOfExperience) : undefined,
-				totalEventsPreviouslyHosted: totalEventsPreviouslyHosted ? Number(totalEventsPreviouslyHosted) : undefined,
+				gstin: gstin.trim() || null,
+				languages,
+				portfolioLinks,
 				operatingCities,
 				categoryIds,
 				socialLinks: {
@@ -364,11 +375,12 @@ export default function EditProfilePage() {
 						<div className="flex items-center gap-5">
 							<div className="relative shrink-0">
 								<div className="size-20 rounded-full overflow-hidden bg-red-100 flex items-center justify-center text-red-700 text-heading-sm font-bold select-none">
-									{avatarPreview || profile?.avatarUrl
+									{avatarPreview || (profile?.avatarUrl && avatarKey !== "") ? (
 										// eslint-disable-next-line @next/next/no-img-element
-										? <img src={avatarPreview ?? profile!.avatarUrl!} alt="Avatar" className="size-full object-cover" />
-										: (profile?.displayName || "H").split(" ").filter(Boolean).map(n => n[0]).join("").slice(0, 2).toUpperCase()
-									}
+										<img src={avatarPreview ?? profile!.avatarUrl!} alt="Avatar" className="size-full object-cover" />
+									) : (
+										<Icon as={UserSvg} size="lg" className="text-red-700 size-10" />
+									)}
 								</div>
 								{avatarUploading && (
 									<div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center">
@@ -384,15 +396,29 @@ export default function EditProfilePage() {
 									className="hidden"
 									onChange={handleAvatarChange}
 								/>
-								<Button
-									variant="secondary"
-									size="sm"
-									radius="pill"
-									onClick={() => avatarInputRef.current?.click()}
-									disabled={avatarUploading}
-								>
-									{avatarUploading ? "Uploading…" : "Change Photo"}
-								</Button>
+								<div className="flex items-center gap-2">
+									<Button
+										variant="secondary"
+										size="sm"
+										radius="pill"
+										onClick={() => avatarInputRef.current?.click()}
+										disabled={avatarUploading}
+									>
+										{avatarUploading ? "Uploading…" : "Change Photo"}
+									</Button>
+									{(avatarPreview || (profile?.avatarUrl && avatarKey !== "")) && (
+										<Button
+											variant="secondary"
+											size="sm"
+											radius="pill"
+											onClick={handleRemovePhoto}
+											disabled={avatarUploading}
+											className="text-text-danger border-status-error-border hover:bg-status-error-bg"
+										>
+											Remove Photo
+										</Button>
+									)}
+								</div>
 								<p className="text-caption text-text-tertiary">JPG, PNG or WebP. Max 5 MB.</p>
 							</div>
 						</div>
@@ -408,10 +434,11 @@ export default function EditProfilePage() {
 								placeholder="How you appear to attendees"
 							/>
 							<TextField
-								label="Tagline"
-								value={tagline}
-								onChange={e => setTagline(e.target.value)}
-								placeholder="A short line about you"
+								label="Email Address"
+								type="email"
+								value={email}
+								onChange={e => setEmail(e.target.value)}
+								placeholder="Enter your email address"
 							/>
 							<TextareaField
 								label="Bio"
@@ -426,27 +453,11 @@ export default function EditProfilePage() {
 								onChange={setGender}
 								options={GENDER_OPTIONS}
 							/>
-						</div>
-					</SectionCard>
-
-					{/* Experience */}
-					<SectionCard title="Experience">
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 							<TextField
-								label="Years of Experience"
-								type="number"
-								min={0}
-								value={yearsOfExperience}
-								onChange={e => setYearsOfExperience(e.target.value)}
-								placeholder="e.g. 3"
-							/>
-							<TextField
-								label="Experiences Hosted Before"
-								type="number"
-								min={0}
-								value={totalEventsPreviouslyHosted}
-								onChange={e => setTotalEventsPreviouslyHosted(e.target.value)}
-								placeholder="e.g. 10"
+								label="GSTIN"
+								value={gstin}
+								onChange={e => setGstin(e.target.value)}
+								placeholder="Enter your GSTIN (optional)"
 							/>
 						</div>
 					</SectionCard>
@@ -473,7 +484,7 @@ export default function EditProfilePage() {
 					)}
 
 					{/* Social Links */}
-					<SectionCard title="Social Links">
+					<SectionCard title="Social Links & Portfolio">
 						<div className="flex flex-col gap-4">
 							<TextField
 								label="YouTube"
@@ -498,6 +509,18 @@ export default function EditProfilePage() {
 								value={portfolioLink}
 								onChange={e => setPortfolioLink(e.target.value)}
 								placeholder="Website or portfolio URL"
+							/>
+							<TagInput
+								label="Languages Spoken"
+								tags={languages}
+								onChange={setLanguages}
+								placeholder="Type a language and press Enter…"
+							/>
+							<TagInput
+								label="Additional Portfolio Links"
+								tags={portfolioLinks}
+								onChange={setPortfolioLinks}
+								placeholder="Type a link and press Enter…"
 							/>
 						</div>
 					</SectionCard>

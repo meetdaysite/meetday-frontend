@@ -5,6 +5,7 @@ import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
 import MapPointSvg from "@/icons/outlined/map-point.svg"
 import UserSvg from "@/icons/outlined/user.svg"
 import type { PublicEventDetails } from "@/types/attendee"
+import { storageUrl } from "@/lib/uploadMedia"
 
 function formatEventDate(dateStr: string): string {
 	return new Date(dateStr).toLocaleDateString("en-IN", {
@@ -17,12 +18,13 @@ function formatEventDate(dateStr: string): string {
 
 export function EventHero({ event }: { event: PublicEventDetails }) {
 	const cover = event.media.find(m => m.type === "COVER")
+	const coverUrl = cover ? (cover.url || (cover.key ? storageUrl(cover.key) : "")) : ""
 
 	return (
 		<div className="relative rounded-action overflow-hidden aspect-16/6 md:aspect-16/5 bg-neutral-200">
-			{cover?.url && (
+			{coverUrl && (
 				<Image
-					src={cover.url}
+					src={coverUrl}
 					alt={event.title}
 					fill
 					sizes="(max-width: 768px) 100vw, (max-width: 1280px) 70vw, 900px"

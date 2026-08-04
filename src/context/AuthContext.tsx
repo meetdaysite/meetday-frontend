@@ -52,5 +52,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 		})
 	}, [])
 
+	useEffect(() => {
+		const INACTIVITY_TIMEOUT = 30 * 60 * 1000 // 30 minutes
+		const CHECK_INTERVAL = 10000 // 10 seconds
+		const STORAGE_KEY = "meetday_last_active"
+
+		// Helper to update last active timestamp (throttled to once every 10 seconds)
+		let lastUpdated = 0
+		function updateActivity() {
+			const now = Date.now()
+			if (now - lastUpdated > 10000) {
+				localStorage.setItem(STORAGE_KEY, String(now))
+				lastUpdated = now
+			}
+		}
+
+		// Initialize if logged in and not set
+		const user = useAuthStore.getState().user
+		if (user && !localStorage.getItem(STORAGE_KEY)) {
+			localStorage.setItem(STORAGE_KEY, String(Date.now()))
+		}
+
+		// Add event listeners for user activity
+		const events = ["mousedown", "mousemove", "keydown", "scroll", "touchstart", "click"]
+		events.forEach(event => {
+			window.addEventListener(event, updateActivity)
+		})
+
+		// Interval to check inactivity
+		const interval = setInterval(() => {
+			const currentUser = useAuthStore.getState().user
+			if (!currentUser) {
+				localStorage.removeItem(STORAGE_KEY)
+				return
+			}
+
+			const lastActiveStr = localStorage.getItem(STORAGE_KEY)
+			if (lastActiveStr) {
+				const lastActive = parseInt(lastActiveStr, 10)
+				if (Date.now() - lastActive > INACTIVITY_TIMEOUT) {
+					localStorage.removeItem(STORAGE_KEY)
+					useAuthStore.getState().signOut().then(() => {
+						window.location.href = "/host/login"
+					})
+				}
+			} else {
+				localStorage.setItem(STORAGE_KEY, String(Date.now()))
+			}
+		}, CHECK_INTERVAL)
+
+		return () => {
+			events.forEach(event => {
+				window.removeEventListener(event, updateActivity)
+			})
+			clearInterval(interval)
+		}
+	}, [])
+
 	return <>{children}</>
 }

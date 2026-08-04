@@ -21,7 +21,10 @@ import {
 	buildPayload,
 	timeToMinutes,
 	to12Hour,
-	validateAll,
+	validateStep2,
+	validateStep3,
+	validateStep4,
+	validateStep5,
 	type FormData,
 	type Errors,
 } from "@/lib/eventForm"
@@ -92,6 +95,40 @@ function SectionCard({
 	)
 }
 
+// ─── Host-specific edit validation ───────────────────────────────────────────
+
+export function validateHostEdit(f: FormData): Errors {
+	const e: Errors = {}
+	
+	// Validate Title, Desc, Category
+	if (!f.title.trim()) e.title = "Event title is required."
+	else if (f.title.trim().length < 3) e.title = "Title must be at least 3 characters."
+	if (!f.desc.trim()) e.desc = "Description is required."
+	else if (f.desc.trim().length < 20) e.desc = "Description must be at least 20 characters."
+	if (!f.category) e.category = "Please select a category."
+	if (!f.eventType) e.eventType = "Please select an event type."
+
+	// Validate Dates & Venue Details
+	Object.assign(e, validateStep2(f, true))
+
+	// Validate Cover
+	Object.assign(e, validateStep3({
+		hasCover: !!(f.coverKey || f.coverUrl),
+		hasGallery: true,
+	}))
+
+	// Validate Tickets
+	const isFreeEvent = f.tickets.length === 0 || f.tickets.every(t => t.price === 0)
+	if (!isFreeEvent) {
+		Object.assign(e, validateStep4({ tickets: f.tickets }))
+	}
+
+	// Validate Settings
+	Object.assign(e, validateStep5(f, isFreeEvent))
+
+	return e
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EditEventPage() {
@@ -141,10 +178,25 @@ export default function EditEventPage() {
 			})
 	}, [id, router])
 
+	const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false)
+	const [customCategoryName, setCustomCategoryName] = useState("")
+
 	const errors: Errors = useMemo(
-		() => (validated ? validateAll(formData, true) : {}),
+		() => (validated ? validateHostEdit(formData) : {}),
 		[validated, formData],
 	)
+
+	function handleCreateCustomCategory() {
+		const name = customCategoryName.trim()
+		if (!name) return
+		const newId = `custom-${Date.now()}`
+		const newCat = { id: newId, name } as Category
+		setCategories(prev => [...prev, newCat])
+		set("category", newId)
+		setShowCustomCategoryInput(false)
+		setCustomCategoryName("")
+		toast.success(`Custom category "${name}" added!`)
+	}
 
 	function set<K extends keyof FormData>(key: K, value: FormData[K]) {
 		setFormData((prev) => ({ ...prev, [key]: value }))
@@ -195,10 +247,11 @@ export default function EditEventPage() {
 	const categoryOptions = useMemo(() => categories.map((c) => ({ value: c.id, label: c.name })), [categories])
 	const availableLanguages = LANGUAGE_OPTIONS.filter((o) => !formData.languages.includes(o.value))
 	const isPartial = formData.refundType === "PARTIAL"
+	const isFreeEvent = formData.tickets.length === 0 || formData.tickets.every(t => t.price === 0)
 
 	async function handleSave() {
 		setValidated(true)
-		const errs = validateAll(formData, true)
+		const errs = validateHostEdit(formData)
 		if (Object.keys(errs).length > 0) {
 			toast.error("Please fix the errors before saving.")
 			const firstErrId = Object.keys(errs)[0]
@@ -224,7 +277,7 @@ export default function EditEventPage() {
 
 	async function handleSubmit() {
 		setValidated(true)
-		const errs = validateAll(formData, true)
+		const errs = validateHostEdit(formData)
 		if (Object.keys(errs).length > 0) {
 			setShowSubmitConfirm(false)
 			toast.error("Please fix the errors before submitting.")
@@ -458,19 +511,50 @@ export default function EditEventPage() {
 								<p className="text-caption text-text-muted ml-auto">{formData.desc.length}/3000</p>
 							</div>
 						</div>
-
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 							<div className="flex flex-col gap-1.5">
 								<FieldLabel required>Category</FieldLabel>
 								<Dropdown
 									value={formData.category}
-									onChange={(v) => set("category", v)}
+									onChange={(v) => {
+										if (v === "CREATE_CUSTOM") {
+											setShowCustomCategoryInput(true)
+											set("category", "")
+										} else {
+											set("category", v)
+											setShowCustomCategoryInput(false)
+										}
+									}}
 									error={!!errors.category}
 									placeholder={categoriesLoading ? "Loading…" : "Select Category"}
 									disabled={categoriesLoading}
-									options={categoryOptions}
+									options={[
+										...categoryOptions,
+										{ value: "CREATE_CUSTOM", label: "+ Add Custom Category..." }
+									]}
 								/>
 								<ErrMsg msg={errors.category} />
+
+								{showCustomCategoryInput && (
+									<div className="flex gap-2 items-end mt-1">
+										<div className="flex-1 flex flex-col gap-1.5">
+											<input
+												type="text"
+												value={customCategoryName}
+												onChange={e => setCustomCategoryName(e.target.value)}
+												placeholder="Enter custom category name"
+												className={inpCls(!customCategoryName.trim() && validated)}
+											/>
+										</div>
+										<button
+											type="button"
+											onClick={handleCreateCustomCategory}
+											className="px-4 py-2 text-label-sm font-semibold text-white bg-action-primary rounded-action hover:opacity-90 transition-opacity"
+										>
+											Add
+										</button>
+									</div>
+								)}
 							</div>
 							<div className="flex flex-col gap-1.5">
 								<FieldLabel required>Event Type</FieldLabel>
@@ -483,63 +567,6 @@ export default function EditEventPage() {
 								/>
 								<ErrMsg msg={errors.eventType} />
 							</div>
-						</div>
-
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel>Languages</FieldLabel>
-							<Dropdown
-								value=""
-								onChange={(v) => {
-									if (v && !formData.languages.includes(v))
-										set("languages", [...formData.languages, v])
-								}}
-								placeholder="Add a language…"
-								options={availableLanguages}
-								disabled={availableLanguages.length === 0}
-							/>
-							{formData.languages.length > 0 && (
-								<div className="flex flex-wrap gap-1.5 mt-1">
-									{formData.languages.map((lang) => {
-										const label = LANGUAGE_OPTIONS.find((o) => o.value === lang)?.label ?? lang
-										return (
-											<span key={lang} className="inline-flex items-center gap-1 px-2.5 py-1 bg-surface-card-muted rounded-badge text-caption text-text-primary">
-												{label}
-												<button
-													type="button"
-													onClick={() => set("languages", formData.languages.filter((l) => l !== lang))}
-													className="text-text-tertiary hover:text-text-primary leading-none"
-													aria-label={`Remove ${lang}`}
-												>×</button>
-											</span>
-										)
-									})}
-								</div>
-							)}
-						</div>
-
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel>Tags / Keywords</FieldLabel>
-							<PillInput values={formData.tags} onChange={(v) => set("tags", v)} placeholder="Add tags…" />
-						</div>
-
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel required>What to Expect</FieldLabel>
-							<PillInput
-								values={formData.whatToExpect}
-								onChange={(v) => set("whatToExpect", v)}
-								placeholder="e.g. Guided walk"
-							/>
-							<ErrMsg msg={errors.whatToExpect} />
-						</div>
-
-						<div className="flex flex-col gap-1.5">
-							<FieldLabel required>Who Should Attend</FieldLabel>
-							<PillInput
-								values={formData.whoShouldAttend}
-								onChange={(v) => set("whoShouldAttend", v)}
-								placeholder="e.g. Photography enthusiasts"
-							/>
-							<ErrMsg msg={errors.whoShouldAttend} />
 						</div>
 					</SectionCard>
 
@@ -798,54 +825,30 @@ export default function EditEventPage() {
 
 					{/* ── 4. Ticket Types ── */}
 					<SectionCard title="Ticket Types" subtitle="Pricing and capacity for your event">
-						<TicketListEditor
-							tickets={formData.tickets}
-							onChange={(updated) => set("tickets", updated)}
-							listError={errors.tickets}
-						/>
+						<div className={clsx(isFreeEvent && "pointer-events-none opacity-60")}>
+							<TicketListEditor
+								tickets={formData.tickets}
+								onChange={(updated) => set("tickets", updated)}
+								listError={errors.tickets}
+							/>
+							{isFreeEvent && (
+								<p className="text-caption text-text-muted mt-2">
+									Tickets cannot be edited for a free/non-ticketed event.
+								</p>
+							)}
+						</div>
 					</SectionCard>
 
 					{/* ── 5. Settings ── */}
-					<SectionCard title="Settings" subtitle="Visibility, restrictions, and refund policy">
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel required>Visibility</FieldLabel>
-								<Dropdown
-									value={formData.visibility}
-									onChange={(v) => set("visibility", v)}
-									error={!!errors.visibility}
-									placeholder="Select Visibility"
-									options={[
-										{ value: "PUBLIC",  label: "Public Searchable" },
-										{ value: "PRIVATE", label: "Private" },
-									]}
-								/>
-								<ErrMsg msg={errors.visibility} />
-							</div>
-							<div className="flex flex-col gap-1.5">
-								<FieldLabel required>Age Restriction</FieldLabel>
-								<Dropdown
-									value={formData.ageRestriction}
-									onChange={(v) => set("ageRestriction", v)}
-									error={!!errors.ageRestriction}
-									placeholder="All Ages"
-									options={[
-										{ value: "All Ages", label: "All Ages" },
-										{ value: "18+",      label: "18+" },
-										{ value: "21+",      label: "21+" },
-									]}
-								/>
-								<ErrMsg msg={errors.ageRestriction} />
-							</div>
-						</div>
-
+					<SectionCard title="Settings" subtitle="Refund policy and instructions">
 						<div className="flex flex-col gap-1.5">
-							<FieldLabel required>Refund Policy</FieldLabel>
+							<FieldLabel required={!isFreeEvent}>Refund Policy</FieldLabel>
 							<Dropdown
-								value={formData.refundType}
-								onChange={(v) => set("refundType", v)}
-								error={!!errors.refundType}
+								value={isFreeEvent ? "NO_REFUND" : formData.refundType}
+								onChange={(v) => !isFreeEvent && set("refundType", v)}
+								error={!isFreeEvent && !!errors.refundType}
 								placeholder="Select Refund Policy"
+								disabled={isFreeEvent || categoriesLoading}
 								options={[
 									{ value: "NO_REFUND", label: "No Refund" },
 									{ value: "PARTIAL",   label: "Partial Refund" },
@@ -894,7 +897,7 @@ export default function EditEventPage() {
 						)}
 
 						<div className="flex flex-col gap-1.5">
-							<FieldLabel required>Special Instructions</FieldLabel>
+							<FieldLabel>Special Instructions</FieldLabel>
 							<textarea
 								id="instructions"
 								rows={5}

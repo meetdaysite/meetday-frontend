@@ -48,8 +48,19 @@ export function EventSummaryRow({ event }: { event: PublicEventDetails }) {
 	const host = event.hostProfile
 	const hasRating = host.averageRating !== null && host.totalReviews > 0
 
+	const hasWhatToExpect = event.whatToExpect && event.whatToExpect.filter(item => item.trim() !== "").length > 0
+	const hasWhoShouldAttend = event.whoShouldAttend && event.whoShouldAttend.filter(item => item.trim() !== "").length > 0
+
+	let colCount = 2
+	if (hasWhatToExpect) colCount++
+	if (hasWhoShouldAttend) colCount++
+
 	return (
-		<div className="rounded-action bg-surface-card border border-border-default shadow-md overflow-hidden grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-border-default">
+		<div className={`rounded-action bg-surface-card border border-border-default shadow-md overflow-hidden grid divide-y divide-border-default ${
+			colCount === 2 ? "grid-cols-1 md:grid-cols-2 md:divide-y-0 md:divide-x" :
+			colCount === 3 ? "grid-cols-1 md:grid-cols-3 md:divide-y-0 md:divide-x" :
+			"grid-cols-2 lg:grid-cols-4 lg:divide-y-0 lg:divide-x"
+		}`}>
 			{/* Col 1 — About */}
 			<div className="p-5 flex flex-col gap-3">
 				<ColHeader icon={PulseSvg} title="Vibe Summary" iconColor="brand" />
@@ -59,16 +70,20 @@ export function EventSummaryRow({ event }: { event: PublicEventDetails }) {
 			</div>
 
 			{/* Col 2 — What to expect */}
-			<div className="p-5 flex flex-col gap-3">
-				<ColHeader icon={CheckCircleSvg} title="What to expect" iconColor="success" />
-				<CompactList items={event.whatToExpect} fallback="Details coming soon" />
-			</div>
+			{hasWhatToExpect && (
+				<div className="p-5 flex flex-col gap-3">
+					<ColHeader icon={CheckCircleSvg} title="What to expect" iconColor="success" />
+					<CompactList items={event.whatToExpect.filter(item => item.trim() !== "")} fallback="Details coming soon" />
+				</div>
+			)}
 
 			{/* Col 3 — Who should attend */}
-			<div className="p-5 flex flex-col gap-3">
-				<ColHeader icon={UsersGroupSvg} title="Who should attend" iconColor="vibe" />
-				<CompactList items={event.whoShouldAttend} fallback="Open to everyone" />
-			</div>
+			{hasWhoShouldAttend && (
+				<div className="p-5 flex flex-col gap-3">
+					<ColHeader icon={UsersGroupSvg} title="Who should attend" iconColor="vibe" />
+					<CompactList items={event.whoShouldAttend.filter(item => item.trim() !== "")} fallback="Open to everyone" />
+				</div>
+			)}
 
 			{/* Col 4 — About the host */}
 			<div className="p-5 flex flex-col gap-3">

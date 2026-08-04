@@ -26,6 +26,15 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
+function MiniSpinner() {
+	return (
+		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden className="animate-spin shrink-0">
+			<circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
+			<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+		</svg>
+	)
+}
+
 export default function LoginPage() {
 	const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY)
 	const [loading, setLoading] = useState(false)
@@ -94,8 +103,9 @@ export default function LoginPage() {
 					radius="pill"
 					className="w-full mt-1"
 					disabled={loading}
+					leftIcon={loading ? <MiniSpinner /> : undefined}
 				>
-					Send OTP
+					{loading ? "Generating OTP…" : "Send OTP"}
 				</Button>
 
 				<p className="text-center text-body-sm text-text-secondary mt-1">

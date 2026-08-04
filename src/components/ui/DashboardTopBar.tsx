@@ -11,6 +11,7 @@ import { useAuthStore } from "@/store/authStore"
 import { useHostStore } from "@/store/hostStore"
 
 import AltArrowDownSvg from "@/icons/outlined/alt-arrow-down.svg"
+import UserSvg from "@/icons/outlined/user.svg"
 
 function useClickOutside(ref: React.RefObject<HTMLElement | null>, handler: () => void) {
 	useEffect(() => {
@@ -75,8 +76,8 @@ export function DashboardTopBar() {
 								/>
 							</div>
 						) : (
-							<div className="size-8 rounded-avatar bg-surface-brand-soft flex items-center justify-center shrink-0">
-								<span className="text-label-sm font-semibold text-text-brand">{initials}</span>
+							<div className="size-8 rounded-avatar bg-surface-brand-soft flex items-center justify-center shrink-0 text-text-brand">
+								<Icon as={UserSvg} size="sm" />
 							</div>
 						)}
 						<span className="text-label-md text-text-primary">{displayName}</span>

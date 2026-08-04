@@ -11,6 +11,7 @@ import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
 import { useHostStore } from "@/store/hostStore"
 import { useAuthStore } from "@/store/authStore"
 import { getCategories, type Category } from "@/lib/api"
+import { HostDetailsPrompt } from "@/components/host/HostDetailsPrompt"
 
 const DB_NAME = "MeetdayProposalDB"
 const STORE_NAME = "proposals"
@@ -172,7 +173,9 @@ export default function ProfilePage() {
 	const router = useRouter()
 	const { profile, clearProfile } = useHostStore()
 	const signOut = useAuthStore((s) => s.signOut)
+	const user = useAuthStore((s) => s.user)
 	const [showDeleteModal, setShowDeleteModal] = useState(false)
+	const [showKycForm, setShowKycForm] = useState(false)
 
 	const [community, setCommunity] = useState<ActivatedCommunity | null>(null)
 	const [categories, setCategories] = useState<Category[]>([])
@@ -208,6 +211,9 @@ export default function ProfilePage() {
 	// const [notifs, setNotifs] = useState<Record<string, boolean>>(
 	// 	Object.fromEntries(NOTIFICATION_PREFS.map(n => [n.id, n.defaultOn])),
 	// )
+
+	const phone = user?.phoneNumber || (profile as any)?.phone || ""
+	const email = user?.email || (profile as any)?.email || ""
 
 	const displayName = profile?.displayName || "Host"
 	const initials = displayName.split(" ").filter(Boolean).map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "H"
@@ -286,11 +292,11 @@ export default function ProfilePage() {
 							{/* Avatar row */}
 							<div className="flex items-center gap-4 mb-6 pb-6 border-b border-border-default">
 								<div className="size-20 rounded-full shrink-0 overflow-hidden bg-red-100 flex items-center justify-center text-red-700 text-heading-sm font-bold select-none">
-									{profile?.avatarUrl || logoUrl ? (
+									{profile?.avatarUrl ? (
 										// eslint-disable-next-line @next/next/no-img-element
-										<img src={profile?.avatarUrl || logoUrl || ""} alt={displayName} className="size-full object-cover" />
+										<img src={profile.avatarUrl} alt={displayName} className="size-full object-cover" />
 									) : (
-										initials
+										<Icon as={UserSvg} size="lg" className="text-red-700 size-10" />
 									)}
 								</div>
 								<div>
@@ -308,6 +314,12 @@ export default function ProfilePage() {
 
 							{/* Identity info rows */}
 							<div className="-my-3">
+								{phone && (
+									<InfoRow label="Phone number" value={<p className="text-label-sm text-text-primary">{phone}</p>} />
+								)}
+								{email && (
+									<InfoRow label="Email" value={<p className="text-label-sm text-text-primary">{email}</p>} />
+								)}
 								{profile?.gender && (
 									<InfoRow label="Gender" value={<p className="text-label-sm text-text-primary">{GENDER_LABELS[profile.gender] ?? profile.gender}</p>} />
 								)}
@@ -455,9 +467,23 @@ export default function ProfilePage() {
 
 						{/* Verification & Approval */}
 						{profile && (
-							<SectionCard icon={<Icon as={CheckCircleSvg} size="md" color="brand" />} title="Verification">
+							<SectionCard 
+								icon={<Icon as={CheckCircleSvg} size="md" color="brand" />} 
+								title="Verification"
+								action={
+									profile.kycStatus !== "VERIFIED" && (
+										<Button 
+											variant="primary" 
+											size="sm" 
+											radius="pill"
+											onClick={() => setShowKycForm(true)}
+										>
+											Verify KYC
+										</Button>
+									)
+								}
+							>
 								<div className="-my-3">
-
 									<InfoRow label="KYC" value={<StatusBadge status={profile.kycStatus} />} />
 									{profile.kycFailureReason && (
 										<InfoRow label="KYC reason" value={<p className="text-label-sm text-status-error-text max-w-50 text-right leading-snug">{profile.kycFailureReason}</p>} />
@@ -468,17 +494,7 @@ export default function ProfilePage() {
 							</SectionCard>
 						)}
 
-						{/* Subscription */}
-						{profile && (
-							<SectionCard icon={<Icon as={CardSvg} size="md" color="brand" />} title="Subscription">
-								<div className="bg-red-50 border border-red-100 rounded-action shadow-md px-4 py-3.5">
-									<p className="text-label-sm font-semibold text-text-primary">{planLabel}</p>
-									<p className="text-caption text-text-tertiary mt-0.5">
-										{profile.currentPlan ?? "No active plan"}
-									</p>
-								</div>
-							</SectionCard>
-						)}
+
 
 						{/* Notification Preferences */}
 						{/* <SectionCard icon={<Icon as={BellSvg} size="md" color="brand" />} title="Notifications">
@@ -520,6 +536,10 @@ export default function ProfilePage() {
 					await signOut()
 				}}
 			/>
+
+			{showKycForm && (
+				<HostDetailsPrompt onClose={() => setShowKycForm(false)} />
+			)}
 		</div>
 	)
 }

@@ -51,7 +51,7 @@ function buildRegisterPayload(values: FormValues, phone?: string): RegisterPaylo
 		phone: phone || undefined,
 		accountType: "HOST",
 		hostType: values.accountType === "Individual" ? "INDIVIDUAL" : "BUSINESS",
-		displayName: values.displayName || undefined,
+		displayName: `${values.firstName} ${values.lastName}`.trim() || undefined,
 		hostBio: values.bio || undefined,
 		tagline: values.tagline || undefined,
 		gender: values.gender || undefined,
@@ -377,14 +377,6 @@ function StepHostProfile() {
 
 	return (
 		<div className="flex flex-col gap-5">
-			<TextField
-				label="Display name"
-				hint="Optional"
-				placeholder="What should we call you?"
-				{...register("displayName")}
-				size="md"
-			/>
-
 			<div className="flex flex-col gap-1.5">
 				<div className="flex items-center justify-between">
 					<label className="text-label-sm font-semibold text-text-primary">Bio</label>

@@ -21,6 +21,6 @@ export async function uploadEventMedia(
 export function storageUrl(key: string): string {
 	if (!key) return ""
 	if (key.startsWith("http")) return key
-	const base = process.env.NEXT_PUBLIC_STORAGE_BASE_URL
+	const base = process.env.NEXT_PUBLIC_STORAGE_BASE_URL || "https://meetday-dev.s3.ap-south-1.amazonaws.com"
 	return base ? `${base}/${key}` : ""
 }

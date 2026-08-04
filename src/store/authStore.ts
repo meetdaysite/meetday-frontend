@@ -30,6 +30,7 @@ const LOCAL_STORAGE_KEYS_TO_CLEAR = [
 	"attendee_about",
 	"meetday_create_draft",
 	"meetday_create_draft_id",
+	"meetday_last_active",
 ]
 const SESSION_STORAGE_KEYS_TO_CLEAR = ["auth-session", "attendee-session", "meetday-booking"]
 

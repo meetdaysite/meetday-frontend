@@ -30,6 +30,15 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
+function MiniSpinner() {
+	return (
+		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden className="animate-spin shrink-0">
+			<circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
+			<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+		</svg>
+	)
+}
+
 const RESEND_SECONDS = 60
 
 
@@ -227,10 +236,10 @@ export default function VerifyPage() {
 					size="md"
 					radius="pill"
 					className="w-full"
-					leftIcon={<Icon as={LockKeyholeSvg} />}
+					leftIcon={loading ? <MiniSpinner /> : <Icon as={LockKeyholeSvg} />}
 					disabled={loading}
 				>
-					{loading ? "Verifying…" : "Verify OTP"}
+					{loading ? "Verifying OTP…" : "Verify OTP"}
 				</Button>
 
 				<p className="text-caption text-text-muted text-center leading-relaxed">

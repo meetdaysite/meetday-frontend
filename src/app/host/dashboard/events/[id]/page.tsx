@@ -417,11 +417,21 @@ export default function EventDetailPage() {
 									{event.category?.name && (
 										<DetailRow label="Category" value={event.category.name} />
 									)}
-									<DetailRow label="Type" value={event.eventType ?? "—"} />
-									<DetailRow label="Visibility" value={event.visibility ?? "—"} />
-									<DetailRow label="Age" value={event.ageRestriction ?? "—"} />
-									<DetailRow label="Languages" value={event.languages?.join(", ") ?? "—"} />
-									<DetailRow label="Refund" value={refundLabel(event.refundPolicy)} />
+									{event.eventType && event.eventType !== "—" && (
+										<DetailRow label="Type" value={event.eventType} />
+									)}
+									{event.visibility && event.visibility !== "—" && (
+										<DetailRow label="Visibility" value={event.visibility} />
+									)}
+									{event.ageRestriction && event.ageRestriction !== "—" && (
+										<DetailRow label="Age" value={event.ageRestriction} />
+									)}
+									{event.languages && event.languages.length > 0 && (
+										<DetailRow label="Languages" value={event.languages.join(", ")} />
+									)}
+									{event.refundPolicy && refundLabel(event.refundPolicy) !== "—" && (
+										<DetailRow label="Refund" value={refundLabel(event.refundPolicy)} />
+									)}
 									{event.tags && event.tags.length > 0 && (
 										<div className="flex items-start justify-between gap-3">
 											<span className="text-caption text-text-muted shrink-0">

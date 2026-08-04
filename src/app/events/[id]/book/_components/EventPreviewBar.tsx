@@ -11,6 +11,7 @@ import StarCircleSvg from "@/icons/filled/star-circle.svg"
 import type { PublicEventDetails, VibeMatchResponse } from "@/types/attendee"
 import { useAuthStore } from "@/store/authStore"
 import { getEventVibeMatch } from "@/lib/api"
+import { storageUrl } from "@/lib/uploadMedia"
 
 function formatEventDate(dateStr: string): string {
 	return new Date(dateStr).toLocaleDateString("en-IN", {
@@ -23,6 +24,7 @@ function formatEventDate(dateStr: string): string {
 
 export function EventPreviewBar({ event }: { event: PublicEventDetails }) {
 	const cover = event.media.find(m => m.type === "COVER")
+	const coverUrl = cover ? (cover.url || (cover.key ? storageUrl(cover.key) : "")) : ""
 	const categoryLabel = event.category.name.toUpperCase()
 	const { user, authLoading } = useAuthStore()
 	const [match, setMatch] = useState<VibeMatchResponse | null>(null)
@@ -40,8 +42,8 @@ export function EventPreviewBar({ event }: { event: PublicEventDetails }) {
 		<div className="rounded-action bg-surface-card border border-border-default p-4 flex gap-5 shadow-md">
 			{/* Thumbnail */}
 			<div className="relative shrink-0 w-40 rounded-action overflow-hidden bg-neutral-200 self-stretch min-h-25">
-				{cover?.url && (
-					<Image src={cover.url} alt={event.title} fill sizes="160px" className="object-cover" />
+				{coverUrl && (
+					<Image src={coverUrl} alt={event.title} fill sizes="160px" className="object-cover" />
 				)}
 				<div className="absolute inset-0 bg-linear-to-t from-neutral-900/70 to-neutral-900/20" />
 				{categoryLabel && (

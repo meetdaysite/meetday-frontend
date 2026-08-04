@@ -97,7 +97,8 @@ export interface PublicRefundPolicy {
 export interface PublicEventMedia {
 	id: string
 	eventId: string
-	url: string
+	url?: string
+	key?: string
 	type: "COVER" | "GALLERY" | "VIDEO"
 	order: number
 	createdAt: string

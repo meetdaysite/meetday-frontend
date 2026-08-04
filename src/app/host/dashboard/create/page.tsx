@@ -174,12 +174,22 @@ function ExperienceBuilderSidebar({
 				<h2 className="text-label-md font-semibold text-text-primary">{heading}</h2>
 				<p className="text-caption text-text-tertiary mt-1">{caption}</p>
 			</div>
-			<div className="flex flex-col gap-5">
-				{steps.map(({ id, title, subtitle, icon }) => {
+			<div className="flex flex-col">
+				{steps.map(({ id, title, subtitle, icon }, index) => {
 					const state: "completed" | "active" | "upcoming" =
 						id < currentStep ? "completed" : id === currentStep ? "active" : "upcoming"
+					const isLast = index === steps.length - 1
+					const isNextCompletedOrActive = id < currentStep
 					return (
-						<div key={id} className="flex items-start gap-3">
+						<div key={id} className="relative flex items-start gap-3 pb-6 last:pb-0">
+							{!isLast && (
+								<div className="absolute left-4 top-8 bottom-0 w-0.5 -translate-x-1/2 bg-border-default overflow-hidden">
+									<div 
+										className="w-full bg-action-primary transition-all duration-700 ease-in-out origin-top"
+										style={{ height: isNextCompletedOrActive ? "100%" : "0%" }}
+									/>
+								</div>
+							)}
 							<StepCircle state={state} icon={icon} />
 							<div className="pt-0.5">
 								<p
@@ -205,9 +215,9 @@ function ExperienceBuilderSidebar({
 
 function CopilotIdleBanner({ onStart }: { onStart: () => void }) {
 	return (
-		<div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-action bg-surface-vibe-soft border border-border-default mb-6">
+		<div className="flex items-center justify-between gap-4 px-4 py-3.5 rounded-action bg-surface-brand-soft border border-border-default mb-6">
 			<div className="flex items-center gap-3 min-w-0">
-				<Icon as={AiAvatarSvg} size="xl" color="vibe" className="shrink-0" aria-hidden />
+				<Icon as={AiAvatarSvg} size="xl" color="brand" className="shrink-0" aria-hidden />
 				<div className="min-w-0">
 					<p className="text-label-sm font-semibold text-text-primary">
 						Start with Meetday AI Copilot
@@ -223,7 +233,7 @@ function CopilotIdleBanner({ onStart }: { onStart: () => void }) {
 				radius="md"
 				onClick={onStart}
 				leftIcon={<Icon as={StarsSvg} size="sm" color="inherit" />}
-				className="bg-linear-to-r from-purple-400 to-purple-800 text-white hover:opacity-90 font-semibold shrink-0"
+				className="bg-linear-to-r from-red-500 to-red-700 text-white hover:opacity-90 font-semibold shrink-0"
 			>
 				Generate draft with AI
 			</Button>
@@ -356,6 +366,7 @@ function NewStep1EventDetails({
 	isDraggingOver,
 	setIsDraggingOver,
 	coverFileRef,
+	setCategories,
 }: {
 	formData: FormData
 	setFormData: Dispatch<SetStateAction<FormData>>
@@ -369,9 +380,12 @@ function NewStep1EventDetails({
 	isDraggingOver: boolean
 	setIsDraggingOver: (v: boolean) => void
 	coverFileRef: React.RefObject<HTMLInputElement | null>
+	setCategories?: Dispatch<SetStateAction<Category[]>>
 }) {
 	const [validated, setValidated] = useState(false)
 	const [overnightConfirm, setOvernightConfirm] = useState<{ startTime: string; endTime: string } | null>(null)
+	const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false)
+	const [customCategoryName, setCustomCategoryName] = useState("")
 
 	const { title, desc, category, coverUrl, eventDate, endDate, isMultiDay, startTime, endTime } = formData
 
@@ -411,6 +425,20 @@ function NewStep1EventDetails({
 	}
 
 	const categoryOptions = useMemo(() => categories.map(c => ({ value: c.id, label: c.name })), [categories])
+
+	function handleCreateCustomCategory() {
+		const name = customCategoryName.trim()
+		if (!name) return
+		const newId = `custom-${Date.now()}`
+		const newCat = { id: newId, name } as Category
+		if (setCategories) {
+			setCategories(prev => [...prev, newCat])
+		}
+		set("category", newId)
+		setShowCustomCategoryInput(false)
+		setCustomCategoryName("")
+		toast.success(`Custom category "${name}" added!`)
+	}
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -532,13 +560,47 @@ function NewStep1EventDetails({
 				<FieldLabel required>Category</FieldLabel>
 				<Dropdown
 					value={category}
-					onChange={v => set("category", v)}
+					onChange={v => {
+						if (v === "CREATE_CUSTOM") {
+							setShowCustomCategoryInput(true)
+							set("category", "")
+						} else {
+							set("category", v)
+							setShowCustomCategoryInput(false)
+						}
+					}}
 					error={!!errors.category}
 					placeholder={categoriesLoading ? "Loading…" : "Select Category"}
 					disabled={categoriesLoading}
-					options={categoryOptions}
+					options={[
+						...categoryOptions,
+						{ value: "CREATE_CUSTOM", label: "+ Add Custom Category..." }
+					]}
 				/>
 				<ErrMsg msg={errors.category} />
+
+				{showCustomCategoryInput && (
+					<div className="flex gap-2 items-end mt-1">
+						<div className="flex-1 flex flex-col gap-1.5">
+							<input
+								type="text"
+								value={customCategoryName}
+								onChange={e => setCustomCategoryName(e.target.value)}
+								placeholder="Enter custom category name"
+								className={inpCls(!customCategoryName.trim() && validated)}
+							/>
+						</div>
+						<Button
+							type="button"
+							variant="primary"
+							size="sm"
+							radius="md"
+							onClick={handleCreateCustomCategory}
+						>
+							Add
+						</Button>
+					</div>
+				)}
 			</div>
 
 			{/* Date & Time card */}
@@ -1883,7 +1945,7 @@ export default function CreateExperiencePage() {
 							<p className="text-body-xs text-text-secondary mt-2 mb-6 leading-relaxed">
 								For paid or priced experiences. Allows configuring multiple ticket tiers, price levels, and receiving ticket payouts. Requires host KYC verification.
 							</p>
-							<div className="flex items-center gap-2 text-label-sm font-bold text-red-600 group-hover:translate-x-1.5 transition-transform duration-300">
+							<div className="mt-auto flex items-center gap-2 text-label-sm font-bold text-red-600 group-hover:translate-x-1.5 transition-transform duration-300">
 								Choose Ticketed
 								<Icon as={AltArrowRightSvg} size="xs" color="inherit" />
 							</div>
@@ -1910,7 +1972,7 @@ export default function CreateExperiencePage() {
 							<p className="text-body-xs text-text-secondary mt-2 mb-6 leading-relaxed">
 								For free entry experiences. Requires providing a valid Instagram profile link for verification.
 							</p>
-							<div className="flex items-center gap-2 text-label-sm font-bold text-red-600 group-hover:translate-x-1.5 transition-transform duration-300">
+							<div className="mt-auto flex items-center gap-2 text-label-sm font-bold text-red-600 group-hover:translate-x-1.5 transition-transform duration-300">
 								Choose Non-Ticketed
 								<Icon as={AltArrowRightSvg} size="xs" color="inherit" />
 							</div>
@@ -2069,6 +2131,7 @@ export default function CreateExperiencePage() {
 												isDraggingOver={isDraggingOver}
 												setIsDraggingOver={setIsDraggingOver}
 												coverFileRef={coverFileRef}
+												setCategories={setCategories}
 											/>
 										)}
 									</>
