@@ -63,7 +63,7 @@ export interface EventDraftPayload {
 	longitude?: number
 	whatToExpect?: string[]
 	whoShouldAttend?: string[]
-	visibility?: "PUBLIC" | "PRIVATE"
+	visibility?: "PUBLIC" | "PRIVATE" | "—"
 	ageRestriction?: string
 	specialInstructions?: string
 	isFree?: boolean
@@ -141,7 +141,7 @@ export interface Event {
 	longitude?: number
 	whatToExpect?: string[]
 	whoShouldAttend?: string[]
-	visibility?: "PUBLIC" | "PRIVATE"
+	visibility?: "PUBLIC" | "PRIVATE" | "—"
 	ageRestriction?: string
 	specialInstructions?: string
 	isFree?: boolean
