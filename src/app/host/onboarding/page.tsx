@@ -1068,8 +1068,8 @@ function StepOne() {
 										<Image
 											src={
 												type === "Individual"
-													? "/images/person-3-fill-svgrepo-com 1.svg"
-													: "/images/person-3-fill-svgrepo-com 2.svg"
+													? "/images/person-3-fill-svgrepo-com 2.svg"
+													: "/images/person-3-fill-svgrepo-com 1.svg"
 											}
 											alt={type}
 											width={56}
