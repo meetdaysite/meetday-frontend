@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 				if (Date.now() - lastActive > INACTIVITY_TIMEOUT) {
 					localStorage.removeItem(STORAGE_KEY)
 					useAuthStore.getState().signOut().then(() => {
-						window.location.href = "/host/login"
+						window.location.href = "/host"
 					})
 				}
 			} else {

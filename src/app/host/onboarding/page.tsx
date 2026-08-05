@@ -21,6 +21,7 @@ import {
 } from "@/lib/api"
 import { useHostStore } from "@/store/hostStore"
 import { useAuthSessionStore } from "@/store/authSessionStore"
+import { AuthShell } from "@/components/auth/AuthShell"
 import { Button } from "@/components/ui/Button"
 import { TextField } from "@/components/ui/TextField"
 import { Dropdown } from "@/components/ui/Dropdown"
@@ -1348,7 +1349,7 @@ export default function OnboardingPage() {
 	]
 
 	return (
-		<div className="flex h-screen overflow-hidden bg-surface-page">
+		<AuthShell>
 			{/* Loading overlay for blocking API calls */}
 			{loadingMessage && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -1361,87 +1362,47 @@ export default function OnboardingPage() {
 				</div>
 			)}
 
-			{/* Left panel */}
-			<div className="hidden lg:block w-[44%] max-w-200 shrink-0 relative">
-				<OnboardingLeftPanel config={panelConfig} />
-			</div>
-
-			{/* Right panel */}
-			<div className="flex-1 overflow-y-auto bg-surface-card flex flex-col">
-				{/* Progress bar */}
-				<div className="shrink-0">
-					<div className="w-full max-w-175 mx-auto px-8 pt-7 pb-5 flex items-center gap-3">
-						<div className="flex-1 h-3 bg-border-default rounded-full overflow-hidden">
-							<div
-								className="h-full bg-action-primary rounded-full transition-all duration-300"
-								style={{ width: `${((step + 1) / TOTAL) * 100}%` }}
-							/>
-						</div>
-						<span className="text-body-sm text-text-primary font-semibold shrink-0">
-							Step {step + 1} of {TOTAL}
-						</span>
-					</div>
+			<div className="flex flex-col flex-grow justify-between min-h-[380px] h-full">
+				
+				{/* Top Section: Title & Subtitle */}
+				<div className="text-center pt-4">
+					<h2 className="font-heading text-3xl sm:text-4xl font-black text-black tracking-tight mb-3">
+						You&apos;re almost there
+					</h2>
+					<p className="text-sm font-semibold text-black/60 max-w-xs mx-auto leading-relaxed">
+						Help us learn more about you.
+					</p>
 				</div>
 
-				{/* Form content */}
-				<div className="flex-1 w-full max-w-175 mx-auto px-8 py-8">
-					{/* Heading */}
-					<div className="mb-6">
-						<h1 className="text-heading-md text-text-primary leading-tight">
-							{"plain" in heading ? (
-								<>
-									{heading.plain}{" "}
-									<span className="text-text-brand">{heading.highlight}</span>
-								</>
-							) : (
-								heading.full
-							)}
-						</h1>
-						<p className="text-body-sm text-text-secondary mt-2">{STEP_SUBTITLES[step]}</p>
-					</div>
+				{/* Form Section */}
+				<FormProvider {...methods}>
+					<form onSubmit={(e) => { e.preventDefault(); handleNext(); }} noValidate className="flex flex-col gap-4 mt-6">
+						{stepComponents[step]}
 
-					<FormProvider {...methods}>
-						<form onSubmit={handleSubmit(() => { })} noValidate>
-							{stepComponents[step]}
-						</form>
-					</FormProvider>
+						{/* Submit/Next Button */}
+						<Button
+							type="submit"
+							variant="primary"
+							size="md"
+							radius="pill"
+							className="w-full py-4 mt-4 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-extrabold text-center shadow-[4px_4px_0px_0px_#FFC940] hover:shadow-[1px_1px_0px_0px_#FFC940] hover:translate-x-[3px] hover:translate-y-[3px] transition-all text-base tracking-wider"
+							disabled={!!loadingMessage}
+						>
+							{loadingMessage
+								? "Please wait…"
+								: (step === TOTAL - 1 ? "Create Account" : STEP_BUTTON_LABELS[step])
+							}
+						</Button>
+					</form>
+				</FormProvider>
 
-					{/* Navigation */}
-					{/* Commented out original condition for rendering navigation */}
-					{/* {!isLast && ( */}
-					{step < TOTAL && (
-						<div className="flex gap-3 mt-8">
-							{step > 0 && !(step === 5 && isRegistered) && (
-								<Button
-									type="button"
-									variant="secondary"
-									size="md"
-									radius="pill"
-									className="flex-1"
-									onClick={() => setStep(s => s - 1)}
-									disabled={!!loadingMessage}
-								>
-									Back
-								</Button>
-							)}
-							<Button
-								type="button"
-								variant="primary"
-								size="md"
-								radius="pill"
-								className="flex-1"
-								onClick={handleNext}
-								disabled={!!loadingMessage}
-							>
-								{loadingMessage
-									? "Please wait…"
-									: <>{step === TOTAL - 1 ? "Create Account" : STEP_BUTTON_LABELS[step]} <AltArrowRightSvg className="size-4" aria-hidden /></>
-								}
-							</Button>
-						</div>
-					)}
+				{/* Bottom Section: Indicator Dots */}
+				<div className="flex gap-2 justify-center items-center mt-8 mb-2">
+					<span className="w-2 h-2 bg-black/15 rounded-full" />
+					<span className="w-2 h-2 bg-black/15 rounded-full" />
+					<span className="w-5 h-2 bg-[#EE2C2C] rounded-full transition-all" />
 				</div>
 			</div>
-		</div>
+		</AuthShell>
 	)
 }

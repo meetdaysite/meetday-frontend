@@ -192,7 +192,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 	async function handleSignOut() {
 		clearProfile()
-		router.replace("/")
+		router.replace("/host")
 		await signOut()
 	}
 
@@ -200,7 +200,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		if (authLoading) return
 
 		if (!user) {
-			router.replace("/host/login")
+			router.replace("/host")
 			return
 		}
 

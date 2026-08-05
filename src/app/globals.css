@@ -6,6 +6,7 @@
 @theme inline {
 	/* FONTS */
 	--font-sans: var(--font-poppins), "Inter", Arial, sans-serif;
+	--font-heading: var(--font-bricolage), "Bricolage Grotesque", sans-serif;
 
 	/* SURFACE */
 	--color-surface-page: var(--surface-page);
@@ -167,5 +168,40 @@ body {
 }
 .animate-marquee {
 	animation: marquee 60s linear infinite;
+	will-change: transform;
+}
+
+/* Floating animations */
+@keyframes float-1 {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-5px); }
+}
+@keyframes float-2 {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-9px); }
+}
+@keyframes float-3 {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-4px); }
+}
+@keyframes float-4 {
+	0%, 100% { transform: translateY(0); }
+	50% { transform: translateY(-7px); }
+}
+
+.animate-float-1 {
+	animation: float-1 4.2s ease-in-out infinite;
+	will-change: transform;
+}
+.animate-float-2 {
+	animation: float-2 5.8s ease-in-out infinite;
+	will-change: transform;
+}
+.animate-float-3 {
+	animation: float-3 3.6s ease-in-out infinite;
+	will-change: transform;
+}
+.animate-float-4 {
+	animation: float-4 5.0s ease-in-out infinite;
 	will-change: transform;
 }

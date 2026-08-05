@@ -68,24 +68,31 @@ export default function LoginPage() {
 	return (
 		<AuthShell phoneImage="/assets/phone_image_login.svg" pointsImage="/assets/points_login.svg">
 			<div id="recaptcha-container" />
-			<AuthTabs />
-
+			<Link 
+				href="/host" 
+				className="inline-flex items-center gap-1.5 text-xs font-bold text-black/50 hover:text-black transition-colors mb-4"
+			>
+				<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+				</svg>
+				Back to welcome
+			</Link>
 			<div className="mb-6">
-				<h1 className="text-heading-sm text-text-primary mb-1">
-					Start hosting on <span className="text-text-brand">meetday</span>
+				<h1 className="font-heading text-3xl font-black text-black mb-1">
+					Log In
 				</h1>
-				<p className="text-body-sm text-text-secondary">
-					Create experiences, grow your community, and build a host presence people trust
+				<p className="text-body-sm text-text-secondary mt-2">
+					Welcome back! Enter your phone number to sign in.
 				</p>
 			</div>
 
-			<form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+			<form className="flex flex-col gap-5 mt-2" onSubmit={handleSubmit(onSubmit)}>
 				<Controller
 					control={control}
 					name="phone"
 					render={({ field }) => (
 						<PhoneField
-							label="Phone number"
+							label="Enter your Mobile Number"
 							value={field.value}
 							onChange={field.onChange}
 							country={country}
@@ -101,7 +108,7 @@ export default function LoginPage() {
 					variant="primary"
 					size="md"
 					radius="pill"
-					className="w-full mt-1"
+					className="w-full py-4 mt-2 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-extrabold text-center shadow-[4px_4px_0px_0px_#FFC940] hover:shadow-[1px_1px_0px_0px_#FFC940] hover:translate-x-[3px] hover:translate-y-[3px] transition-all text-base tracking-wider"
 					disabled={loading}
 					leftIcon={loading ? <MiniSpinner /> : undefined}
 				>
@@ -109,12 +116,20 @@ export default function LoginPage() {
 				</Button>
 
 				<p className="text-center text-body-sm text-text-secondary mt-1">
-					New to meetday?{" "}
-					<Link href="/host/signup" className="font-medium text-text-link hover:underline">
+					New to Meetday?{" "}
+					<Link href="/host/signup" className="font-semibold text-text-link hover:underline">
 						Create an account
 					</Link>
 				</p>
 			</form>
+
+			{/* Bottom Section: Indicator Dots */}
+			<div className="flex gap-2 justify-center items-center mt-8 mb-2">
+				<span className="w-2 h-2 bg-black/15 rounded-full" />
+				<span className="w-5 h-2 bg-[#EE2C2C] rounded-full transition-all" />
+				<span className="w-2 h-2 bg-black/15 rounded-full" />
+				<span className="w-2 h-2 bg-black/15 rounded-full" />
+			</div>
 		</AuthShell>
 	)
 }

@@ -52,10 +52,8 @@ export function OtpInput({ length = 6, value, onChange }: OtpInputProps) {
 					onKeyDown={e => handleKeyDown(i, e)}
 					onPaste={handlePaste}
 					className={clsx(
-						"w-12 h-12 rounded-input border text-center text-lg font-semibold",
-						"outline-none transition-colors duration-(--duration-120)",
-						"bg-surface-canvas text-text-primary placeholder:text-text-muted",
-						digit ? "border-action-primary" : "border-border-default focus:border-border-focused",
+						"w-12 h-12 border-[2.5px] rounded-xl text-center text-xl font-bold transition-all duration-150 outline-none",
+						digit ? "border-black bg-white" : "border-black/10 bg-[#FFFDF9] focus:border-black",
 					)}
 					aria-label={`OTP digit ${i + 1}`}
 				/>
