@@ -9,13 +9,13 @@ interface AuthShellProps {
 
 export function AuthShell({ children }: AuthShellProps) {
 	return (
-		<div className="w-full min-h-screen flex flex-col lg:flex-row bg-[#EE2C2C] text-black">
+		<div className="w-full h-screen flex flex-col lg:flex-row bg-[#EE2C2C] text-black overflow-hidden">
 			
 			{/* ── Left Side Panel: Logo, Puzzle Heart, Vibration Arcs (lg screens only) ── */}
-			<div className="hidden lg:flex lg:w-[52%] xl:w-[58%] flex-col justify-between p-12 relative overflow-hidden select-none">
+			<div className="hidden lg:flex lg:w-1/2 h-full flex-col items-center justify-center relative overflow-hidden select-none">
 				
-				{/* Top Logo */}
-				<Link href="/" className="inline-block relative z-10 self-center">
+				{/* Top Logo — absolutely pinned to top center aligned with the card's top edge */}
+				<Link href="/" className="absolute top-[5vh] left-1/2 -translate-x-1/2 inline-block z-20">
 					<Image 
 						src="/assets/brand_logo.svg" 
 						alt="Meetday" 
@@ -27,8 +27,9 @@ export function AuthShell({ children }: AuthShellProps) {
 					/>
 				</Link>
 
-				{/* Center: Puzzle Heart + Vibration Arcs */}
-				<div className="flex-1 flex items-start justify-center relative pt-20">					{/* The Puzzle Heart Container */}
+				{/* Center: Puzzle Heart + Vibration Arcs — vertically centered, shifted slightly down */}
+				<div className="translate-y-8 flex items-center justify-center relative">
+					{/* The Puzzle Heart Container */}
 					<div className="relative z-10 flex flex-col items-center">
 						
 						{/* Floating Speech Bubble: Beat goes Boom */}
@@ -43,21 +44,34 @@ export function AuthShell({ children }: AuthShellProps) {
 						</div>
 
 						{/* Puzzle Heart SVG */}
-						<svg className="w-[500px] h-[500px] overflow-visible drop-shadow-[0_10px_20px_rgba(0,0,0,0.15)]" viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg">
+						<svg className="w-[85vw] h-[85vw] sm:w-[75vw] sm:h-[75vw] lg:w-[38vw] lg:h-[38vw] max-w-[540px] max-h-[540px] min-w-[340px] min-h-[340px] overflow-visible drop-shadow-[0_10px_20px_rgba(0,0,0,0.15)]" viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg">
 							
-							{/* Background Vibration Arcs (Concentric Heart Outline) */}
-							<g className="text-[#A51616] animate-pulse" fill="none" stroke="currentColor" strokeLinecap="round">
-								{/* Left concentric arcs (outlining Brands top-left) */}
-								<path d="M 135,40 A 80 80 0 0 0 30,175" strokeWidth="8" />
-								<path d="M 135,18 A 102 102 0 0 0 12,195" strokeWidth="6" />
-								
-								{/* Right concentric arcs (outlining IRL Communities top-right) */}
-								<path d="M 225,40 A 80 80 0 0 1 330,175" strokeWidth="8" />
-								<path d="M 225,18 A 102 102 0 0 1 348,195" strokeWidth="6" />
-								
-								{/* Bottom concentric arcs (outlining Vibe V-shape bottom) */}
-								<path d="M 130,270 Q 180,315 230,270" strokeWidth="8" />
-								<path d="M 115,290 Q 180,345 245,290" strokeWidth="6" />
+							{/* Background Vibration Arcs (Concentric Heart Outline from public/images/heart.svg) */}
+							<g className="animate-pulse" transform="translate(-32, 28) scale(0.5)">
+								<defs>
+									<linearGradient id="paint0_linear_69_1366" x1="130.661" y1="13.0542" x2="130.661" y2="307.502" gradientUnits="userSpaceOnUse">
+										<stop stopColor="#DD1616"/>
+										<stop offset="1" stopColor="#AD1A1A"/>
+									</linearGradient>
+									<linearGradient id="paint1_linear_69_1366" x1="799.661" y1="6.50146" x2="799.661" y2="171.987" gradientUnits="userSpaceOnUse">
+										<stop stopColor="#DD1616"/>
+										<stop offset="1" stopColor="#AD1A1A"/>
+									</linearGradient>
+									<linearGradient id="paint2_linear_69_1366" x1="45.6607" y1="6.50146" x2="45.6607" y2="171.987" gradientUnits="userSpaceOnUse">
+										<stop stopColor="#DD1616"/>
+										<stop offset="1" stopColor="#AD1A1A"/>
+									</linearGradient>
+									<linearGradient id="paint3_linear_69_1366" x1="717.661" y1="13.0542" x2="717.661" y2="307.502" gradientUnits="userSpaceOnUse">
+										<stop stopColor="#DD1616"/>
+										<stop offset="1" stopColor="#AD1A1A"/>
+									</linearGradient>
+								</defs>
+								<path d="M212.821 17.0017C90.8213 -14.9989 -31.1787 153.501 115.821 307.502" stroke="url(#paint0_linear_69_1366)" strokeWidth="13" strokeLinecap="round" fill="none"/>
+								<path d="M835.631 171.987C850.1 97.7228 813.66 33.4529 760.5 6.50146" stroke="url(#paint1_linear_69_1366)" strokeWidth="13" strokeLinecap="round" fill="none"/>
+								<path d="M9.69011 171.987C-4.77864 97.7228 31.6609 33.4529 84.8213 6.50146" stroke="url(#paint2_linear_69_1366)" strokeWidth="13" strokeLinecap="round" fill="none"/>
+								<path d="M635.5 17.0017C757.5 -14.9989 879.5 153.501 732.5 307.502" stroke="url(#paint3_linear_69_1366)" strokeWidth="13" strokeLinecap="round" fill="none"/>
+								<path d="M549.625 492.501L512.25 529.501L475.291 566.09C454.111 587.057 420.219 587.763 398.185 567.695L356.25 529.501L315.625 492.501" stroke="#C70B0B" strokeWidth="13" strokeLinecap="round" fill="none"/>
+								<path d="M512.75 577.001L488.79 598.638C459.638 624.962 415.574 625.871 385.362 600.771L356.75 577.001" stroke="#C70B0B" strokeWidth="13" strokeLinecap="round" fill="none"/>
 							</g>
 							
 							{/* Yellow Brands Piece (Left) */}
@@ -101,18 +115,16 @@ export function AuthShell({ children }: AuthShellProps) {
 					</div>
 				</div>
 
-				{/* Empty bottom spacer to match flex layout */}
-				<div className="h-10 w-full" />
 			</div>
 
 			{/* ── Right Side Panel: Form Card ── */}
-			<div className="flex-1 flex items-center justify-center p-6 lg:p-12 xl:p-16 z-10">
+			<div className="flex-1 flex items-center justify-center px-6 py-6 lg:px-10 lg:py-10 z-10 min-h-screen">
 				
 				{/* The Onboarding Form Card */}
-				<div className="w-full max-w-[500px] min-h-[460px] bg-white border-[4px] border-black rounded-[36px] px-8 py-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative flex flex-col justify-between">
+				<div className="w-full lg:w-[35vw] max-w-[500px] min-w-[320px] h-[90vh] bg-white border-[4px] border-black rounded-[36px] px-8 py-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative flex flex-col justify-center overflow-y-auto">
 					
 					{/* Content / Form fields */}
-					<div className="w-full">
+					<div className="w-full flex flex-col gap-4">
 						{children}
 					</div>
 

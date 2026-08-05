@@ -159,7 +159,8 @@ const STEP_FIELDS: (keyof FormValues)[][] = [
 ]
 */
 const STEP_FIELDS: (keyof FormValues)[][] = [
-	["firstName", "lastName", "gender", "accountType", "email"],
+	["accountType"],
+	["firstName", "lastName", "gender", "email"],
 ]
 
 // Commented out original STEP_BUTTON_LABELS config
@@ -176,7 +177,8 @@ const STEP_BUTTON_LABELS = [
 ]
 */
 const STEP_BUTTON_LABELS = [
-	"Save & Continue",
+	"Next",
+	"Create Account",
 ]
 
 // Commented out original STEP_SUBTITLES config
@@ -193,7 +195,8 @@ const STEP_SUBTITLES = [
 ]
 */
 const STEP_SUBTITLES = [
-	"This helps us tailor your meetday experience to fit your goals and style.",
+	"Help us tailor your Meetday experience to fit your style & goals.",
+	"Help us learn more about you.",
 ]
 
 // ─── Custom STEP_PANEL_CONFIGS for 2-step onboarding ──────────────────────────
@@ -1033,7 +1036,70 @@ function StepUnderReview({ onGoToDashboard }: { onGoToDashboard: () => void }) {
 // ─── StepOne and StepTwo Components ───────────────────────────────────────────
 
 // ─── Combined Step 1 Component ───────────────────────────────────────────────
-function StepOne({ isEmailReadOnly }: { isEmailReadOnly: boolean }) {
+function StepOne() {
+	const {
+		control,
+		formState: { errors },
+	} = useFormContext<FormValues>()
+
+	return (
+		<div className="flex flex-col gap-5">
+			<p className="text-sm font-bold text-black text-center mt-2">What best describes you?</p>
+			<Controller
+				control={control}
+				name="accountType"
+				render={({ field }) => (
+					<div className="grid grid-cols-2 gap-4">
+						{(["Individual", "Business"] as const).map(type => {
+							const selected = field.value === type
+							return (
+								<button
+									key={type}
+									type="button"
+									onClick={() => field.onChange(type)}
+									className={clsx(
+										"relative flex flex-col items-center gap-3 rounded-2xl border-[3px] border-black px-4 py-8 text-center transition-all duration-150 bg-white",
+										selected
+											? "shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-slate-50 translate-x-0 translate-y-0"
+											: "shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] hover:border-black/70"
+									)}
+								>
+									<div className="w-14 h-14 relative flex items-center justify-center">
+										<Image
+											src={
+												type === "Individual"
+													? "/images/person-3-fill-svgrepo-com 1.svg"
+													: "/images/person-3-fill-svgrepo-com 2.svg"
+											}
+											alt={type}
+											width={56}
+											height={56}
+											className="w-auto h-full object-contain"
+											aria-hidden
+										/>
+									</div>
+									<div className="mt-2">
+										<p className="text-base text-black font-extrabold">{type}</p>
+										<p className="text-[11px] font-semibold text-black/50 mt-1.5 leading-snug">
+											{type === "Individual"
+												? "I host experiences on my own"
+												: "I represent a company"}
+										</p>
+									</div>
+								</button>
+							)
+						})}
+					</div>
+				)}
+			/>
+			{errors.accountType && (
+				<p className="text-xs font-bold text-[#EE2C2C] text-center mt-1">{errors.accountType.message}</p>
+			)}
+		</div>
+	)
+}
+
+function StepTwo({ isEmailReadOnly }: { isEmailReadOnly: boolean }) {
 	const {
 		register,
 		control,
@@ -1048,137 +1114,48 @@ function StepOne({ isEmailReadOnly }: { isEmailReadOnly: boolean }) {
 	]
 
 	return (
-		<div className="flex flex-col gap-6">
-			<div className="flex gap-3">
-				<TextField
-					label="First name"
-					placeholder="Enter your first name"
-					{...register("firstName")}
-					error={!!errors.firstName}
-					helperText={errors.firstName?.message}
-					size="md"
-					className="flex-1"
-				/>
-				<TextField
-					label="Last name"
-					placeholder="Enter your last name"
-					{...register("lastName")}
-					error={!!errors.lastName}
-					helperText={errors.lastName?.message}
-					size="md"
-					className="flex-1"
-				/>
-			</div>
-
-			<div className="flex gap-3">
-				<div className="flex-1">
-					<Controller
-						control={control}
-						name="gender"
-						render={({ field }) => (
-							<Dropdown
-								label="Gender"
-								placeholder="Select gender"
-								options={genderOptions}
-								value={field.value}
-								onChange={field.onChange}
-								size="md"
-							/>
-						)}
+		<div className="flex flex-col gap-4">
+			<TextField
+				label="First name"
+				placeholder="Enter your first name"
+				{...register("firstName")}
+				error={!!errors.firstName}
+				helperText={errors.firstName?.message}
+				size="md"
+			/>
+			<TextField
+				label="Last name"
+				placeholder="Enter your last name"
+				{...register("lastName")}
+				error={!!errors.lastName}
+				helperText={errors.lastName?.message}
+				size="md"
+			/>
+			<Controller
+				control={control}
+				name="gender"
+				render={({ field }) => (
+					<Dropdown
+						label="Gender"
+						placeholder="Select gender"
+						options={genderOptions}
+						value={field.value}
+						onChange={field.onChange}
+						size="md"
 					/>
-				</div>
-				<TextField
-					label="Email address"
-					placeholder="Enter your email address"
-					type="email"
-					{...register("email")}
-					error={!!errors.email}
-					helperText={errors.email?.message}
-					size="md"
-					className="flex-1"
-					disabled={isEmailReadOnly}
-					hint={isEmailReadOnly ? "From your Google account" : undefined}
-				/>
-			</div>
-
-			<div>
-				<p className="text-label-sm font-semibold text-text-primary mb-3">What best describes you?</p>
-				<Controller
-					control={control}
-					name="accountType"
-					render={({ field }) => (
-						<div className="grid grid-cols-2 gap-3">
-							{(["Individual", "Business"] as const).map(type => {
-								const selected = field.value === type
-								return (
-									<button
-										key={type}
-										type="button"
-										onClick={() => field.onChange(type)}
-										className={clsx(
-											"relative flex flex-col items-center gap-3 rounded-action border-2 px-4 py-5 text-center transition-all duration-(--duration-120)",
-											selected
-												? "border-border-focus bg-surface-brand-soft"
-												: "border-border-default bg-surface-canvas hover:border-border-strong",
-										)}
-									>
-										{selected && (
-											<span className="absolute top-2.5 right-2.5 flex size-5 items-center justify-center rounded-avatar bg-action-primary">
-												<svg viewBox="0 0 12 12" fill="none" className="size-3">
-													<path
-														d="M2 6l2.5 2.5L10 3.5"
-														stroke="white"
-														strokeWidth={1.5}
-														strokeLinecap="round"
-														strokeLinejoin="round"
-													/>
-												</svg>
-											</span>
-										)}
-										<Image
-											src={
-												type === "Individual"
-													? "/onboarding/individual.svg"
-													: "/onboarding/business.svg"
-											}
-											alt=""
-											width={100}
-											height={100}
-											className="w-auto"
-											aria-hidden
-										/>
-										<div className="mt-2">
-											<p className="text-label-md text-text-primary font-semibold">{type}</p>
-											<p className="text-[10px] text-text-secondary mt-0.5">
-												{type === "Individual"
-													? "I host events on my own"
-													: "I represent a company or organization"}
-											</p>
-										</div>
-									</button>
-								)
-							})}
-						</div>
-					)}
-				/>
-				{errors.accountType && (
-					<p className="text-caption text-text-danger mt-2">{errors.accountType.message}</p>
 				)}
-				<p className="flex items-center gap-1.5 text-caption text-text-muted mt-3">
-					<svg
-						viewBox="0 0 16 16"
-						fill="currentColor"
-						className="size-3.5 shrink-0 text-icon-muted"
-					>
-						<path
-							fillRule="evenodd"
-							d="M8 15A7 7 0 108 1a7 7 0 000 14zm.75-10a.75.75 0 00-1.5 0v4a.75.75 0 001.5 0V5zm-.75 6.5a.875.875 0 100 1.75.875.875 0 000-1.75z"
-							clipRule="evenodd"
-						/>
-					</svg>
-					Don&apos;t worry - you can change this later. Next steps will adapt to your choice.
-				</p>
-			</div>
+			/>
+			<TextField
+				label="Email address"
+				placeholder="Enter your email address"
+				type="email"
+				{...register("email")}
+				error={!!errors.email}
+				helperText={errors.email?.message}
+				size="md"
+				disabled={isEmailReadOnly}
+				hint={isEmailReadOnly ? "From your Google account" : undefined}
+			/>
 		</div>
 	)
 }
@@ -1203,7 +1180,8 @@ const STEP_HEADINGS: HeadingConfig[] = [
 ]
 */
 const STEP_HEADINGS: HeadingConfig[] = [
-	{ plain: "Tell us", highlight: "about you" },
+	{ plain: "Getting", highlight: "Started" },
+	{ plain: "You're", highlight: "almost there" },
 ]
 
 // ─── Main page ────────────────────────────────────────────────────────────────
@@ -1282,7 +1260,7 @@ export default function OnboardingPage() {
 	const isLast = step === TOTAL - 1
 	const panelConfig = STEP_PANEL_CONFIGS[step]
 	*/
-	const TOTAL = TWO_STEP_PANEL_CONFIGS.length
+	const TOTAL = 2
 	const isLast = step === TOTAL - 1
 	const panelConfig = TWO_STEP_PANEL_CONFIGS[step]
 	const heading = STEP_HEADINGS[step]
@@ -1345,7 +1323,8 @@ export default function OnboardingPage() {
 	]
 	*/
 	const stepComponents = [
-		<StepOne key={0} isEmailReadOnly={isEmailReadOnly} />,
+		<StepOne key={0} />,
+		<StepTwo key={1} isEmailReadOnly={isEmailReadOnly} />,
 	]
 
 	return (
@@ -1367,10 +1346,13 @@ export default function OnboardingPage() {
 				{/* Top Section: Title & Subtitle */}
 				<div className="text-center pt-4">
 					<h2 className="font-heading text-3xl sm:text-4xl font-black text-black tracking-tight mb-3">
-						You&apos;re almost there
+						{step === 0 ? "Getting Started" : "You're almost there"}
 					</h2>
 					<p className="text-sm font-semibold text-black/60 max-w-xs mx-auto leading-relaxed">
-						Help us learn more about you.
+						{step === 0 
+							? "Help us tailor your Meetday experience to fit your style & goals."
+							: "Help us learn more about you."
+						}
 					</p>
 				</div>
 
@@ -1393,14 +1375,20 @@ export default function OnboardingPage() {
 								: (step === TOTAL - 1 ? "Create Account" : STEP_BUTTON_LABELS[step])
 							}
 						</Button>
+						{step === 0 && (
+							<p className="text-center text-xs font-semibold text-black/40 mt-3">
+								You can always change this later
+							</p>
+						)}
 					</form>
 				</FormProvider>
 
 				{/* Bottom Section: Indicator Dots */}
-				<div className="flex gap-2 justify-center items-center mt-8 mb-2">
+				<div className="flex gap-2 justify-center items-center mt-6 mb-2">
 					<span className="w-2 h-2 bg-black/15 rounded-full" />
 					<span className="w-2 h-2 bg-black/15 rounded-full" />
-					<span className="w-5 h-2 bg-[#EE2C2C] rounded-full transition-all" />
+					<span className={clsx("h-2 rounded-full transition-all duration-300", step === 0 ? "w-5 bg-[#EE2C2C]" : "w-2 bg-black/15")} />
+					<span className={clsx("h-2 rounded-full transition-all duration-300", step === 1 ? "w-5 bg-[#EE2C2C]" : "w-2 bg-black/15")} />
 				</div>
 			</div>
 		</AuthShell>
