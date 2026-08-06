@@ -58,117 +58,134 @@ export default function DashboardWelcomePage() {
 	const upcomingEvents = recentEvents.filter((e) => e.status === "PUBLISHED" || e.status === "LIVE")
 
 	return (
-		<div className="flex flex-col min-h-screen bg-surface-page">
-			<DashboardTopBar />
+		<div className="flex flex-col min-h-full bg-white">
+			{/* Top Nav / Subheader */}
+			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
+				<p className="text-sm font-semibold text-black/50 mx-auto">
+					Welcome to <span className="text-[#EE2C2C] font-bold">Meetday</span>
+				</p>
+			</div>
 
-			<div className="px-6 lg:px-8 py-8 max-w-7xl mx-auto w-full flex-1 flex flex-col gap-8 animate-in fade-in duration-150">
+			<div className="px-4 lg:px-6 py-4 max-w-6xl mx-auto w-full flex-1 flex flex-col gap-6">
+				
 				{/* Welcome Header */}
-				<div className="animate-fade-in text-left">
-					<h1 className="text-3xl md:text-5xl font-black tracking-tight text-text-primary leading-tight">
-						Hey {displayName}, <span className="text-red-600">what are we building today?</span>
+				<div className="text-center mt-2">
+					<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
+						Hey {displayName}, <span className="text-[#EE2C2C]">what are we building today?</span>
 					</h1>
-					<p className="text-md md:text-lg text-text-secondary mt-3 max-w-2xl font-medium">
-						Start something new, or pick up where you left off.
+					<p className="text-sm font-semibold text-black/50 mt-2 max-w-2xl mx-auto">
+						Start something new or pick up where you left off!
 					</p>
 				</div>
 
 				{/* Two CTAs grid */}
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
 					{/* CTA 1: Raise Sponsorship */}
-					<Link
-						href="/host/dashboard/proposal"
-						className="group relative flex flex-col items-start text-left p-6 rounded-3xl border border-border-default bg-surface-card shadow-md hover:shadow-xl hover:border-red-500/50 hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out overflow-hidden"
-					>
-						<div className="absolute -right-16 -top-16 size-48 rounded-full bg-red-500/10 blur-3xl group-hover:bg-red-500/20 transition-all duration-300" />
-						<div className="size-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-							<Icon as={DocumentTextSvg} size="md" color="inherit" />
+					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
+						<div className="flex items-center justify-between w-full mb-4">
+							<h2 className="text-lg font-heading font-black text-black">
+								Raise Sponsorships
+							</h2>
+							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
+								LIVE
+							</span>
 						</div>
-						<h2 className="text-xl font-bold text-text-primary leading-snug group-hover:text-red-600 transition-colors duration-300">
-							Raise Sponsorship
-						</h2>
-						<p className="text-body-sm text-text-secondary mt-2 mb-6 flex-1">
+						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
 							Create a professional proposal, connect with top brands, and secure funding for your upcoming events.
 						</p>
-						<div className="flex items-center gap-2 text-label-sm font-bold text-red-600 group-hover:translate-x-2 transition-transform duration-300">
-							Get Sponsored
-							<AltArrowRightSvg className="size-4" aria-hidden />
-						</div>
-					</Link>
+						<Link
+							href="/host/dashboard/proposal"
+							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
+						>
+							GET SPONSORED
+							<span className="text-base font-bold">➔</span>
+						</Link>
+					</div>
 
 					{/* CTA 2: Host an Experience */}
-					<Link
-						href="/host/dashboard/create"
-						className="group relative flex flex-col items-start text-left p-6 rounded-3xl border border-border-default bg-surface-card shadow-md hover:shadow-xl hover:border-red-500/50 hover:-translate-y-1 hover:scale-[1.01] transition-all duration-300 ease-out overflow-hidden"
-					>
-						<div className="absolute -right-16 -top-16 size-48 rounded-full bg-red-500/10 blur-3xl group-hover:bg-red-500/20 transition-all duration-300" />
-						<div className="size-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-							<Icon as={CalendarOutSvg} size="md" color="inherit" />
+					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
+						<div className="flex items-center justify-between w-full mb-4">
+							<h2 className="text-lg font-heading font-black text-black">
+								Host an experience
+							</h2>
+							<span className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
+								COMING SOON
+							</span>
 						</div>
-						<h2 className="text-xl font-bold text-text-primary leading-snug group-hover:text-red-600 transition-colors duration-300">
-							Host an Experience
-						</h2>
-						<p className="text-body-sm text-text-secondary mt-2 mb-6 flex-1">
+						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
 							Set up ticket types, dates, venue details, and invite your community to a brand new unforgettable experience.
 						</p>
-						<div className="flex items-center gap-2 text-label-sm font-bold text-red-600 group-hover:translate-x-2 transition-transform duration-300">
-							Create Event
-							<AltArrowRightSvg className="size-4" aria-hidden />
-						</div>
-					</Link>
+						<Link
+							href="/host/dashboard/create"
+							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
+						>
+							LIST EXPERIENCE
+							<span className="text-base font-bold">➔</span>
+						</Link>
+					</div>
 				</div>
 
-				<hr className="border-border-default" />
+				<style>{`
+					@keyframes zoom-pulse {
+						0%, 100% {
+							transform: scale(1);
+						}
+						50% {
+							transform: scale(1.15);
+						}
+					}
+					.badge-zoom-pulse {
+						animation: zoom-pulse 2s infinite ease-in-out;
+						display: inline-block;
+					}
+				`}</style>
+
+				<hr className="border-black/10 my-2" />
 
 				{/* Overview Section */}
-				<div className="flex flex-col gap-8">
+				<div className="flex flex-col gap-10 pb-8">
 					{/* Row 1: Approved Sponsorships */}
-					<div className="bg-surface-card rounded-action border border-border-default shadow-card overflow-hidden flex flex-col w-full">
-						<div className="flex items-center justify-between px-5 py-4 border-b border-border-default bg-surface-card-muted/50 shrink-0">
+					<div className="flex flex-col w-full">
+						<div className="flex items-center justify-between w-full mb-4">
 							<div>
-								<h2 className="text-label-md font-semibold text-text-primary">Upcoming Sponsor Experiences</h2>
-								<p className="text-caption text-text-secondary mt-0.5">Your published sponsorship proposals.</p>
+								<h2 className="text-xl font-heading font-black text-black">Sponsorship Proposals</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">View your approved proposals.</p>
 							</div>
-							<Link href="/host/dashboard/proposal" className="text-label-sm text-red-600 hover:text-red-700 hover:underline inline-flex items-center gap-1">
-								View All Proposals
-								<AltArrowRightSvg className="size-3.5" aria-hidden />
+							<Link href="/host/dashboard/proposal" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1">
+								View All Proposals &gt;
 							</Link>
 						</div>
 
 						{loadingProposals ? (
-							<div className="flex flex-col divide-y divide-border-default">
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
 								{Array.from({ length: 2 }).map((_, i) => (
-									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse">
-										<div className="size-12 rounded-xl bg-surface-card-muted shrink-0" />
+									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
+										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
 										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
-											<div className="h-4 bg-surface-card-muted rounded w-32" />
-											<div className="h-3 bg-surface-card-muted rounded w-20" />
+											<div className="h-4 bg-black/5 rounded w-32" />
+											<div className="h-3 bg-black/5 rounded w-20" />
 										</div>
 									</div>
 								))}
 							</div>
 						) : approvedSponsorships.length === 0 ? (
-							<div className="flex flex-col items-center justify-center py-12 px-4 text-center gap-3">
-								<div className="size-12 rounded-full bg-surface-card-muted flex items-center justify-center text-text-tertiary">
-									<Icon as={DocumentTextSvg} size="md" color="inherit" />
-								</div>
-								<div>
-									<p className="text-label-sm font-semibold text-text-primary">No approved sponsorships yet</p>
-									<p className="text-caption text-text-secondary mt-0.5">Submit your first proposal for admin approval to get sponsored.</p>
-								</div>
+							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
+								<p className="text-sm font-black text-black/80">No approved sponsorships yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Submit your first proposal for admin approval to get sponsored.</p>
 							</div>
 						) : (
-							<div className="flex flex-col divide-y divide-border-default">
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
 								{approvedSponsorships.map((prop) => {
 									const imgUrl = typeof prop.image === "string" ? prop.image : prop.image ? URL.createObjectURL(prop.image) : null
 									return (
 										<Link
 											key={prop.id}
 											href={`/host/dashboard/proposal?proposalId=${prop.id}`}
-											className="group/item flex items-center justify-between px-5 h-20 hover:bg-surface-card-muted/50 hover:pl-7 transition-all duration-300 ease-out"
+											className="group/item flex items-center justify-between px-5 h-20 bg-white hover:bg-black/[0.02] hover:pl-7 transition-all duration-300 ease-out"
 										>
 											<div className="flex items-center gap-3 min-w-0">
 												{imgUrl ? (
-													<div className="size-12 rounded-xl overflow-hidden shrink-0 border border-border-default">
+													<div className="size-12 rounded-xl overflow-hidden shrink-0 border border-black/10">
 														{/* eslint-disable-next-line @next/next/no-img-element */}
 														<img
 															src={imgUrl}
@@ -188,10 +205,10 @@ export default function DashboardWelcomePage() {
 												</div>
 											</div>
 											<div className="flex items-center gap-2">
-												<span className="text-[11px] text-text-brand font-semibold shrink-0 bg-surface-brand-soft px-2 py-0.5 rounded-badge border border-border-brand">
+												<span className="text-[11px] text-[#EE2C2C] font-black shrink-0 bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">
 													{prop.guestCount} guests
 												</span>
-												<span className="inline-flex items-center px-2.5 py-0.5 rounded-badge text-[10px] font-semibold shrink-0 bg-status-success-bg text-status-success-text">
+												<span className="inline-flex items-center px-2.5 py-0.5 rounded-badge text-[10px] font-bold shrink-0 bg-status-success-bg text-status-success-text">
 													Published
 												</span>
 											</div>
@@ -202,43 +219,37 @@ export default function DashboardWelcomePage() {
 						)}
 					</div>
 
-					{/* Row 2: Upcoming Events */}
-					<div className="bg-surface-card rounded-action border border-border-default shadow-card overflow-hidden flex flex-col w-full">
-						<div className="flex items-center justify-between px-5 py-4 border-b border-border-default bg-surface-card-muted/50 shrink-0">
+					{/* Row 2: Upcoming Events / Curated Experiences */}
+					<div className="flex flex-col w-full">
+						<div className="flex items-center justify-between w-full mb-4">
 							<div>
-								<h2 className="text-label-md font-semibold text-text-primary">Upcoming Events</h2>
-								<p className="text-caption text-text-secondary mt-0.5">Your published or live experiences.</p>
+								<h2 className="text-xl font-heading font-black text-black">Curated Experiences</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Your published or live experiences.</p>
 							</div>
-							<Link href="/host/dashboard/events" className="text-label-sm text-red-600 hover:text-red-700 hover:underline inline-flex items-center gap-1">
-								View All Events
-								<AltArrowRightSvg className="size-3.5" aria-hidden />
+							<Link href="/host/dashboard/events" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1">
+								View All Events &gt;
 							</Link>
 						</div>
 
 						{isLoading && !data ? (
-							<div className="flex flex-col divide-y divide-border-default">
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
 								{Array.from({ length: 2 }).map((_, i) => (
-									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse">
-										<div className="size-12 rounded-xl bg-surface-card-muted shrink-0" />
+									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
+										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
 										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
-											<div className="h-4 bg-surface-card-muted rounded w-32" />
-											<div className="h-3 bg-surface-card-muted rounded w-20" />
+											<div className="h-4 bg-black/5 rounded w-32" />
+											<div className="h-3 bg-black/5 rounded w-20" />
 										</div>
 									</div>
 								))}
 							</div>
 						) : upcomingEvents.length === 0 ? (
-							<div className="flex flex-col items-center justify-center py-12 px-4 text-center gap-3">
-								<div className="size-12 rounded-full bg-surface-card-muted flex items-center justify-center text-text-tertiary">
-									<Icon as={CalendarOutSvg} size="md" color="inherit" />
-								</div>
-								<div>
-									<p className="text-label-sm font-semibold text-text-primary">No upcoming events yet</p>
-									<p className="text-caption text-text-secondary mt-0.5">Create and publish an event to see it here.</p>
-								</div>
+							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
+								<p className="text-sm font-black text-black/80">No upcoming events yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Create and publish an event to see it here.</p>
 							</div>
 						) : (
-							<div className="flex flex-col divide-y divide-border-default">
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
 								{upcomingEvents.map((event) => {
 									const statusCfg = STATUS_CONFIG[event.status] ?? STATUS_CONFIG.DRAFT
 									const dateStr = formatEventDateRange(event.eventDate ?? undefined, event.endDate)
@@ -246,11 +257,11 @@ export default function DashboardWelcomePage() {
 										<Link
 											key={event.id}
 											href={`/host/dashboard/events/${event.id}`}
-											className="group/item flex items-center justify-between px-5 h-20 hover:bg-surface-card-muted/50 hover:pl-7 transition-all duration-300 ease-out"
+											className="group/item flex items-center justify-between px-5 h-20 bg-white hover:bg-black/[0.02] hover:pl-7 transition-all duration-300 ease-out"
 										>
 											<div className="flex items-center gap-3 min-w-0">
 												{event.coverImageUrl ? (
-													<div className="size-12 rounded-xl overflow-hidden shrink-0 border border-border-default">
+													<div className="size-12 rounded-xl overflow-hidden shrink-0 border border-black/10">
 														{/* eslint-disable-next-line @next/next/no-img-element */}
 														<img src={event.coverImageUrl} alt="" className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-300" />
 													</div>
@@ -264,7 +275,7 @@ export default function DashboardWelcomePage() {
 													<p className="text-caption text-text-tertiary mt-0.5">{dateStr} • {event.city || "Online"}</p>
 												</div>
 											</div>
-											<span className={`inline-flex items-center px-2.5 py-0.5 rounded-badge text-[10px] font-semibold shrink-0 ${statusCfg.className}`}>
+											<span className={`inline-flex items-center px-2.5 py-0.5 rounded-badge text-[10px] font-bold shrink-0 ${statusCfg.className}`}>
 												{statusCfg.label}
 											</span>
 										</Link>
