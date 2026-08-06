@@ -15,6 +15,7 @@ import {
 import { useHostStore } from "@/store/hostStore"
 import { ApiError, getApiErrorMessage } from "@/lib/errors"
 import LockKeyholeSvg from "@/icons/outlined/lock-keyhole.svg"
+import clsx from "clsx"
 
 type FormValues = {
 	displayName: string
@@ -32,7 +33,12 @@ function needsPrompt(p: HostProfile): boolean {
 	return !p.displayName || p.kycStatus !== "VERIFIED"
 }
 
-export function HostDetailsPrompt({ onClose }: { onClose?: () => void }) {
+interface HostDetailsPromptProps {
+	onClose?: () => void
+	inline?: boolean
+}
+
+export function HostDetailsPrompt({ onClose, inline = false }: HostDetailsPromptProps) {
 	const { profile, setProfile } = useHostStore()
 	const [open, setOpen] = useState(false)
 	const [saving, setSaving] = useState(false)
@@ -98,21 +104,25 @@ export function HostDetailsPrompt({ onClose }: { onClose?: () => void }) {
 		setSaving(true)
 		try {
 			// 1. Update Profile details (displayName, legalName, PAN)
-			const updated = await updateHostProfile({
-				displayName: values.displayName.trim(),
-				legalName: values.legalName.trim(),
-				pan: values.pan.trim().toUpperCase(),
-			})
-			setProfile(updated)
+			try {
+				await updateHostProfile({
+					displayName: values.displayName.trim(),
+					legalName: values.legalName.trim(),
+					pan: values.pan.trim().toUpperCase(),
+				})
+			} catch (e) {
+				// 409 profile already updated is fine, other errors throw
+				if (!(e instanceof ApiError && e.statusCode === 409)) throw e
+			}
 
-			// 2. Verify PAN
+			// 2. Trigger PAN KYC Verification check
 			try {
 				await verifyPan()
 			} catch (e) {
 				if (!(e instanceof ApiError && e.statusCode === 409)) throw e
 			}
 
-			// 3. Verify Bank
+			// 3. Trigger Bank Verification check
 			try {
 				await verifyBankAccount({
 					bankAccount: {
@@ -135,6 +145,7 @@ export function HostDetailsPrompt({ onClose }: { onClose?: () => void }) {
 
 			toast.success("Verification submitted successfully!")
 			setOpen(false)
+			if (onClose) onClose()
 		} catch (e) {
 			toast.error(getApiErrorMessage(e))
 		} finally {
@@ -142,138 +153,146 @@ export function HostDetailsPrompt({ onClose }: { onClose?: () => void }) {
 		}
 	}
 
-	if (!open) return null
+	if (!open && !inline) return null
+
+	const content = (
+		<div className={clsx(
+			"bg-white flex flex-col gap-6 text-black relative",
+			inline ? "w-full h-full p-6 overflow-y-auto" : "w-full max-w-140 max-h-[90vh] overflow-y-auto bg-surface-card rounded-action shadow-modal p-8"
+		)}>
+			{/* Cross close button on the top right */}
+			<button
+				type="button"
+				onClick={() => {
+					setOpen(false)
+					if (onClose) onClose()
+				}}
+				className="absolute top-4 right-4 text-black/60 hover:text-black p-2 rounded-full hover:bg-black/5 transition-colors text-lg font-bold leading-none"
+				aria-label="Close"
+			>
+				✕
+			</button>
+
+			<div>
+				<h2 className="text-xl font-heading font-black text-black">
+					Verify details for <span className="text-[#EE2C2C]">payouts & events</span>
+				</h2>
+				<p className="text-xs font-semibold text-black/50 mt-2">
+					Please complete verification to create events and receive ticket payouts. This is a one-time process.
+				</p>
+			</div>
+
+			<div className="flex flex-col gap-5">
+				<TextField
+					label="Display name"
+					placeholder="What should we call you?"
+					value={values.displayName}
+					onChange={e => setField("displayName", (e.target as HTMLInputElement).value)}
+					error={!!errors.displayName}
+					helperText={errors.displayName}
+					size="md"
+				/>
+
+				<div className="flex gap-3">
+					<TextField
+						label="Legal name (as per PAN)"
+						placeholder="Enter your full legal name"
+						value={values.legalName}
+						onChange={e => setField("legalName", (e.target as HTMLInputElement).value)}
+						error={!!errors.legalName}
+						helperText={errors.legalName}
+						size="md"
+						className="flex-1"
+					/>
+					<TextField
+						label="PAN card number"
+						placeholder="ABCDE1234F"
+						value={values.pan}
+						onChange={e =>
+							setField("pan", (e.target as HTMLInputElement).value.toUpperCase())
+						}
+						error={!!errors.pan}
+						helperText={errors.pan}
+						size="md"
+						className="flex-1"
+					/>
+				</div>
+
+				<div className="h-px bg-black/10" />
+
+				<p className="text-sm font-bold text-black -mb-2">Bank account details</p>
+
+				<TextField
+					label="Account holder name"
+					placeholder="As per your bank records"
+					value={values.accountHolderName}
+					onChange={e => setField("accountHolderName", (e.target as HTMLInputElement).value)}
+					error={!!errors.accountHolderName}
+					helperText={errors.accountHolderName}
+					size="md"
+				/>
+
+				<TextField
+					label="Account number"
+					placeholder="Enter your account number"
+					value={values.accountNumber}
+					onChange={e => setField("accountNumber", (e.target as HTMLInputElement).value)}
+					error={!!errors.accountNumber}
+					helperText={errors.accountNumber}
+					size="md"
+				/>
+
+				<div className="flex gap-3">
+					<TextField
+						label="IFSC code"
+						placeholder="e.g. HDFC0001234"
+						value={values.ifscCode}
+						onChange={e =>
+							setField("ifscCode", (e.target as HTMLInputElement).value.toUpperCase())
+						}
+						error={!!errors.ifscCode}
+						helperText={errors.ifscCode}
+						size="md"
+						className="flex-1"
+					/>
+					<TextField
+						label="Bank name"
+						placeholder="e.g. HDFC Bank"
+						value={values.bankName}
+						onChange={e => setField("bankName", (e.target as HTMLInputElement).value)}
+						error={!!errors.bankName}
+						helperText={errors.bankName}
+						size="md"
+						className="flex-1"
+					/>
+				</div>
+
+				<p className="flex items-center gap-1.5 text-xs text-black/50">
+					<Icon as={LockKeyholeSvg} size="sm" className="opacity-80" />
+					Your information is encrypted and never shared.
+				</p>
+			</div>
+
+			<div className="flex gap-3 mt-4 shrink-0">
+				<button
+					type="button"
+					onClick={handleSubmit}
+					disabled={saving}
+					className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all flex items-center justify-center gap-2 select-none"
+				>
+					{saving ? "Saving…" : "SUBMIT FOR VERIFICATION"}
+				</button>
+			</div>
+		</div>
+	)
+
+	if (inline) {
+		return content
+	}
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-			<div className="relative w-full max-w-140 max-h-[90vh] overflow-y-auto bg-surface-card rounded-action shadow-modal p-8 flex flex-col gap-6">
-				{/* Cross close button on the top right */}
-				<button
-					type="button"
-					onClick={() => {
-						setOpen(false)
-						if (onClose) onClose()
-					}}
-					className="absolute top-4 right-4 text-text-secondary hover:text-text-primary p-2 rounded-full hover:bg-surface-card-muted transition-colors text-lg font-bold leading-none"
-					aria-label="Close"
-				>
-					✕
-				</button>
-
-				<div>
-					<h2 className="text-heading-sm text-text-primary">
-						Verify details for <span className="text-text-brand">payouts & events</span>
-					</h2>
-					<p className="text-body-sm text-text-secondary mt-2">
-						Please complete verification to create events and receive ticket payouts. This is a one-time process.
-					</p>
-				</div>
-
-				<div className="flex flex-col gap-5">
-					<TextField
-						label="Display name"
-						placeholder="What should we call you?"
-						value={values.displayName}
-						onChange={e => setField("displayName", (e.target as HTMLInputElement).value)}
-						error={!!errors.displayName}
-						helperText={errors.displayName}
-						size="md"
-					/>
-
-					<div className="flex gap-3">
-						<TextField
-							label="Legal name (as per PAN)"
-							placeholder="Enter your full legal name"
-							value={values.legalName}
-							onChange={e => setField("legalName", (e.target as HTMLInputElement).value)}
-							error={!!errors.legalName}
-							helperText={errors.legalName}
-							size="md"
-							className="flex-1"
-						/>
-						<TextField
-							label="PAN card number"
-							placeholder="ABCDE1234F"
-							value={values.pan}
-							onChange={e =>
-								setField("pan", (e.target as HTMLInputElement).value.toUpperCase())
-							}
-							error={!!errors.pan}
-							helperText={errors.pan}
-							size="md"
-							className="flex-1"
-						/>
-					</div>
-
-					<div className="h-px bg-border-default" />
-
-					<p className="text-label-sm font-semibold text-text-primary -mb-2">Bank account details</p>
-
-					<TextField
-						label="Account holder name"
-						placeholder="As per your bank records"
-						value={values.accountHolderName}
-						onChange={e => setField("accountHolderName", (e.target as HTMLInputElement).value)}
-						error={!!errors.accountHolderName}
-						helperText={errors.accountHolderName}
-						size="md"
-					/>
-
-					<TextField
-						label="Account number"
-						placeholder="Enter your account number"
-						value={values.accountNumber}
-						onChange={e => setField("accountNumber", (e.target as HTMLInputElement).value)}
-						error={!!errors.accountNumber}
-						helperText={errors.accountNumber}
-						size="md"
-					/>
-
-					<div className="flex gap-3">
-						<TextField
-							label="IFSC code"
-							placeholder="e.g. HDFC0001234"
-							value={values.ifscCode}
-							onChange={e =>
-								setField("ifscCode", (e.target as HTMLInputElement).value.toUpperCase())
-							}
-							error={!!errors.ifscCode}
-							helperText={errors.ifscCode}
-							size="md"
-							className="flex-1"
-						/>
-						<TextField
-							label="Bank name"
-							placeholder="e.g. HDFC Bank"
-							value={values.bankName}
-							onChange={e => setField("bankName", (e.target as HTMLInputElement).value)}
-							error={!!errors.bankName}
-							helperText={errors.bankName}
-							size="md"
-							className="flex-1"
-						/>
-					</div>
-
-					<p className="flex items-center gap-1.5 text-caption text-text-secondary">
-						<Icon as={LockKeyholeSvg} size="sm" className="opacity-80" />
-						Your information is encrypted and never shared.
-					</p>
-				</div>
-
-				<div className="flex gap-3 mt-4">
-					<Button
-						type="button"
-						variant="primary"
-						size="md"
-						radius="pill"
-						className="flex-1"
-						onClick={handleSubmit}
-						disabled={saving}
-					>
-						{saving ? "Saving…" : "Submit & Verification"}
-					</Button>
-				</div>
-			</div>
+			{content}
 		</div>
 	)
 }

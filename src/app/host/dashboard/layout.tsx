@@ -351,10 +351,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 	*/
 
 	return (
-		<div className="min-h-screen flex bg-surface-page">
+		<div className="min-h-screen flex bg-[#EE2C2C] p-4 gap-4 overflow-hidden">
 			<Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-			<div className="flex-1 flex flex-col min-w-0">
+			<div className="flex-1 flex flex-col min-w-0 bg-white border-[4px] border-black rounded-[36px] overflow-hidden shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] h-[calc(100vh-2rem)]">
 				{/* Mobile top bar */}
 				<header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-surface-card border-b border-border-default">
 					<Link href="/host/dashboard">
@@ -375,8 +375,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 					</button>
 				</header>
 
-				<main className="flex-1">
-					<div className="w-full max-w-7xl mx-auto">{children}</div>
+				<main className="flex-1 overflow-y-auto">
+					<div className="w-full max-w-7xl mx-auto h-full">{children}</div>
 				</main>
 			</div>
 		</div>

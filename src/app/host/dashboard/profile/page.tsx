@@ -3,526 +3,324 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
-import { Button } from "@/components/ui/Button"
-import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
 import { useHostStore } from "@/store/hostStore"
 import { useAuthStore } from "@/store/authStore"
-import { getCategories, type Category } from "@/lib/api"
 import { HostDetailsPrompt } from "@/components/host/HostDetailsPrompt"
-
-const DB_NAME = "MeetdayProposalDB"
-const STORE_NAME = "proposals"
-const COMMUNITY_KEY = "activated_community"
-
-interface ActivatedCommunity {
-	name: string
-	about: string
-	logo: File | Blob | null
-	logoName: string
-	size: string
-	avgGuestCount: string
-	experiencesPerYear: string
-	categoryIds: string[]
-	instagram?: string
-	linkedin?: string
-	youtube?: string
-	portfolio?: string
-	activatedAt: string
-}
-
-function initDB(): Promise<IDBDatabase> {
-	return new Promise((resolve, reject) => {
-		const request = indexedDB.open(DB_NAME, 1)
-		request.onerror = () => reject(request.error)
-		request.onsuccess = () => resolve(request.result)
-		request.onupgradeneeded = () => {
-			request.result.createObjectStore(STORE_NAME)
-		}
-	})
-}
-
-function getCommunity(hostId: string): Promise<ActivatedCommunity | null> {
-	return initDB().then((db) => {
-		return new Promise<ActivatedCommunity | null>((resolve, reject) => {
-			const transaction = db.transaction(STORE_NAME, "readonly")
-			const store = transaction.objectStore(STORE_NAME)
-			const request = store.get(`${COMMUNITY_KEY}_${hostId}`)
-			request.onerror = () => reject(request.error)
-			request.onsuccess = () => resolve(request.result || null)
-		})
-	})
-}
+import { ActivateCommunityModal, type ActivatedCommunity } from "@/components/host/ActivateCommunityModal"
+import { CommunityProfileDetailsPanel } from "@/components/host/CommunityProfileDetailsPanel"
+import { VerificationsDetailsPanel } from "@/components/host/VerificationsDetailsPanel"
+import { EditProfilePanel } from "@/components/host/EditProfilePanel"
+import clsx from "clsx"
 
 import UserSvg from "@/icons/outlined/user.svg"
-import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
-import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
-import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
-import MapPointRotateSvg from "@/icons/outlined/map-point-rotate.svg"
-// import BellSvg from "@/icons/outlined/bell.svg"
-import CardSvg from "@/icons/filled/card.svg"
-import Chart2OutSvg from "@/icons/outlined/chart-2.svg"
-
-// ─── Status badge ─────────────────────────────────────────────────────────────
-
-function StatusBadge({ status }: { status: string }) {
-	const cfg: Record<string, { label: string; className: string; Icon: React.ElementType }> = {
-		VERIFIED: { label: "Verified", className: "bg-status-success-bg text-status-success-text", Icon: CheckCircleSvg },
-		APPROVED: { label: "Approved", className: "bg-status-success-bg text-status-success-text", Icon: CheckCircleSvg },
-		PENDING: { label: "Pending", className: "bg-status-trending-bg text-status-trending-text", Icon: ClockCircleSvg },
-		FAILED: { label: "Failed", className: "bg-status-error-bg text-status-error-text", Icon: CloseCircleSvg },
-		REJECTED: { label: "Rejected", className: "bg-status-error-bg text-status-error-text", Icon: CloseCircleSvg },
-	}
-	const { label, className, Icon: BadgeIcon } = cfg[status] ?? {
-		label: status,
-		className: "bg-surface-card-muted text-text-secondary",
-		Icon: ClockCircleSvg,
-	}
-	return (
-		<span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-badge text-caption font-medium ${className}`}>
-			<BadgeIcon className="size-3.5" aria-hidden />
-			{label}
-		</span>
-	)
-}
-
-// ─── Info row ─────────────────────────────────────────────────────────────────
-
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-	return (
-		<div className="flex items-center justify-between gap-4 py-3 border-b border-border-default last:border-b-0">
-			<p className="text-label-sm text-text-tertiary shrink-0">{label}</p>
-			<div className="text-right">{value}</div>
-		</div>
-	)
-}
-
-// ─── Section card ─────────────────────────────────────────────────────────────
-
-function SectionCard({ icon, title, children, className, action }: {
-	icon: React.ReactNode
-	title: string
-	children: React.ReactNode
-	className?: string
-	action?: React.ReactNode
-}) {
-	return (
-		<div className={clsx("bg-surface-card border border-border-default rounded-action px-5 py-5", className)}>
-			<div className="flex items-center justify-between gap-3 mb-5">
-				<div className="flex items-center gap-3">
-					<div className="size-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-						{icon}
-					</div>
-					<h2 className="text-label-lg font-semibold text-text-primary">{title}</h2>
-				</div>
-				{action}
-			</div>
-			{children}
-		</div>
-	)
-}
-
-// ─── Toggle ───────────────────────────────────────────────────────────────────
-
-// function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-// 	return (
-// 		<button
-// 			role="switch"
-// 			aria-checked={checked}
-// 			onClick={() => onChange(!checked)}
-// 			className={clsx(
-// 				"relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2",
-// 				checked ? "bg-action-primary" : "bg-neutral-200",
-// 			)}
-// 		>
-// 			<span className={clsx(
-// 				"pointer-events-none inline-block size-5 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200",
-// 				checked ? "translate-x-5" : "translate-x-0",
-// 			)} />
-// 		</button>
-// 	)
-// }
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-// const NOTIFICATION_PREFS = [
-// 	{ id: "new-registration", label: "New Registration", description: "When someone registers for your event", defaultOn: true },
-// 	{ id: "review-updates", label: "Review Updates", description: "Event approved, rejected, or under review", defaultOn: true },
-// 	{ id: "payout-notifications", label: "Payout Notifications", description: "When earnings are sent to your account", defaultOn: true },
-// 	{ id: "attendee-messages", label: "Attendee Messages", description: "Direct messages from attendees", defaultOn: false },
-// ]
-
-const PLAN_LABELS: Record<string, string> = {
-	DISCOVER: "Discover Plan",
-	COMMUNITY: "Community Plan",
-	SELL: "Sell Plan",
-}
 
 const GENDER_LABELS: Record<string, string> = {
 	MALE: "Male",
 	FEMALE: "Female",
-	OTHER: "Other",
+	NON_BINARY: "Non-binary",
 	PREFER_NOT_TO_SAY: "Prefer not to say",
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function ProfilePage() {
-	const router = useRouter()
 	const { profile, clearProfile } = useHostStore()
-	const signOut = useAuthStore((s) => s.signOut)
-	const user = useAuthStore((s) => s.user)
+	const { user, signOut } = useAuthStore()
+	const router = useRouter()
+
 	const [showDeleteModal, setShowDeleteModal] = useState(false)
 	const [showKycForm, setShowKycForm] = useState(false)
-
+	
+	// Right panel states
+	const [showCommunityModal, setShowCommunityModal] = useState(false)
+	const [isEditingCommunity, setIsEditingCommunity] = useState(false)
 	const [community, setCommunity] = useState<ActivatedCommunity | null>(null)
-	const [categories, setCategories] = useState<Category[]>([])
-	const [logoUrl, setLogoUrl] = useState<string | null>(null)
 
-	const hostId = profile?.id || ""
+	const [showVerificationsModal, setShowVerificationsModal] = useState(false)
+	const [isEditingVerifications, setIsEditingVerifications] = useState(false)
 
+	const [showEditProfileModal, setShowEditProfileModal] = useState(false)
+
+	// Fetch community status from IndexedDB on mount
 	useEffect(() => {
-		getCategories().then(setCategories).catch(() => {})
-	}, [])
-
-	useEffect(() => {
-		if (!hostId) return
-		getCommunity(hostId).then(setCommunity).catch((err) => console.error(err))
-	}, [hostId])
-
-	useEffect(() => {
-		if (community?.logo) {
-			const url = URL.createObjectURL(community.logo)
-			setLogoUrl(url)
-			return () => URL.revokeObjectURL(url)
-		} else {
-			setLogoUrl(null)
+		if (profile?.id) {
+			const DB_NAME = "MeetdayProposalDB"
+			const STORE_NAME = "proposals"
+			const COMMUNITY_KEY = "activated_community"
+			const request = indexedDB.open(DB_NAME, 1)
+			request.onsuccess = () => {
+				const db = request.result
+				if (db.objectStoreNames.contains(STORE_NAME)) {
+					const tx = db.transaction(STORE_NAME, "readonly")
+					const store = tx.objectStore(STORE_NAME)
+					const getReq = store.get(`${COMMUNITY_KEY}_${profile.id}`)
+					getReq.onsuccess = () => {
+						if (getReq.result) {
+							setCommunity(getReq.result)
+						}
+					}
+				}
+			}
 		}
-	}, [community])
+	}, [profile?.id])
 
-	const handleSignOut = () => {
-		signOut()
+	const handleSignOut = async () => {
 		clearProfile()
-		router.push("/")
+		router.replace("/")
+		await signOut()
 	}
 
-	// const [notifs, setNotifs] = useState<Record<string, boolean>>(
-	// 	Object.fromEntries(NOTIFICATION_PREFS.map(n => [n.id, n.defaultOn])),
-	// )
-
-	const phone = user?.phoneNumber || (profile as any)?.phone || ""
 	const email = user?.email || (profile as any)?.email || ""
-
 	const displayName = profile?.displayName || "Host"
-	const initials = displayName.split(" ").filter(Boolean).map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "H"
-	const planLabel = profile?.currentPlan ? PLAN_LABELS[profile.currentPlan] ?? profile.currentPlan : "—"
+	const avatarUrl = profile?.avatarUrl
 
-	const address = profile?.address
-	const formattedAddress = address
-		? [
-			address.addressLine1,
-			address.addressLine2,
-			address.city,
-			address.state && address.pincode ? `${address.state} ${address.pincode}` : address.state || address.pincode,
-			address.country,
-		].filter(Boolean).join(", ")
-		: null
+	const handleCommunityProfileClick = () => {
+		setShowCommunityModal(true)
+		setShowVerificationsModal(false)
+		setShowEditProfileModal(false)
+		setIsEditingVerifications(false)
+		setIsEditingCommunity(!community)
+	}
 
-	const communityCategoryNames = community?.categoryIds
-		? community.categoryIds.map(id => categories.find(c => c.id === id)?.name).filter(Boolean).join(", ")
-		: ""
+	const handleVerificationsClick = () => {
+		setShowVerificationsModal(true)
+		setShowCommunityModal(false)
+		setShowEditProfileModal(false)
+		setIsEditingCommunity(false)
+		setIsEditingVerifications(profile?.kycStatus !== "VERIFIED")
+	}
 
-	const hasSocial = (profile?.socialLinks && Object.values(profile.socialLinks).some(Boolean)) ||
-		!!community?.instagram || !!community?.linkedin || !!community?.youtube || !!community?.portfolio
-	const hasExtra = hasSocial || (profile?.languages?.length ?? 0) > 0 || (profile?.portfolioLinks?.length ?? 0) > 0
+	const handleEditProfileClick = () => {
+		setShowEditProfileModal(true)
+		setShowCommunityModal(false)
+		setShowVerificationsModal(false)
+		setIsEditingCommunity(false)
+		setIsEditingVerifications(false)
+	}
+
+	const closeRightPanel = () => {
+		setShowCommunityModal(false)
+		setShowVerificationsModal(false)
+		setShowEditProfileModal(false)
+	}
+
+	const isPanelOpen = showCommunityModal || showVerificationsModal || showEditProfileModal
 
 	return (
-		<div className="flex flex-col min-h-screen">
-			<DashboardTopBar />
+		<div className="flex flex-col min-h-full bg-white">
+			{/* Top Nav / Subheader */}
+			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
+				<p className="text-sm font-semibold text-black/50 mx-auto">
+					Welcome to <span className="text-[#EE2C2C] font-bold">Meetday</span>
+				</p>
+			</div>
 
-			<div className="flex-1 px-4 sm:px-6 lg:px-8 py-6 lg:py-8 bg-surface-page">
-				{/* Header */}
-				<div className="flex items-center justify-between gap-4 mb-6">
+			<div className={clsx(
+				"flex-1 min-h-0 w-full overflow-hidden relative",
+				isPanelOpen ? "lg:grid lg:grid-cols-[65%_35%]" : "flex"
+			)}>
+				
+				{/* Left Column: Profile details */}
+				<div className={clsx(
+					"px-6 lg:px-12 py-8 flex-1 flex flex-col gap-8 overflow-y-auto h-full transition-all duration-300",
+					isPanelOpen ? "max-w-none" : "max-w-2xl mx-auto"
+				)}>
+					{/* Header */}
 					<div>
-						<h1 className="text-heading-sm font-semibold text-text-primary">Profile</h1>
-						<p className="text-body-sm text-text-secondary mt-0.5">Your host identity and account details</p>
+						<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
+							My Profile
+						</h1>
+						<p className="text-sm font-semibold text-black/50 mt-1.5">
+							Your host identity and account details
+						</p>
 					</div>
-					<Button
-						variant="secondary"
-						size="sm"
-						radius="pill"
-						className="text-text-primary hover:bg-surface-card-muted shrink-0"
-						onClick={handleSignOut}
-					>
-						Sign Out
-					</Button>
-				</div>
 
-				{/* 2-column grid */}
-				<div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-4 items-start">
-
-					{/* ── LEFT COLUMN ─────────────────────────────────────── */}
-					<div className="flex flex-col gap-4">
-
-						{/* Identity */}
-						<SectionCard
-							icon={<Icon as={UserSvg} size="md" color="brand" />}
-							title="Host Identity"
-							action={
-								<div className="flex items-center gap-2">
-									<Link href="/host/dashboard/profile/edit">
-										<Button variant="secondary" size="sm" radius="pill">
-											Edit Profile
-										</Button>
-									</Link>
-									<Button
-										variant="primary"
-										size="sm"
-										radius="pill"
-										className="bg-red-500 hover:bg-red-600 border-red-500"
-										onClick={() => setShowDeleteModal(true)}
-									>
-										Delete Account
-									</Button>
-								</div>
-							}
-						>
-							{/* Avatar row */}
-							<div className="flex items-center gap-4 mb-6 pb-6 border-b border-border-default">
-								<div className="size-20 rounded-full shrink-0 overflow-hidden bg-red-100 flex items-center justify-center text-red-700 text-heading-sm font-bold select-none">
-									{profile?.avatarUrl ? (
+					{/* Yellow Card Container */}
+					<div className="w-full bg-[#FFC940] border-[3px] border-black rounded-[28px] p-3.5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+						{/* Inner Dashed Card */}
+						<div className="w-full bg-white border-2 border-dashed border-black/40 rounded-[20px] p-6 flex flex-col gap-5">
+							
+							{/* Avatar Row */}
+							<div className="flex items-center gap-4">
+								<div className="relative size-16 rounded-2xl border-[3px] border-black overflow-hidden bg-slate-50 flex items-center justify-center shrink-0">
+									{avatarUrl ? (
 										// eslint-disable-next-line @next/next/no-img-element
-										<img src={profile.avatarUrl} alt={displayName} className="size-full object-cover" />
+										<img src={avatarUrl} alt={displayName} className="size-full object-cover" />
 									) : (
-										<Icon as={UserSvg} size="lg" className="text-red-700 size-10" />
+										<Icon as={UserSvg} size="lg" className="text-black size-8" />
 									)}
 								</div>
-								<div>
-									<p className="text-title-sm font-semibold text-text-primary">{displayName}</p>
-									{profile?.legalName && profile.legalName !== displayName && (
-										<p className="text-caption text-text-muted mt-0.5">Legal: {profile.legalName}</p>
-									)}
-									{profile && (
-										<span className="mt-2 inline-flex items-center px-2 py-0.5 rounded-badge text-caption font-medium bg-surface-card-muted text-text-secondary">
-											{profile.hostType === "INDIVIDUAL" ? "Individual Host" : "Business Host"}
-										</span>
-									)}
+								
+								<div className="flex flex-col gap-1.5">
+									<p className="text-xl font-heading font-black text-black leading-none">{displayName}</p>
+									<span className="inline-block bg-[#1E1B4B] text-white text-[8px] font-black px-2.5 py-0.5 rounded-lg uppercase tracking-wider w-max">
+										{profile?.hostType === "INDIVIDUAL" ? "Individual Host" : "Business Host"}
+									</span>
+								</div>
+
+								<button 
+									onClick={handleEditProfileClick}
+									className="ml-auto font-heading font-black text-sm text-black hover:underline cursor-pointer"
+								>
+									Edit
+								</button>
+							</div>
+
+							{/* Divider */}
+							<hr className="border-dashed border-black/10 my-1" />
+
+							{/* Info Rows */}
+							<div className="flex flex-col gap-3">
+								<div className="flex gap-2 text-sm font-semibold">
+									<span className="text-black/50 w-24">Gender :</span>
+									<span className="text-[#6C32D1] font-bold">
+										{profile?.gender ? (GENDER_LABELS[profile.gender] ?? profile.gender) : "Not specified"}
+									</span>
+								</div>
+								<div className="flex gap-2 text-sm font-semibold">
+									<span className="text-black/50 w-24">Email ID :</span>
+									<span className="text-[#6C32D1] font-bold truncate max-w-[280px]">
+										{email || "Not specified"}
+									</span>
 								</div>
 							</div>
 
-							{/* Identity info rows */}
-							<div className="-my-3">
-								{phone && (
-									<InfoRow label="Phone number" value={<p className="text-label-sm text-text-primary">{phone}</p>} />
-								)}
-								{email && (
-									<InfoRow label="Email" value={<p className="text-label-sm text-text-primary">{email}</p>} />
-								)}
-								{profile?.gender && (
-									<InfoRow label="Gender" value={<p className="text-label-sm text-text-primary">{GENDER_LABELS[profile.gender] ?? profile.gender}</p>} />
-								)}
-
-								{profile?.pan && (
-									<InfoRow label="PAN" value={<p className="text-label-sm text-text-primary font-mono">{profile.pan}</p>} />
-								)}
-								{profile?.gstin && (
-									<InfoRow label="GSTIN" value={<p className="text-label-sm text-text-primary font-mono">{profile.gstin}</p>} />
-								)}
-							</div>
-						</SectionCard>
-
-						{/* About Community and Experiences */}
-						{(profile || community) && (
-							<SectionCard icon={<Icon as={MapPointRotateSvg} size="md" color="brand" />} title="About Community and Experiences">
-								{(profile?.hostBio || community?.about) && (
-									<div className="mb-5 pb-5 border-b border-border-default">
-										<p className="text-body-sm text-text-secondary leading-relaxed">
-											{profile?.hostBio || community?.about}
-										</p>
-									</div>
-								)}
-								<div className="-my-3">
-									{profile?.averageRating != null && (
-										<InfoRow
-											label="Average rating"
-											value={<p className="text-label-sm text-text-primary">{profile.averageRating.toFixed(1)} ★ ({profile.totalReviews ?? 0} reviews)</p>}
-										/>
-									)}
-									{community?.size && (
-										<InfoRow
-											label="Community size"
-											value={<p className="text-label-sm text-text-primary">{community.size} members</p>}
-										/>
-									)}
-									{community?.avgGuestCount && (
-										<InfoRow
-											label="Average event guest count"
-											value={<p className="text-label-sm text-text-primary">{community.avgGuestCount} guests</p>}
-										/>
-									)}
-									{community?.experiencesPerYear && (
-										<InfoRow
-											label="Curated experiences per year"
-											value={<p className="text-label-sm text-text-primary">{community.experiencesPerYear} events</p>}
-										/>
-									)}
-									{profile?.operatingCities && profile.operatingCities.length > 0 && (
-										<InfoRow
-											label="Operating cities"
-											value={
-												<div className="flex flex-wrap gap-1.5 justify-end">
-													{profile.operatingCities.map(city => (
-														<span key={city} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-badge text-caption font-medium bg-surface-card-muted text-text-secondary">
-															<MapPointRotateSvg className="size-3" aria-hidden />
-															{city}
-														</span>
-													))}
-												</div>
-											}
-										/>
-									)}
-								</div>
-							</SectionCard>
-						)}
-
-						{/* Categories */}
-						{((profile?.categories && profile.categories.length > 0) || (community?.categoryIds && community.categoryIds.length > 0)) && (
-							<SectionCard icon={<Icon as={Chart2OutSvg} size="md" color="brand" />} title="Experience Categories">
-								<div className="flex flex-wrap gap-2">
-									{profile?.categories?.map(({ category }) => (
-										<span key={category.id} className="inline-flex items-center px-3 py-1 rounded-badge text-label-sm font-medium bg-surface-brand-soft text-text-brand border border-border-brand">
-											{category.name}
-										</span>
-									))}
-									{community?.categoryIds?.map(id => {
-										const catName = categories.find(c => c.id === id)?.name
-										if (!catName) return null
-										if (profile?.categories?.some(c => c.categoryId === id)) return null
-										return (
-											<span key={id} className="inline-flex items-center px-3 py-1 rounded-badge text-label-sm font-medium bg-surface-brand-soft text-text-brand border border-border-brand">
-												{catName}
-											</span>
-										)
-									})}
-								</div>
-							</SectionCard>
-						)}
-
-						{/* Social & Links */}
-						{hasExtra && (
-							<SectionCard icon={<Icon as={UserSvg} size="md" color="brand" />} title="Social & Links">
-								<div className="-my-3">
-									{(profile?.socialLinks?.youtube || community?.youtube) && (
-										<InfoRow label="YouTube" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile?.socialLinks?.youtube || community?.youtube}</p>} />
-									)}
-									{(profile?.socialLinks?.instagram || community?.instagram) && (
-										<InfoRow label="Instagram" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile?.socialLinks?.instagram || community?.instagram}</p>} />
-									)}
-									{(profile?.socialLinks?.linkedin || community?.linkedin) && (
-										<InfoRow label="LinkedIn" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile?.socialLinks?.linkedin || community?.linkedin}</p>} />
-									)}
-									{(profile?.socialLinks?.portfolio || community?.portfolio) && (
-										<InfoRow label="Portfolio" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile?.socialLinks?.portfolio || community?.portfolio}</p>} />
-									)}
-									{profile?.languages && profile.languages.length > 0 && (
-										<InfoRow
-											label="Languages"
-											value={
-												<div className="flex flex-wrap gap-1.5 justify-end">
-													{profile.languages.map(lang => (
-														<span key={lang} className="inline-flex items-center px-2 py-0.5 rounded-badge text-caption font-medium bg-surface-card-muted text-text-secondary">{lang}</span>
-													))}
-												</div>
-											}
-										/>
-									)}
-									{profile?.portfolioLinks && profile.portfolioLinks.length > 0 && (
-										<InfoRow
-											label="Portfolio links"
-											value={
-												<div className="flex flex-col gap-1 items-end">
-													{profile.portfolioLinks.map((link, i) => (
-														<p key={i} className="text-label-sm text-text-brand truncate max-w-50">{link}</p>
-													))}
-												</div>
-											}
-										/>
-									)}
-								</div>
-							</SectionCard>
-						)}
-
-						{/* Address */}
-						{formattedAddress && (
-							<SectionCard icon={<Icon as={MapPointRotateSvg} size="md" color="brand" />} title="Address">
-								<p className="text-label-sm text-text-primary leading-relaxed">{formattedAddress}</p>
-							</SectionCard>
-						)}
+						</div>
 					</div>
 
-					{/* ── RIGHT COLUMN ────────────────────────────────────── */}
-					<div className="flex flex-col gap-4">
-
-						{/* Verification & Approval */}
-						{profile && (
-							<SectionCard 
-								icon={<Icon as={CheckCircleSvg} size="md" color="brand" />} 
-								title="Verification"
-								action={
-									profile.kycStatus !== "VERIFIED" && (
-										<Button 
-											variant="primary" 
-											size="sm" 
-											radius="pill"
-											onClick={() => setShowKycForm(true)}
-										>
-											Verify KYC
-										</Button>
-									)
-								}
-							>
-								<div className="-my-3">
-									<InfoRow label="KYC" value={<StatusBadge status={profile.kycStatus} />} />
-									{profile.kycFailureReason && (
-										<InfoRow label="KYC reason" value={<p className="text-label-sm text-status-error-text max-w-50 text-right leading-snug">{profile.kycFailureReason}</p>} />
-									)}
-									<InfoRow label="PAN" value={<StatusBadge status={profile.panVerificationStatus} />} />
-									<InfoRow label="Bank" value={<StatusBadge status={profile.bankVerificationStatus} />} />
-								</div>
-							</SectionCard>
-						)}
-
-
-
-						{/* Notification Preferences */}
-						{/* <SectionCard icon={<Icon as={BellSvg} size="md" color="brand" />} title="Notifications">
-							<div className="flex flex-col divide-y divide-border-default -my-1">
-								{NOTIFICATION_PREFS.map((notif, i) => (
-									<div
-										key={notif.id}
-										className={clsx(
-											"flex items-center justify-between gap-3 py-4",
-											i === 0 && "pt-0",
-											i === NOTIFICATION_PREFS.length - 1 && "pb-0",
-										)}
-									>
-										<div className="min-w-0">
-											<p className="text-label-sm font-semibold text-text-primary">{notif.label}</p>
-											<p className="text-caption text-text-tertiary mt-0.5 leading-snug">{notif.description}</p>
-										</div>
-										<Toggle
-											checked={notifs[notif.id]}
-											onChange={v => setNotifs(prev => ({ ...prev, [notif.id]: v }))}
-										/>
-									</div>
-								))}
+					{/* Options Menu List */}
+					<div className="flex flex-col mt-4">
+						
+						{/* Community Profile */}
+						<div 
+							onClick={handleCommunityProfileClick}
+							className="flex items-center justify-between py-4 border-b border-black/10 cursor-pointer hover:bg-black/[0.01]"
+						>
+							<span className="font-heading font-black text-base text-black">Community Profile</span>
+							<div className="flex items-center gap-3">
+								<button 
+									type="button"
+									className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+								>
+									{community ? "VIEW DETAILS" : "ACTIVATE NOW"}
+								</button>
+								<span className="text-black/50 font-black text-lg">&gt;</span>
 							</div>
-						</SectionCard> */}
+						</div>
+
+						{/* My Verifications */}
+						<div 
+							onClick={handleVerificationsClick}
+							className="flex items-center justify-between py-4 border-b border-black/10 cursor-pointer hover:bg-black/[0.01]"
+						>
+							<span className="font-heading font-black text-base text-black">My Verifications</span>
+							<div className="flex items-center gap-3">
+								<button 
+									type="button"
+									className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+								>
+									{profile?.kycStatus === "VERIFIED" ? "VIEW DETAILS" : "VERIFY NOW"}
+								</button>
+								<span className="text-black/50 font-black text-lg">&gt;</span>
+							</div>
+						</div>
+
+						{/* Profile Actions */}
+						<div className="flex items-center justify-between py-4">
+							<span className="font-heading font-black text-base text-black">Profile Actions</span>
+							<div className="flex items-center gap-3">
+								<button 
+									onClick={handleSignOut} 
+									className="bg-white border-[3px] border-black text-black rounded-2xl px-4 py-2 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+								>
+									LOG OUT
+								</button>
+								<button 
+									onClick={() => setShowDeleteModal(true)} 
+									className="bg-[#EE2C2C] border-[3px] border-black text-white rounded-2xl px-4 py-2 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+								>
+									DELETE
+								</button>
+							</div>
+						</div>
 
 					</div>
 				</div>
+
+				{/* Right Column: Inline Activate Community, Verifications, or Edit Profile Drawer */}
+				{isPanelOpen && profile?.id && (
+					<>
+						{/* Mobile/Tablet Backdrop Blur */}
+						<div 
+							onClick={closeRightPanel}
+							className="lg:hidden fixed inset-0 bg-black/45 z-40 backdrop-blur-xs"
+						/>
+						
+						{/* Responsive drawer container */}
+						<div className={clsx(
+							"bg-white h-full flex flex-col z-50 transition-all duration-300 animate-in slide-in-from-right",
+							"fixed inset-y-0 right-0 w-full sm:w-[420px] border-l-4 border-black shadow-modal",
+							"lg:static lg:border-l-0 lg:border-l lg:border-black/10 lg:shadow-none lg:w-full"
+						)}>
+							{showCommunityModal ? (
+								isEditingCommunity ? (
+									<ActivateCommunityModal
+										hostId={profile.id}
+										profileInstagram={profile.socialLinks?.instagram || ""}
+										profileLinkedin={profile.socialLinks?.linkedin || ""}
+										profileYoutube={profile.socialLinks?.youtube || ""}
+										profilePortfolio={profile.socialLinks?.portfolio || ""}
+										onClose={() => {
+											if (!community) {
+												setShowCommunityModal(false)
+											} else {
+												setIsEditingCommunity(false)
+											}
+										}}
+										onSuccess={(saved) => {
+											setCommunity(saved)
+											setIsEditingCommunity(false)
+										}}
+										inline={true}
+									/>
+								) : (
+									<CommunityProfileDetailsPanel
+										community={community!}
+										onEdit={() => setIsEditingCommunity(true)}
+										onClose={() => setShowCommunityModal(false)}
+									/>
+								)
+							) : showVerificationsModal ? (
+								isEditingVerifications ? (
+									<HostDetailsPrompt
+										inline={true}
+										onClose={() => {
+											if (profile.kycStatus === "VERIFIED") {
+												setIsEditingVerifications(false)
+											} else {
+												setShowVerificationsModal(false)
+											}
+										}}
+									/>
+								) : (
+									<VerificationsDetailsPanel
+										profile={profile}
+										onVerifyNow={() => setIsEditingVerifications(true)}
+										onClose={() => setShowVerificationsModal(false)}
+									/>
+								)
+							) : (
+								<EditProfilePanel
+									onClose={() => setShowEditProfileModal(false)}
+									onSuccess={() => {
+										// Successfully saved updates reload automatically
+									}}
+								/>
+							)}
+						</div>
+					</>
+				)}
+
 			</div>
 
 			<DeleteAccountModal
@@ -537,9 +335,6 @@ export default function ProfilePage() {
 				}}
 			/>
 
-			{showKycForm && (
-				<HostDetailsPrompt onClose={() => setShowKycForm(false)} />
-			)}
 		</div>
 	)
 }
