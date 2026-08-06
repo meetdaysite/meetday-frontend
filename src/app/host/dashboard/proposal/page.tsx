@@ -9,19 +9,30 @@ import clsx from "clsx"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
-import { getCategories, updateHostProfile, type Category } from "@/lib/api"
+import {
+    getCategories,
+    updateHostProfile,
+    type Category,
+    createSponsorshipProposal,
+    updateSponsorshipProposal,
+    getMySponsorshipProposals,
+    submitSponsorshipProposal,
+    deleteSponsorshipProposal,
+    getUploadUrl,
+    getHostCommunityProfile,
+    activateHostCommunityProfile,
+    deactivateHostCommunityProfile,
+    type SponsorshipProposal as ApiSponsorshipProposal,
+    type SponsorshipProposalPayload,
+    type HostCommunityProfile,
+    type HostCommunityProfilePayload,
+} from "@/lib/api"
 
 import UploadSvg from "@/icons/outlined/upload.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
 import DotsSvg from "@/icons/outlined/dots.svg"
 import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
-
-// ─── IndexedDB Config ────────────────────────────────────────────────────────
-const DB_NAME = "MeetdayProposalDB"
-const STORE_NAME = "proposals"
-const RECORD_KEY = "current_proposal"
-const COMMUNITY_KEY = "activated_community"
 
 export interface SponsorPrice {
     name: string
@@ -32,7 +43,7 @@ export interface StoredProposal {
     id: string
     name: string
     about: string
-    image: File | Blob | null
+    image: File | Blob | string | null
     imageName: string
     date: string
     venue: string
@@ -40,7 +51,7 @@ export interface StoredProposal {
     audienceProfile: string | string[]
     ageGroup: string
     guestCount: string
-    docFile: File | Blob
+    docFile: File | Blob | string
     docName: string
     docType: string
     docSize: number
@@ -50,7 +61,7 @@ export interface StoredProposal {
     pendingRevision?: {
         name: string
         about: string
-        image: File | Blob | null
+        image: File | Blob | string | null
         imageName: string
         date: string
         venue: string
@@ -58,7 +69,7 @@ export interface StoredProposal {
         audienceProfile: string | string[]
         ageGroup: string
         guestCount: string
-        docFile: File | Blob
+        docFile: File | Blob | string
         docName: string
         docType: string
         docSize: number
@@ -67,131 +78,64 @@ export interface StoredProposal {
     }
 }
 
-interface ActivatedCommunity {
-    name: string
-    about: string
-    logo: File | Blob | null
-    logoName: string
-    size: string
-    avgGuestCount: string
-    experiencesPerYear: string
-    categoryIds: string[]
-    instagram?: string
-    linkedin?: string
-    youtube?: string
-    portfolio?: string
-    activatedAt: string
-}
-
-function initDB(): Promise<IDBDatabase> {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, 1)
-        request.onerror = () => reject(request.error)
-        request.onsuccess = () => resolve(request.result)
-        request.onupgradeneeded = () => {
-            request.result.createObjectStore(STORE_NAME)
-        }
-    })
-}
-
-function saveProposalsList(proposals: StoredProposal[], hostId: string): Promise<StoredProposal[]> {
-    return initDB().then((db) => {
-        return new Promise<StoredProposal[]>((resolve, reject) => {
-            const transaction = db.transaction(STORE_NAME, "readwrite")
-            const store = transaction.objectStore(STORE_NAME)
-            const request = store.put(proposals, `${RECORD_KEY}_${hostId}`)
-            request.onerror = () => reject(request.error)
-            request.onsuccess = () => resolve(proposals)
-        })
-    })
-}
-
-export function getProposals(hostId: string): Promise<StoredProposal[]> {
-    return initDB().then((db) => {
-        return new Promise<StoredProposal[]>((resolve, reject) => {
-            const transaction = db.transaction(STORE_NAME, "readonly")
-            const store = transaction.objectStore(STORE_NAME)
-            const request = store.get(`${RECORD_KEY}_${hostId}`)
-            request.onerror = () => reject(request.error)
-            request.onsuccess = () => {
-                const res = request.result
-                if (!res) {
-                    resolve([])
-                } else if (Array.isArray(res)) {
-                    resolve(res)
-                } else {
-                    // Legacy single proposal -> convert to array with a dummy ID
-                    resolve([{
-                        id: res.id || "legacy",
-                        name: res.name || "",
-                        about: res.about || "",
-                        image: res.image || null,
-                        imageName: res.imageName || "",
-                        date: res.date || "",
-                        venue: res.venue || "",
-                        city: res.city || "",
-                        audienceProfile: res.audienceProfile || "",
-                        ageGroup: res.ageGroup || "",
-                        guestCount: res.guestCount || "",
-                        docFile: res.docFile || res.data,
-                        docName: res.docName || res.name || "",
-                        docType: res.docType || res.type || "",
-                        docSize: res.docSize || res.size || 0,
-                        uploadedAt: res.uploadedAt || new Date().toISOString(),
-                    }])
-                }
+function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
+    return {
+        id: p.id,
+        name: p.name || "",
+        about: p.about || "",
+        image: p.imageUrl || null,
+        imageName: p.imageKey ? p.imageKey.split("/").pop() || "" : "",
+        date: p.eventDate ? p.eventDate.substring(0, 10) : "",
+        venue: p.venue || "",
+        city: p.city || "",
+        audienceProfile: p.audienceProfile || [],
+        ageGroup: p.ageGroup || "",
+        guestCount: p.guestCount || "",
+        docFile: p.docUrl || "",
+        docName: p.docName || "",
+        docType: p.docType || "",
+        docSize: p.docSize || 0,
+        uploadedAt: p.updatedAt,
+        status: p.status,
+        sponsorPrices: (p.sponsorTiers || []).map((t) => ({ name: t.name, price: t.price })),
+        pendingRevision: p.pendingRevision
+            ? {
+                name: (p.pendingRevision.name as string) || p.name || "",
+                about: (p.pendingRevision.about as string) || p.about || "",
+                image: (p.pendingRevision.imageUrl as string) || p.imageUrl || null,
+                imageName: p.pendingRevision.imageKey ? String(p.pendingRevision.imageKey).split("/").pop() || "" : p.imageKey?.split("/").pop() || "",
+                date: (p.pendingRevision.eventDate as string)?.substring(0, 10) || (p.eventDate || "").substring(0, 10),
+                venue: (p.pendingRevision.venue as string) || p.venue || "",
+                city: (p.pendingRevision.city as string) || p.city || "",
+                audienceProfile: (p.pendingRevision.audienceProfile as string[]) || p.audienceProfile || [],
+                ageGroup: (p.pendingRevision.ageGroup as string) || p.ageGroup || "",
+                guestCount: (p.pendingRevision.guestCount as string) || p.guestCount || "",
+                docFile: (p.pendingRevision.docUrl as string) || p.docUrl || "",
+                docName: (p.pendingRevision.docName as string) || p.docName || "",
+                docType: (p.pendingRevision.docType as string) || p.docType || "",
+                docSize: (p.pendingRevision.docSize as number) || p.docSize || 0,
+                uploadedAt: p.updatedAt,
+                sponsorPrices: ((p.pendingRevision.sponsorTiers as { name: string; price: string }[]) || (p.sponsorTiers || [])).map((t) => ({ name: t.name, price: t.price })),
             }
-        })
-    })
+            : undefined,
+    }
 }
 
-function deleteProposalsList(hostId: string): Promise<void> {
-    return initDB().then((db) => {
-        return new Promise<void>((resolve, reject) => {
-            const transaction = db.transaction(STORE_NAME, "readwrite")
-            const store = transaction.objectStore(STORE_NAME)
-            const request = store.delete(`${RECORD_KEY}_${hostId}`)
-            request.onerror = () => reject(request.error)
-            request.onsuccess = () => resolve()
-        })
-    })
+export async function getProposals(_hostId: string): Promise<StoredProposal[]> {
+    const { proposals } = await getMySponsorshipProposals()
+    return proposals.map(mapApiProposalToStored)
 }
 
-function saveCommunity(community: ActivatedCommunity, hostId: string): Promise<ActivatedCommunity> {
-    return initDB().then((db) => {
-        return new Promise<ActivatedCommunity>((resolve, reject) => {
-            const transaction = db.transaction(STORE_NAME, "readwrite")
-            const store = transaction.objectStore(STORE_NAME)
-            const request = store.put(community, `${COMMUNITY_KEY}_${hostId}`)
-            request.onerror = () => reject(request.error)
-            request.onsuccess = () => resolve(community)
-        })
-    })
+async function uploadFileAndGetKey(
+    file: File,
+    context: "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT",
+): Promise<string> {
+    const { url, key } = await getUploadUrl({ context, contentType: file.type })
+    await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
+    return key
 }
 
-function getCommunity(hostId: string): Promise<ActivatedCommunity | null> {
-    return initDB().then((db) => {
-        return new Promise<ActivatedCommunity | null>((resolve, reject) => {
-            const transaction = db.transaction(STORE_NAME, "readonly")
-            const store = transaction.objectStore(STORE_NAME)
-            const request = store.get(`${COMMUNITY_KEY}_${hostId}`)
-            request.onerror = () => reject(request.error)
-            request.onsuccess = () => resolve(request.result || null)
-        })
-    })
-}
 
-function deleteCommunity(hostId: string): Promise<void> {
-    return initDB().then((db) => {
-        return new Promise<void>((resolve, reject) => {
-            const transaction = db.transaction(STORE_NAME, "readwrite")
-            const store = transaction.objectStore(STORE_NAME)
-            const request = store.delete(`${COMMUNITY_KEY}_${hostId}`)
-            request.onerror = () => reject(request.error)
-            request.onsuccess = () => resolve()
-        })
-    })
-}
 
 // ─── Format helper ──────────────────────────────────────────────────────────
 function formatBytes(bytes: number, decimals = 2) {
@@ -212,9 +156,9 @@ export default function ProposalPage() {
     const [proposals, setProposals] = useState<StoredProposal[]>([])
     const [selectedProposal, setSelectedProposal] = useState<StoredProposal | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+    const [docBlob, setDocBlob] = useState<Blob | null>(null)
     const [projectImageUrl, setProjectImageUrl] = useState<string | null>(null)
-    const [community, setCommunity] = useState<ActivatedCommunity | null>(null)
-    const [communityLogoUrl, setCommunityLogoUrl] = useState<string | null>(null)
+    const [community, setCommunity] = useState<HostCommunityProfile | null>(null)
 
     // Project Details / Proposal Upload states
     const [showProjectModal, setShowProjectModal] = useState(false)
@@ -335,7 +279,7 @@ export default function ProposalPage() {
     useEffect(() => {
         if (!hostId) return
         setLoading(true)
-        Promise.all([getProposals(hostId), getCommunity(hostId)])
+        Promise.all([getProposals(hostId), getHostCommunityProfile()])
             .then(([p, c]) => {
                 setProposals(p)
                 setCommunity(c)
@@ -347,7 +291,7 @@ export default function ProposalPage() {
                 }
             })
             .catch((err) => {
-                console.error("Failed to load details from IndexedDB", err)
+                console.error("Failed to load proposal/community details", err)
             })
             .finally(() => {
                 setLoading(false)
@@ -355,7 +299,14 @@ export default function ProposalPage() {
     }, [hostId, urlProposalId])
 
     useEffect(() => {
-        if (displayDetails?.docFile) {
+        let cancelled = false
+        let objectUrl: string | null = null
+        async function run() {
+            if (!displayDetails?.docFile) {
+                setPreviewUrl(null)
+                setDocBlob(null)
+                return
+            }
             let mimeType = displayDetails.docType
             if (displayDetails.docName.toLowerCase().endsWith(".pdf")) {
                 mimeType = "application/pdf"
@@ -364,40 +315,40 @@ export default function ProposalPage() {
             } else if (displayDetails.docName.toLowerCase().endsWith(".pptx")) {
                 mimeType = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
             }
-            const docBlob = new Blob([displayDetails.docFile], { type: mimeType })
-            const url = URL.createObjectURL(docBlob)
-            setPreviewUrl(url)
-            return () => {
-                URL.revokeObjectURL(url)
-            }
-        } else {
+            const blob = typeof displayDetails.docFile === "string"
+                ? await (await fetch(displayDetails.docFile)).blob()
+                : new Blob([displayDetails.docFile], { type: mimeType })
+            if (cancelled) return
+            objectUrl = URL.createObjectURL(blob)
+            setDocBlob(blob)
+            setPreviewUrl(objectUrl)
+        }
+        run().catch((err) => {
+            console.error("Failed to load document preview", err)
             setPreviewUrl(null)
+            setDocBlob(null)
+        })
+        return () => {
+            cancelled = true
+            if (objectUrl) URL.revokeObjectURL(objectUrl)
         }
     }, [displayDetails])
 
     useEffect(() => {
-        if (displayDetails?.image) {
-            const url = URL.createObjectURL(displayDetails.image)
-            setProjectImageUrl(url)
-            return () => {
-                URL.revokeObjectURL(url)
-            }
-        } else {
+        if (!displayDetails?.image) {
             setProjectImageUrl(null)
+            return
+        }
+        if (typeof displayDetails.image === "string") {
+            setProjectImageUrl(displayDetails.image)
+            return
+        }
+        const url = URL.createObjectURL(displayDetails.image)
+        setProjectImageUrl(url)
+        return () => {
+            URL.revokeObjectURL(url)
         }
     }, [displayDetails])
-
-    useEffect(() => {
-        if (community?.logo) {
-            const url = URL.createObjectURL(community.logo)
-            setCommunityLogoUrl(url)
-            return () => {
-                URL.revokeObjectURL(url)
-            }
-        } else {
-            setCommunityLogoUrl(null)
-        }
-    }, [community])
 
     useEffect(() => {
         if (logoFile) {
@@ -406,8 +357,6 @@ export default function ProposalPage() {
             return () => {
                 URL.revokeObjectURL(url)
             }
-        } else {
-            setLogoPreviewUrl(null)
         }
     }, [logoFile])
 
@@ -452,9 +401,11 @@ export default function ProposalPage() {
             displayDetails.docName.toLowerCase().endsWith(".ppt") ||
             displayDetails.docName.toLowerCase().endsWith(".pptx")
 
+        if (!docBlob) return
+
         if (isDoc && docxRenderer) {
             previewContainerRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-xs text-text-tertiary">Loading document preview...</div>'
-            docxRenderer.renderAsync(displayDetails.docFile, previewContainerRef.current)
+            docxRenderer.renderAsync(docBlob, previewContainerRef.current)
                 .catch((err: any) => {
                     console.error("Error rendering docx:", err)
                     if (previewContainerRef.current) {
@@ -465,7 +416,7 @@ export default function ProposalPage() {
             previewContainerRef.current.innerHTML = '<div class="flex items-center justify-center h-full text-xs text-text-tertiary">Loading presentation preview...</div>'
             try {
                 const viewer = new pptxViewerClass(previewContainerRef.current)
-                viewer.load(displayDetails.docFile)
+                viewer.load(docBlob)
                     .catch((err: any) => {
                         console.error("Error loading pptx:", err)
                         if (previewContainerRef.current) {
@@ -476,7 +427,7 @@ export default function ProposalPage() {
                 console.error("Error initializing pptx viewer:", err)
             }
         }
-    }, [displayDetails, docxRenderer, pptxViewerClass])
+    }, [displayDetails, docxRenderer, pptxViewerClass, docBlob])
 
     const openProposalForm = (p?: StoredProposal) => {
         if (p) {
@@ -485,14 +436,14 @@ export default function ProposalPage() {
                 : p;
             setProjName(data.name)
             setProjAbout(data.about)
-            setProjImage(data.image as File | null)
+            setProjImage(null)
             setProjDate(data.date)
             setProjVenue(data.venue)
             setProjCity(data.city)
             setProjAudience(Array.isArray(data.audienceProfile) ? data.audienceProfile : data.audienceProfile ? data.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
             setProjAgeGroup(data.ageGroup)
             setProjGuestCount(data.guestCount)
-            setProjDoc(data.docFile as File | null)
+            setProjDoc(null)
             setSponsorPrices(data.sponsorPrices && data.sponsorPrices.length > 0 ? data.sponsorPrices : [{ name: "", price: "" }])
             setSelectedProposal(p)
         } else {
@@ -559,7 +510,7 @@ export default function ProposalPage() {
         }
     }
 
-    const handleProposalSubmit = (e: React.FormEvent, forceStatus?: "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED") => {
+    const handleProposalSubmit = async (e: React.FormEvent, forceStatus?: "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED") => {
         e.preventDefault()
 
         if (!projName.trim()) {
@@ -570,7 +521,7 @@ export default function ProposalPage() {
             toast.error("About description is required.")
             return
         }
-        if (!projImage) {
+        if (!projImage && !selectedProposal?.image) {
             toast.error("Project Image is required.")
             return
         }
@@ -614,116 +565,64 @@ export default function ProposalPage() {
         }
 
         setIsUploading(true)
-        setUploadProgress(0)
+        setUploadProgress(10)
 
-        const interval = setInterval(() => {
-            setUploadProgress((prev) => {
-                if (prev >= 100) {
-                    clearInterval(interval)
-                    let updatedProposals: StoredProposal[] = []
-                    if (selectedProposal) {
-                        // Editing existing proposal details
-                        updatedProposals = proposals.map(p => {
-                            if (p.id === selectedProposal.id) {
-                                if (p.status === "PUBLISHED" || !p.status || (p.status === "UNDER_REVIEW" && p.pendingRevision != null)) {
-                                    const baseImage = p.pendingRevision?.image || p.image;
-                                    const baseImageName = p.pendingRevision?.imageName || p.imageName;
-                                    const baseDocFile = p.pendingRevision?.docFile || p.docFile;
-                                    const baseDocName = p.pendingRevision?.docName || p.docName;
-                                    const baseDocType = p.pendingRevision?.docType || p.docType;
-                                    const baseDocSize = p.pendingRevision?.docSize || p.docSize;
-                                    return {
-                                        ...p,
-                                        pendingRevision: {
-                                            name: projName,
-                                            about: projAbout,
-                                            image: projImage || baseImage,
-                                            imageName: projImage ? projImage.name : baseImageName,
-                                            date: projDate,
-                                            venue: projVenue,
-                                            city: projCity,
-                                            audienceProfile: projAudience,
-                                            ageGroup: projAgeGroup,
-                                            guestCount: projGuestCount,
-                                            docFile: projDoc || baseDocFile,
-                                            docName: projDoc ? projDoc.name : baseDocName,
-                                            docType: projDoc ? projDoc.type : baseDocType,
-                                            docSize: projDoc ? projDoc.size : baseDocSize,
-                                            uploadedAt: new Date().toISOString(),
-                                            sponsorPrices: sponsorPrices,
-                                        }
-                                    }
-                                } else {
-                                    return {
-                                        ...p,
-                                        name: projName,
-                                        about: projAbout,
-                                        image: projImage || p.image,
-                                        imageName: projImage ? projImage.name : p.imageName,
-                                        date: projDate,
-                                        venue: projVenue,
-                                        city: projCity,
-                                        audienceProfile: projAudience,
-                                        ageGroup: projAgeGroup,
-                                        guestCount: projGuestCount,
-                                        docFile: projDoc || p.docFile,
-                                        docName: projDoc ? projDoc.name : p.docName,
-                                        docType: projDoc ? projDoc.type : p.docType,
-                                        docSize: projDoc ? projDoc.size : p.docSize,
-                                        uploadedAt: new Date().toISOString(),
-                                        status: forceStatus || p.status || "UNDER_REVIEW",
-                                        sponsorPrices: sponsorPrices,
-                                    }
-                                }
-                            }
-                            return p
-                        })
-                    } else {
-                        // Creating a brand new proposal
-                        const newProposal: StoredProposal = {
-                            id: Date.now().toString(),
-                            name: projName,
-                            about: projAbout,
-                            image: projImage,
-                            imageName: projImage ? projImage.name : "",
-                            date: projDate,
-                            venue: projVenue,
-                            city: projCity,
-                            audienceProfile: projAudience,
-                            ageGroup: projAgeGroup,
-                            guestCount: projGuestCount,
-                            docFile: projDoc!,
-                            docName: projDoc!.name,
-                            docType: projDoc!.type,
-                            docSize: projDoc!.size,
-                            uploadedAt: new Date().toISOString(),
-                            status: forceStatus || "UNDER_REVIEW",
-                            sponsorPrices: sponsorPrices,
-                        }
-                        updatedProposals = [...proposals, newProposal]
-                    }
+        try {
+            const payload: SponsorshipProposalPayload = {
+                name: projName,
+                about: projAbout,
+                eventDate: projDate,
+                venue: projVenue,
+                city: projCity,
+                audienceProfile: projAudience,
+                ageGroup: projAgeGroup,
+                guestCount: projGuestCount,
+                sponsorTiers: sponsorPrices,
+            }
 
-                    saveProposalsList(updatedProposals, hostId)
-                        .then((saved) => {
-                            setProposals(saved)
-                            resetProposalForm()
-                            toast.success("Proposal details saved successfully!")
-                        })
-                        .catch((err) => {
-                            console.error(err)
-                            toast.error("Failed to save proposal details.")
-                        })
-                        .finally(() => {
-                            setIsUploading(false)
-                        })
-                    return 100
+            if (projImage) {
+                payload.imageKey = await uploadFileAndGetKey(projImage, "SPONSORSHIP_MEDIA")
+            }
+            setUploadProgress(50)
+            if (projDoc) {
+                payload.docKey = await uploadFileAndGetKey(projDoc, "SPONSORSHIP_DOCUMENT")
+                payload.docName = projDoc.name
+                payload.docType = projDoc.type
+                payload.docSize = projDoc.size
+            }
+            setUploadProgress(80)
+
+            let saved: ApiSponsorshipProposal
+            if (selectedProposal) {
+                saved = await updateSponsorshipProposal(selectedProposal.id, payload)
+                if (forceStatus !== "DRAFT" && (saved.status === "DRAFT" || saved.status === "REJECTED")) {
+                    saved = await submitSponsorshipProposal(selectedProposal.id)
                 }
-                return prev + 10
+            } else {
+                saved = await createSponsorshipProposal(payload)
+                if (forceStatus !== "DRAFT") {
+                    saved = await submitSponsorshipProposal(saved.id)
+                }
+            }
+
+            const stored = mapApiProposalToStored(saved)
+            setProposals((prev) => {
+                const exists = prev.some((p) => p.id === stored.id)
+                return exists ? prev.map((p) => (p.id === stored.id ? stored : p)) : [...prev, stored]
             })
-        }, 100)
+            setUploadProgress(100)
+            resetProposalForm()
+            toast.success("Proposal details saved successfully!")
+        } catch (err) {
+            console.error(err)
+            toast.error("Failed to save proposal details.")
+        } finally {
+            setIsUploading(false)
+            setUploadProgress(0)
+        }
     }
 
-    const handleUpdateFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleUpdateFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && selectedProposal) {
             const file = e.target.files[0]
             const allowedExtensions = [".pdf", ".doc", ".docx", ".ppt", ".pptx"]
@@ -746,146 +645,36 @@ export default function ProposalPage() {
                 return
             }
 
-            const updatedProposals = proposals.map(p => {
-                if (p.id === selectedProposal.id) {
-                    if (p.status === "PUBLISHED" || !p.status || (p.status === "UNDER_REVIEW" && p.pendingRevision != null)) {
-                        const updated = {
-                            ...p,
-                            pendingRevision: {
-                                name: p.pendingRevision?.name || p.name,
-                                about: p.pendingRevision?.about || p.about,
-                                image: p.pendingRevision?.image || p.image,
-                                imageName: p.pendingRevision?.imageName || p.imageName,
-                                date: p.pendingRevision?.date || p.date,
-                                venue: p.pendingRevision?.venue || p.venue,
-                                city: p.pendingRevision?.city || p.city,
-                                audienceProfile: p.pendingRevision?.audienceProfile || p.audienceProfile,
-                                ageGroup: p.pendingRevision?.ageGroup || p.ageGroup,
-                                guestCount: p.pendingRevision?.guestCount || p.guestCount,
-                                docFile: file,
-                                docName: file.name,
-                                docType: file.type,
-                                docSize: file.size,
-                                uploadedAt: new Date().toISOString(),
-                            }
-                        }
-                        setSelectedProposal(updated)
-                        return updated
-                    } else {
-                        const updated = {
-                            ...p,
-                            docFile: file,
-                            docName: file.name,
-                            docType: file.type,
-                            docSize: file.size,
-                            uploadedAt: new Date().toISOString(),
-                        }
-                        setSelectedProposal(updated)
-                        return updated
-                    }
-                }
-                return p
-            })
-
-            saveProposalsList(updatedProposals, hostId)
-                .then((saved) => {
-                    setProposals(saved)
-                    toast.success("Document updated successfully!")
+            try {
+                const docKey = await uploadFileAndGetKey(file, "SPONSORSHIP_DOCUMENT")
+                const saved = await updateSponsorshipProposal(selectedProposal.id, {
+                    docKey,
+                    docName: file.name,
+                    docType: file.type,
+                    docSize: file.size,
                 })
-                .catch((err) => {
-                    console.error(err)
-                    toast.error("Failed to update document.")
-                })
+                const stored = mapApiProposalToStored(saved)
+                setProposals((prev) => prev.map((p) => (p.id === stored.id ? stored : p)))
+                setSelectedProposal(stored)
+                toast.success("Document updated successfully!")
+            } catch (err) {
+                console.error(err)
+                toast.error("Failed to update document.")
+            }
         }
     }
 
-    const submitProposalForApproval = (proposal: StoredProposal) => {
-        const updatedProposals: StoredProposal[] = proposals.map(p => {
-            if (p.id === proposal.id) {
-                return { ...p, status: "UNDER_REVIEW" }
-            }
-            return p
-        })
-        saveProposalsList(updatedProposals, hostId)
-            .then((saved) => {
-                setProposals(saved)
-                toast.success("Proposal submitted for admin approval!")
-            })
-            .catch(() => {
-                toast.error("Failed to submit proposal.")
-            })
-    }
-
-    const handleMockAdminApprove = (proposal: StoredProposal) => {
-        const updatedProposals = proposals.map(p => {
-            if (p.id === proposal.id) {
-                if (p.pendingRevision) {
-                    return {
-                        ...p,
-                        name: p.pendingRevision.name,
-                        about: p.pendingRevision.about,
-                        image: p.pendingRevision.image,
-                        imageName: p.pendingRevision.imageName,
-                        date: p.pendingRevision.date,
-                        venue: p.pendingRevision.venue,
-                        city: p.pendingRevision.city,
-                        audienceProfile: p.pendingRevision.audienceProfile,
-                        ageGroup: p.pendingRevision.ageGroup,
-                        guestCount: p.pendingRevision.guestCount,
-                        docFile: p.pendingRevision.docFile || p.docFile,
-                        docName: p.pendingRevision.docName || p.docName,
-                        docType: p.pendingRevision.docType || p.docType,
-                        docSize: p.pendingRevision.docSize || p.docSize,
-                        uploadedAt: new Date().toISOString(),
-                        status: "PUBLISHED" as const,
-                        sponsorPrices: p.pendingRevision.sponsorPrices || p.sponsorPrices,
-                        pendingRevision: undefined,
-                    }
-                } else {
-                    return {
-                        ...p,
-                        status: "PUBLISHED" as const,
-                    }
-                }
-            }
-            return p
-        })
-
-        saveProposalsList(updatedProposals, hostId)
-            .then((saved) => {
-                setProposals(saved)
-                const fresh = saved.find(item => item.id === proposal.id) || null
-                setSelectedProposal(fresh)
-                toast.success("Proposal approved by Admin!")
-            })
-            .catch(() => {
-                toast.error("Failed to approve proposal.")
-            })
-    }
-
-    const handleMockAdminReject = (proposal: StoredProposal) => {
-        const updatedProposals = proposals.map(p => {
-            if (p.id === proposal.id) {
-                const wasPublished = p.status === "PUBLISHED" || p.pendingRevision != null;
-                return {
-                    ...p,
-                    status: wasPublished ? ("PUBLISHED" as const) : ("REJECTED" as const),
-                    pendingRevision: undefined,
-                }
-            }
-            return p
-        })
-
-        saveProposalsList(updatedProposals, hostId)
-            .then((saved) => {
-                setProposals(saved)
-                const fresh = saved.find(item => item.id === proposal.id) || null
-                setSelectedProposal(fresh)
-                toast.error("Proposal rejected by Admin!")
-            })
-            .catch(() => {
-                toast.error("Failed to reject proposal.")
-            })
+    const submitProposalForApproval = async (proposal: StoredProposal) => {
+        try {
+            const saved = await submitSponsorshipProposal(proposal.id)
+            const stored = mapApiProposalToStored(saved)
+            setProposals((prev) => prev.map((p) => (p.id === stored.id ? stored : p)))
+            if (selectedProposal?.id === stored.id) setSelectedProposal(stored)
+            toast.success("Proposal submitted for admin approval!")
+        } catch (err) {
+            console.error(err)
+            toast.error("Failed to submit proposal.")
+        }
     }
 
     const resetProposalForm = () => {
@@ -909,7 +698,7 @@ export default function ProposalPage() {
         if (!selectedProposal || !displayDetails) return
         setProjName(displayDetails.name)
         setProjAbout(displayDetails.about)
-        setProjImage(displayDetails.image as File | null)
+        setProjImage(null)
         setProjDate(displayDetails.date)
         setProjVenue(displayDetails.venue)
         setProjCity(displayDetails.city)
@@ -917,13 +706,13 @@ export default function ProposalPage() {
         setNewAudience("")
         setProjAgeGroup(displayDetails.ageGroup)
         setProjGuestCount(displayDetails.guestCount)
-        setProjDoc(displayDetails.docFile as File | null)
+        setProjDoc(null)
         setSponsorPrices(displayDetails.sponsorPrices && displayDetails.sponsorPrices.length > 0 ? displayDetails.sponsorPrices : [{ name: "", price: "" }])
 
         setIsEditingInPlace(true)
     }
 
-    const handleSaveInPlace = (e: React.FormEvent) => {
+    const handleSaveInPlace = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!selectedProposal) return
 
@@ -971,68 +760,33 @@ export default function ProposalPage() {
             }
         }
 
-        const updatedProposals = proposals.map(p => {
-            if (p.id === selectedProposal.id) {
-                if (p.status === "PUBLISHED" || !p.status || (p.status === "UNDER_REVIEW" && p.pendingRevision != null)) {
-                    const baseImage = p.pendingRevision?.image || p.image;
-                    const baseImageName = p.pendingRevision?.imageName || p.imageName;
-                    const updated = {
-                        ...p,
-                        pendingRevision: {
-                            name: projName,
-                            about: projAbout,
-                            image: projImage || baseImage,
-                            imageName: projImage ? projImage.name : baseImageName,
-                            date: projDate,
-                            venue: projVenue,
-                            city: projCity,
-                            audienceProfile: projAudience,
-                            ageGroup: projAgeGroup,
-                            guestCount: projGuestCount,
-                            docFile: p.pendingRevision?.docFile || p.docFile,
-                            docName: p.pendingRevision?.docName || p.docName,
-                            docType: p.pendingRevision?.docType || p.docType,
-                            docSize: p.pendingRevision?.docSize || p.docSize,
-                            uploadedAt: new Date().toISOString(),
-                            sponsorPrices: sponsorPrices,
-                        }
-                    }
-                    setSelectedProposal(updated)
-                    return updated
-                } else {
-                    const updated = {
-                        ...p,
-                        name: projName,
-                        about: projAbout,
-                        image: projImage || p.image,
-                        imageName: projImage ? projImage.name : p.imageName,
-                        date: projDate,
-                        venue: projVenue,
-                        city: projCity,
-                        audienceProfile: projAudience,
-                        ageGroup: projAgeGroup,
-                        guestCount: projGuestCount,
-                        uploadedAt: new Date().toISOString(),
-                        sponsorPrices: sponsorPrices,
-                    }
-                    setSelectedProposal(updated)
-                    return updated
-                }
+        try {
+            const payload: SponsorshipProposalPayload = {
+                name: projName,
+                about: projAbout,
+                eventDate: projDate,
+                venue: projVenue,
+                city: projCity,
+                audienceProfile: projAudience,
+                ageGroup: projAgeGroup,
+                guestCount: projGuestCount,
+                sponsorTiers: sponsorPrices,
             }
-            return p
-        })
+            if (projImage) {
+                payload.imageKey = await uploadFileAndGetKey(projImage, "SPONSORSHIP_MEDIA")
+            }
 
-        saveProposalsList(updatedProposals, hostId)
-            .then((saved) => {
-                setProposals(saved)
-                setIsEditingInPlace(false)
-                setShowProjectModal(false)
-                toast.success("Project details updated successfully!")
-            })
-            .catch((err) => {
-                console.error(err)
-                toast.error("Failed to save project details.")
-            })
+            const saved = await updateSponsorshipProposal(selectedProposal.id, payload)
+            const stored = mapApiProposalToStored(saved)
+            setProposals((prev) => prev.map((p) => (p.id === stored.id ? stored : p)))
+            setSelectedProposal(stored)
+            setIsEditingInPlace(false)
+            setShowProjectModal(false)
+            toast.success("Project details updated successfully!")
+        } catch (err) {
+            console.error(err)
+            toast.error("Failed to save project details.")
+        }
     }
 
     const handleDelete = (proposalId?: string) => {
@@ -1040,10 +794,9 @@ export default function ProposalPage() {
         if (!idToDelete) return
 
         if (confirm("Are you sure you want to delete this proposal?")) {
-            const updated = proposals.filter(p => p.id !== idToDelete)
-            saveProposalsList(updated, hostId)
-                .then((saved) => {
-                    setProposals(saved)
+            deleteSponsorshipProposal(idToDelete)
+                .then(() => {
+                    setProposals((prev) => prev.filter((p) => p.id !== idToDelete))
                     setSelectedProposal(null)
                     resetProposalForm()
                     toast.success("Proposal deleted successfully.")
@@ -1064,12 +817,13 @@ export default function ProposalPage() {
             setCommunitySize(community.size)
             setAvgGuestCount(community.avgGuestCount)
             setExperiencesPerYear(community.experiencesPerYear)
-            setCategoryIds(community.categoryIds || [])
-            setInstagram(community.instagram || profile?.socialLinks?.instagram || "")
-            setLinkedin(community.linkedin || profile?.socialLinks?.linkedin || "")
-            setYoutube(community.youtube || profile?.socialLinks?.youtube || "")
-            setPortfolio(community.portfolio || profile?.socialLinks?.portfolio || "")
-            setLogoFile(community.logo as File | null)
+            setCategoryIds(community.categories.map((c) => c.id))
+            setInstagram(profile?.socialLinks?.instagram || "")
+            setLinkedin(profile?.socialLinks?.linkedin || "")
+            setYoutube(profile?.socialLinks?.youtube || "")
+            setPortfolio(profile?.socialLinks?.portfolio || "")
+            setLogoFile(null)
+            setLogoPreviewUrl(community.logoUrl)
         } else {
             setCommunityName("")
             setAboutCommunity("")
@@ -1082,6 +836,7 @@ export default function ProposalPage() {
             setYoutube(profile?.socialLinks?.youtube || "")
             setPortfolio(profile?.socialLinks?.portfolio || "")
             setLogoFile(null)
+            setLogoPreviewUrl(null)
         }
         setShowActivateModal(true)
     }
@@ -1109,7 +864,7 @@ export default function ProposalPage() {
         }
     }
 
-    const handleActivationSubmit = (e: React.FormEvent) => {
+    const handleActivationSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
         if (!communityName.trim()) {
@@ -1122,7 +877,7 @@ export default function ProposalPage() {
             return
         }
 
-        if (!logoFile) {
+        if (!logoFile && !community?.logoUrl) {
             toast.error("Logo image is required.")
             return
         }
@@ -1152,55 +907,52 @@ export default function ProposalPage() {
             return
         }
 
-        const communityData: ActivatedCommunity = {
-            name: communityName,
-            about: aboutCommunity,
-            logo: logoFile,
-            logoName: logoFile.name,
-            size: communitySize,
-            avgGuestCount: avgGuestCount,
-            experiencesPerYear: experiencesPerYear,
-            categoryIds: categoryIds,
-            instagram: instagram.trim() || undefined,
-            linkedin: linkedin.trim() || undefined,
-            youtube: youtube.trim() || undefined,
-            portfolio: portfolio.trim() || undefined,
-            activatedAt: community?.activatedAt || new Date().toISOString(),
-        }
+        try {
+            const logoKey = logoFile
+                ? await uploadFileAndGetKey(logoFile, "SPONSORSHIP_MEDIA")
+                : community!.logoKey
 
-        saveCommunity(communityData, hostId)
-            .then(async (saved) => {
-                setCommunity(saved)
-                setShowActivateModal(false)
-                try {
-                    const updated = await updateHostProfile({
-                        socialLinks: {
-                            instagram: instagram.trim() || undefined,
-                            linkedin: linkedin.trim() || undefined,
-                            youtube: youtube.trim() || undefined,
-                            portfolio: portfolio.trim() || undefined,
-                        }
-                    })
-                    setProfile(updated)
-                } catch (e) {
-                    console.error("Failed to sync social links to host profile", e)
-                }
-                toast.success(community ? "Community details updated!" : "Community activated successfully!")
-            })
-            .catch((err) => {
-                console.error(err)
-                toast.error("Failed to save activation details.")
-            })
+            const payload: HostCommunityProfilePayload = {
+                name: communityName,
+                about: aboutCommunity,
+                logoKey,
+                size: communitySize,
+                avgGuestCount: avgGuestCount,
+                experiencesPerYear: experiencesPerYear,
+                categoryIds: categoryIds,
+            }
+
+            const saved = await activateHostCommunityProfile(payload)
+            setCommunity(saved)
+            setShowActivateModal(false)
+
+            try {
+                const updated = await updateHostProfile({
+                    socialLinks: {
+                        instagram: instagram.trim() || undefined,
+                        linkedin: linkedin.trim() || undefined,
+                        youtube: youtube.trim() || undefined,
+                        portfolio: portfolio.trim() || undefined,
+                    }
+                })
+                setProfile(updated)
+            } catch (e) {
+                console.error("Failed to sync social links to host profile", e)
+            }
+            toast.success(community ? "Community details updated!" : "Community activated successfully!")
+        } catch (err) {
+            console.error(err)
+            toast.error("Failed to save activation details.")
+        }
     }
 
     const handleDeactivate = () => {
-        if (confirm("Are you sure you want to deactivate the community? Both community details and uploaded proposals will be removed.")) {
-            Promise.all([deleteCommunity(hostId), deleteProposalsList(hostId)])
+        if (confirm("Are you sure you want to deactivate the community? Your sponsorship proposals will remain saved and reappear once you reactivate.")) {
+            deactivateHostCommunityProfile()
                 .then(() => {
                     setCommunity(null)
-                    setProposals([])
                     setSelectedProposal(null)
-                    toast.success("Community deactivated and proposals cleared.")
+                    toast.success("Community deactivated.")
                 })
                 .catch((err) => {
                     console.error(err)
@@ -1445,9 +1197,9 @@ export default function ProposalPage() {
                                 <div className="bg-surface-card border border-border-default rounded-action p-4 w-full shadow-sm">
                                     <div className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-border-default">
                                         <div className="flex items-center gap-3">
-                                            {communityLogoUrl ? (
+                                            {community.logoUrl ? (
                                                 // eslint-disable-next-line @next/next/no-img-element
-                                                <img src={communityLogoUrl} alt={community.name} className="size-8 rounded-lg object-cover border border-border-default" />
+                                                <img src={community.logoUrl} alt={community.name} className="size-8 rounded-lg object-cover border border-border-default" />
                                             ) : (
                                                 <div className="size-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-700 text-[10px] font-bold">
                                                     {community.name.substring(0, 2).toUpperCase()}
@@ -1505,32 +1257,28 @@ export default function ProposalPage() {
                                                     <p className="text-body-sm font-semibold text-text-primary mt-0.5">{community.experiencesPerYear}</p>
                                                 </div>
                                             )}
-                                            {community.categoryIds && community.categoryIds.length > 0 && (
+                                            {community.categories && community.categories.length > 0 && (
                                                 <div className="col-span-3 mt-1">
                                                     <p className="text-[10px] text-text-tertiary">Categories</p>
                                                     <div className="flex flex-wrap gap-1 mt-1">
-                                                        {community.categoryIds.map((catId) => {
-                                                            const cat = categories.find(c => c.id === catId)
-                                                            if (!cat) return null
-                                                            return (
-                                                                <span
-                                                                    key={catId}
-                                                                    className="inline-flex items-center px-2 py-0.5 rounded-badge text-[10px] font-medium bg-surface-brand-soft text-text-brand border border-border-brand"
-                                                                >
-                                                                    {cat.name}
-                                                                </span>
-                                                            )
-                                                        })}
+                                                        {community.categories.map((cat) => (
+                                                            <span
+                                                                key={cat.id}
+                                                                className="inline-flex items-center px-2 py-0.5 rounded-badge text-[10px] font-medium bg-surface-brand-soft text-text-brand border border-border-brand"
+                                                            >
+                                                                {cat.name}
+                                                            </span>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             )}
-                                            {(community.instagram || community.linkedin || community.youtube || community.portfolio) && (
+                                            {(profile?.socialLinks?.instagram || profile?.socialLinks?.linkedin || profile?.socialLinks?.youtube || profile?.socialLinks?.portfolio) && (
                                                 <div className="col-span-3 mt-1 pt-1.5 border-t border-border-default">
                                                     <div className="flex flex-wrap gap-x-4 gap-y-1">
-                                                        {community.instagram && <p className="text-[11px] text-text-secondary">Instagram: <a href={`https://${community.instagram}`} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline">{community.instagram}</a></p>}
-                                                        {community.linkedin && <p className="text-[11px] text-text-secondary">LinkedIn: <a href={`https://${community.linkedin}`} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline">{community.linkedin}</a></p>}
-                                                        {community.youtube && <p className="text-[11px] text-text-secondary">YouTube: <a href={`https://${community.youtube}`} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline">{community.youtube}</a></p>}
-                                                        {community.portfolio && <p className="text-[11px] text-text-secondary">Website: <a href={`https://${community.portfolio}`} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline">{community.portfolio}</a></p>}
+                                                        {profile?.socialLinks?.instagram && <p className="text-[11px] text-text-secondary">Instagram: <a href={`https://${profile.socialLinks.instagram}`} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline">{profile.socialLinks.instagram}</a></p>}
+                                                        {profile?.socialLinks?.linkedin && <p className="text-[11px] text-text-secondary">LinkedIn: <a href={`https://${profile.socialLinks.linkedin}`} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline">{profile.socialLinks.linkedin}</a></p>}
+                                                        {profile?.socialLinks?.youtube && <p className="text-[11px] text-text-secondary">YouTube: <a href={`https://${profile.socialLinks.youtube}`} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline">{profile.socialLinks.youtube}</a></p>}
+                                                        {profile?.socialLinks?.portfolio && <p className="text-[11px] text-text-secondary">Website: <a href={`https://${profile.socialLinks.portfolio}`} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline">{profile.socialLinks.portfolio}</a></p>}
                                                     </div>
                                                 </div>
                                             )}
@@ -1601,7 +1349,7 @@ export default function ProposalPage() {
                                                 {filteredProposals.map((p) => {
                                                     const isViewingRevision = activeTab === "UNDER_REVIEW" && p.pendingRevision != null;
                                                     const cardData = isViewingRevision ? p.pendingRevision! : p;
-                                                    const imgUrl = cardData.image ? URL.createObjectURL(cardData.image) : null;
+                                                    const imgUrl = typeof cardData.image === "string" ? cardData.image : cardData.image ? URL.createObjectURL(cardData.image) : null;
                                                     return (
                                                         <div
                                                             key={p.id}
@@ -1617,7 +1365,7 @@ export default function ProposalPage() {
                                                                             src={imgUrl}
                                                                             alt={cardData.name}
                                                                             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-                                                                            onLoad={() => imgUrl && URL.revokeObjectURL(imgUrl)}
+                                                                            onLoad={() => imgUrl && imgUrl.startsWith("blob:") && URL.revokeObjectURL(imgUrl)}
                                                                         />
                                                                     ) : (
                                                                         <div className="w-full h-full bg-linear-to-br from-surface-card-muted to-border-default flex items-center justify-center text-text-tertiary font-bold text-lg">
@@ -2326,7 +2074,7 @@ export default function ProposalPage() {
                                         <img src={projImagePreview} alt="Preview" className="size-16 rounded-xl object-cover border border-border-default" />
                                     ) : selectedProposal?.image ? (
                                         // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={URL.createObjectURL(selectedProposal.image)} alt="Current" className="size-16 rounded-xl object-cover border border-border-default" />
+                                        <img src={typeof selectedProposal.image === "string" ? selectedProposal.image : URL.createObjectURL(selectedProposal.image)} alt="Current" className="size-16 rounded-xl object-cover border border-border-default" />
                                     ) : (
                                         <div className="size-16 rounded-xl bg-surface-card-muted border border-dashed border-border-default flex items-center justify-center text-text-tertiary text-xs">
                                             No Image

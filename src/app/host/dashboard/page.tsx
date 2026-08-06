@@ -159,7 +159,7 @@ export default function DashboardWelcomePage() {
 						) : (
 							<div className="flex flex-col divide-y divide-border-default">
 								{approvedSponsorships.map((prop) => {
-									const imgUrl = prop.image ? URL.createObjectURL(prop.image) : null
+									const imgUrl = typeof prop.image === "string" ? prop.image : prop.image ? URL.createObjectURL(prop.image) : null
 									return (
 										<Link
 											key={prop.id}
@@ -174,7 +174,7 @@ export default function DashboardWelcomePage() {
 															src={imgUrl}
 															alt=""
 															className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-300"
-															onLoad={() => URL.revokeObjectURL(imgUrl)}
+															onLoad={() => imgUrl.startsWith("blob:") && URL.revokeObjectURL(imgUrl)}
 														/>
 													</div>
 												) : (

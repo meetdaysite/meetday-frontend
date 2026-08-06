@@ -445,6 +445,166 @@ export async function cancelEvent(id: string, cancellationReason: string): Promi
 	return data.data
 }
 
+// ─── Sponsorship proposals ────────────────────────────────────────────────────
+
+export type SponsorshipStatus = "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED"
+
+export type SponsorTier = {
+	name: string
+	price: string
+}
+
+export type SponsorshipProposalPayload = {
+	name?: string
+	about?: string
+	imageKey?: string
+	eventDate?: string
+	venue?: string
+	city?: string
+	audienceProfile?: string[]
+	ageGroup?: string
+	guestCount?: string
+	docKey?: string
+	docName?: string
+	docType?: string
+	docSize?: number
+	sponsorTiers?: SponsorTier[]
+}
+
+export type SponsorshipProposal = {
+	id: string
+	hostProfileId: string
+	name: string | null
+	about: string | null
+	imageKey: string | null
+	imageUrl?: string | null
+	eventDate: string | null
+	venue: string | null
+	city: string | null
+	audienceProfile: string[]
+	ageGroup: string | null
+	guestCount: string | null
+	docKey: string | null
+	docUrl?: string | null
+	docName: string | null
+	docType: string | null
+	docSize: number | null
+	sponsorTiers: SponsorTier[]
+	status: SponsorshipStatus
+	pendingRevision: (SponsorshipProposalPayload & { imageUrl?: string | null; docUrl?: string | null }) | null
+	adminRejectionRemark: string | null
+	submittedAt: string | null
+	createdAt: string
+	updatedAt: string
+}
+
+export type SponsorshipProposalsListResponse = {
+	proposals: SponsorshipProposal[]
+	total: number
+	page: number
+	limit: number
+}
+
+export async function createSponsorshipProposal(
+	payload: SponsorshipProposalPayload = {},
+): Promise<SponsorshipProposal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipProposal }>(
+		"/sponsorships",
+		payload,
+	)
+	return data.data
+}
+
+export async function updateSponsorshipProposal(
+	id: string,
+	payload: SponsorshipProposalPayload,
+): Promise<SponsorshipProposal> {
+	const { data } = await apiClient.patch<{ success: boolean; data: SponsorshipProposal }>(
+		`/sponsorships/${id}`,
+		payload,
+	)
+	return data.data
+}
+
+export async function getMySponsorshipProposals(params?: {
+	status?: SponsorshipStatus
+	page?: number
+	limit?: number
+}): Promise<SponsorshipProposalsListResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipProposalsListResponse }>(
+		"/sponsorships/me",
+		{ params },
+	)
+	return data.data
+}
+
+export async function getSponsorshipProposalDetail(id: string): Promise<SponsorshipProposal> {
+	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipProposal }>(
+		`/sponsorships/${id}`,
+	)
+	return data.data
+}
+
+export async function submitSponsorshipProposal(id: string): Promise<SponsorshipProposal> {
+	const { data } = await apiClient.patch<{ success: boolean; data: SponsorshipProposal }>(
+		`/sponsorships/${id}/submit`,
+	)
+	return data.data
+}
+
+export async function deleteSponsorshipProposal(id: string): Promise<void> {
+	await apiClient.delete(`/sponsorships/${id}`)
+}
+
+// ─── Host community profile (shown to sponsors) ───────────────────────────────
+
+export type HostCommunityProfilePayload = {
+	name: string
+	about: string
+	logoKey: string
+	size: string
+	avgGuestCount: string
+	experiencesPerYear: string
+	categoryIds: string[]
+}
+
+export type HostCommunityProfile = {
+	id: string
+	hostProfileId: string
+	name: string
+	about: string
+	logoKey: string
+	logoUrl: string
+	size: string
+	avgGuestCount: string
+	experiencesPerYear: string
+	categories: Category[]
+	activatedAt: string
+	createdAt: string
+	updatedAt: string
+}
+
+export async function getHostCommunityProfile(): Promise<HostCommunityProfile | null> {
+	const { data } = await apiClient.get<{ success: boolean; data: HostCommunityProfile | null }>(
+		"/hosts/community",
+	)
+	return data.data
+}
+
+export async function activateHostCommunityProfile(
+	payload: HostCommunityProfilePayload,
+): Promise<HostCommunityProfile> {
+	const { data } = await apiClient.post<{ success: boolean; data: HostCommunityProfile }>(
+		"/hosts/community",
+		payload,
+	)
+	return data.data
+}
+
+export async function deactivateHostCommunityProfile(): Promise<void> {
+	await apiClient.delete("/hosts/community")
+}
+
 // ─── Scanner sessions ─────────────────────────────────────────────────────────
 
 export type CreateScannerSessionPayload = {
@@ -1174,7 +1334,7 @@ export async function getCommunityAnnouncements(
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
-	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA"
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT"
 	contentType: string
 	resourceId?: string
 	mediaType?: string
