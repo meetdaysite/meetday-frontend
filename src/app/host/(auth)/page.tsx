@@ -5,7 +5,7 @@ import { AuthShell } from "@/components/auth/AuthShell"
 
 export default function WelcomeAuthPage() {
 	return (
-		<AuthShell>
+		<AuthShell size="small">
 			<div className="flex flex-col flex-grow justify-between min-h-[380px] h-full">
 				
 				{/* Top Section: Title & Subtitle */}

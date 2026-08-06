@@ -68,7 +68,7 @@ export default function SignupPage() {
 	}
 
 	return (
-		<AuthShell phoneImage="/assets/phone_image_login.svg" pointsImage="/assets/points_login.svg">
+		<AuthShell size="small" phoneImage="/assets/phone_image_login.svg" pointsImage="/assets/points_login.svg">
 			<div id="recaptcha-container" />
 			<Link 
 				href="/host" 

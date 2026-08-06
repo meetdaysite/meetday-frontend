@@ -164,6 +164,7 @@ export default function VerifyPage() {
 
 	return (
 		<AuthShell
+			size="small"
 			phoneImage="/assets/phone_image_otp_verify.svg"
 			pointsImage="/assets/points_otp_verify.svg"
 		>

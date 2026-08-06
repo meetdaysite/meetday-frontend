@@ -5,9 +5,10 @@ interface AuthShellProps {
 	children: React.ReactNode
 	phoneImage?: string // Kept for interface compatibility but ignored
 	pointsImage?: string // Kept for interface compatibility but ignored
+	size?: "small" | "default"
 }
 
-export function AuthShell({ children }: AuthShellProps) {
+export function AuthShell({ children, size = "default" }: AuthShellProps) {
 	return (
 		<div className="w-full h-screen flex flex-col lg:flex-row bg-[#EE2C2C] text-black overflow-hidden">
 			
@@ -121,14 +122,32 @@ export function AuthShell({ children }: AuthShellProps) {
 			<div className="flex-1 flex items-center justify-center px-6 py-6 lg:px-10 lg:py-10 z-10 min-h-screen">
 				
 				{/* The Onboarding Form Card */}
-				<div className="w-full lg:w-[35vw] max-w-[500px] min-w-[320px] h-[90vh] bg-white border-[4px] border-black rounded-[36px] px-8 py-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative flex flex-col justify-center overflow-y-auto">
+				<div className="w-full lg:w-[35vw] max-w-[500px] min-w-[320px] bg-white border-[4px] border-black rounded-[36px] pl-8 pr-2 py-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative flex flex-col h-[85vh]">
 					
-					{/* Content / Form fields */}
-					<div className="w-full flex flex-col gap-4">
-						{children}
+					{/* Scrollable Container inside the card */}
+					<div className="w-full flex-1 overflow-y-auto pr-6 flex flex-col min-h-0">
+						<div className="w-full flex flex-col gap-4 my-auto auth-card-content">
+							{children}
+						</div>
 					</div>
 
 				</div>
+				<style>{`
+					.auth-card-content label {
+						font-size: 1.05rem !important;
+					}
+					.auth-card-content p, 
+					.auth-card-content .text-sm,
+					.auth-card-content .text-body-sm {
+						font-size: 1.05rem !important;
+					}
+					.auth-card-content input {
+						font-size: 1.15rem !important;
+					}
+					.auth-card-content button {
+						font-size: 1.15rem !important;
+					}
+				`}</style>
 			</div>
 
 		</div>

@@ -119,7 +119,7 @@ export default function RootPage() {
 					bg="#F8EFE2" 
 					textColor="#EE2C2C" 
 					rotation="rotate-[-8deg]" 
-					positionClass="left-[2%] top-[15%]" 
+					positionClass="left-[6%] top-[16%]" 
 					tailOffset="left-5"
 					animationClass="animate-float-1"
 				/>
@@ -128,7 +128,7 @@ export default function RootPage() {
 					bg="#FFD9D9" 
 					textColor="#000000" 
 					rotation="rotate-[6deg]" 
-					positionClass="left-[6%] top-[39%]" 
+					positionClass="left-[10%] top-[39%]" 
 					tailOffset="left-6"
 					animationClass="animate-float-3"
 				/>
@@ -137,7 +137,7 @@ export default function RootPage() {
 					bg="#F8EFE2" 
 					textColor="#EE2C2C" 
 					rotation="rotate-[-3deg]" 
-					positionClass="left-[1%] top-[58%]" 
+					positionClass="left-[5%] top-[58%]" 
 					tailOffset="left-5"
 					animationClass="animate-float-2"
 				/>
@@ -146,7 +146,7 @@ export default function RootPage() {
 					bg="#FFCE29" 
 					textColor="#000000" 
 					rotation="rotate-[12deg]" 
-					positionClass="left-[9%] bottom-[9%] z-30" 
+					positionClass="left-[12%] top-[71%] z-30" 
 					tailOffset="left-4"
 					animationClass="animate-float-4"
 				/>
@@ -157,7 +157,7 @@ export default function RootPage() {
 					bg="#FFD9D9" 
 					textColor="#000000" 
 					rotation="rotate-[9deg]" 
-					positionClass="right-[2%] top-[18%]" 
+					positionClass="right-[6%] top-[18%]" 
 					tailOffset="right-5"
 					animationClass="animate-float-2"
 				/>
@@ -166,7 +166,7 @@ export default function RootPage() {
 					bg="#F8EFE2" 
 					textColor="#EE2C2C" 
 					rotation="rotate-[-4deg]" 
-					positionClass="right-[7%] top-[36%]" 
+					positionClass="right-[11%] top-[36%]" 
 					tailOffset="right-5"
 					animationClass="animate-float-4"
 				/>
@@ -175,7 +175,7 @@ export default function RootPage() {
 					bg="#FFD9D9" 
 					textColor="#000000" 
 					rotation="rotate-[5deg]" 
-					positionClass="right-[2%] top-[56%]" 
+					positionClass="right-[6%] top-[56%]" 
 					tailOffset="right-6"
 					animationClass="animate-float-1"
 				/>
@@ -184,7 +184,7 @@ export default function RootPage() {
 					bg="#FFCE29" 
 					textColor="#000000" 
 					rotation="rotate-[-10deg]" 
-					positionClass="right-[6%] bottom-[8%] z-30" 
+					positionClass="right-[11%] top-[70%] z-30" 
 					tailOffset="right-4"
 					animationClass="animate-float-3"
 				/>
