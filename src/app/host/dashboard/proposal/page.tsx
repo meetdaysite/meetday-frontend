@@ -979,26 +979,6 @@ export default function ProposalPage() {
                                 <p className="text-text-secondary">Loading details...</p>
                             </div>
                         </>
-                    ) : !community ? (
-                        <>
-                            <div className="mb-6">
-                                <h1 className="text-heading-sm font-semibold text-text-primary">Sponsorships</h1>
-                                <p className="text-body-sm text-text-secondary mt-0.5">Activate your community and upload your proposal</p>
-                            </div>
-                            {/* State 1: Not Activated yet. User must fill in details first. */}
-                            <div className="bg-surface-card border border-border-default rounded-action p-8 text-center max-w-2xl flex flex-col items-center">
-                                <div className="size-16 rounded-full bg-surface-brand-soft flex items-center justify-center mb-4">
-                                    <Icon as={DocumentTextSvg} size="lg" color="brand" />
-                                </div>
-                                <h2 className="text-label-lg font-semibold text-text-primary mb-2">Sponsorships</h2>
-                                <p className="text-body-sm text-text-secondary mb-6 max-w-md">
-                                    Before uploading your proposal document, please provide details about your community.
-                                </p>
-                                <Button variant="primary" size="md" radius="pill" onClick={openActivationModal}>
-                                    Activate
-                                </Button>
-                            </div>
-                        </>
                     ) : selectedProposal && !isEditingInPlace ? (
                         /* Proposal Details Section - rendered inline instead of a modal! */
                         <div className="flex flex-col gap-6 animate-in fade-in duration-150">
@@ -1196,8 +1176,9 @@ export default function ProposalPage() {
                             </div>
                         </div>
                     ) : (
-                        /* Community activated. Now they can view/edit details and upload/view the proposal. */
+                        /* Proposal section always available; community profile is optional. */
                         <div className="flex flex-col gap-8">
+                            {community ? (
                             <div>
                                 <h1 className="text-heading-sm font-semibold text-text-primary mb-4">Community profile</h1>
 
@@ -1294,6 +1275,17 @@ export default function ProposalPage() {
                                     </div>
                                 </div>
                             </div>
+                            ) : (
+                                <div className="bg-surface-card-muted border border-border-default rounded-action p-4 flex items-center justify-between gap-3">
+                                    <div>
+                                        <p className="text-label-sm font-semibold text-text-primary">No community profile yet</p>
+                                        <p className="text-caption text-text-tertiary mt-0.5">Optional — add community details to strengthen your proposal for sponsors.</p>
+                                    </div>
+                                    <Button variant="secondary" size="xs" radius="pill" onClick={openActivationModal}>
+                                        Activate Community
+                                    </Button>
+                                </div>
+                            )}
 
                             <hr className="border-border-default" />
 
