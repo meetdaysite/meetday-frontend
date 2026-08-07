@@ -172,9 +172,33 @@ export async function updateHostProfile(payload: UpdateHostProfilePayload): Prom
 export type BrandProfile = HostProfile
 export type UpdateBrandProfilePayload = UpdateHostProfilePayload
 
+type RawBrandProfile = {
+	id: string
+	brandName: string
+	email: string | null
+	phone: string | null
+	firstName: string
+	lastName: string
+	createdAt: string
+}
+
+// Brands are a lean, separate account type on the backend (BrandProfile, not HostProfile).
+// Mapped into the HostProfile shape so the existing brand dashboard UI (built against HostProfile)
+// keeps working without changes — approvalStatus/kycStatus are hardcoded since brands have no
+// KYC/approval gate.
 export async function getBrandProfile(): Promise<BrandProfile> {
-	const { data } = await apiClient.get<{ success: boolean; data: BrandProfile }>("/hosts/me")
-	return data.data
+	const { data } = await apiClient.get<{ success: boolean; data: RawBrandProfile }>("/brands/me")
+	const brand = data.data
+	return {
+		id: brand.id,
+		userId: brand.id,
+		hostType: "BUSINESS",
+		displayName: brand.brandName,
+		kycStatus: "VERIFIED",
+		panVerificationStatus: "VERIFIED",
+		bankVerificationStatus: "VERIFIED",
+		approvalStatus: "APPROVED",
+	}
 }
 
 export async function updateBrandProfile(payload: UpdateBrandProfilePayload): Promise<BrandProfile> {
@@ -223,12 +247,18 @@ export async function registerHost(payload: RegisterPayload): Promise<void> {
 	await apiClient.post("/auth/register", payload)
 }
 
-export type BrandRegisterPayload = Omit<RegisterPayload, "accountType"> & {
+// Brands are a separate, minimal account type on the backend \u2014 just contact identity + brand name.
+export type BrandRegisterPayload = {
+	firstName: string
+	lastName: string
+	email: string
+	phone?: string
 	accountType: "BRAND"
+	brandName: string
 }
 
 export async function registerBrand(payload: BrandRegisterPayload): Promise<void> {
-	await apiClient.post("/auth/register", { ...payload, accountType: "HOST" })
+	await apiClient.post("/auth/register", payload)
 }
 
 // ─── Attendee registration ────────────────────────────────────────────────────
@@ -555,6 +585,28 @@ export async function submitSponsorshipProposal(id: string): Promise<Sponsorship
 
 export async function deleteSponsorshipProposal(id: string): Promise<void> {
 	await apiClient.delete(`/sponsorships/${id}`)
+}
+
+// ─── Brand: browse published sponsorship proposals ────────────────────────────
+
+export type PublishedSponsorshipProposal = SponsorshipProposal & {
+	hostProfile: {
+		id: string
+		displayName?: string
+		user: { firstName: string; lastName: string }
+	}
+}
+
+export type PublishedSponsorshipsResponse = {
+	proposals: PublishedSponsorshipProposal[]
+	total: number
+}
+
+export async function getAllPublishedSponsorships(): Promise<PublishedSponsorshipsResponse> {
+	const { data } = await apiClient.get<{ success: boolean; data: PublishedSponsorshipsResponse }>(
+		"/sponsorships/published",
+	)
+	return data.data
 }
 
 // ─── Host community profile (shown to sponsors) ───────────────────────────────
