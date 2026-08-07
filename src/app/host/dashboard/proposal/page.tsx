@@ -57,6 +57,7 @@ export interface StoredProposal {
     docSize: number
     uploadedAt: string
     status?: "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED"
+    adminRejectionRemark?: string | null
     sponsorPrices?: SponsorPrice[]
     pendingRevision?: {
         name: string
@@ -97,6 +98,7 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
         docSize: p.docSize || 0,
         uploadedAt: p.updatedAt,
         status: p.status,
+        adminRejectionRemark: p.adminRejectionRemark,
         sponsorPrices: (p.sponsorTiers || []).map((t) => ({ name: t.name, price: t.price })),
         pendingRevision: p.pendingRevision
             ? {
@@ -1074,6 +1076,12 @@ export default function ProposalPage() {
                             </div>
 
                             {/* Banners */}
+                            {selectedProposal.status === "REJECTED" && selectedProposal.adminRejectionRemark && (
+                                <div className="p-3 bg-red-50 border border-red-200 rounded-action text-xs text-red-700">
+                                    <span className="font-semibold">Rejected by admin: </span>
+                                    {selectedProposal.adminRejectionRemark}
+                                </div>
+                            )}
                             {displayDetails?.isRevision && (
                                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-action text-xs text-amber-800 font-medium">
                                     You are viewing the pending revision of this proposal, which is under review by the admin.
