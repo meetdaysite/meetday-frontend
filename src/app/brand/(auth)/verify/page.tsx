@@ -115,6 +115,14 @@ export default function VerifyPage() {
 					router.replace("/brand/login")
 					return
 				}
+				if (me.role.name !== "BRAND") {
+					await signOut()
+					toast.error(
+						"This phone number is already registered as a different account type. Please use a different number to sign up as a brand.",
+					)
+					router.replace("/brand/login")
+					return
+				}
 			}
 
 			if (intent === "login") {

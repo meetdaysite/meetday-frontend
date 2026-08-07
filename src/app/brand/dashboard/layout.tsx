@@ -230,6 +230,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 					} else {
 						router.replace("/brand/onboarding")
 					}
+				} else if (e instanceof ApiError && e.statusCode === 403) {
+					// This phone number belongs to a non-BRAND account (e.g. already a HOST) —
+					// sign out and send back to login with a clear explanation instead of a
+					// generic error screen.
+					clearProfile()
+					await signOut()
+					toast.error(
+						"This phone number is already registered as a different account type. Please use a different number to sign up as a brand.",
+					)
+					router.replace("/brand/login")
 				} else {
 					// Don't redirect to /login — the user is still authenticated in Firebase,
 					// which would cause an immediate bounce back to /dashboard and an infinite loop.
