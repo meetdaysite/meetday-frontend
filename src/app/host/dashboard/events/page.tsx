@@ -279,68 +279,45 @@ function MyEventsPageContent() {
 	//
 	return (
 		<>
-			<div className="flex flex-col min-h-screen">
-				<DashboardTopBar />
+			<div className="flex flex-col min-h-screen bg-white">
 
-				<div className="flex-1 px-4 sm:px-6 lg:px-8 py-6 lg:py-8 bg-surface-page">
+				{/* Top Nav / Subheader */}
+				<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0 bg-white">
+					<p className="text-sm font-semibold text-black/50 mx-auto">
+						Welcome to <span className="text-[#EE2C2C] font-bold">Meetday</span>
+					</p>
+				</div>
+
+				<div className="flex-1 px-4 sm:px-6 lg:px-8 py-6 lg:py-8 bg-white">
 					{/* Header */}
 					<div className="flex items-start justify-between gap-4 mb-6">
 						<div>
-							<h1 className="text-heading-sm font-semibold text-text-primary">Curated Experiences</h1>
-							{profile && (
-								<div className="flex items-center gap-2 mt-1.5 bg-surface-card border border-border-default px-3 py-1.5 rounded-full w-fit shadow-sm">
-									<div className="size-6 rounded-full bg-red-100 flex items-center justify-center text-red-700 text-xs font-bold select-none overflow-hidden border border-border-default">
-										{profile.avatarUrl ? (
-											// eslint-disable-next-line @next/next/no-img-element
-											<img src={profile.avatarUrl} alt={profile.displayName} className="size-full object-cover" />
-										) : (
-											profile.displayName?.[0]?.toUpperCase() || "H"
-										)}
-									</div>
-									<span className="text-label-sm font-medium text-text-primary">{profile.displayName}</span>
-									{profile.socialLinks?.instagram && (
-										<>
-											<span className="text-text-muted">•</span>
-											<a
-												href={profile.socialLinks.instagram.startsWith("http") ? profile.socialLinks.instagram : `https://instagram.com/${profile.socialLinks.instagram.replace(/^@/, "")}`}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="text-caption text-text-brand hover:underline font-medium"
-											>
-												{profile.socialLinks.instagram.includes("instagram.com")
-													? `@${profile.socialLinks.instagram.split("instagram.com/")[1]?.split("/")[0] || profile.socialLinks.instagram}`
-													: profile.socialLinks.instagram.startsWith("@") ? profile.socialLinks.instagram : `@${profile.socialLinks.instagram}`}
-											</a>
-										</>
-									)}
-								</div>
-							)}
+							<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight mt-1">My Experiences</h1>
+							<p className="text-sm font-semibold text-black/50 mt-1.5">For all your experiences</p>
 						</div>
-						<Button
-							leftIcon={<PlusIcon />}
+						<button
 							onClick={() => router.push("/host/dashboard/create")}
-							className="shrink-0 font-semibold"
+							className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer"
 						>
-							<span className="hidden sm:inline">Create New Experience</span>
-							<span className="sm:hidden">Create</span>
-						</Button>
+							+ Create New
+						</button>
 					</div>
 
 					{/* Toolbar */}
-					<div className="flex items-center gap-3 mb-4 flex-wrap">
-						<div className="flex items-center gap-2 h-9 px-3 rounded-action border border-border-default bg-surface-canvas text-text-muted hover:border-border-strong focus-within:border-border-focused transition-colors flex-1 min-w-0 max-w-xs">
+					<div className="flex items-center gap-3 mb-6 flex-wrap">
+						<div className="flex items-center gap-2 h-10 px-4 rounded-xl border-[3px] border-black bg-white text-black min-w-0 max-w-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
 							<SearchIcon />
 							<input
 								type="text"
 								value={searchQuery}
 								onChange={e => handleSearchQuery(e.target.value)}
 								placeholder="Search experiences..."
-								className="flex-1 min-w-0 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
+								className="flex-1 min-w-0 bg-transparent text-sm text-black placeholder:text-black/40 outline-none font-semibold"
 							/>
 							{searchQuery && (
 								<button
 									onClick={() => handleSearchQuery("")}
-									className="text-text-muted hover:text-text-primary shrink-0"
+									className="text-black/40 hover:text-black shrink-0"
 								>
 									<XIcon />
 								</button>
@@ -353,17 +330,17 @@ function MyEventsPageContent() {
 								value={sortOrder}
 								onChange={handleSortOrder}
 								size="sm"
-								className="w-36"
+								className="w-36 border-[2px] border-black rounded-xl"
 							/>
-							<div className="flex items-center border border-border-default rounded-action overflow-hidden">
+							<div className="flex items-center border-[2px] border-black rounded-xl overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white">
 								<button
 									onClick={() => handleViewMode("list")}
 									aria-label="List view"
 									className={clsx(
-										"flex items-center justify-center w-9 h-9 transition-colors",
+										"flex items-center justify-center w-9 h-9 transition-colors border-r border-black",
 										viewMode === "list"
-											? "bg-surface-inverse text-text-inverse"
-											: "bg-surface-canvas text-text-muted hover:bg-surface-card-muted",
+											? "bg-[#EE2C2C] text-white"
+											: "bg-white text-black hover:bg-slate-50",
 									)}
 								>
 									<ListViewIcon />
@@ -374,8 +351,8 @@ function MyEventsPageContent() {
 									className={clsx(
 										"flex items-center justify-center w-9 h-9 transition-colors",
 										viewMode === "grid"
-											? "bg-surface-inverse text-text-inverse"
-											: "bg-surface-canvas text-text-muted hover:bg-surface-card-muted",
+											? "bg-[#EE2C2C] text-white"
+											: "bg-white text-black hover:bg-slate-50",
 									)}
 								>
 									<GridViewIcon />
@@ -385,13 +362,27 @@ function MyEventsPageContent() {
 					</div>
 
 					{/* Status tabs */}
-					<Tabs
-						items={STATUS_TABS.map(tab => ({ ...tab, count: tabCounts[tab.value] ?? 0 }))}
-						value={statusFilter}
-						onChange={handleStatusFilter}
-						variant="pill"
-						className="mb-6"
-					/>
+					<div className="flex flex-wrap gap-5 border-b border-black/10 pb-2 mb-6">
+						{STATUS_TABS.map((tab) => {
+							const isActive = statusFilter === tab.value
+							const count = tabCounts[tab.value] ?? 0
+							return (
+								<button
+									key={tab.value}
+									onClick={() => handleStatusFilter(tab.value)}
+									className={clsx(
+										"text-[10px] font-black uppercase tracking-wider pb-2 relative transition-colors",
+										isActive ? "text-[#EE2C2C]" : "text-black/40 hover:text-black"
+									)}
+								>
+									{tab.label.toUpperCase()} ({count})
+									{isActive && (
+										<div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#EE2C2C]" />
+									)}
+								</button>
+							)
+						})}
+					</div>
 
 					{/* Error */}
 					{eventsError && (
@@ -539,7 +530,8 @@ interface CardProps {
 }
 
 function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDraft }: CardProps) {
-	const cfg = STATUS_CONFIG[event.displayStatus ?? event.status]
+	const statusKey = event.displayStatus ?? event.status
+	const cfg = STATUS_CONFIG[statusKey]
 	const cap = eventCapacity(event)
 	const price = eventStartingPrice(event)
 	const priceLabel = price === null ? "—" : price === 0 ? "Free" : `₹${price}`
@@ -548,10 +540,10 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 	return (
 		<div
 			onClick={() => onNavigate(`/host/dashboard/events/${event.id}`)}
-			className="group relative cursor-pointer bg-surface-card border border-border-default rounded-action hover:border-border-strong hover:shadow-card-hover transition-all"
+			className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-col justify-between"
 		>
 			{/* Image */}
-			<div className="relative aspect-16/10 overflow-hidden rounded-t-action bg-surface-card-muted">
+			<div className="relative aspect-[16/10] overflow-hidden rounded-t-[20px] bg-slate-50 border-b-[3px] border-black">
 				{cover ? (
 					// eslint-disable-next-line @next/next/no-img-element
 					<img
@@ -561,12 +553,17 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 						loading="lazy"
 					/>
 				) : (
-					<div className="w-full h-full bg-linear-to-br from-surface-card-muted to-border-default" />
+					<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-lg">
+						{event.title ? event.title.substring(0, 2).toUpperCase() : "EV"}
+					</div>
 				)}
 				<span
 					className={clsx(
-						"absolute top-3 left-3 text-caption font-semibold px-2.5 py-1 rounded-badge",
-						cfg.imageBadge,
+						"absolute top-3 left-3 text-[8px] font-black px-2 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+						(statusKey === "DRAFT" || statusKey === "CANCELLED") && "bg-slate-100 text-black",
+						(statusKey === "UNDER_REVIEW" || statusKey === "COMPLETED") && "bg-[#F5C343] text-black",
+						statusKey === "REJECTED" && "bg-[#EE2C2C] text-white",
+						(statusKey === "PUBLISHED" || statusKey === "LIVE") && "bg-green-400 text-black"
 					)}
 				>
 					{cfg.label}
@@ -574,19 +571,19 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 			</div>
 
 			{/* Kebab */}
-			<div data-kebab className="absolute top-2.5 right-2.5 z-10" onClick={e => e.stopPropagation()}>
+			<div data-kebab className="absolute top-3 right-3 z-10" onClick={e => e.stopPropagation()}>
 				<button
 					onClick={e => onToggleKebab(event.id, e)}
-					className="flex items-center justify-center size-8 rounded-full bg-white/80 backdrop-blur-sm text-neutral-700 hover:bg-white transition-colors"
+					className="flex items-center justify-center size-6 rounded-full bg-white border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-50 text-black transition-colors"
 					aria-label="Event options"
 				>
 					<DotsIcon />
 				</button>
 				{openDropdownId === event.id && (
-					<div className="absolute right-0 top-10 z-50 w-44 bg-surface-card border border-border-default rounded-action shadow-floating py-1">
+					<div className="absolute right-0 top-8 z-50 w-44 bg-white border-[2px] border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] py-1">
 						<button
 							onClick={() => onNavigate(`/host/dashboard/events/${event.id}`)}
-							className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
+							className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-black hover:bg-slate-50 transition-colors font-bold"
 						>
 							<EyeIcon />
 							View Detail
@@ -594,7 +591,7 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 						{(event.status === "DRAFT" || event.status === "UNDER_REVIEW") && (
 							<button
 								onClick={() => onNavigate(`/host/dashboard/events/${event.id}/edit`)}
-								className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
+								className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-black hover:bg-slate-50 transition-colors font-bold"
 							>
 								<EditIcon />
 								Edit
@@ -603,7 +600,7 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 						{event.status === "PUBLISHED" && event.displayStatus !== "COMPLETED" && (
 							<button
 								onClick={() => onNavigate(`/host/dashboard/events/${event.id}/revise`)}
-								className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
+								className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-black hover:bg-slate-50 transition-colors font-bold"
 							>
 								<EditIcon />
 								Edit
@@ -611,13 +608,13 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 						)}
 						{event.status === "DRAFT" && (
 							<>
-								<div className="my-1 border-t border-border-default" />
+								<div className="my-1 border-t border-black" />
 								<button
 									onClick={e => {
 										e.stopPropagation()
 										onDeleteDraft(event.id)
 									}}
-									className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-red-600 hover:bg-red-50 transition-colors"
+									className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-[#EE2C2C] hover:bg-red-50 transition-colors font-black"
 								>
 									<TrashIcon />
 									Delete Draft
@@ -629,41 +626,32 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 			</div>
 
 			{/* Card body */}
-			<div className="p-4">
+			<div className="p-4 flex flex-col gap-1">
 				{event.category?.name && (
-					<span className="inline-block text-caption text-text-brand bg-surface-brand-soft px-2 py-0.5 rounded-badge mb-2">
+					<span className="inline-block self-start text-[9px] font-black text-[#6C32D1] bg-[#6C32D1]/5 border border-[#6C32D1]/20 px-2 py-0.5 rounded-full mb-1">
 						{event.category.name}
 					</span>
 				)}
 
 				<div className="flex items-start justify-between gap-2 mb-0.5">
-					<h3 className="text-label-md font-semibold text-text-primary line-clamp-1 group-hover:text-text-brand transition-colors">
+					<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">
 						{event.title ?? "Untitled Event"}
 					</h3>
-					<span
-						className={clsx(
-							"text-caption font-semibold shrink-0",
-							price === 0 ? "text-text-success" : "text-text-primary",
-						)}
-					>
-						{priceLabel}
-					</span>
 				</div>
 
-				<p className="text-caption text-text-muted mb-3 line-clamp-1">
+				<p className="text-[10px] font-bold text-black/50 mb-2">
 					{formatEventDateRange(event.eventDate, event.endDate)}
 					{event.venueName && <> &middot; {event.venueName}</>}
 					{event.city && <> &middot; {event.city}</>}
 				</p>
 
-				<div className="flex items-center justify-between mb-1.5">
-					<div className="flex items-center gap-1.5 text-caption text-text-secondary">
-						<PeopleIcon />
-						{cap > 0 ? `${cap} capacity` : "—"}
-					</div>
-				</div>
-				<div className="h-1.5 bg-surface-card-muted rounded-full overflow-hidden">
-					<div className="h-full bg-action-primary rounded-full w-0" />
+				<div className="flex items-center gap-2 mt-1">
+					<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+						👥 {cap > 0 ? `${cap} Capacity` : "—"}
+					</span>
+					<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+						💰 {priceLabel}
+					</span>
 				</div>
 			</div>
 		</div>
@@ -673,7 +661,8 @@ function GridCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 // ─── List Card ────────────────────────────────────────────────────────────────
 
 function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDraft }: CardProps) {
-	const cfg = STATUS_CONFIG[event.displayStatus ?? event.status]
+	const statusKey = event.displayStatus ?? event.status
+	const cfg = STATUS_CONFIG[statusKey]
 	const cap = eventCapacity(event)
 	const price = eventStartingPrice(event)
 	const priceLabel = price === null ? "—" : price === 0 ? "Free" : `₹${price}`
@@ -682,77 +671,79 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 	return (
 		<div
 			onClick={() => onNavigate(`/host/dashboard/events/${event.id}`)}
-			className="group cursor-pointer flex gap-4 bg-surface-card border border-border-default rounded-action p-4 hover:border-border-strong hover:shadow-card-hover transition-all"
+			className="group cursor-pointer flex gap-4 bg-white border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all p-4 items-center justify-between"
 		>
-			{/* Thumbnail */}
-			<div className="relative w-32 sm:w-40 aspect-4/3 rounded-action overflow-hidden shrink-0 bg-surface-card-muted">
-				{cover ? (
-					// eslint-disable-next-line @next/next/no-img-element
-					<img
-						src={cover}
-						alt={event.title ?? ""}
-						className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-						loading="lazy"
-					/>
-				) : (
-					<div className="w-full h-full bg-linear-to-br from-surface-card-muted to-border-default" />
-				)}
-				<span
-					className={clsx(
-						"absolute top-2 left-2 text-caption font-semibold px-2 py-0.5 rounded-badge",
-						cfg.imageBadge,
+			{/* Left side: thumbnail + text */}
+			<div className="flex gap-4 items-center min-w-0">
+				{/* Thumbnail */}
+				<div className="relative w-28 sm:w-36 aspect-[4/3] rounded-[16px] overflow-hidden shrink-0 bg-slate-50 border-[2px] border-black">
+					{cover ? (
+						// eslint-disable-next-line @next/next/no-img-element
+						<img
+							src={cover}
+							alt={event.title ?? ""}
+							className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+							loading="lazy"
+						/>
+					) : (
+						<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-lg">
+							{event.title ? event.title.substring(0, 2).toUpperCase() : "EV"}
+						</div>
 					)}
-				>
-					{cfg.label}
-				</span>
-			</div>
+					<span
+						className={clsx(
+							"absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+							(statusKey === "DRAFT" || statusKey === "CANCELLED") && "bg-slate-100 text-black",
+							(statusKey === "UNDER_REVIEW" || statusKey === "COMPLETED") && "bg-[#F5C343] text-black",
+							statusKey === "REJECTED" && "bg-[#EE2C2C] text-white",
+							(statusKey === "PUBLISHED" || statusKey === "LIVE") && "bg-green-400 text-black"
+						)}
+					>
+						{cfg.label}
+					</span>
+				</div>
 
-			{/* Content */}
-			<div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-				<div>
-					<h3 className="text-label-md font-semibold text-text-primary mb-0.5 line-clamp-1 group-hover:text-text-brand transition-colors">
-						{event.title ?? "Untitled Event"}
-					</h3>
+				{/* Content */}
+				<div className="min-w-0 flex flex-col gap-1">
 					{event.category?.name && (
-						<span className="inline-block text-caption text-text-brand bg-surface-brand-soft px-2 py-0.5 rounded-badge mb-1.5">
+						<span className="inline-block self-start text-[9px] font-black text-[#6C32D1] bg-[#6C32D1]/5 border border-[#6C32D1]/20 px-2 py-0.5 rounded-full">
 							{event.category.name}
 						</span>
 					)}
-					<p className="text-caption text-text-muted line-clamp-1">
+					<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors leading-tight">
+						{event.title ?? "Untitled Event"}
+					</h3>
+					<p className="text-[10px] font-bold text-black/50">
 						{formatEventDateRange(event.eventDate, event.endDate)}
 						{event.venueName && <> &middot; {event.venueName}</>}
 						{event.city && <> &middot; {event.city}</>}
 					</p>
-				</div>
-				<div className="mt-2">
-					<div className="flex items-center gap-1.5 text-caption text-text-secondary mb-1.5">
-						<PeopleIcon />
-						{cap > 0 ? `${cap} capacity` : "—"}
-					</div>
-					<div className="h-1.5 bg-surface-card-muted rounded-full overflow-hidden max-w-48">
-						<div className="h-full bg-action-primary rounded-full w-0" />
+					<div className="flex gap-2 mt-1">
+						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+							👥 {cap > 0 ? `${cap} Capacity` : "—"}
+						</span>
+						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+							💰 {priceLabel}
+						</span>
 					</div>
 				</div>
 			</div>
 
-			{/* Price + kebab */}
-			<div
-				className="flex flex-col items-end justify-between shrink-0"
-				onClick={e => e.stopPropagation()}
-			>
+			{/* Right side: kebab */}
+			<div className="flex flex-col items-end justify-between shrink-0 h-full" onClick={e => e.stopPropagation()}>
 				<div data-kebab className="relative">
 					<button
 						onClick={e => onToggleKebab(event.id, e)}
-						className="flex items-center justify-center size-8 rounded-action text-text-muted hover:bg-surface-card-muted hover:text-text-primary transition-colors"
+						className="flex items-center justify-center size-8 rounded-full border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-white hover:bg-slate-50 text-black transition-colors"
 						aria-label="Event options"
 					>
 						<DotsIcon />
 					</button>
 					{openDropdownId === event.id && (
-						<div className="absolute right-0 top-10 z-50 w-44 bg-surface-card border border-border-default rounded-action shadow-floating py-1">
+						<div className="absolute right-0 top-10 z-50 w-44 bg-white border-[2px] border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] py-1">
 							<button
 								onClick={() => onNavigate(`/host/dashboard/events/${event.id}`)}
-								className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
+								className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-black hover:bg-slate-50 transition-colors font-bold"
 							>
 								<EyeIcon />
 								View Detail
@@ -760,7 +751,7 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 							{(event.status === "DRAFT" || event.status === "UNDER_REVIEW") && (
 								<button
 									onClick={() => onNavigate(`/host/dashboard/events/${event.id}/edit`)}
-									className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
+									className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-black hover:bg-slate-50 transition-colors font-bold"
 								>
 									<EditIcon />
 									Edit
@@ -769,7 +760,7 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 							{event.status === "PUBLISHED" && event.displayStatus !== "COMPLETED" && (
 								<button
 									onClick={() => onNavigate(`/host/dashboard/events/${event.id}/revise`)}
-									className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-text-primary hover:bg-surface-card-muted transition-colors"
+									className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-black hover:bg-slate-50 transition-colors font-bold"
 								>
 									<EditIcon />
 									Edit
@@ -777,13 +768,13 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 							)}
 							{event.status === "DRAFT" && (
 								<>
-									<div className="my-1 border-t border-border-default" />
+									<div className="my-1 border-t border-black" />
 									<button
 										onClick={e => {
 											e.stopPropagation()
 											onDeleteDraft(event.id)
 										}}
-										className="flex items-center gap-2.5 w-full px-3.5 py-2.5 text-label-sm text-red-600 hover:bg-red-50 transition-colors"
+										className="flex items-center gap-2.5 w-full px-3.5 py-2 text-xs text-[#EE2C2C] hover:bg-red-50 transition-colors font-black"
 									>
 										<TrashIcon />
 										Delete Draft
@@ -792,19 +783,6 @@ function ListCard({ event, openDropdownId, onToggleKebab, onNavigate, onDeleteDr
 							)}
 						</div>
 					)}
-				</div>
-				<div className="text-right hidden sm:block">
-					<p
-						className={clsx(
-							"text-label-sm font-semibold",
-							price === 0 ? "text-text-success" : "text-text-primary",
-						)}
-					>
-						{priceLabel}
-					</p>
-					<p className="text-caption text-text-muted">
-						{price === 0 ? "Free entry" : "Starting from"}
-					</p>
 				</div>
 			</div>
 		</div>

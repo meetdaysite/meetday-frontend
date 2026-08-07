@@ -224,19 +224,18 @@ export default function RootPage() {
 				<div className="w-full max-w-3xl px-6 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mt-8 md:mt-10 mb-12 z-20">
 					
 					{/* Hosts Card */}
-					<div className="bg-white border-[4px] border-black rounded-[36px] p-6 md:p-8 flex flex-col items-center shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
+					<div className="bg-white border-[4px] border-black rounded-[36px] p-4 md:p-5 flex flex-col items-center shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
 						
-						{/* Placeholder Image */}
-						<div className="relative w-full aspect-[4/3] border-[3px] border-black rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center group">
-							{/* Pattern background to look beautiful */}
-							<div className="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1.5px,transparent_1.5px)] [background-size:12px_12px]" />
-							<div className="z-10 text-center flex flex-col items-center gap-3">
-								<svg className="w-12 h-12 text-black/40 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-								</svg>
-								<span className="text-sm font-bold text-black/50 tracking-wider">HOSTS PLACEHOLDER</span>
-							</div>
+						{/* Image */}
+						<div className="relative w-full aspect-[4/3] border-[3px] border-black rounded-2xl overflow-hidden bg-slate-100 group">
+							<Image
+								src="/images/host.png"
+								alt="Hosts"
+								fill
+								sizes="(max-width: 768px) 100vw, 350px"
+								className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+								priority
+							/>
 						</div>
 						
 						<p className="mt-4 text-black font-semibold text-center text-sm sm:text-base leading-relaxed flex-grow max-w-sm">
@@ -252,17 +251,18 @@ export default function RootPage() {
 					</div>
 
 					{/* Brands Card */}
-					<div className="bg-white border-[4px] border-black rounded-[36px] p-6 md:p-8 flex flex-col items-center shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
+					<div className="bg-white border-[4px] border-black rounded-[36px] p-4 md:p-5 flex flex-col items-center shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
 						
-						{/* Placeholder Image */}
-						<div className="relative w-full aspect-[4/3] border-[3px] border-black rounded-2xl overflow-hidden bg-slate-100 flex items-center justify-center group">
-							<div className="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1.5px,transparent_1.5px)] [background-size:12px_12px]" />
-							<div className="z-10 text-center flex flex-col items-center gap-3">
-								<svg className="w-12 h-12 text-black/40 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-								</svg>
-								<span className="text-sm font-bold text-black/50 tracking-wider">BRANDS PLACEHOLDER</span>
-							</div>
+						{/* Image */}
+						<div className="relative w-full aspect-[4/3] border-[3px] border-black rounded-2xl overflow-hidden bg-slate-100 group">
+							<Image
+								src="/images/brand.png"
+								alt="Brands"
+								fill
+								sizes="(max-width: 768px) 100vw, 350px"
+								className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+								priority
+							/>
 						</div>
 						
 						<p className="mt-4 text-black font-semibold text-center text-sm sm:text-base leading-relaxed flex-grow max-w-sm">

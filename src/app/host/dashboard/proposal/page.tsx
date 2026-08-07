@@ -28,6 +28,8 @@ import {
     type HostCommunityProfilePayload,
 } from "@/lib/api"
 
+import { ActivateCommunityModal } from "@/components/host/ActivateCommunityModal"
+
 import UploadSvg from "@/icons/outlined/upload.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
@@ -214,6 +216,148 @@ export default function ProposalPage() {
 
     const [categories, setCategories] = useState<Category[]>([])
 
+    const isSplitLayout = showActivateModal || !!community
+
+    const communityLogoUrl = useMemo(() => {
+        if (!community) return null
+        if ((community as any).logoUrl) return (community as any).logoUrl
+        if ((community as any).logo) {
+            try {
+                return URL.createObjectURL((community as any).logo)
+            } catch (e) {
+                return null
+            }
+        }
+        return null
+    }, [community])
+
+    const categoryIdsToShow = useMemo(() => {
+        if (!community) return []
+        if (community.categories) return community.categories.map(c => c.id)
+        if ((community as any).categoryIds) return (community as any).categoryIds
+        return []
+    }, [community])
+
+    const renderCommunityCard = () => {
+        if (!community) return null
+        return (
+            <div className="border border-black/10 rounded-[28px] p-6 bg-white flex flex-col gap-6 w-full shadow-sm">
+                {/* Top Section: Avatar & Info */}
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <div className="relative size-14 shrink-0">
+                            <div className="size-14 rounded-full border border-black/10 overflow-hidden bg-slate-50 flex items-center justify-center">
+                                {communityLogoUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={communityLogoUrl} alt={community.name} className="size-full object-cover" />
+                                ) : (
+                                    <div className="text-lg font-black text-black/50">
+                                        {community.name.substring(0, 2).toUpperCase()}
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                onClick={openActivationModal}
+                                className="absolute -bottom-0.5 -right-0.5 size-5 bg-white border border-black/10 rounded-full flex items-center justify-center shadow-sm hover:scale-105 transition-transform"
+                            >
+                                <span className="text-[10px]">✏️</span>
+                            </button>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <h3 className="font-heading font-black text-black text-base leading-tight truncate max-w-[150px]">{community.name}</h3>
+                            <span className="inline-block self-start text-[8px] font-black text-white bg-[#6C32D1] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                Community Profile
+                            </span>
+                        </div>
+                    </div>
+                    <button
+                        onClick={openActivationModal}
+                        className="text-xs font-bold text-black hover:underline cursor-pointer"
+                    >
+                        Edit
+                    </button>
+                </div>
+
+                <hr className="border-black/10" />
+
+                {/* About Section */}
+                {community.about && (
+                    <div className="flex flex-col gap-1">
+                        <h4 className="font-heading font-black text-black/40 text-[10px] uppercase tracking-wider">About the Community</h4>
+                        <p className="text-xs font-semibold text-black/60 leading-relaxed line-clamp-4">{community.about}</p>
+                    </div>
+                )}
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                    {community.size && (
+                        <div className="flex flex-col gap-0.5">
+                            <h4 className="font-heading font-black text-black/40 text-[10px] uppercase tracking-wider">Community Size</h4>
+                            <p className="text-xs font-black text-black">{community.size} Members</p>
+                        </div>
+                    )}
+                    {community.avgGuestCount && (
+                        <div className="flex flex-col gap-0.5">
+                            <h4 className="font-heading font-black text-black/40 text-[10px] uppercase tracking-wider">Average Guest Count</h4>
+                            <p className="text-xs font-black text-black">{community.avgGuestCount} Guests</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Experiences/Year */}
+                {community.experiencesPerYear && (
+                    <div className="flex flex-col gap-0.5">
+                        <h4 className="font-heading font-black text-black/40 text-[10px] uppercase tracking-wider">Experiences/Year</h4>
+                        <p className="text-xs font-black text-black">{community.experiencesPerYear}</p>
+                    </div>
+                )}
+
+                {/* Categories */}
+                <div className="flex flex-col gap-2">
+                    <div className="flex justify-between items-center">
+                        <h4 className="font-heading font-black text-black/40 text-[10px] uppercase tracking-wider">Experience Categories</h4>
+                        <button onClick={openActivationModal} className="text-black/60 hover:text-black font-bold text-sm">+</button>
+                    </div>
+                    {categoryIdsToShow.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                            {categoryIdsToShow.map((catId: string) => {
+                                const cat = categories.find((c) => c.id === catId)
+                                if (!cat) return null
+                                return (
+                                    <div
+                                        key={cat.id}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-black/10 bg-black/5 text-[11px] font-semibold text-black"
+                                    >
+                                        <span>{cat.name}</span>
+                                        <button onClick={openActivationModal} className="text-black/40 hover:text-black font-bold">×</button>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        <p className="text-xs font-semibold text-black/30 italic">No categories added</p>
+                    )}
+                </div>
+
+                {/* Social Links */}
+                {(profile?.socialLinks?.instagram || profile?.socialLinks?.linkedin) && (
+                    <div className="flex flex-col gap-2 pt-2 border-t border-black/10">
+                        {profile?.socialLinks?.instagram && (
+                            <div className="px-3 py-1.5 rounded-xl border border-black/10 bg-black/5 text-[11px] font-semibold text-black/60 truncate">
+                                Instagram: <a href={`https://${profile.socialLinks.instagram}`} target="_blank" rel="noopener noreferrer" className="font-bold hover:underline text-[#6C32D1]">{profile.socialLinks.instagram}</a>
+                            </div>
+                        )}
+                        {profile?.socialLinks?.linkedin && (
+                            <div className="px-3 py-1.5 rounded-xl border border-black/10 bg-black/5 text-[11px] font-semibold text-black/60 truncate">
+                                LinkedIn: <a href={`https://${profile.socialLinks.linkedin}`} target="_blank" rel="noopener noreferrer" className="font-bold hover:underline text-[#6C32D1]">{profile.socialLinks.linkedin}</a>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        )
+    }
+
     const displayDetails = useMemo(() => {
         if (!selectedProposal) return null
         if ((activeTab === "UNDER_REVIEW" || selectedProposal.status === "UNDER_REVIEW") && selectedProposal.pendingRevision) {
@@ -281,10 +425,33 @@ export default function ProposalPage() {
     useEffect(() => {
         if (!hostId) return
         setLoading(true)
-        Promise.all([getProposals(hostId), getHostCommunityProfile()])
+
+        const loadCommunity = () => {
+            return new Promise((resolve) => {
+                const DB_NAME = "MeetdayProposalDB"
+                const STORE_NAME = "proposals"
+                const COMMUNITY_KEY = "activated_community"
+                const request = indexedDB.open(DB_NAME, 1)
+                request.onerror = () => resolve(null)
+                request.onsuccess = () => {
+                    const db = request.result
+                    if (db.objectStoreNames.contains(STORE_NAME)) {
+                        const tx = db.transaction(STORE_NAME, "readonly")
+                        const store = tx.objectStore(STORE_NAME)
+                        const getReq = store.get(`${COMMUNITY_KEY}_${hostId}`)
+                        getReq.onsuccess = () => resolve(getReq.result || null)
+                        getReq.onerror = () => resolve(null)
+                    } else {
+                        resolve(null)
+                    }
+                }
+            })
+        }
+
+        Promise.all([getProposals(hostId), loadCommunity()])
             .then(([p, c]) => {
                 setProposals(p)
-                setCommunity(c)
+                setCommunity(c as any)
                 if (urlProposalId) {
                     const found = p.find(item => item.id === urlProposalId)
                     if (found) {
@@ -615,9 +782,10 @@ export default function ProposalPage() {
             setUploadProgress(100)
             resetProposalForm()
             toast.success("Proposal details saved successfully!")
-        } catch (err) {
+        } catch (err: any) {
             console.error(err)
-            toast.error("Failed to save proposal details.")
+            const errMsg = err?.message || err?.response?.data?.message || "Failed to save proposal details."
+            toast.error(errMsg)
         } finally {
             setIsUploading(false)
             setUploadProgress(0)
@@ -819,13 +987,13 @@ export default function ProposalPage() {
             setCommunitySize(community.size)
             setAvgGuestCount(community.avgGuestCount)
             setExperiencesPerYear(community.experiencesPerYear)
-            setCategoryIds(community.categories.map((c) => c.id))
+            setCategoryIds(community.categories ? community.categories.map((c) => c.id) : ((community as any).categoryIds || []))
             setInstagram(profile?.socialLinks?.instagram || "")
             setLinkedin(profile?.socialLinks?.linkedin || "")
             setYoutube(profile?.socialLinks?.youtube || "")
             setPortfolio(profile?.socialLinks?.portfolio || "")
             setLogoFile(null)
-            setLogoPreviewUrl(community.logoUrl)
+            setLogoPreviewUrl(community.logoUrl || communityLogoUrl)
         } else {
             setCommunityName("")
             setAboutCommunity("")
@@ -950,35 +1118,94 @@ export default function ProposalPage() {
 
     const handleDeactivate = () => {
         if (confirm("Are you sure you want to deactivate the community? Your sponsorship proposals will remain saved and reappear once you reactivate.")) {
-            deactivateHostCommunityProfile()
-                .then(() => {
-                    setCommunity(null)
-                    setSelectedProposal(null)
-                    toast.success("Community deactivated.")
-                })
-                .catch((err) => {
-                    console.error(err)
-                    toast.error("Failed to deactivate community.")
-                })
+            const DB_NAME = "MeetdayProposalDB"
+            const STORE_NAME = "proposals"
+            const COMMUNITY_KEY = "activated_community"
+            const request = indexedDB.open(DB_NAME, 1)
+            request.onsuccess = () => {
+                const db = request.result
+                if (db.objectStoreNames.contains(STORE_NAME)) {
+                    const tx = db.transaction(STORE_NAME, "readwrite")
+                    const store = tx.objectStore(STORE_NAME)
+                    store.delete(`${COMMUNITY_KEY}_${hostId}`)
+                }
+            }
+            setCommunity(null)
+            setSelectedProposal(null)
+            toast.success("Community deactivated.")
         }
     }
 
     return (
         <div className="flex flex-col min-h-screen">
-            <DashboardTopBar />
+            {/* Top Nav / Subheader */}
+            <div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
+                <p className="text-sm font-semibold text-black/50 mx-auto">
+                    Welcome to <span className="text-[#EE2C2C] font-bold">Meetday</span>
+                </p>
+            </div>
 
-            <div className="flex-1 px-4 sm:px-6 lg:px-8 py-6 lg:py-8 bg-surface-page">
-                <div className="max-w-4xl">
+            <div className={clsx(
+                "flex-1 min-h-0 w-full overflow-hidden relative bg-white",
+                isSplitLayout ? "md:grid md:grid-cols-[60%_40%]" : "flex flex-col"
+            )}>
+                <div className={clsx(
+                    "px-4 lg:px-6 py-6 lg:py-8 flex-1 flex flex-col gap-8 overflow-y-auto h-full transition-all duration-300",
+                    isSplitLayout ? "max-w-none" : "max-w-2xl mx-auto w-full"
+                )}>
                     {loading ? (
                         <>
                             <div className="mb-6">
-                                <h1 className="text-heading-sm font-semibold text-text-primary">Sponsorships</h1>
-                                <p className="text-body-sm text-text-secondary mt-0.5">Activate your community and upload your proposal</p>
+                                <h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">Sponsorships</h1>
+                                <p className="text-sm font-semibold text-black/50 mt-1.5">Activate your community and upload your proposal</p>
                             </div>
-                            <div className="bg-surface-card border border-border-default rounded-action p-12 text-center max-w-2xl">
-                                <p className="text-text-secondary">Loading details...</p>
+                            <div className="bg-white border-2 border-black rounded-[20px] p-12 text-center max-w-2xl">
+                                <p className="text-sm font-semibold text-black/50">Loading details...</p>
                             </div>
                         </>
+                    ) : !community ? (
+                        <div className={clsx(
+                            "flex flex-col gap-8 w-full",
+                            showActivateModal ? "max-w-none" : "max-w-2xl mx-auto"
+                        )}>
+                            {/* Welcome header */}
+                            <div className="mb-2">
+                                <h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight mt-1">
+                                    My Sponsorships
+                                </h1>
+                                <p className="text-sm font-semibold text-black/50 mt-1.5">
+                                    For all your proposals
+                                </p>
+                            </div>
+
+                            {/* Activation banner */}
+                            <div className="bg-white border-[3px] border-black rounded-[20px] p-6 flex flex-col md:flex-row md:items-center justify-between shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] gap-4">
+                                <div className="flex flex-col gap-1.5">
+                                    <h3 className="font-heading font-black text-black text-lg">
+                                        Uh-Oh! Looks like you haven't activated your community yet.
+                                    </h3>
+                                    <p className="text-sm font-semibold text-black/50">
+                                        Activate your community before getting started on sponsorships and approvals.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={openActivationModal}
+                                    className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none shrink-0 self-start md:self-auto"
+                                >
+                                    ACTIVATE NOW
+                                </button>
+                            </div>
+
+                            {/* Dashed placeholder */}
+                            <div className="border-[3px] border-dashed border-black/30 rounded-[20px] p-12 flex flex-col items-center justify-center text-center gap-2 mt-2 bg-transparent">
+                                <p className="font-heading font-black text-black/40 text-lg">
+                                    No approved sponsorships yet
+                                </p>
+                                <p className="text-sm font-semibold text-black/30">
+                                    Activate your community before getting approvals.
+                                </p>
+                            </div>
+                        </div>
                     ) : selectedProposal && !isEditingInPlace ? (
                         /* Proposal Details Section - rendered inline instead of a modal! */
                         <div className="flex flex-col gap-6 animate-in fade-in duration-150">
@@ -1178,119 +1405,334 @@ export default function ProposalPage() {
                     ) : (
                         /* Proposal section always available; community profile is optional. */
                         <div className="flex flex-col gap-8">
-                            {community ? (
-                            <div>
-                                <h1 className="text-heading-sm font-semibold text-text-primary mb-4">Community profile</h1>
-
-                                {/* Activated Community Details Card */}
-                                <div className="bg-surface-card border border-border-default rounded-action p-4 w-full shadow-sm">
-                                    <div className="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-border-default">
+                            {showProposalForm ? (
+                                /* Render the inline Create Proposal Form exactly like the user's mockup! */
+                                <div className="animate-in fade-in duration-150 flex flex-col gap-6">
+                                    <div className="flex justify-between items-center shrink-0">
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex items-center gap-2 cursor-pointer text-black/60 hover:text-black" onClick={resetProposalForm}>
+                                                <span className="text-xl font-bold">←</span>
+                                                <h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
+                                                    {selectedProposal ? "Edit Proposal" : "Create Proposal"}
+                                                </h1>
+                                            </div>
+                                            <p className="text-sm font-semibold text-black/50 mt-1">
+                                                Provide details and upload your proposal document
+                                            </p>
+                                        </div>
                                         <div className="flex items-center gap-3">
-                                            {community.logoUrl ? (
-                                                // eslint-disable-next-line @next/next/no-img-element
-                                                <img src={community.logoUrl} alt={community.name} className="size-8 rounded-lg object-cover border border-border-default" />
-                                            ) : (
-                                                <div className="size-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-700 text-[10px] font-bold">
-                                                    {community.name.substring(0, 2).toUpperCase()}
-                                                </div>
-                                            )}
-                                            <div>
-                                                <h3 className="text-label-md font-semibold text-text-primary">{community.name}</h3>
-                                                <p className="text-caption text-text-tertiary">Community profile</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Button
-                                                variant="secondary"
-                                                size="xs"
-                                                radius="pill"
-                                                onClick={openActivationModal}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => handleProposalSubmit(e, "DRAFT")}
+                                                className="px-4 py-2 bg-black/5 hover:bg-black/10 border border-black/10 text-xs font-bold rounded-lg text-black transition-colors"
                                             >
-                                                Edit details
-                                            </Button>
-                                            <Button
-                                                variant="secondary"
-                                                size="xs"
-                                                radius="pill"
-                                                className="text-red-600 border-red-100 bg-red-50 hover:bg-red-100"
-                                                onClick={handleDeactivate}
+                                                Save As Draft
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    const nextStatus = selectedProposal ? selectedProposal.status : "UNDER_REVIEW"
+                                                    handleProposalSubmit(e, nextStatus)
+                                                }}
+                                                className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
                                             >
-                                                Deactivate
-                                            </Button>
+                                                SUBMIT
+                                            </button>
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col gap-2">
-                                        {community.about && (
-                                            <div>
-                                                <p className="text-[10px] text-text-tertiary">About the Community</p>
-                                                <p className="text-body-sm text-text-secondary mt-0.5 leading-relaxed">{community.about}</p>
+                                    {/* Enclose the form in a neobrutalist dashed border box */}
+                                    <form onSubmit={handleProposalSubmit} className="border-[3px] border-dashed border-black/30 rounded-[28px] p-6 bg-white flex flex-col gap-6 w-full">
+                                        {/* Name */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-black">Project Name *</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={projName}
+                                                onChange={(e) => setProjName(e.target.value)}
+                                                placeholder="e.g. Annual Charity Gala"
+                                                className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                            />
+                                        </div>
+
+                                        {/* About */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-black">About the community *</label>
+                                            <textarea
+                                                required
+                                                value={projAbout}
+                                                onChange={(e) => setProjAbout(e.target.value)}
+                                                placeholder="Describe your community's purpose, focus, and vibes..."
+                                                rows={3}
+                                                className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
+                                            />
+                                        </div>
+
+                                        {/* Logo/Image Upload */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-black">Logo *</label>
+                                            <div className="flex items-center gap-4">
+                                                {projImagePreview ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img src={projImagePreview} alt="Preview" className="size-16 rounded-xl object-cover border border-black/10" />
+                                                ) : selectedProposal?.image ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img src={typeof selectedProposal.image === "string" ? selectedProposal.image : URL.createObjectURL(selectedProposal.image)} alt="Current" className="size-16 rounded-xl object-cover border border-black/10" />
+                                                ) : (
+                                                    <div className="size-16 rounded-xl bg-slate-50 border border-dashed border-black/10 flex items-center justify-center text-black/30 text-xs">
+                                                        No Image
+                                                    </div>
+                                                )}
+                                                <div className="flex flex-col gap-1">
+                                                    <input
+                                                        ref={projImageInputRef}
+                                                        type="file"
+                                                        accept="image/jpeg,image/jpg,image/png"
+                                                        className="hidden"
+                                                        onChange={handleProjImageChange}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => projImageInputRef.current?.click()}
+                                                        className="px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
+                                                    >
+                                                        Choose Image
+                                                    </button>
+                                                    <span className="text-[10px] text-black/40">JPEG, JPG, PNG accepted. Max 5MB.</span>
+                                                </div>
                                             </div>
-                                        )}
-                                        <div className="grid grid-cols-3 gap-3 mt-1">
-                                            {community.size && (
-                                                <div>
-                                                    <p className="text-[10px] text-text-tertiary">Community Size</p>
-                                                    <p className="text-body-sm font-semibold text-text-primary mt-0.5">{community.size} members</p>
-                                                </div>
-                                            )}
-                                            {community.avgGuestCount && (
-                                                <div>
-                                                    <p className="text-[10px] text-text-tertiary">Avg Guest Count</p>
-                                                    <p className="text-body-sm font-semibold text-text-primary mt-0.5">{community.avgGuestCount} guests</p>
-                                                </div>
-                                            )}
-                                            {community.experiencesPerYear && (
-                                                <div>
-                                                    <p className="text-[10px] text-text-tertiary">Experiences/Year</p>
-                                                    <p className="text-body-sm font-semibold text-text-primary mt-0.5">{community.experiencesPerYear}</p>
-                                                </div>
-                                            )}
-                                            {community.categories && community.categories.length > 0 && (
-                                                <div className="col-span-3 mt-1">
-                                                    <p className="text-[10px] text-text-tertiary">Categories</p>
-                                                    <div className="flex flex-wrap gap-1 mt-1">
-                                                        {community.categories.map((cat) => (
-                                                            <span
-                                                                key={cat.id}
-                                                                className="inline-flex items-center px-2 py-0.5 rounded-badge text-[10px] font-medium bg-surface-brand-soft text-text-brand border border-border-brand"
+                                        </div>
+
+                                        {/* Date, City */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-xs font-bold text-black">Date *</label>
+                                                <input
+                                                    type="date"
+                                                    required
+                                                    value={projDate}
+                                                    onChange={(e) => setProjDate(e.target.value)}
+                                                    className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-xs font-bold text-black">City *</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={projCity}
+                                                    onChange={(e) => setProjCity(e.target.value)}
+                                                    placeholder="e.g. San Francisco"
+                                                    className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Venue */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-black">Venue *</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={projVenue}
+                                                onChange={(e) => setProjVenue(e.target.value)}
+                                                placeholder="e.g. Palace of Fine Arts"
+                                                className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                            />
+                                        </div>
+
+                                        {/* Audience Profile */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-black">Audience Profile *</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={newAudience}
+                                                    onChange={(e) => setNewAudience(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === "Enter") {
+                                                            e.preventDefault()
+                                                            const trimmed = newAudience.trim()
+                                                            if (trimmed && !projAudience.includes(trimmed)) {
+                                                                setProjAudience([...projAudience, trimmed])
+                                                                setNewAudience("")
+                                                            }
+                                                        }
+                                                    }}
+                                                    placeholder="e.g. Tech Founders (press Add or Enter)"
+                                                    className="flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const trimmed = newAudience.trim()
+                                                        if (trimmed && !projAudience.includes(trimmed)) {
+                                                            setProjAudience([...projAudience, trimmed])
+                                                            setNewAudience("")
+                                                        }
+                                                    }}
+                                                    className="px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
+                                                >
+                                                    Add
+                                                </button>
+                                            </div>
+                                            {projAudience.length > 0 ? (
+                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                    {projAudience.map((aud, idx) => (
+                                                        <span
+                                                            key={idx}
+                                                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-black/5 text-black border border-black/10"
+                                                        >
+                                                            {aud}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setProjAudience(projAudience.filter((_, i) => i !== idx))}
+                                                                className="text-black/40 hover:text-black font-bold text-[10px]"
                                                             >
-                                                                {cat.name}
-                                                            </span>
-                                                        ))}
-                                                    </div>
+                                                                ✕
+                                                            </button>
+                                                        </span>
+                                                    ))}
                                                 </div>
-                                            )}
-                                            {(profile?.socialLinks?.instagram || profile?.socialLinks?.linkedin || profile?.socialLinks?.youtube || profile?.socialLinks?.portfolio) && (
-                                                <div className="col-span-3 mt-1 pt-1.5 border-t border-border-default">
-                                                    <div className="flex flex-wrap gap-x-4 gap-y-1">
-                                                        {profile?.socialLinks?.instagram && <p className="text-[11px] text-text-secondary">Instagram: <a href={`https://${profile.socialLinks.instagram}`} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline">{profile.socialLinks.instagram}</a></p>}
-                                                        {profile?.socialLinks?.linkedin && <p className="text-[11px] text-text-secondary">LinkedIn: <a href={`https://${profile.socialLinks.linkedin}`} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline">{profile.socialLinks.linkedin}</a></p>}
-                                                        {profile?.socialLinks?.youtube && <p className="text-[11px] text-text-secondary">YouTube: <a href={`https://${profile.socialLinks.youtube}`} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline">{profile.socialLinks.youtube}</a></p>}
-                                                        {profile?.socialLinks?.portfolio && <p className="text-[11px] text-text-secondary">Website: <a href={`https://${profile.socialLinks.portfolio}`} target="_blank" rel="noopener noreferrer" className="text-text-brand hover:underline">{profile.socialLinks.portfolio}</a></p>}
-                                                    </div>
-                                                </div>
+                                            ) : (
+                                                <p className="text-[10px] text-black/40">Add at least one targeted audience profile.</p>
                                             )}
                                         </div>
-                                    </div>
+
+                                        {/* Age Group, Number of Guests */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-xs font-bold text-black">Age Group *</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={projAgeGroup}
+                                                    onChange={(e) => setProjAgeGroup(e.target.value)}
+                                                    placeholder="e.g. 21-40"
+                                                    className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-xs font-bold text-black">Guests Count *</label>
+                                                <input
+                                                    type="number"
+                                                    required
+                                                    min="1"
+                                                    value={projGuestCount}
+                                                    onChange={(e) => setProjGuestCount(e.target.value)}
+                                                    placeholder="e.g. 150"
+                                                    className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Document Upload */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-black">Proposal Document *</label>
+                                            <div className="flex items-center gap-4">
+                                                <div className="size-16 rounded-xl bg-slate-50 border border-dashed border-black/10 flex items-center justify-center text-black/30">
+                                                    📄
+                                                </div>
+                                                <div className="flex flex-col gap-1">
+                                                    <input
+                                                        ref={projDocInputRef}
+                                                        type="file"
+                                                        accept=".pdf,.docx,.pptx"
+                                                        className="hidden"
+                                                        onChange={handleProjDocChange}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => projDocInputRef.current?.click()}
+                                                        className="px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
+                                                    >
+                                                        Choose Document
+                                                    </button>
+                                                    <span className="text-[10px] text-black/40">PDF, DOCX, PPTX accepted. Max 10MB.</span>
+                                                    {projDoc && (
+                                                        <span className="text-xs font-semibold text-black truncate max-w-xs">{projDoc.name}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Sponsor pricing slots */}
+                                        <div className="flex flex-col gap-3">
+                                            <div className="flex justify-between items-center">
+                                                <label className="text-xs font-bold text-black">Sponsorship Slots *</label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSponsorPrices([...sponsorPrices, { name: "", price: "" }])}
+                                                    className="text-xs font-bold text-black hover:underline"
+                                                >
+                                                    + Add Slot
+                                                </button>
+                                            </div>
+                                            {sponsorPrices.map((sp, idx) => (
+                                                <div key={idx} className="flex gap-3 items-center">
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        placeholder="Slot Name (e.g., Title Sponsor)"
+                                                        value={sp.name}
+                                                        onChange={(e) => {
+                                                            const updated = [...sponsorPrices]
+                                                            updated[idx].name = e.target.value
+                                                            setSponsorPrices(updated)
+                                                        }}
+                                                        className="flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        placeholder="Price (e.g., ₹50,000)"
+                                                        value={sp.price}
+                                                        onChange={(e) => {
+                                                            const updated = [...sponsorPrices]
+                                                            updated[idx].price = e.target.value
+                                                            setSponsorPrices(updated)
+                                                        }}
+                                                        className="flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                    />
+                                                    {sponsorPrices.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setSponsorPrices(sponsorPrices.filter((_, i) => i !== idx))}
+                                                            className="text-red-500 hover:text-red-700 font-bold text-lg"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </form>
                                 </div>
-                            </div>
                             ) : (
-                                <div className="bg-surface-card-muted border border-border-default rounded-action p-4 flex items-center justify-between gap-3">
-                                    <div>
-                                        <p className="text-label-sm font-semibold text-text-primary">No community profile yet</p>
-                                        <p className="text-caption text-text-tertiary mt-0.5">Optional — add community details to strengthen your proposal for sponsors.</p>
+                                <>
+                                    {/* Header */}
+                                    <div className="flex justify-between items-center mb-2">
+                                        <div>
+                                            <h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight mt-1">
+                                                My Sponsorships
+                                            </h1>
+                                            <p className="text-sm font-semibold text-black/50 mt-1.5">
+                                                For all your proposals
+                                            </p>
+                                        </div>
+                                        {proposals.length > 0 && (
+                                            <button
+                                                onClick={() => openProposalForm()}
+                                                className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer"
+                                            >
+                                                + CREATE NEW
+                                            </button>
+                                        )}
                                     </div>
-                                    <Button variant="secondary" size="xs" radius="pill" onClick={openActivationModal}>
-                                        Activate Community
-                                    </Button>
-                                </div>
-                            )}
 
-                            <hr className="border-border-default" />
-
-                            {/* Proposal upload/display section */}
-                            <div className="flex flex-col gap-4 w-full">
+                                    {/* Proposal upload/display section */}
+                                    <div className="flex flex-col gap-4 w-full">
                                 {isUploading ? (
                                     <div className="bg-surface-card border border-border-default rounded-action p-8 text-center flex flex-col items-center w-full max-w-2xl mx-auto">
                                         <div className="w-16 h-16 rounded-full bg-surface-brand-soft flex items-center justify-center mb-4 animate-bounce">
@@ -1309,56 +1751,62 @@ export default function ProposalPage() {
                                 ) : proposals.length > 0 ? (
                                     /* State 3: Show list/grid of proposals overview cards styled like My Events */
                                     <div className="flex flex-col gap-6 w-full animate-in fade-in duration-150">
-                                        <div className="flex justify-between items-center">
-                                            <div>
-                                                <h1 className="text-heading-sm font-semibold text-text-primary">My Sponsorships</h1>
-                                                <p className="text-body-sm text-text-secondary mt-0.5">Manage and organize your sponsorship proposals</p>
-                                            </div>
-                                            <Button variant="primary" size="sm" radius="pill" onClick={() => openProposalForm()}>
-                                                + Create New Proposal
-                                            </Button>
-                                        </div>
 
                                         {/* Status tabs */}
-                                        <Tabs
-                                            items={[
-                                                { value: "ALL", label: "All", count: allCount },
-                                                { value: "DRAFT", label: "Draft", count: draftCount },
-                                                { value: "UNDER_REVIEW", label: "Under Review", count: underReviewCount },
-                                                { value: "REJECTED", label: "Rejected", count: rejectedCount },
-                                                { value: "PUBLISHED", label: "Published", count: publishedCount }
-                                            ]}
-                                            value={activeTab}
-                                            onChange={(val: any) => setActiveTab(val)}
-                                            variant="pill"
-                                            className="w-fit"
-                                        />
+                                        <div className="flex flex-wrap gap-5 border-b border-black/10 pb-2 mb-4">
+                                            {[
+                                                { value: "ALL", label: `ALL (${allCount})` },
+                                                { value: "DRAFT", label: `DRAFT (${draftCount})` },
+                                                { value: "UNDER_REVIEW", label: `UNDER REVIEW (${underReviewCount})` },
+                                                { value: "PUBLISHED", label: `PUBLISHED (${publishedCount})` },
+                                                { value: "REJECTED", label: `REJECTED (${rejectedCount})` }
+                                            ].map((tab) => {
+                                                const isActive = activeTab === tab.value
+                                                return (
+                                                    <button
+                                                        key={tab.value}
+                                                        onClick={() => setActiveTab(tab.value as any)}
+                                                        className={clsx(
+                                                            "text-[10px] font-black uppercase tracking-wider pb-2 relative transition-colors",
+                                                            isActive ? "text-[#EE2C2C]" : "text-black/40 hover:text-black"
+                                                        )}
+                                                    >
+                                                        {tab.label}
+                                                        {isActive && (
+                                                            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#EE2C2C]" />
+                                                        )}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
 
                                         {filteredProposals.length === 0 ? (
-                                            <div className="flex flex-col items-center justify-center py-20 text-center gap-3 bg-surface-card border border-border-default rounded-action">
-                                                <div className="size-12 rounded-full bg-surface-card-muted flex items-center justify-center">
-                                                    <Icon as={DocumentTextSvg} size="md" color="secondary" />
-                                                </div>
-                                                <p className="text-label-md font-semibold text-text-primary">No proposals found</p>
-                                                <p className="text-body-sm text-text-muted max-w-xs">
+                                            <div className="flex flex-col items-center justify-center py-20 text-center gap-3 border-[3px] border-dashed border-black/30 rounded-[20px]">
+                                                <p className="text-label-md font-semibold text-black/50">No proposals found</p>
+                                                <p className="text-body-sm text-black/30 max-w-xs">
                                                     No proposals in this category yet.
                                                 </p>
                                             </div>
                                         ) : (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-5">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 lg:gap-6">
                                                 {filteredProposals.map((p) => {
                                                     const isViewingRevision = activeTab === "UNDER_REVIEW" && p.pendingRevision != null;
                                                     const cardData = isViewingRevision ? p.pendingRevision! : p;
                                                     const imgUrl = typeof cardData.image === "string" ? cardData.image : cardData.image ? URL.createObjectURL(cardData.image) : null;
+                                                    
+                                                    // Format date from YYYY-MM-DD to DD/MM/YYYY
+                                                    const parts = cardData.date ? cardData.date.split("-") : [];
+                                                    const displayDate = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : cardData.date;
+
                                                     return (
                                                         <div
                                                             key={p.id}
                                                             onClick={() => setSelectedProposal(p)}
-                                                            className="group relative cursor-pointer bg-surface-card border border-border-default rounded-action hover:border-border-strong hover:shadow-card-hover transition-all overflow-hidden flex flex-col justify-between"
+                                                            className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-col justify-between"
                                                         >
                                                             <div>
                                                                 {/* Image */}
-                                                                <div className="relative aspect-16/10 overflow-hidden bg-surface-card-muted border-b border-border-default">
+                                                                <div className="relative aspect-[16/10] overflow-hidden bg-slate-50 border-b-[3px] border-black">
                                                                     {imgUrl ? (
                                                                         // eslint-disable-next-line @next/next/no-img-element
                                                                         <img
@@ -1368,18 +1816,20 @@ export default function ProposalPage() {
                                                                             onLoad={() => imgUrl && imgUrl.startsWith("blob:") && URL.revokeObjectURL(imgUrl)}
                                                                         />
                                                                     ) : (
-                                                                        <div className="w-full h-full bg-linear-to-br from-surface-card-muted to-border-default flex items-center justify-center text-text-tertiary font-bold text-lg">
+                                                                        <div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-lg">
                                                                             {cardData.name.substring(0, 2).toUpperCase()}
                                                                         </div>
                                                                     )}
+                                                                    
+                                                                    {/* Status Badge */}
                                                                     <span
                                                                         className={clsx(
-                                                                            "absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-badge uppercase tracking-wider border",
-                                                                            p.status === "DRAFT" && "bg-neutral-100 text-neutral-700 border-neutral-300",
-                                                                            isViewingRevision && "bg-amber-50 text-amber-700 border-amber-200",
-                                                                            (!isViewingRevision && p.status === "UNDER_REVIEW") && "bg-amber-50 text-amber-700 border-amber-200",
-                                                                            p.status === "REJECTED" && "bg-rose-50 text-rose-700 border-rose-200",
-                                                                            (!isViewingRevision && (p.status === "PUBLISHED" || !p.status)) && "bg-green-50 text-green-700 border-green-200"
+                                                                            "absolute top-3 left-3 text-[8px] font-black px-2 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+                                                                            p.status === "DRAFT" && "bg-slate-100 text-black",
+                                                                            isViewingRevision && "bg-[#F5C343] text-black",
+                                                                            (!isViewingRevision && p.status === "UNDER_REVIEW") && "bg-[#F5C343] text-black",
+                                                                            p.status === "REJECTED" && "bg-[#EE2C2C] text-white",
+                                                                            (!isViewingRevision && (p.status === "PUBLISHED" || !p.status)) && "bg-green-400 text-black"
                                                                         )}
                                                                     >
                                                                         {p.status === "DRAFT" && "Draft"}
@@ -1394,19 +1844,19 @@ export default function ProposalPage() {
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => setOpenKebabId(openKebabId === p.id ? null : p.id)}
-                                                                            className="flex items-center justify-center size-7 rounded-full bg-white/95 shadow-sm border border-border-default hover:bg-white text-text-secondary hover:text-text-primary transition-colors"
+                                                                            className="flex items-center justify-center size-6 rounded-full bg-white border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-50 text-black transition-colors"
                                                                         >
                                                                             <Icon as={DotsSvg} size="xs" />
                                                                         </button>
                                                                         {openKebabId === p.id && (
-                                                                            <div className="absolute right-0 top-8 z-20 w-36 bg-surface-card border border-border-default rounded-action shadow-floating py-1 flex flex-col">
+                                                                            <div className="absolute right-0 top-8 z-20 w-36 bg-white border-[2px] border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] py-1 flex flex-col">
                                                                                 <button
                                                                                     type="button"
                                                                                     onClick={() => {
                                                                                         setSelectedProposal(p)
                                                                                         setOpenKebabId(null)
                                                                                     }}
-                                                                                    className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-surface-card-muted transition-colors font-medium"
+                                                                                    className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
                                                                                 >
                                                                                     View details
                                                                                 </button>
@@ -1417,7 +1867,7 @@ export default function ProposalPage() {
                                                                                             submitProposalForApproval(p)
                                                                                             setOpenKebabId(null)
                                                                                         }}
-                                                                                        className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-surface-card-muted transition-colors font-medium"
+                                                                                        className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
                                                                                     >
                                                                                         Submit for Approval
                                                                                     </button>
@@ -1428,7 +1878,7 @@ export default function ProposalPage() {
                                                                                         handleDelete(p.id)
                                                                                         setOpenKebabId(null)
                                                                                     }}
-                                                                                    className="px-3 py-1.5 text-left text-xs text-red-600 hover:bg-red-50 transition-colors font-semibold"
+                                                                                    className="px-3 py-1.5 text-left text-xs text-[#EE2C2C] hover:bg-red-50 transition-colors font-black"
                                                                                 >
                                                                                     Delete
                                                                                 </button>
@@ -1438,24 +1888,21 @@ export default function ProposalPage() {
                                                                 </div>
 
                                                                 {/* Content */}
-                                                                <div className="p-4 flex flex-col gap-1.5">
-                                                                    <h3 className="text-label-md font-semibold text-text-primary truncate group-hover:text-text-brand transition-colors">{cardData.name}</h3>
-                                                                    <p className="text-caption text-text-secondary">{cardData.city} • {cardData.venue}</p>
-                                                                    <p className="text-[11px] text-text-tertiary truncate mt-1">{cardData.about}</p>
+                                                                <div className="p-4 flex flex-col gap-1">
+                                                                    <h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">{cardData.name}</h3>
+                                                                    <p className="text-[10px] font-bold text-black/50">{cardData.city} • {cardData.venue}</p>
+                                                                    <p className="text-[10px] font-semibold text-black/70 truncate mt-1">{cardData.about}</p>
                                                                 </div>
                                                             </div>
 
                                                             {/* Footer info */}
                                                             <div className="p-4 pt-0">
-                                                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-default">
-                                                                    <span className="text-[10px] text-text-tertiary">Date: {cardData.date}</span>
-                                                                    {cardData.sponsorPrices && cardData.sponsorPrices[0] && (
-                                                                        <span className="text-[10px] font-semibold text-text-secondary bg-surface-card-muted px-2 py-0.5 rounded-badge border border-border-default mr-1.5">
-                                                                            {cardData.sponsorPrices[0].name}: {cardData.sponsorPrices[0].price}
-                                                                        </span>
-                                                                    )}
-                                                                    <span className="text-[10px] font-semibold text-text-brand bg-surface-brand-soft px-2 py-0.5 rounded-badge border border-border-brand">
-                                                                        {cardData.guestCount} guests
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                                                                        📅 {displayDate}
+                                                                    </span>
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                                                                        👥 {cardData.guestCount} Guests
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -1467,262 +1914,67 @@ export default function ProposalPage() {
                                     </div>
                                 ) : (
                                     /* State 2b: CTA to open details form */
-                                    <div className="bg-surface-card border border-border-default rounded-action p-8 text-center w-full max-w-2xl mx-auto flex flex-col items-center">
-                                        <div className="size-16 rounded-full bg-surface-brand-soft flex items-center justify-center mb-4">
-                                            <Icon as={DocumentTextSvg} size="lg" color="brand" />
-                                        </div>
-                                        <h2 className="text-label-lg font-semibold text-text-primary mb-2">No active proposals</h2>
-                                        <p className="text-body-sm text-text-secondary mb-6 max-w-md">
-                                            Create a comprehensive proposal detailing your project features, target audience, venue details and budget.
+                                    <div className="border-[3px] border-dashed border-black/30 rounded-[20px] p-12 text-center w-full flex flex-col items-center justify-center gap-2">
+                                        <h2 className="font-heading font-black text-black text-lg">No active proposals</h2>
+                                        <p className="text-xs font-semibold text-black/50 mb-3">
+                                            Create a comprehensive proposal detailing your project features.
                                         </p>
-                                        <Button variant="primary" size="md" radius="pill" onClick={() => openProposalForm()}>
-                                            Create Sponsorship Proposal
-                                        </Button>
+                                        <button
+                                            onClick={() => openProposalForm()}
+                                            className="bg-[#EE2C2C] text-white text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer"
+                                        >
+                                            GET STARTED
+                                        </button>
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        </>
                     )}
                 </div>
-            </div>
-
-            {/* ─── Activate Community Dialog / Modal ─────────────────────────────────── */}
-            {showActivateModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto">
-                    <div className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-lg p-6 my-8 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
-
-                        {/* Modal Header */}
-                        <div className="flex justify-between items-center pb-4 mb-4 border-b border-border-default shrink-0">
-                            <h2 className="text-heading-xs font-semibold text-text-primary">
-                                {community ? "Edit Community Details" : "Activate Community"}
-                            </h2>
-                            <button
-                                onClick={() => setShowActivateModal(false)}
-                                className="text-text-secondary hover:text-text-primary size-8 rounded-full flex items-center justify-center hover:bg-surface-card-muted transition-colors"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        {/* Modal Body (Scrollable) */}
-                        <form onSubmit={handleActivationSubmit} className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4">
-
-                            {/* Community Name */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Community Name *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={communityName}
-                                    onChange={(e) => setCommunityName(e.target.value)}
-                                    placeholder="e.g. Bangalore Boardgamers Guild"
-                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                />
-                            </div>
-
-                            {/* About Community */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">About the community *</label>
-                                <textarea
-                                    required
-                                    value={aboutCommunity}
-                                    onChange={(e) => setAboutCommunity(e.target.value)}
-                                    placeholder="Describe your community's purpose, focus, and vibes..."
-                                    rows={3}
-                                    className="p-3 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors resize-none"
-                                />
-                            </div>
-
-                            {/* Logo Upload */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Logo *</label>
-                                <div className="flex items-center gap-4">
-                                    <div className="size-16 rounded-xl border border-dashed border-border-default bg-surface-canvas flex items-center justify-center overflow-hidden shrink-0">
-                                        {logoPreviewUrl ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={logoPreviewUrl} alt="Logo preview" className="size-full object-cover" />
-                                        ) : (
-                                            <Icon as={UploadSvg} size="md" color="muted" />
-                                        )}
-                                    </div>
-                                    <div className="flex flex-col gap-1">
-                                        <input
-                                            ref={logoInputRef}
-                                            type="file"
-                                            accept=".jpeg,.jpg,.png,image/jpeg,image/png"
-                                            className="hidden"
-                                            onChange={handleLogoChange}
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            size="xs"
-                                            radius="md"
-                                            onClick={() => logoInputRef.current?.click()}
-                                        >
-                                            Choose Image
-                                        </Button>
-                                        <span className="text-[10px] text-text-tertiary mt-1">
-                                            JPEG, JPG, PNG accepted. Max 5MB.
-                                        </span>
-                                        {logoFile && (
-                                            <span className="text-[10px] text-text-secondary truncate max-w-xs font-semibold">
-                                                {logoFile.name}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Community Size */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Community Size *</label>
-                                <input
-                                    type="number"
-                                    required
-                                    min="1"
-                                    value={communitySize}
-                                    onChange={(e) => setCommunitySize(e.target.value)}
-                                    placeholder="e.g. 500"
-                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                />
-                            </div>
-
-                            {/* Average Guest Count */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Average Guest Count per event *</label>
-                                <input
-                                    type="number"
-                                    required
-                                    min="1"
-                                    value={avgGuestCount}
-                                    onChange={(e) => setAvgGuestCount(e.target.value)}
-                                    placeholder="e.g. 30"
-                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                />
-                            </div>
-
-                            {/* Experiences Hosted in a Year */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Number of curated experiences hosted in a year *</label>
-                                <input
-                                    type="number"
-                                    required
-                                    min="0"
-                                    value={experiencesPerYear}
-                                    onChange={(e) => setExperiencesPerYear(e.target.value)}
-                                    placeholder="e.g. 24"
-                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                />
-                            </div>
-
-                            {/* Categories */}
-                            <div className="flex flex-col gap-1.5">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-label-sm font-semibold text-text-primary">Categories *</label>
-                                    <span className="text-caption text-text-muted">Pick all that apply</span>
-                                </div>
-                                {categories.length === 0 ? (
-                                    <p className="text-caption text-text-muted">Loading categories…</p>
-                                ) : (
-                                    <div className="flex flex-wrap gap-2">
-                                        {categories.map(cat => {
-                                            const active = categoryIds.includes(cat.id)
-                                            return (
-                                                <button
-                                                    key={cat.id}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setCategoryIds(prev =>
-                                                            prev.includes(cat.id)
-                                                                ? prev.filter(id => id !== cat.id)
-                                                                : [...prev, cat.id]
-                                                        )
-                                                    }}
-                                                    className={`px-3 py-1.5 rounded-avatar border text-xs font-medium transition-colors ${active
-                                                        ? "border-border-focus bg-surface-brand-soft text-text-brand font-semibold"
-                                                        : "border-border-default bg-surface-canvas text-text-secondary hover:border-border-strong"
-                                                        }`}
-                                                >
-                                                    {cat.name}
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Social Media Links */}
-                            <div className="flex flex-col gap-3">
-                                <label className="text-label-sm font-semibold text-text-primary">Social media links</label>
-                                <div className="flex flex-col gap-2.5">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-caption text-text-secondary w-20">Instagram</span>
-                                        <input
-                                            type="text"
-                                            value={instagram}
-                                            onChange={(e) => setInstagram(e.target.value)}
-                                            placeholder="instagram.com/handle"
-                                            className="flex-1 h-9 px-3 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-caption text-text-secondary w-20">LinkedIn</span>
-                                        <input
-                                            type="text"
-                                            value={linkedin}
-                                            onChange={(e) => setLinkedin(e.target.value)}
-                                            placeholder="linkedin.com/in/profile"
-                                            className="flex-1 h-9 px-3 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-caption text-text-secondary w-20">YouTube</span>
-                                        <input
-                                            type="text"
-                                            value={youtube}
-                                            onChange={(e) => setYoutube(e.target.value)}
-                                            placeholder="youtube.com/@channel"
-                                            className="flex-1 h-9 px-3 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-caption text-text-secondary w-20">Website</span>
-                                        <input
-                                            type="text"
-                                            value={portfolio}
-                                            onChange={(e) => setPortfolio(e.target.value)}
-                                            placeholder="yourwebsite.com"
-                                            className="flex-1 h-9 px-3 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Modal Footer (Sticky/Fixed inside flex layout) */}
-                            <div className="flex gap-3 justify-end mt-4 pt-4 border-t border-border-default shrink-0">
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="sm"
-                                    radius="md"
-                                    onClick={() => setShowActivateModal(false)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    variant="primary"
-                                    size="sm"
-                                    radius="md"
-                                >
-                                    {community ? "Update Details" : "Activate"}
-                                </Button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
             )}
+        </div>
+
+                {/* Right Column Drawer / Mobile drawer */}
+                {isSplitLayout && (
+                    <>
+                        {showActivateModal ? (
+                             <>
+                                 {/* Mobile/Tablet Backdrop Blur */}
+                                 <div 
+                                     onClick={() => setShowActivateModal(false)}
+                                     className="md:hidden fixed inset-0 bg-black/45 z-40 backdrop-blur-xs"
+                                 />
+                                 
+                                 {/* Responsive drawer container */}
+                                 <div className={clsx(
+                                     "bg-white h-full flex flex-col z-50 transition-all duration-300 animate-in slide-in-from-right shrink-0",
+                                     "fixed inset-y-0 right-0 w-full sm:w-[420px] border-l-4 border-black shadow-modal",
+                                     "md:static md:border-l-0 md:border-l md:border-black/10 md:shadow-none md:w-full overflow-y-auto p-6"
+                                 )}>
+                                     <ActivateCommunityModal
+                                         hostId={hostId}
+                                         profileInstagram={profile?.socialLinks?.instagram || ""}
+                                         profileLinkedin={profile?.socialLinks?.linkedin || ""}
+                                         profileYoutube={profile?.socialLinks?.youtube || ""}
+                                         profilePortfolio={profile?.socialLinks?.portfolio || ""}
+                                         onClose={() => setShowActivateModal(false)}
+                                         onSuccess={(saved) => {
+                                             setCommunity(saved as any)
+                                             setShowActivateModal(false)
+                                         }}
+                                         inline={true}
+                                     />
+                                 </div>
+                             </>
+                         ) : (
+                             /* Render the Community details card exactly like the user's mockup! */
+                             <div className="hidden md:flex flex-col p-6 overflow-y-auto h-full w-full bg-white animate-in fade-in duration-150 shrink-0">
+                                 {renderCommunityCard()}
+                             </div>
+                         )}
+                     </>
+                 )}
+            </div>
             {/* ─── Project Details & PDF Modal ────────────────────────────────────────── */}
             {showProjectModal && selectedProposal && isEditingInPlace && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
@@ -2009,345 +2261,6 @@ export default function ProposalPage() {
                                 radius="md"
                             >
                                 Save details
-                            </Button>
-                        </div>
-                    </form>
-                </div>
-            )}
-            {showProposalForm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
-                    <form
-                        onSubmit={handleProposalSubmit}
-                        className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-2xl p-6 my-8 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150"
-                    >
-                        {/* Modal Header */}
-                        <div className="flex justify-between items-center pb-4 mb-4 border-b border-border-default shrink-0">
-                            <div>
-                                <h2 className="text-heading-xs font-semibold text-text-primary">
-                                    {selectedProposal ? "Edit Sponsorship Proposal" : "Create Sponsorship Proposal"}
-                                </h2>
-                                <p className="text-caption text-text-tertiary">Provide details and upload your proposal document</p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={resetProposalForm}
-                                className="text-text-secondary hover:text-text-primary size-8 rounded-full flex items-center justify-center hover:bg-surface-card-muted transition-colors"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        {/* Modal Body */}
-                        <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4">
-                            {/* Name */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Project Name *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={projName}
-                                    onChange={(e) => setProjName(e.target.value)}
-                                    placeholder="e.g. Annual Charity Gala"
-                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                />
-                            </div>
-
-                            {/* About */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">About the Project *</label>
-                                <textarea
-                                    required
-                                    value={projAbout}
-                                    onChange={(e) => setProjAbout(e.target.value)}
-                                    placeholder="Describe what the event/experience is about..."
-                                    rows={3}
-                                    className="p-3 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors resize-y"
-                                />
-                            </div>
-
-                            {/* Image */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Project Image *</label>
-                                <div className="flex items-center gap-4">
-                                    {projImagePreview ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={projImagePreview} alt="Preview" className="size-16 rounded-xl object-cover border border-border-default" />
-                                    ) : selectedProposal?.image ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={typeof selectedProposal.image === "string" ? selectedProposal.image : URL.createObjectURL(selectedProposal.image)} alt="Current" className="size-16 rounded-xl object-cover border border-border-default" />
-                                    ) : (
-                                        <div className="size-16 rounded-xl bg-surface-card-muted border border-dashed border-border-default flex items-center justify-center text-text-tertiary text-xs">
-                                            No Image
-                                        </div>
-                                    )}
-                                    <div className="flex flex-col gap-1">
-                                        <input
-                                            ref={projImageInputRef}
-                                            type="file"
-                                            accept="image/jpeg,image/jpg,image/png"
-                                            className="hidden"
-                                            onChange={handleProjImageChange}
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            size="xs"
-                                            radius="md"
-                                            onClick={() => projImageInputRef.current?.click()}
-                                        >
-                                            Choose Image
-                                        </Button>
-                                        <span className="text-[10px] text-text-tertiary">JPEG, JPG, PNG accepted. Max 5MB.</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Date, City */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">Date *</label>
-                                    <input
-                                        type="date"
-                                        required
-                                        value={projDate}
-                                        onChange={(e) => setProjDate(e.target.value)}
-                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">City *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={projCity}
-                                        onChange={(e) => setProjCity(e.target.value)}
-                                        placeholder="e.g. San Francisco"
-                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Venue */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Venue *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={projVenue}
-                                    onChange={(e) => setProjVenue(e.target.value)}
-                                    placeholder="e.g. Palace of Fine Arts"
-                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                />
-                            </div>
-
-                            {/* Audience Profile (Multiple Submission Input Box) */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Audience Profile *</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={newAudience}
-                                        onChange={(e) => setNewAudience(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter") {
-                                                e.preventDefault()
-                                                const trimmed = newAudience.trim()
-                                                if (trimmed && !projAudience.includes(trimmed)) {
-                                                    setProjAudience([...projAudience, trimmed])
-                                                    setNewAudience("")
-                                                }
-                                            }
-                                        }}
-                                        placeholder="e.g. Tech Founders (press Add or Enter)"
-                                        className="flex-1 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        size="sm"
-                                        radius="md"
-                                        onClick={() => {
-                                            const trimmed = newAudience.trim()
-                                            if (trimmed && !projAudience.includes(trimmed)) {
-                                                setProjAudience([...projAudience, trimmed])
-                                                setNewAudience("")
-                                            }
-                                        }}
-                                    >
-                                        Add
-                                    </Button>
-                                </div>
-                                {projAudience.length > 0 ? (
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                        {projAudience.map((aud, idx) => (
-                                            <span
-                                                key={idx}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-badge text-label-sm font-medium bg-surface-brand-soft text-text-brand border border-border-brand animate-in fade-in duration-100"
-                                            >
-                                                {aud}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setProjAudience(projAudience.filter((_, i) => i !== idx))}
-                                                    className="size-4 hover:bg-surface-brand-hover rounded-full flex items-center justify-center text-text-brand text-xs font-bold transition-colors"
-                                                >
-                                                    ✕
-                                                </button>
-                                            </span>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-[11px] text-text-tertiary">Add at least one targeted audience profile.</p>
-                                )}
-                            </div>
-
-                            {/* Age Group, Number of Guests */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">Age Group *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={projAgeGroup}
-                                        onChange={(e) => setProjAgeGroup(e.target.value)}
-                                        placeholder="e.g. 21-40"
-                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">Guests Count *</label>
-                                    <input
-                                        type="number"
-                                        required
-                                        min="1"
-                                        value={projGuestCount}
-                                        onChange={(e) => setProjGuestCount(e.target.value)}
-                                        placeholder="e.g. 150"
-                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Sponsor Price Tiers */}
-                            <div className="flex flex-col gap-2.5">
-                                <div className="flex justify-between items-center">
-                                    <label className="text-label-sm font-semibold text-text-primary">Sponsor Pricing *</label>
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        size="xs"
-                                        radius="md"
-                                        onClick={() => setSponsorPrices([...sponsorPrices, { name: "", price: "" }])}
-                                    >
-                                        + Add Sponsor Price
-                                    </Button>
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    {sponsorPrices.map((sp, idx) => (
-                                        <div key={idx} className="flex gap-2 items-center animate-in fade-in duration-100">
-                                            <input
-                                                type="text"
-                                                required
-                                                value={sp.name}
-                                                onChange={(e) => {
-                                                    const next = [...sponsorPrices]
-                                                    next[idx] = { ...next[idx], name: e.target.value }
-                                                    setSponsorPrices(next)
-                                                }}
-                                                placeholder="Sponsor Tier Name (e.g. Gold)"
-                                                className="flex-1 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                            />
-                                            <input
-                                                type="text"
-                                                required
-                                                value={sp.price}
-                                                onChange={(e) => {
-                                                    const next = [...sponsorPrices]
-                                                    next[idx] = { ...next[idx], price: e.target.value }
-                                                    setSponsorPrices(next)
-                                                }}
-                                                placeholder="Price (e.g. $5,000)"
-                                                className="w-48 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                            />
-                                            {sponsorPrices.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setSponsorPrices(sponsorPrices.filter((_, i) => i !== idx))}
-                                                    className="size-10 rounded-input border border-border-default bg-surface-canvas flex items-center justify-center text-text-secondary hover:text-red-600 hover:border-red-200 transition-colors shrink-0 text-lg font-bold"
-                                                >
-                                                    ×
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Upload Proposal Doc */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Upload Proposal (PDF/DOC/PPT) {selectedProposal ? "" : "*"}</label>
-                                <div className="flex items-center gap-4">
-                                    <input
-                                        ref={projDocInputRef}
-                                        type="file"
-                                        accept=".pdf,.doc,.docx,.ppt,.pptx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                                        className="hidden"
-                                        onChange={handleProjDocChange}
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        size="xs"
-                                        radius="md"
-                                        onClick={() => projDocInputRef.current?.click()}
-                                    >
-                                        Choose Proposal File
-                                    </Button>
-                                    {projDoc ? (
-                                        <span className="text-xs text-text-secondary font-medium truncate max-w-xs">{projDoc.name}</span>
-                                    ) : selectedProposal ? (
-                                        <span className="text-xs text-text-secondary font-medium truncate max-w-xs">{selectedProposal.docName} (unchanged)</span>
-                                    ) : (
-                                        <span className="text-[10px] text-text-tertiary">PDF, DOC, DOCX, PPT, PPTX accepted. Max 10MB.</span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Modal Footer */}
-                        <div className="flex gap-3 justify-end mt-4 pt-4 border-t border-border-default shrink-0">
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                radius="pill"
-                                onClick={resetProposalForm}
-                            >
-                                Cancel
-                            </Button>
-                            {(!selectedProposal || selectedProposal.status === "DRAFT" || selectedProposal.status === "REJECTED") && (
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="sm"
-                                    radius="pill"
-                                    onClick={(e) => handleProposalSubmit(e, "DRAFT")}
-                                >
-                                    Save as Draft
-                                </Button>
-                            )}
-                            <Button
-                                type="submit"
-                                variant="primary"
-                                size="sm"
-                                radius="pill"
-                                onClick={(e) => {
-                                    const nextStatus = (selectedProposal && (selectedProposal.status === "UNDER_REVIEW" || selectedProposal.status === "PUBLISHED")) 
-                                        ? selectedProposal.status 
-                                        : "UNDER_REVIEW";
-                                    handleProposalSubmit(e, nextStatus);
-                                }}
-                            >
-                                {selectedProposal ? "Update Proposal" : "Submit Proposal"}
                             </Button>
                         </div>
                     </form>

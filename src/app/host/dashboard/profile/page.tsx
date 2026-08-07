@@ -122,7 +122,7 @@ export default function ProfilePage() {
 				
 				{/* Left Column: Profile details */}
 				<div className={clsx(
-					"px-6 lg:px-12 py-8 flex-1 flex flex-col gap-8 overflow-y-auto h-full transition-all duration-300",
+					"px-4 lg:px-6 py-8 flex-1 flex flex-col gap-8 overflow-y-auto h-full transition-all duration-300",
 					isPanelOpen ? "max-w-none" : "max-w-2xl mx-auto"
 				)}>
 					{/* Header */}
