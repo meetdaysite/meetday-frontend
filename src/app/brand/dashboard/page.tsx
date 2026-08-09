@@ -1,12 +1,19 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { useHostStore } from "@/store/hostStore"
 import { Skeleton } from "@/components/ui/Skeleton"
-import { getAllPublishedSponsorships, type PublishedSponsorshipProposal } from "@/lib/api"
+import {
+	getAllPublishedSponsorships,
+	getCategories,
+	type Category,
+	type PublishedSponsorshipProposal,
+} from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
+import clsx from "clsx"
 
 function formatDate(value: string | null): string {
 	if (!value) return "Date TBD"
@@ -17,14 +24,24 @@ function formatDate(value: string | null): string {
 	}
 }
 
-function ProposalCard({ proposal }: { proposal: PublishedSponsorshipProposal }) {
+function ProposalCard({
+	proposal,
+	onClick,
+}: {
+	proposal: PublishedSponsorshipProposal
+	onClick: () => void
+}) {
 	const hostName =
 		proposal.hostProfile?.displayName ||
 		[proposal.hostProfile?.user?.firstName, proposal.hostProfile?.user?.lastName].filter(Boolean).join(" ") ||
 		"Host"
 
 	return (
-		<div className="rounded-action border border-border-default bg-surface-card overflow-hidden flex flex-col">
+		<button
+			type="button"
+			onClick={onClick}
+			className="text-left rounded-action border border-border-default bg-surface-card overflow-hidden flex flex-col hover:border-border-strong transition-colors duration-(--duration-120)"
+		>
 			<div className="relative w-full aspect-[16/9] bg-surface-card-muted">
 				{proposal.imageUrl ? (
 					<Image src={proposal.imageUrl} alt={proposal.name ?? "Sponsorship proposal"} fill className="object-cover" unoptimized />
@@ -44,6 +61,15 @@ function ProposalCard({ proposal }: { proposal: PublishedSponsorshipProposal }) 
 					<span>{formatDate(proposal.eventDate)}</span>
 					{proposal.city && <span>{proposal.city}</span>}
 				</div>
+				{proposal.hostProfile?.categories?.length > 0 && (
+					<div className="flex flex-wrap gap-2 mt-1">
+						{proposal.hostProfile.categories.map((c) => (
+							<span key={c.id} className="px-2 py-0.5 rounded-full bg-surface-card-muted text-text-muted text-caption">
+								{c.name}
+							</span>
+						))}
+					</div>
+				)}
 				{proposal.sponsorTiers?.length > 0 && (
 					<div className="flex flex-wrap gap-2 mt-2">
 						{proposal.sponsorTiers.map((tier, i) => (
@@ -57,20 +83,31 @@ function ProposalCard({ proposal }: { proposal: PublishedSponsorshipProposal }) 
 					</div>
 				)}
 			</div>
-		</div>
+		</button>
 	)
 }
 
 export default function DashboardPage() {
+	const router = useRouter()
 	const { profile } = useHostStore()
+	const [categories, setCategories] = useState<Category[]>([])
+	const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
 	const [proposals, setProposals] = useState<PublishedSponsorshipProposal[]>([])
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 
 	useEffect(() => {
+		getCategories()
+			.then(setCategories)
+			.catch(() => {
+				// non-fatal — filters just won't render
+			})
+	}, [])
+
+	useEffect(() => {
 		let cancelled = false
 		setIsLoading(true)
-		getAllPublishedSponsorships()
+		getAllPublishedSponsorships(selectedCategoryId ?? undefined)
 			.then((res) => {
 				if (!cancelled) setProposals(res.proposals)
 			})
@@ -83,7 +120,15 @@ export default function DashboardPage() {
 		return () => {
 			cancelled = true
 		}
-	}, [])
+	}, [selectedCategoryId])
+
+	// Only show category tabs for categories that actually have at least one published proposal,
+	// computed from the unfiltered "All" list the first time it loads.
+	const categoriesWithProposals = useMemo(() => {
+		if (selectedCategoryId !== null) return categories
+		const idsInUse = new Set(proposals.flatMap((p) => p.hostProfile?.categories?.map((c) => c.id) ?? []))
+		return categories.filter((c) => idsInUse.has(c.id))
+	}, [categories, proposals, selectedCategoryId])
 
 	const displayName = profile?.displayName || "Brand"
 
@@ -100,6 +145,36 @@ export default function DashboardPage() {
 				</p>
 			</div>
 
+			<div className="px-6 lg:px-8 pb-4 flex flex-wrap gap-2">
+				<button
+					type="button"
+					onClick={() => setSelectedCategoryId(null)}
+					className={clsx(
+						"px-3.5 py-1.5 rounded-full text-label-sm font-medium border transition-colors duration-(--duration-120)",
+						selectedCategoryId === null
+							? "bg-action-primary text-action-primary-text border-action-primary"
+							: "bg-surface-card text-text-secondary border-border-default hover:border-border-strong",
+					)}
+				>
+					All
+				</button>
+				{categoriesWithProposals.map((c) => (
+					<button
+						key={c.id}
+						type="button"
+						onClick={() => setSelectedCategoryId(c.id)}
+						className={clsx(
+							"px-3.5 py-1.5 rounded-full text-label-sm font-medium border transition-colors duration-(--duration-120)",
+							selectedCategoryId === c.id
+								? "bg-action-primary text-action-primary-text border-action-primary"
+								: "bg-surface-card text-text-secondary border-border-default hover:border-border-strong",
+						)}
+					>
+						{c.name}
+					</button>
+				))}
+			</div>
+
 			<div className="px-6 lg:px-8 pb-8">
 				{isLoading ? (
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -110,11 +185,15 @@ export default function DashboardPage() {
 				) : error ? (
 					<p className="text-body-sm text-status-error-text">{error}</p>
 				) : proposals.length === 0 ? (
-					<p className="text-body-sm text-text-secondary">No sponsorship proposals have been published yet.</p>
+					<p className="text-body-sm text-text-secondary">No sponsorship proposals found for this filter.</p>
 				) : (
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 						{proposals.map((proposal) => (
-							<ProposalCard key={proposal.id} proposal={proposal} />
+							<ProposalCard
+								key={proposal.id}
+								proposal={proposal}
+								onClick={() => router.push(`/brand/dashboard/proposal/${proposal.id}`)}
+							/>
 						))}
 					</div>
 				)}

@@ -265,9 +265,26 @@ export default function ProposalPage() {
                         </div>
                         <div className="flex flex-col gap-1">
                             <h3 className="font-heading font-black text-black text-base leading-tight truncate max-w-[150px]">{community.name}</h3>
-                            <span className="inline-block self-start text-[8px] font-black text-white bg-[#6C32D1] px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                Community Profile
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="inline-block self-start text-[8px] font-black text-white bg-[#6C32D1] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                    Community Profile
+                                </span>
+                                <span
+                                    className={`inline-block self-start text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                        community.approvalStatus === "APPROVED"
+                                            ? "text-white bg-green-600"
+                                            : community.approvalStatus === "REJECTED"
+                                            ? "text-white bg-red-600"
+                                            : "text-black bg-amber-300"
+                                    }`}
+                                >
+                                    {community.approvalStatus === "APPROVED"
+                                        ? "Live"
+                                        : community.approvalStatus === "REJECTED"
+                                        ? "Rejected"
+                                        : "Pending review"}
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <button
@@ -277,6 +294,13 @@ export default function ProposalPage() {
                         Edit
                     </button>
                 </div>
+
+                {community.approvalStatus === "REJECTED" && community.adminRejectionRemark && (
+                    <div className="rounded-2xl bg-red-50 border border-red-200 px-4 py-3">
+                        <p className="text-[10px] font-black text-red-700 uppercase tracking-wider mb-1">Admin remark</p>
+                        <p className="text-xs font-semibold text-red-700">{community.adminRejectionRemark}</p>
+                    </div>
+                )}
 
                 <hr className="border-black/10" />
 

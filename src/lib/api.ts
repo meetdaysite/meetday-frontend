@@ -74,6 +74,7 @@ export type HostProfile = {
 	hostType: "INDIVIDUAL" | "BUSINESS"
 	displayName?: string
 	legalName?: string
+	communityName?: string | null
 	avatarUrl?: string | null
 	gender?: string
 	gstin?: string | null
@@ -216,6 +217,7 @@ export type RegisterPayload = {
 	accountType: "HOST"
 	hostType: "INDIVIDUAL" | "BUSINESS"
 	displayName?: string
+	communityName?: string
 	hostBio?: string
 	tagline?: string
 	gender?: string
@@ -594,6 +596,7 @@ export type PublishedSponsorshipProposal = SponsorshipProposal & {
 		id: string
 		displayName?: string
 		user: { firstName: string; lastName: string }
+		categories: Category[]
 	}
 }
 
@@ -602,10 +605,50 @@ export type PublishedSponsorshipsResponse = {
 	total: number
 }
 
-export async function getAllPublishedSponsorships(): Promise<PublishedSponsorshipsResponse> {
+export async function getAllPublishedSponsorships(
+	categoryId?: string,
+): Promise<PublishedSponsorshipsResponse> {
 	const { data } = await apiClient.get<{ success: boolean; data: PublishedSponsorshipsResponse }>(
 		"/sponsorships/published",
+		{ params: categoryId ? { categoryId } : undefined },
 	)
+	return data.data
+}
+
+export type SponsorshipCommunityProfile = {
+	id: string
+	name: string
+	about: string
+	logoUrl: string | null
+	size: string
+	avgGuestCount: string
+	experiencesPerYear: string
+	categories: Category[]
+}
+
+export type PublishedSponsorshipDetail = SponsorshipProposal & {
+	hostProfile: {
+		id: string
+		displayName?: string
+		user: { firstName: string; lastName: string }
+	}
+	community: SponsorshipCommunityProfile | null
+}
+
+export async function getPublishedSponsorshipDetail(id: string): Promise<PublishedSponsorshipDetail> {
+	const { data } = await apiClient.get<{ success: boolean; data: PublishedSponsorshipDetail }>(
+		`/sponsorships/published/${id}`,
+	)
+	return data.data
+}
+
+export async function markSponsorshipInterest(
+	id: string,
+): Promise<{ message: string; alreadyInterested: boolean }> {
+	const { data } = await apiClient.post<{
+		success: boolean
+		data: { message: string; alreadyInterested: boolean }
+	}>(`/sponsorships/published/${id}/interest`)
 	return data.data
 }
 
@@ -632,6 +675,8 @@ export type HostCommunityProfile = {
 	avgGuestCount: string
 	experiencesPerYear: string
 	categories: Category[]
+	approvalStatus: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED"
+	adminRejectionRemark: string | null
 	activatedAt: string
 	createdAt: string
 	updatedAt: string

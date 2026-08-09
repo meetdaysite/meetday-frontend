@@ -56,6 +56,7 @@ function buildRegisterPayload(values: FormValues, phone?: string): RegisterPaylo
 		hostBio: values.bio || undefined,
 		tagline: values.tagline || undefined,
 		gender: values.gender || undefined,
+		communityName: values.communityName || undefined,
 		// Commented out original assignment for legalName and pan
 		// legalName: values.legalName,
 		// pan: values.pan,
@@ -99,6 +100,7 @@ const schema = z.object({
 	bio: z.string().optional(),
 	tagline: z.string().optional(),
 	gender: z.string().optional(),
+	communityName: z.string().min(1, "Required"),
 	// Step 3
 	instagram: z.string().optional(),
 	linkedin: z.string().optional(),
@@ -160,7 +162,7 @@ const STEP_FIELDS: (keyof FormValues)[][] = [
 */
 const STEP_FIELDS: (keyof FormValues)[][] = [
 	["accountType"],
-	["firstName", "lastName", "gender", "email"],
+	["firstName", "lastName", "communityName", "email"],
 ]
 
 // Commented out original STEP_BUTTON_LABELS config
@@ -1131,6 +1133,15 @@ function StepTwo({ isEmailReadOnly }: { isEmailReadOnly: boolean }) {
 				helperText={errors.lastName?.message}
 				size="md"
 			/>
+			<TextField
+				label="Community name"
+				placeholder="e.g. Bangalore Founders Circle"
+				hint="The community or experience you run — shown to brands later"
+				{...register("communityName")}
+				error={!!errors.communityName}
+				helperText={errors.communityName?.message}
+				size="md"
+			/>
 			<Controller
 				control={control}
 				name="gender"
@@ -1227,6 +1238,7 @@ export default function OnboardingPage() {
 			bio: "",
 			tagline: "",
 			gender: "",
+			communityName: "",
 			yearsOfExperience: undefined,
 			totalEventsHosted: undefined,
 			categoryIds: [],
