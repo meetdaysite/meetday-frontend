@@ -361,7 +361,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 	return (
 		<div className="min-h-screen flex bg-surface-page">
-			<BrandSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+			<BrandSidebar
+				isOpen={sidebarOpen}
+				onClose={() => setSidebarOpen(false)}
+				onSignOut={() => setShowLogoutConfirm(true)}
+			/>
 
 			<div className="flex-1 flex flex-col min-w-0">
 				{/* Mobile top bar */}
@@ -386,6 +390,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 					<div className="w-full max-w-7xl mx-auto">{children}</div>
 				</main>
 			</div>
+
+			<LogoutConfirmDialog
+				open={showLogoutConfirm}
+				onClose={() => setShowLogoutConfirm(false)}
+				onConfirm={handleSignOut}
+			/>
 		</div>
 	)
 }
