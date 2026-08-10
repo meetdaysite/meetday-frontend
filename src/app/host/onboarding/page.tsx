@@ -124,7 +124,7 @@ const schema = z.object({
 	// totalEventsHosted: z.coerce.number({ error: "Required" }).min(0, "Required"),
 	yearsOfExperience: z.coerce.number().optional(),
 	totalEventsHosted: z.coerce.number().optional(),
-	categoryIds: z.array(z.string()).optional(),
+	categoryIds: z.array(z.string()).min(1, "Select at least one category"),
 	// Commented out original fields and made them optional
 	// operatingCities: z.array(z.string()).min(1, "Add at least one city"),
 	operatingCities: z.array(z.string()).optional(),
@@ -162,7 +162,7 @@ const STEP_FIELDS: (keyof FormValues)[][] = [
 */
 const STEP_FIELDS: (keyof FormValues)[][] = [
 	["accountType"],
-	["firstName", "lastName", "communityName", "email"],
+	["firstName", "lastName", "communityName", "email", "categoryIds"],
 ]
 
 // Commented out original STEP_BUTTON_LABELS config
@@ -1101,7 +1101,7 @@ function StepOne() {
 	)
 }
 
-function StepTwo({ isEmailReadOnly }: { isEmailReadOnly: boolean }) {
+function StepTwo({ isEmailReadOnly, categories }: { isEmailReadOnly: boolean; categories: Category[] }) {
 	const {
 		register,
 		control,
@@ -1167,6 +1167,55 @@ function StepTwo({ isEmailReadOnly }: { isEmailReadOnly: boolean }) {
 				disabled={isEmailReadOnly}
 				hint={isEmailReadOnly ? "From your Google account" : undefined}
 			/>
+			<div className="flex flex-col gap-2">
+				<div className="flex items-center justify-between">
+					<p className="text-label-sm font-semibold text-text-primary">Categories</p>
+					<span className="text-caption text-text-muted">Pick all that apply</span>
+				</div>
+				{categories.length === 0 ? (
+					<p className="text-caption text-text-muted">Loading categories…</p>
+				) : (
+					<Controller
+						control={control}
+						name="categoryIds"
+						render={({ field }) => {
+							const selected = field.value ?? []
+							function toggle(id: string) {
+								field.onChange(
+									selected.includes(id)
+										? selected.filter((i: string) => i !== id)
+										: [...selected, id],
+								)
+							}
+							return (
+								<div className="flex flex-wrap gap-2">
+									{categories.map(cat => {
+										const active = selected.includes(cat.id)
+										return (
+											<button
+												key={cat.id}
+												type="button"
+												onClick={() => toggle(cat.id)}
+												className={clsx(
+													"px-3.5 py-1.5 rounded-avatar border-2 text-label-sm transition-all duration-(--duration-120)",
+													active
+														? "border-border-focus bg-surface-brand-soft text-text-brand font-semibold"
+														: "border-border-default bg-surface-canvas text-text-secondary hover:border-border-strong",
+												)}
+											>
+												{cat.name}
+											</button>
+										)
+									})}
+								</div>
+							)
+						}}
+					/>
+				)}
+				{errors.categoryIds && (
+					<p className="text-caption text-text-danger">{errors.categoryIds.message}</p>
+				)}
+			</div>
 		</div>
 	)
 }
@@ -1343,7 +1392,7 @@ export default function OnboardingPage() {
 	*/
 	const stepComponents = [
 		<StepOne key={0} />,
-		<StepTwo key={1} isEmailReadOnly={isEmailReadOnly} />,
+		<StepTwo key={1} isEmailReadOnly={isEmailReadOnly} categories={categories} />,
 	]
 
 	return (
