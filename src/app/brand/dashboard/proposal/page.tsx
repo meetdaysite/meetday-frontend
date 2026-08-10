@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
+import { getHostCommunityProfile, deactivateHostCommunityProfile } from "@/lib/api"
 
 import UploadSvg from "@/icons/outlined/upload.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"

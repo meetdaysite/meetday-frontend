@@ -176,43 +176,67 @@ export default function DashboardWelcomePage() {
 								<p className="text-[11px] font-semibold text-black/40">Submit your first proposal for admin approval to get sponsored.</p>
 							</div>
 						) : (
-							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+							<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 								{approvedSponsorships.map((prop) => {
 									const imgUrl = typeof prop.image === "string" ? prop.image : prop.image ? URL.createObjectURL(prop.image) : null
+									const parts = prop.date ? prop.date.split("-") : []
+									const displayDate = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : prop.date
+
 									return (
 										<Link
 											key={prop.id}
 											href={`/host/dashboard/proposal?proposalId=${prop.id}`}
-											className="group/item flex items-center justify-between px-5 h-20 bg-white hover:bg-black/[0.02] hover:pl-7 transition-all duration-300 ease-out"
+											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-col justify-between"
 										>
-											<div className="flex items-center gap-3 min-w-0">
-												{imgUrl ? (
-													<div className="size-12 rounded-xl overflow-hidden shrink-0 border border-black/10">
-														{/* eslint-disable-next-line @next/next/no-img-element */}
+											<div>
+												{/* Image */}
+												<div className="relative aspect-[16/9] overflow-hidden bg-slate-50 border-b-[3px] border-black">
+													{imgUrl ? (
+														// eslint-disable-next-line @next/next/no-img-element
 														<img
 															src={imgUrl}
-															alt=""
-															className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-300"
+															alt={prop.name}
+															className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
 															onLoad={() => imgUrl.startsWith("blob:") && URL.revokeObjectURL(imgUrl)}
 														/>
-													</div>
-												) : (
-													<div className="size-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0 group-hover/item:scale-115 group-hover/item:rotate-3 transition-transform duration-300">
-														<Icon as={DocumentTextSvg} size="md" color="inherit" />
-													</div>
-												)}
-												<div className="min-w-0">
-													<p className="text-label-md font-semibold text-text-primary truncate group-hover/item:text-red-600 transition-colors duration-300">{prop.name}</p>
-													<p className="text-caption text-text-tertiary mt-0.5">{prop.venue} • {prop.city}</p>
+													) : (
+														<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-base">
+															{prop.name.substring(0, 2).toUpperCase()}
+														</div>
+													)}
+
+													{/* Status Badge */}
+													<span className="absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-green-400 text-black">
+														Published
+													</span>
+												</div>
+
+												{/* Content */}
+												<div className="p-3 flex flex-col gap-0.5">
+													<h3 className="font-heading font-black text-sm text-black truncate group-hover:text-[#EE2C2C] transition-colors">
+														{prop.name}
+													</h3>
+													<p className="text-[9px] font-bold text-black/50">
+														{prop.city} • {prop.venue}
+													</p>
+													<p className="text-[9px] font-semibold text-black/70 truncate mt-0.5">
+														{prop.about}
+													</p>
 												</div>
 											</div>
-											<div className="flex items-center gap-2">
-												<span className="text-[11px] text-[#EE2C2C] font-black shrink-0 bg-red-50 px-2 py-0.5 rounded-lg border border-red-100">
-													{prop.guestCount} guests
-												</span>
-												<span className="inline-flex items-center px-2.5 py-0.5 rounded-badge text-[10px] font-bold shrink-0 bg-status-success-bg text-status-success-text">
-													Published
-												</span>
+
+											{/* Footer Info */}
+											<div className="p-3 pt-0">
+												<div className="flex items-center gap-1.5 mt-1">
+													{displayDate && (
+														<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+															{displayDate}
+														</span>
+													)}
+													<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+														{prop.guestCount} Guests
+													</span>
+												</div>
 											</div>
 										</Link>
 									)

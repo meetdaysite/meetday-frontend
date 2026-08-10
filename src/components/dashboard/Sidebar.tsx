@@ -8,6 +8,8 @@ import clsx from "clsx"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
+import { getHostCommunityProfile, getMySponsorshipProposals } from "@/lib/api"
+import { useNotificationStore } from "@/store/notificationStore"
 import type { ComponentType, SVGProps } from "react"
 
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
@@ -44,6 +46,29 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const router = useRouter()
 	const { profile } = useHostStore()
 	const [showIncompleteCard, setShowIncompleteCard] = useState(true)
+	const [community, setCommunity] = useState<any>(null)
+	const [proposals, setProposals] = useState<any[]>([])
+	const [dismissedList, setDismissedList] = useState<any[]>([])
+
+	useEffect(() => {
+		if (profile?.id) {
+			getHostCommunityProfile()
+				.then(setCommunity)
+				.catch(() => {})
+			getMySponsorshipProposals()
+				.then(res => setProposals(res.proposals || []))
+				.catch(() => {})
+		}
+	}, [profile?.id])
+	const { notifications, init: initNotifs, markRead } = useNotificationStore()
+	const [dismissedNotifIds, setDismissedNotifIds] = useState([])
+
+	useEffect(() => {
+		initNotifs()
+	}, [initNotifs])
+
+	const activeNotifs = notifications.filter(n => !n.isRead && !dismissedNotifIds.includes(n.id))
+	const latestNotif = activeNotifs[0]
 
 	// Calculate remaining profile steps dynamically
 	const steps = [
@@ -59,11 +84,80 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const hostName = profile?.displayName || "Host"
 	const avatarUrl = profile?.avatarUrl
 
+	// Construct sidebar notifications
+	const sidebarNotifs = []
+
+	// 1. Host profile verification status
+	if (profile?.approvalStatus === "REJECTED") {
+		sidebarNotifs.push({
+			id: 'host-profile-rejected-' + profile.id,
+			type: "error",
+			title: "Verification Rejected",
+			desc: profile.rejectionReason || "Your host verification application was not approved.",
+			action: "REAPPLY",
+			link: "/host/dashboard/profile"
+		})
+	} else if (profile?.approvalStatus === "PENDING" && profile?.kycStatus === "VERIFIED") {
+		sidebarNotifs.push({
+			id: 'host-profile-pending-' + profile.id,
+			type: "warning",
+			title: "Verification Pending",
+			desc: "Your host verification is under review. This usually takes 2-3 business days.",
+		})
+	}
+
+	// 2. Community profile status
+	if (community) {
+		if (community.approvalStatus === "REJECTED") {
+			sidebarNotifs.push({
+				id: 'community-rejected-' + community.id,
+				type: "error",
+				title: "Community Rejected",
+				desc: community.adminRejectionRemark || "Your community profile details were rejected.",
+				action: "EDIT DETAILS",
+				link: "/host/dashboard/profile"
+			})
+		} else if (community.approvalStatus === "PENDING") {
+			sidebarNotifs.push({
+				id: 'community-pending-' + community.id,
+				type: "warning",
+				title: "Community Under Review",
+				desc: "Your community profile is currently under review by the admin team.",
+			})
+		}
+	}
+
+	// 3. Proposals status
+	proposals.forEach(p => {
+		if (p.status === "REJECTED") {
+			sidebarNotifs.push({
+				id: 'proposal-rejected-' + p.id,
+				type: "error",
+				title: "Proposal Rejected",
+				desc: '"' + p.name + '" was rejected. ' + (p.adminRejectionRemark || ""),
+				action: "VIEW PROPOSAL",
+				link: '/host/dashboard/proposal?proposalId=' + p.id
+			})
+		} else if (p.status === "UNDER_REVIEW") {
+			sidebarNotifs.push({
+				id: 'proposal-review-' + p.id,
+				type: "warning",
+				title: "Proposal Under Review",
+				desc: '"' + p.name + '" is currently under review.',
+				action: "VIEW",
+				link: '/host/dashboard/proposal?proposalId=' + p.id
+			})
+		}
+	})
+
+	// Filter out dismissed notifications
+	const visibleNotifs = sidebarNotifs.filter(n => !dismissedList.includes(n.id))
+
 	return (
 		<div className="flex flex-col h-full bg-[#EE2C2C] text-white">
 			
 			{/* Brand Logo */}
-			<div className="px-6 pt-5 pb-3 flex items-center justify-start">
+			<div className="px-6 pt-5 pb-3 flex items-center justify-center">
 				<Link href="/host/dashboard">
 					<Image
 						src="/assets/brand_logo.svg"
@@ -120,7 +214,38 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 				<div className="mt-auto flex flex-col gap-1 pb-2">
 					
 					{/* Incomplete Profile Card shifted here */}
-					{showIncompleteCard && stepsRemaining > 0 && (
+					{visibleNotifs.map(n => {
+						const bgColor = n.type === "error" ? "bg-[#FFD2D2]" : "bg-[#FFEAA7]"
+						const titleColor = n.type === "error" ? "text-[#EE2C2C]" : "text-[#b27b00]"
+						return (
+							<div key={n.id} className={clsx("mb-3 border-[3px] border-black rounded-[24px] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black relative flex flex-col gap-2", bgColor)}>
+								<button 
+									onClick={() => setDismissedList(prev => [...prev, n.id])}
+									className="absolute top-3 right-3 text-black/60 hover:text-black font-extrabold text-sm"
+									aria-label="Dismiss notification"
+								>
+									✕
+								</button>
+								<div>
+									<h3 className={clsx("font-heading font-black text-sm leading-tight", titleColor)}>{n.title}</h3>
+									<p className="text-[11px] font-semibold text-black/75 mt-1 leading-snug break-words">
+										{n.desc}
+									</p>
+								</div>
+								{n.action && n.link && (
+									<Link
+										href={n.link}
+										onClick={onClose}
+										className="w-full py-1.5 bg-[#FFC940] text-black border-[3px] border-black rounded-xl font-black text-center text-[10px] tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all block uppercase"
+									>
+										{n.action}
+									</Link>
+								)}
+							</div>
+						)
+					})}
+
+					{showIncompleteCard && !community && (
 						<div className="mb-3 bg-white border-[3px] border-black rounded-[24px] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black relative flex flex-col gap-2">
 							<button 
 								onClick={() => setShowIncompleteCard(false)}
@@ -132,14 +257,8 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 							<div>
 								<h3 className="font-heading font-bold text-base text-black leading-tight">Incomplete Profile</h3>
 								<p className="text-[11px] font-semibold text-black/50 mt-0.5 leading-snug">
-									Complete your profile to be eligible for sponsorships.
+									Create your community profile to be eligible for sponsorships.
 								</p>
-							</div>
-							
-							{/* Progress Indicator */}
-							<div className="flex items-center gap-2 text-xs font-semibold text-[#EE2C2C]">
-								<span className="size-2.5 rounded-full bg-[#EE2C2C] border border-black shrink-0" />
-								<span>{stepsRemaining} out of {steps.length} steps remaining</span>
 							</div>
 
 							<Link

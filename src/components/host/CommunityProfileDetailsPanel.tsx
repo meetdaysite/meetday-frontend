@@ -15,7 +15,7 @@ interface CommunityProfileDetailsPanelProps {
 		portfolio?: string
 	}
 	onEdit: () => void
-	onClose: () => void
+	onClose?: () => void
 }
 
 const STATUS_CONFIG: Record<HostCommunityProfile["approvalStatus"], { label: string; className: string }> = {
@@ -41,13 +41,15 @@ export function CommunityProfileDetailsPanel({
 				<h2 className="text-xl font-heading font-black text-black">
 					Community Profile
 				</h2>
-				<button
-					type="button"
-					onClick={onClose}
-					className="text-black/60 hover:text-black size-8 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors font-bold text-sm"
-				>
-					✕
-				</button>
+				{onClose && (
+					<button
+						type="button"
+						onClick={onClose}
+						className="text-black/60 hover:text-black size-8 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors font-bold text-sm"
+					>
+						✕
+					</button>
+				)}
 			</div>
 
 			{/* Panel Content */}

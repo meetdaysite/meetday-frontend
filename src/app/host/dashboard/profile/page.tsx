@@ -60,6 +60,7 @@ export default function ProfilePage() {
 	}
 
 	const email = user?.email || (profile as any)?.email || ""
+	const phone = (profile as any)?.user?.phone || ""
 	const displayName = profile?.displayName || "Host"
 	const avatarUrl = profile?.avatarUrl
 
@@ -111,10 +112,7 @@ export default function ProfilePage() {
 			)}>
 				
 				{/* Left Column: Profile details */}
-				<div className={clsx(
-					"px-4 lg:px-6 py-8 flex-1 flex flex-col gap-8 overflow-y-auto h-full transition-all duration-300",
-					isPanelOpen ? "max-w-none" : "max-w-2xl mx-auto"
-				)}>
+				<div className="px-4 lg:px-6 py-8 flex-1 flex flex-col gap-8 overflow-y-auto h-full max-w-3xl w-full mx-auto">
 					{/* Header */}
 					<div>
 						<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
@@ -171,6 +169,18 @@ export default function ProfilePage() {
 									<span className="text-black/50 w-24">Email ID :</span>
 									<span className="text-[#6C32D1] font-bold truncate max-w-[280px]">
 										{email || "Not specified"}
+									</span>
+								</div>
+								<div className="flex gap-2 text-sm font-semibold">
+									<span className="text-black/50 w-24">Phone No :</span>
+									<span className="text-[#6C32D1] font-bold">
+										{phone || "Not specified"}
+									</span>
+								</div>
+								<div className="flex gap-2 text-sm font-semibold">
+									<span className="text-black/50 w-24">Community :</span>
+									<span className="text-[#6C32D1] font-bold truncate max-w-[280px]">
+										{profile?.communityName || "Not specified"}
 									</span>
 								</div>
 							</div>

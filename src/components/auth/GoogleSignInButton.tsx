@@ -24,10 +24,10 @@ export function GoogleSignInButton({ onClick, loading, disabled, label = "Contin
 			type="button"
 			onClick={onClick}
 			disabled={loading || disabled}
-			className="w-full flex items-center justify-center gap-2.5 h-(--size-action-md) px-4 rounded-action border border-border-default bg-surface-card text-label-sm font-medium text-text-primary hover:bg-surface-card-muted transition-colors duration-(--duration-120) disabled:opacity-60"
+			className="w-full flex items-center justify-center gap-3 h-12 px-5 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-sm tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all select-none disabled:opacity-60 disabled:pointer-events-none"
 		>
 			<GoogleLogo />
-			{loading ? "Signing in…" : label}
+			<span className="font-extrabold">{loading ? "Signing in…" : label}</span>
 		</button>
 	)
 }

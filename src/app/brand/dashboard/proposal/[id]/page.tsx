@@ -117,7 +117,7 @@ export default function ProposalDetailPage() {
 						{proposal.about && (
 							<div className="flex flex-col gap-2">
 								<h2 className="text-label-md font-semibold text-text-primary">About this experience</h2>
-								<p className="text-body-sm text-text-secondary whitespace-pre-line">{proposal.about}</p>
+								<p className="text-body-sm text-text-secondary whitespace-pre-line break-words">{proposal.about}</p>
 							</div>
 						)}
 
@@ -126,9 +126,9 @@ export default function ProposalDetailPage() {
 								<h2 className="text-label-md font-semibold text-text-primary">Sponsorship tiers</h2>
 								<div className="flex flex-wrap gap-3">
 									{proposal.sponsorTiers.map((tier, i) => (
-										<div key={i} className="px-4 py-2 rounded-action border border-border-default bg-surface-card">
-											<p className="text-label-sm font-semibold text-text-primary">{tier.name}</p>
-											<p className="text-body-sm text-text-secondary">{tier.price}</p>
+										<div key={i} className="px-4 py-2 rounded-action border border-border-default bg-surface-card min-w-[120px] max-w-full break-words">
+											<p className="text-label-sm font-semibold text-text-primary break-words">{tier.name}</p>
+											<p className="text-body-sm text-text-secondary break-words">{tier.price}</p>
 										</div>
 									))}
 								</div>
@@ -146,7 +146,7 @@ export default function ProposalDetailPage() {
 						)}
 
 						{proposal.community && (
-							<div className="flex flex-col gap-3 p-5 rounded-action border border-border-default bg-surface-card">
+							<div className="flex flex-col gap-3 p-5 rounded-action border border-border-default bg-surface-card overflow-hidden">
 								<h2 className="text-label-md font-semibold text-text-primary">Community profile</h2>
 								<div className="flex items-center gap-3">
 									{proposal.community.logoUrl && (
@@ -154,20 +154,20 @@ export default function ProposalDetailPage() {
 											<Image src={proposal.community.logoUrl} alt={proposal.community.name} fill className="object-cover" unoptimized />
 										</div>
 									)}
-									<div>
-										<p className="text-label-sm font-semibold text-text-primary">{proposal.community.name}</p>
-										<p className="text-caption text-text-muted">
+									<div className="min-w-0 flex-1">
+										<p className="text-label-sm font-semibold text-text-primary break-words">{proposal.community.name}</p>
+										<p className="text-caption text-text-muted break-words">
 											{proposal.community.size} members · {proposal.community.experiencesPerYear} experiences/year
 										</p>
 									</div>
 								</div>
 								{proposal.community.about && (
-									<p className="text-body-sm text-text-secondary">{proposal.community.about}</p>
+									<p className="text-body-sm text-text-secondary break-words">{proposal.community.about}</p>
 								)}
 								{proposal.community.categories?.length > 0 && (
 									<div className="flex flex-wrap gap-2">
 										{proposal.community.categories.map((c) => (
-											<span key={c.id} className="px-2 py-0.5 rounded-full bg-surface-card-muted text-text-muted text-caption">
+											<span key={c.id} className="px-2 py-0.5 rounded-full bg-surface-card-muted text-text-muted text-caption break-words">
 												{c.name}
 											</span>
 										))}

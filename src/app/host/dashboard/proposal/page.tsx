@@ -29,6 +29,7 @@ import {
 } from "@/lib/api"
 
 import { ActivateCommunityModal } from "@/components/host/ActivateCommunityModal"
+import { CommunityProfileDetailsPanel } from "@/components/host/CommunityProfileDetailsPanel"
 
 import UploadSvg from "@/icons/outlined/upload.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
@@ -241,144 +242,12 @@ export default function ProposalPage() {
     const renderCommunityCard = () => {
         if (!community) return null
         return (
-            <div className="border border-black/10 rounded-[28px] p-6 bg-white flex flex-col gap-6 w-full shadow-sm">
-                {/* Top Section: Avatar & Info */}
-                <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                        <div className="relative size-14 shrink-0">
-                            <div className="size-14 rounded-full border border-black/10 overflow-hidden bg-slate-50 flex items-center justify-center">
-                                {communityLogoUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={communityLogoUrl} alt={community.name} className="size-full object-cover" />
-                                ) : (
-                                    <div className="text-lg font-black text-black/50">
-                                        {community.name.substring(0, 2).toUpperCase()}
-                                    </div>
-                                )}
-                            </div>
-                            <button
-                                onClick={openActivationModal}
-                                className="absolute -bottom-0.5 -right-0.5 size-5 bg-white border border-black/10 rounded-full flex items-center justify-center shadow-sm hover:scale-105 transition-transform"
-                            >
-                                <span className="text-[10px]">✏️</span>
-                            </button>
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <h3 className="font-heading font-black text-black text-base leading-tight truncate max-w-[150px]">{community.name}</h3>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="inline-block self-start text-[8px] font-black text-white bg-[#6C32D1] px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                    Community Profile
-                                </span>
-                                <span
-                                    className={`inline-block self-start text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                                        community.approvalStatus === "APPROVED"
-                                            ? "text-white bg-green-600"
-                                            : community.approvalStatus === "REJECTED"
-                                            ? "text-white bg-red-600"
-                                            : "text-black bg-amber-300"
-                                    }`}
-                                >
-                                    {community.approvalStatus === "APPROVED"
-                                        ? "Live"
-                                        : community.approvalStatus === "REJECTED"
-                                        ? "Rejected"
-                                        : "Pending review"}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <button
-                        onClick={openActivationModal}
-                        className="text-xs font-bold text-black hover:underline cursor-pointer"
-                    >
-                        Edit
-                    </button>
-                </div>
-
-                {community.approvalStatus === "REJECTED" && community.adminRejectionRemark && (
-                    <div className="rounded-2xl bg-red-50 border border-red-200 px-4 py-3">
-                        <p className="text-[10px] font-black text-red-700 uppercase tracking-wider mb-1">Admin remark</p>
-                        <p className="text-xs font-semibold text-red-700">{community.adminRejectionRemark}</p>
-                    </div>
-                )}
-
-                <hr className="border-black/10" />
-
-                {/* About Section */}
-                {community.about && (
-                    <div className="flex flex-col gap-1">
-                        <h4 className="font-heading font-black text-black/40 text-[10px] uppercase tracking-wider">About the Community</h4>
-                        <p className="text-xs font-semibold text-black/60 leading-relaxed line-clamp-4">{community.about}</p>
-                    </div>
-                )}
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 gap-4">
-                    {community.size && (
-                        <div className="flex flex-col gap-0.5">
-                            <h4 className="font-heading font-black text-black/40 text-[10px] uppercase tracking-wider">Community Size</h4>
-                            <p className="text-xs font-black text-black">{community.size} Members</p>
-                        </div>
-                    )}
-                    {community.avgGuestCount && (
-                        <div className="flex flex-col gap-0.5">
-                            <h4 className="font-heading font-black text-black/40 text-[10px] uppercase tracking-wider">Average Guest Count</h4>
-                            <p className="text-xs font-black text-black">{community.avgGuestCount} Guests</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Experiences/Year */}
-                {community.experiencesPerYear && (
-                    <div className="flex flex-col gap-0.5">
-                        <h4 className="font-heading font-black text-black/40 text-[10px] uppercase tracking-wider">Experiences/Year</h4>
-                        <p className="text-xs font-black text-black">{community.experiencesPerYear}</p>
-                    </div>
-                )}
-
-                {/* Categories */}
-                <div className="flex flex-col gap-2">
-                    <div className="flex justify-between items-center">
-                        <h4 className="font-heading font-black text-black/40 text-[10px] uppercase tracking-wider">Experience Categories</h4>
-                        <button onClick={openActivationModal} className="text-black/60 hover:text-black font-bold text-sm">+</button>
-                    </div>
-                    {categoryIdsToShow.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5">
-                            {categoryIdsToShow.map((catId: string) => {
-                                const cat = categories.find((c) => c.id === catId)
-                                if (!cat) return null
-                                return (
-                                    <div
-                                        key={cat.id}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-black/10 bg-black/5 text-[11px] font-semibold text-black"
-                                    >
-                                        <span>{cat.name}</span>
-                                        <button onClick={openActivationModal} className="text-black/40 hover:text-black font-bold">×</button>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    ) : (
-                        <p className="text-xs font-semibold text-black/30 italic">No categories added</p>
-                    )}
-                </div>
-
-                {/* Social Links */}
-                {(profile?.socialLinks?.instagram || profile?.socialLinks?.linkedin) && (
-                    <div className="flex flex-col gap-2 pt-2 border-t border-black/10">
-                        {profile?.socialLinks?.instagram && (
-                            <div className="px-3 py-1.5 rounded-xl border border-black/10 bg-black/5 text-[11px] font-semibold text-black/60 truncate">
-                                Instagram: <a href={`https://${profile.socialLinks.instagram}`} target="_blank" rel="noopener noreferrer" className="font-bold hover:underline text-[#6C32D1]">{profile.socialLinks.instagram}</a>
-                            </div>
-                        )}
-                        {profile?.socialLinks?.linkedin && (
-                            <div className="px-3 py-1.5 rounded-xl border border-black/10 bg-black/5 text-[11px] font-semibold text-black/60 truncate">
-                                LinkedIn: <a href={`https://${profile.socialLinks.linkedin}`} target="_blank" rel="noopener noreferrer" className="font-bold hover:underline text-[#6C32D1]">{profile.socialLinks.linkedin}</a>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
+            <CommunityProfileDetailsPanel
+                community={community}
+                operatingCities={profile?.operatingCities}
+                socialLinks={profile?.socialLinks}
+                onEdit={openActivationModal}
+            />
         )
     }
 
@@ -1167,7 +1036,7 @@ export default function ProposalPage() {
 
             <div className={clsx(
                 "flex-1 min-h-0 w-full overflow-hidden relative bg-white",
-                isSplitLayout ? "md:grid md:grid-cols-[60%_40%]" : "flex flex-col"
+                isSplitLayout ? "md:grid md:grid-cols-[70%_30%]" : "flex flex-col"
             )}>
                 <div className={clsx(
                     "px-4 lg:px-6 py-6 lg:py-8 flex-1 flex flex-col gap-8 overflow-y-auto h-full transition-all duration-300",
@@ -1340,18 +1209,18 @@ export default function ProposalPage() {
                                             <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Venue</p>
                                             <p className="text-label-sm font-semibold text-text-primary mt-0.5">{displayDetails?.venue}</p>
                                         </div>
-                                        <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border-default/50">
-                                            <div>
+                                        <div className="flex flex-wrap gap-x-4 gap-y-3 pt-3 border-t border-border-default/50">
+                                            <div className="min-w-[60px] flex-1">
                                                 <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Guests</p>
-                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5">{displayDetails?.guestCount}</p>
+                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5 break-words">{displayDetails?.guestCount}</p>
                                             </div>
-                                            <div>
+                                            <div className="min-w-[60px] flex-1">
                                                 <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Age Group</p>
-                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5">{displayDetails?.ageGroup}</p>
+                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5 break-words">{displayDetails?.ageGroup}</p>
                                             </div>
-                                            <div>
+                                            <div className="min-w-[60px] flex-1">
                                                 <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Audience</p>
-                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5 truncate" title={Array.isArray(displayDetails?.audienceProfile) ? displayDetails.audienceProfile.join(", ") : displayDetails?.audienceProfile}>
+                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5 break-words" title={Array.isArray(displayDetails?.audienceProfile) ? displayDetails.audienceProfile.join(", ") : displayDetails?.audienceProfile}>
                                                     {Array.isArray(displayDetails?.audienceProfile) ? displayDetails.audienceProfile.join(", ") : displayDetails?.audienceProfile}
                                                 </p>
                                             </div>
@@ -1360,7 +1229,7 @@ export default function ProposalPage() {
 
                                     <div className="bg-surface-card border border-border-default rounded-action p-5">
                                         <h4 className="text-label-sm font-semibold text-text-primary mb-2">About the Project</h4>
-                                        <p className="text-body-sm text-text-secondary leading-relaxed whitespace-pre-wrap">{displayDetails?.about}</p>
+                                        <p className="text-body-sm text-text-secondary leading-relaxed whitespace-pre-wrap break-words">{displayDetails?.about}</p>
                                     </div>
 
                                     {displayDetails?.sponsorPrices && displayDetails.sponsorPrices.length > 0 && (
@@ -1368,9 +1237,9 @@ export default function ProposalPage() {
                                             <h4 className="text-label-sm font-semibold text-text-primary">Sponsor Pricing Tiers</h4>
                                             <div className="flex flex-col gap-2">
                                                 {displayDetails.sponsorPrices.map((sp: any, idx: number) => (
-                                                    <div key={idx} className="flex justify-between items-center text-sm border-b border-border-default/40 pb-1.5 last:border-b-0 last:pb-0">
-                                                        <span className="text-text-secondary font-medium">{sp.name}</span>
-                                                        <span className="text-text-brand font-semibold">{sp.price}</span>
+                                                    <div key={idx} className="flex flex-wrap justify-between items-start gap-2 text-sm border-b border-border-default/40 pb-1.5 last:border-b-0 last:pb-0">
+                                                        <span className="text-text-secondary font-medium min-w-[120px] flex-1 break-words">{sp.name}</span>
+                                                        <span className="text-text-brand font-semibold break-words shrink-0">{sp.price}</span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -1478,12 +1347,12 @@ export default function ProposalPage() {
 
                                         {/* About */}
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-xs font-bold text-black">About the community *</label>
+                                            <label className="text-xs font-bold text-black">About the project *</label>
                                             <textarea
                                                 required
                                                 value={projAbout}
                                                 onChange={(e) => setProjAbout(e.target.value)}
-                                                placeholder="Describe your community's purpose, focus, and vibes..."
+                                                placeholder="Describe your project's details, format, and goals..."
                                                 rows={3}
                                                 className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
                                             />
@@ -1803,7 +1672,6 @@ export default function ProposalPage() {
                                                 )
                                             })}
                                         </div>
-
                                         {filteredProposals.length === 0 ? (
                                             <div className="flex flex-col items-center justify-center py-20 text-center gap-3 border-[3px] border-dashed border-black/30 rounded-[20px]">
                                                 <p className="text-label-md font-semibold text-black/50">No proposals found</p>
@@ -1812,7 +1680,7 @@ export default function ProposalPage() {
                                                 </p>
                                             </div>
                                         ) : (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 lg:gap-6">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                                                 {filteredProposals.map((p) => {
                                                     const isViewingRevision = activeTab === "UNDER_REVIEW" && p.pendingRevision != null;
                                                     const cardData = isViewingRevision ? p.pendingRevision! : p;
@@ -1826,17 +1694,17 @@ export default function ProposalPage() {
                                                         <div
                                                             key={p.id}
                                                             onClick={() => setSelectedProposal(p)}
-                                                            className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-col justify-between"
+                                                            className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex flex-col justify-between max-w-[320px] w-full"
                                                         >
-                                                            <div>
+                                                            <div className="relative">
                                                                 {/* Image */}
-                                                                <div className="relative aspect-[16/10] overflow-hidden bg-slate-50 border-b-[3px] border-black">
+                                                                <div className="relative aspect-[16/10] overflow-hidden bg-slate-50 border-b-[3px] border-black rounded-t-[21px]">
                                                                     {imgUrl ? (
                                                                         // eslint-disable-next-line @next/next/no-img-element
                                                                         <img
                                                                             src={imgUrl}
                                                                             alt={cardData.name}
-                                                                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                                                                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-t-[18px]"
                                                                             onLoad={() => imgUrl && imgUrl.startsWith("blob:") && URL.revokeObjectURL(imgUrl)}
                                                                         />
                                                                     ) : (
@@ -1862,53 +1730,53 @@ export default function ProposalPage() {
                                                                         {p.status === "REJECTED" && "Rejected"}
                                                                         {!isViewingRevision && (p.status === "PUBLISHED" || !p.status) && "Published"}
                                                                     </span>
+                                                                </div>
 
-                                                                    {/* Kebab button */}
-                                                                    <div className="absolute top-3 right-3 z-10" onClick={(e) => e.stopPropagation()}>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => setOpenKebabId(openKebabId === p.id ? null : p.id)}
-                                                                            className="flex items-center justify-center size-6 rounded-full bg-white border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-50 text-black transition-colors"
-                                                                        >
-                                                                            <Icon as={DotsSvg} size="xs" />
-                                                                        </button>
-                                                                        {openKebabId === p.id && (
-                                                                            <div className="absolute right-0 top-8 z-20 w-36 bg-white border-[2px] border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] py-1 flex flex-col">
+                                                                {/* Kebab button */}
+                                                                <div className="absolute top-3 right-3 z-30" onClick={(e) => e.stopPropagation()}>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setOpenKebabId(openKebabId === p.id ? null : p.id)}
+                                                                        className="flex items-center justify-center size-6 rounded-full bg-white border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-50 text-black transition-colors"
+                                                                    >
+                                                                        <Icon as={DotsSvg} size="xs" />
+                                                                    </button>
+                                                                    {openKebabId === p.id && (
+                                                                        <div className="absolute right-0 top-8 z-40 w-36 bg-white border-[2px] border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] py-1 flex flex-col">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    setSelectedProposal(p)
+                                                                                    setOpenKebabId(null)
+                                                                                }}
+                                                                                className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
+                                                                            >
+                                                                                View details
+                                                                            </button>
+                                                                            {(p.status === "DRAFT" || p.status === "REJECTED") && (
                                                                                 <button
                                                                                     type="button"
                                                                                     onClick={() => {
-                                                                                        setSelectedProposal(p)
+                                                                                        submitProposalForApproval(p)
                                                                                         setOpenKebabId(null)
                                                                                     }}
                                                                                     className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
                                                                                 >
-                                                                                    View details
+                                                                                    Submit for Approval
                                                                                 </button>
-                                                                                {(p.status === "DRAFT" || p.status === "REJECTED") && (
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        onClick={() => {
-                                                                                            submitProposalForApproval(p)
-                                                                                            setOpenKebabId(null)
-                                                                                        }}
-                                                                                        className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
-                                                                                    >
-                                                                                        Submit for Approval
-                                                                                    </button>
-                                                                                )}
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => {
-                                                                                        handleDelete(p.id)
-                                                                                        setOpenKebabId(null)
-                                                                                    }}
-                                                                                    className="px-3 py-1.5 text-left text-xs text-[#EE2C2C] hover:bg-red-50 transition-colors font-black"
-                                                                                >
-                                                                                    Delete
-                                                                                </button>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
+                                                                            )}
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => {
+                                                                                    handleDelete(p.id)
+                                                                                    setOpenKebabId(null)
+                                                                                }}
+                                                                                className="px-3 py-1.5 text-left text-xs text-[#EE2C2C] hover:bg-red-50 transition-colors font-black"
+                                                                            >
+                                                                                Delete
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
 
                                                                 {/* Content */}
@@ -1922,11 +1790,11 @@ export default function ProposalPage() {
                                                             {/* Footer info */}
                                                             <div className="p-4 pt-0">
                                                                 <div className="flex items-center gap-2 mt-1">
-                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                                                                        📅 {displayDate}
+                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                                                                        {displayDate}
                                                                     </span>
-                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                                                                        👥 {cardData.guestCount} Guests
+                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                                                                        {cardData.guestCount} Guests
                                                                     </span>
                                                                 </div>
                                                             </div>
