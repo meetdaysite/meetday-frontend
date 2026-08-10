@@ -53,7 +53,7 @@ export function CommunityProfileDetailsPanel({
 			</div>
 
 			{/* Panel Content */}
-			<div className="flex-grow flex flex-col gap-6">
+			<div className="flex flex-col gap-6">
 				{/* Approval status banner */}
 				<div className={clsx("rounded-xl px-3.5 py-2.5 text-xs font-semibold border-2", statusConfig.className)}>
 					{statusConfig.label}
@@ -168,7 +168,7 @@ export function CommunityProfileDetailsPanel({
 				</div>
 
 				{/* Edit details button */}
-				<div className="mt-auto pt-6 border-t border-black/10 shrink-0">
+				<div className="mt-6 pt-6 border-t border-black/10 shrink-0">
 					<button
 						type="button"
 						onClick={onEdit}

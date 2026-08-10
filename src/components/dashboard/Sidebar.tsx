@@ -10,6 +10,7 @@ import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
 import { getHostCommunityProfile, getMySponsorshipProposals } from "@/lib/api"
 import { useNotificationStore } from "@/store/notificationStore"
+import { useToastStore } from "@/store/toastStore"
 import type { ComponentType, SVGProps } from "react"
 
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
@@ -45,7 +46,9 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const pathname = usePathname()
 	const router = useRouter()
 	const { profile } = useHostStore()
+	const { toasts, removeToast } = useToastStore()
 	const [showIncompleteCard, setShowIncompleteCard] = useState(true)
+	const [showKycCard, setShowKycCard] = useState(true)
 	const [community, setCommunity] = useState<any>(null)
 	const [proposals, setProposals] = useState<any[]>([])
 	const [dismissedList, setDismissedList] = useState<any[]>([])
@@ -60,7 +63,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 				.catch(() => {})
 		}
 	}, [profile?.id])
-	const { notifications, init: initNotifs, markRead } = useNotificationStore()
+	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
 	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
 
 	useEffect(() => {
@@ -213,6 +216,31 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 				{/* Navigation Bottom Items */}
 				<div className="mt-auto flex flex-col gap-1 pb-2">
 					
+					{/* Come & Go Toast Notifications */}
+					{toasts.map(t => {
+						const bgColor = t.type === "error" ? "bg-[#FFD2D2]" : t.type === "success" ? "bg-[#D4EDDA] border-green-600" : "bg-[#FFF3CD] border-amber-600"
+						const textColor = t.type === "error" ? "text-[#EE2C2C]" : t.type === "success" ? "text-green-800" : "text-amber-800"
+						return (
+							<div key={t.id} className={clsx("mb-3 border-[3px] border-black rounded-[24px] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black relative flex flex-col gap-1.5 animate-in slide-in-from-bottom duration-300", bgColor)}>
+								<button 
+									onClick={() => removeToast(t.id)}
+									className="absolute top-3 right-3 text-black/60 hover:text-black font-extrabold text-sm"
+									aria-label="Dismiss toast"
+								>
+									✕
+								</button>
+								<div className="pr-4">
+									<h3 className={clsx("font-heading font-black text-sm leading-tight", textColor)}>{t.title}</h3>
+									{t.desc && (
+										<p className="text-[11px] font-semibold text-black/75 mt-0.5 leading-snug break-words">
+											{t.desc}
+										</p>
+									)}
+								</div>
+							</div>
+						)
+					})}
+
 					{/* Incomplete Profile Card shifted here */}
 					{visibleNotifs.map(n => {
 						const bgColor = n.type === "error" ? "bg-[#FFD2D2]" : "bg-[#FFEAA7]"
@@ -262,7 +290,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 							</div>
 
 							<Link
-								href="/host/dashboard/profile"
+								href="/host/dashboard/profile?open=community"
 								onClick={onClose}
 								className="w-full py-2 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-bold text-center text-xs tracking-wider shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all block"
 							>
@@ -271,8 +299,35 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 						</div>
 					)}
 
+					{showKycCard && community && profile?.kycStatus !== "VERIFIED" && (
+						<div className="mb-3 bg-white border-[3px] border-black rounded-[24px] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black relative flex flex-col gap-2">
+							<button 
+								onClick={() => setShowKycCard(false)}
+								className="absolute top-3 right-3 text-black/60 hover:text-black font-extrabold text-sm"
+								aria-label="Close KYC alert"
+							>
+								✕
+							</button>
+							<div>
+								<h3 className="font-heading font-bold text-base text-black leading-tight">Verify Details</h3>
+								<p className="text-[11px] font-semibold text-black/50 mt-0.5 leading-snug">
+									Verify details for payouts to receive sponsorships.
+								</p>
+							</div>
+
+							<Link
+								href="/host/dashboard/profile?open=kyc"
+								onClick={onClose}
+								className="w-full py-2 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-bold text-center text-xs tracking-wider shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all block"
+							>
+								VERIFY NOW
+							</Link>
+						</div>
+					)}
+
 					{NAV_ITEMS_BOTTOM.map(({ label, href, outlined: Outlined, filled: Filled }) => {
 						const isActive = pathname.startsWith(href)
+						const isNotifications = label === "Notifications"
 						return (
 							<Link
 								key={href}
@@ -285,11 +340,16 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 										: "text-white/90 hover:bg-[#D12525]/50 hover:text-white"
 								)}
 							>
-								<Icon
-									as={isActive ? Filled : Outlined}
-									size="md"
-									className="text-white shrink-0"
-								/>
+								<div className="relative shrink-0">
+									<Icon
+										as={isActive ? Filled : Outlined}
+										size="md"
+										className="text-white"
+									/>
+									{isNotifications && unreadCount > 0 && (
+										<span className="absolute -top-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full ring-2 ring-[#EE2C2C] bg-[#FFC940]" />
+									)}
+								</div>
 								<span className="flex-1">{label}</span>
 							</Link>
 						)

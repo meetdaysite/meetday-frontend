@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 import { Button } from "@/components/ui/Button"
 import { TextField } from "@/components/ui/TextField"
 import { Icon } from "@/components/ui/Icon"
@@ -175,10 +175,10 @@ export function HostDetailsPrompt({ onClose, inline = false }: HostDetailsPrompt
 
 			<div>
 				<h2 className="text-xl font-heading font-black text-black">
-					Verify details for <span className="text-[#EE2C2C]">payouts & events</span>
+					Verify details for <span className="text-[#EE2C2C]">payouts</span>
 				</h2>
 				<p className="text-xs font-semibold text-black/50 mt-2">
-					Please complete verification to create events and receive ticket payouts. This is a one-time process.
+					Please complete verification to receive ticket payouts. This is a one-time process.
 				</p>
 			</div>
 

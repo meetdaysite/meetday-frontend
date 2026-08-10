@@ -186,11 +186,11 @@ export default function DashboardWelcomePage() {
 										<Link
 											key={prop.id}
 											href={`/host/dashboard/proposal?proposalId=${prop.id}`}
-											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-col justify-between"
+											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-col justify-between max-w-[280px] w-full"
 										>
 											<div>
 												{/* Image */}
-												<div className="relative aspect-[16/9] overflow-hidden bg-slate-50 border-b-[3px] border-black">
+												<div className="relative aspect-square overflow-hidden bg-slate-50 border-b-[3px] border-black">
 													{imgUrl ? (
 														// eslint-disable-next-line @next/next/no-img-element
 														<img
@@ -212,28 +212,28 @@ export default function DashboardWelcomePage() {
 												</div>
 
 												{/* Content */}
-												<div className="p-3 flex flex-col gap-0.5">
-													<h3 className="font-heading font-black text-sm text-black truncate group-hover:text-[#EE2C2C] transition-colors">
+												<div className="p-3.5 flex flex-col gap-1">
+													<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">
 														{prop.name}
 													</h3>
-													<p className="text-[9px] font-bold text-black/50">
+													<p className="text-xs font-bold text-black/50">
 														{prop.city} • {prop.venue}
 													</p>
-													<p className="text-[9px] font-semibold text-black/70 truncate mt-0.5">
+													<p className="text-xs font-semibold text-black/70 truncate mt-0.5">
 														{prop.about}
 													</p>
 												</div>
 											</div>
 
 											{/* Footer Info */}
-											<div className="p-3 pt-0">
+											<div className="p-3.5 pt-0">
 												<div className="flex items-center gap-1.5 mt-1">
 													{displayDate && (
-														<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+														<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
 															{displayDate}
 														</span>
 													)}
-													<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+													<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
 														{prop.guestCount} Guests
 													</span>
 												</div>

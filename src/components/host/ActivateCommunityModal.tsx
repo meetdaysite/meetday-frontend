@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import {
@@ -27,6 +27,7 @@ async function uploadLogoAndGetKey(file: File): Promise<string> {
 
 interface ActivateCommunityModalProps {
 	hostId: string
+	profileCommunityName?: string
 	profileInstagram?: string
 	profileLinkedin?: string
 	profileYoutube?: string
@@ -39,6 +40,7 @@ interface ActivateCommunityModalProps {
 
 export function ActivateCommunityModal({
 	hostId,
+	profileCommunityName = "",
 	profileInstagram = "",
 	profileLinkedin = "",
 	profileYoutube = "",
@@ -52,7 +54,7 @@ export function ActivateCommunityModal({
 	const [community, setCommunity] = useState<HostCommunityProfile | null>(null)
 
 	// Form fields
-	const [communityName, setCommunityName] = useState("")
+	const [communityName, setCommunityName] = useState(profileCommunityName)
 	const [aboutCommunity, setAboutCommunity] = useState("")
 	const [logoFile, setLogoFile] = useState<File | null>(null)
 	const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null)
@@ -97,6 +99,7 @@ export function ActivateCommunityModal({
 					setPortfolio(profilePortfolio)
 					setOperatingCities(profileOperatingCities)
 				} else {
+					setCommunityName(profileCommunityName)
 					setInstagram(profileInstagram)
 					setLinkedin(profileLinkedin)
 					setYoutube(profileYoutube)
@@ -122,9 +125,9 @@ export function ActivateCommunityModal({
 				return
 			}
 
-			const maxLogoSize = 5 * 1024 * 1024 // 5MB
+			const maxLogoSize = 3 * 1024 * 1024 // 3MB
 			if (file.size > maxLogoSize) {
-				toast.error("Logo file size cannot exceed 5MB.")
+				toast.error("Logo file size cannot exceed 3MB.")
 				return
 			}
 
@@ -319,7 +322,7 @@ export function ActivateCommunityModal({
 								Choose Image
 							</Button>
 							<span className="text-[10px] text-black/40 mt-1">
-								JPEG, JPG, PNG accepted. Max 5MB.
+								JPEG, JPG, PNG accepted (1:1 ratio, max 3MB).
 							</span>
 							{logoFile && (
 								<span className="text-[10px] text-black/60 truncate max-w-xs font-semibold">
@@ -476,7 +479,7 @@ export function ActivateCommunityModal({
 					<label className="text-xs font-bold text-black">Social media links</label>
 					<div className="flex flex-col gap-2.5">
 						<div className="flex items-center gap-2">
-							<span className="text-xs text-black/50 w-20">Instagram</span>
+							<span className="text-xs text-black/50 w-20">Instagram *</span>
 							<input
 								type="text"
 								value={instagram}

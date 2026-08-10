@@ -544,7 +544,7 @@ export default function ProposalPage() {
                                             radius="pill"
                                             onClick={openActivationModal}
                                         >
-                                            Edit details
+                                            Edit Details
                                         </Button>
                                         <Button
                                             variant="secondary"

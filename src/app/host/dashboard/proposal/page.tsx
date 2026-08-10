@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useMemo } from "react"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/Button"
 import { Tabs } from "@/components/ui/Tabs"
@@ -30,6 +30,7 @@ import {
 
 import { ActivateCommunityModal } from "@/components/host/ActivateCommunityModal"
 import { CommunityProfileDetailsPanel } from "@/components/host/CommunityProfileDetailsPanel"
+import { AddressAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
 
 import UploadSvg from "@/icons/outlined/upload.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
@@ -551,19 +552,13 @@ export default function ProposalPage() {
     const handleProjDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0]
-            const allowedExtensions = [".pdf", ".doc", ".docx", ".ppt", ".pptx"]
-            const allowedTypes = [
-                "application/pdf",
-                "application/msword",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "application/vnd.ms-powerpoint",
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            ]
+            const allowedExtensions = [".pdf"]
+            const allowedTypes = ["application/pdf"]
             const fileExtension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase()
             const isValid = allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension)
 
             if (!isValid) {
-                toast.error("Only PDF, DOC/DOCX, or PPT/PPTX files are accepted.")
+                toast.error("Only PDF files are accepted.")
                 return
             }
             if (file.size > 10 * 1024 * 1024) {
@@ -690,19 +685,13 @@ export default function ProposalPage() {
     const handleUpdateFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0] && selectedProposal) {
             const file = e.target.files[0]
-            const allowedExtensions = [".pdf", ".doc", ".docx", ".ppt", ".pptx"]
-            const allowedTypes = [
-                "application/pdf",
-                "application/msword",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "application/vnd.ms-powerpoint",
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-            ]
+            const allowedExtensions = [".pdf"]
+            const allowedTypes = ["application/pdf"]
             const fileExtension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase()
             const isValid = allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension)
 
             if (!isValid) {
-                toast.error("Only PDF, DOC/DOCX, or PPT/PPTX files are accepted.")
+                toast.error("Only PDF files are accepted.")
                 return
             }
             if (file.size > 10 * 1024 * 1024) {
@@ -869,7 +858,8 @@ export default function ProposalPage() {
                 })
                 .catch((err) => {
                     console.error(err)
-                    toast.error("Failed to delete proposal.")
+                    const errMsg = err?.response?.data?.message || err?.message || "Failed to delete proposal."
+                    toast.error(errMsg)
                 })
         }
     }
@@ -1121,7 +1111,7 @@ export default function ProposalPage() {
                                     <input
                                         ref={updateDocInputRef}
                                         type="file"
-                                        accept=".pdf,.doc,.docx,.ppt,.pptx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                                        accept=".pdf,application/pdf"
                                         className="hidden"
                                         onChange={handleUpdateFile}
                                     />
@@ -1134,7 +1124,7 @@ export default function ProposalPage() {
                                             setShowProjectModal(true)
                                         }}
                                     >
-                                        Edit details
+                                        Edit Details
                                     </Button>
                                     {(selectedProposal.status === "DRAFT" || selectedProposal.status === "REJECTED") && (
                                         <Button
@@ -1155,7 +1145,7 @@ export default function ProposalPage() {
                                         radius="pill"
                                         onClick={() => updateDocInputRef.current?.click()}
                                     >
-                                        Update file
+                                        Update File
                                     </Button>
                                     <Button
                                         variant="secondary"
@@ -1193,68 +1183,80 @@ export default function ProposalPage() {
                             )}
 
                             {/* Body */}
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                                {/* Left column - Metadata */}
-                                <div className="lg:col-span-3 flex flex-col gap-6">
+                            <div className="flex flex-col gap-6">
+                                {/* Top Row: Logo & Metadata */}
+                                <div className="flex flex-col md:flex-row gap-6 items-stretch">
                                     {projectImageUrl && (
                                         // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={projectImageUrl} alt={displayDetails?.name} className="w-full h-40 object-cover rounded-xl border border-border-default shadow-sm" />
+                                        <img src={projectImageUrl} alt={displayDetails?.name} className="size-36 object-cover rounded-xl border border-border-default shadow-sm shrink-0" />
                                     )}
-                                    <div className="bg-surface-card-muted border border-border-default rounded-action p-5 flex flex-col gap-4">
-                                        <div>
-                                            <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Date & City</p>
-                                            <p className="text-label-sm font-semibold text-text-primary mt-0.5">{displayDetails?.date} • {displayDetails?.city}</p>
+                                    <div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-2.5 w-full flex flex-col justify-between gap-2">
+                                        {/* Row 1: Date & City, Venue */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+                                            <div>
+                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Date & City</p>
+                                                <p className="text-sm font-bold text-text-primary mt-0">{displayDetails?.date} • {displayDetails?.city}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue</p>
+                                                <p className="text-sm font-bold text-text-primary mt-0">{displayDetails?.venue}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Venue</p>
-                                            <p className="text-label-sm font-semibold text-text-primary mt-0.5">{displayDetails?.venue}</p>
+                                        {/* Divider */}
+                                        <hr className="border-border-default/15" />
+                                        {/* Row 2: Guests, Age Group */}
+                                        <div className="grid grid-cols-2 gap-1.5">
+                                            <div>
+                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Guests</p>
+                                                <p className="text-sm font-bold text-text-primary mt-0 break-words">{displayDetails?.guestCount}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Age Group</p>
+                                                <p className="text-sm font-bold text-text-primary mt-0 break-words">{displayDetails?.ageGroup}</p>
+                                            </div>
                                         </div>
-                                        <div className="flex flex-wrap gap-x-4 gap-y-3 pt-3 border-t border-border-default/50">
-                                            <div className="min-w-[60px] flex-1">
-                                                <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Guests</p>
-                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5 break-words">{displayDetails?.guestCount}</p>
-                                            </div>
-                                            <div className="min-w-[60px] flex-1">
-                                                <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Age Group</p>
-                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5 break-words">{displayDetails?.ageGroup}</p>
-                                            </div>
-                                            <div className="min-w-[60px] flex-1">
-                                                <p className="text-[10px] text-text-tertiary font-semibold uppercase tracking-wider">Audience</p>
-                                                <p className="text-label-sm font-semibold text-text-primary mt-0.5 break-words" title={Array.isArray(displayDetails?.audienceProfile) ? displayDetails.audienceProfile.join(", ") : displayDetails?.audienceProfile}>
-                                                    {Array.isArray(displayDetails?.audienceProfile) ? displayDetails.audienceProfile.join(", ") : displayDetails?.audienceProfile}
-                                                </p>
-                                            </div>
+                                        {/* Divider */}
+                                        <hr className="border-border-default/15" />
+                                        {/* Row 3: Audience */}
+                                        <div>
+                                            <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Audience</p>
+                                            <p className="text-sm font-bold text-text-primary mt-0 break-words" title={Array.isArray(displayDetails?.audienceProfile) ? displayDetails.audienceProfile.join(", ") : displayDetails?.audienceProfile}>
+                                                {Array.isArray(displayDetails?.audienceProfile) ? displayDetails.audienceProfile.join(", ") : displayDetails?.audienceProfile}
+                                            </p>
                                         </div>
                                     </div>
-
-                                    <div className="bg-surface-card border border-border-default rounded-action p-5">
-                                        <h4 className="text-label-sm font-semibold text-text-primary mb-2">About the Project</h4>
-                                        <p className="text-body-sm text-text-secondary leading-relaxed whitespace-pre-wrap break-words">{displayDetails?.about}</p>
-                                    </div>
-
-                                    {displayDetails?.sponsorPrices && displayDetails.sponsorPrices.length > 0 && (
-                                        <div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-3">
-                                            <h4 className="text-label-sm font-semibold text-text-primary">Sponsor Pricing Tiers</h4>
-                                            <div className="flex flex-col gap-2">
-                                                {displayDetails.sponsorPrices.map((sp: any, idx: number) => (
-                                                    <div key={idx} className="flex flex-wrap justify-between items-start gap-2 text-sm border-b border-border-default/40 pb-1.5 last:border-b-0 last:pb-0">
-                                                        <span className="text-text-secondary font-medium min-w-[120px] flex-1 break-words">{sp.name}</span>
-                                                        <span className="text-text-brand font-semibold break-words shrink-0">{sp.price}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
 
-                                {/* Right column - PDF Preview */}
-                                <div className="lg:col-span-9 flex flex-col gap-3">
-                                    <h4 className="text-label-md font-semibold text-text-primary">Document Preview</h4>
+                                {/* Below Top Row: About Project */}
+                                <div className="bg-surface-card border border-border-default rounded-action p-5">
+                                    <h4 className="text-sm font-bold text-text-primary mb-2">About the Project</h4>
+                                    <p className="text-body-sm text-text-secondary leading-relaxed whitespace-pre-wrap break-words">{displayDetails?.about}</p>
+                                </div>
+
+                                {displayDetails?.sponsorPrices && displayDetails.sponsorPrices.length > 0 && (
+                                    <div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-3">
+                                        <h4 className="text-sm font-bold text-text-primary">Sponsor Pricing Tiers</h4>
+                                        <div className="flex flex-wrap gap-3">
+                                            {displayDetails.sponsorPrices.map((sp: any, idx: number) => (
+                                                <div key={idx} className="flex gap-2 text-sm border border-border-default/45 rounded-xl px-4 py-2 bg-surface-card-muted">
+                                                    <span className="text-text-secondary font-medium">{sp.name}:</span>
+                                                    <span className="text-text-brand font-semibold">
+                                                        {sp.price?.toString().startsWith("₹") ? sp.price : `₹${sp.price}`}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Bottom - PDF Preview */}
+                                <div className="flex flex-col gap-3">
+                                    <h4 className="text-sm font-bold text-text-primary">Document Preview</h4>
                                     {displayDetails?.docType?.includes("pdf") || displayDetails?.docName?.toLowerCase().endsWith(".pdf") ? (
                                         <div className="border border-border-default rounded-action overflow-hidden bg-surface-card shadow-sm h-[750px]">
                                             {previewUrl ? (
                                                 <iframe
-                                                    src={previewUrl}
+                                                    src={`${previewUrl}#toolbar=0&navpanes=0`}
                                                     className="w-full h-full border-none"
                                                     title="Proposal Preview"
                                                 />
@@ -1421,13 +1423,17 @@ export default function ProposalPage() {
                                         {/* Venue */}
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-xs font-bold text-black">Venue *</label>
-                                            <input
-                                                type="text"
-                                                required
+                                            <AddressAutocompleteInput
                                                 value={projVenue}
-                                                onChange={(e) => setProjVenue(e.target.value)}
+                                                error={false}
+                                                onChange={setProjVenue}
+                                                onPlaceSelect={(fields) => {
+                                                    setProjVenue(fields.venueName || fields.fullAddress)
+                                                    if (fields.city) {
+                                                        setProjCity(fields.city)
+                                                    }
+                                                }}
                                                 placeholder="e.g. Palace of Fine Arts"
-                                                className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
                                             />
                                         </div>
 
@@ -1527,7 +1533,7 @@ export default function ProposalPage() {
                                                     <input
                                                         ref={projDocInputRef}
                                                         type="file"
-                                                        accept=".pdf,.docx,.pptx"
+                                                        accept=".pdf,application/pdf"
                                                         className="hidden"
                                                         onChange={handleProjDocChange}
                                                     />
@@ -1538,7 +1544,7 @@ export default function ProposalPage() {
                                                     >
                                                         Choose Document
                                                     </button>
-                                                    <span className="text-[10px] text-black/40">PDF, DOCX, PPTX accepted. Max 10MB.</span>
+                                                    <span className="text-[10px] text-black/40">PDF accepted. Max 10MB.</span>
                                                     {projDoc && (
                                                         <span className="text-xs font-semibold text-black truncate max-w-xs">{projDoc.name}</span>
                                                     )}
@@ -1572,18 +1578,21 @@ export default function ProposalPage() {
                                                         }}
                                                         className="flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
                                                     />
-                                                    <input
-                                                        type="text"
-                                                        required
-                                                        placeholder="Price (e.g., ₹50,000)"
-                                                        value={sp.price}
-                                                        onChange={(e) => {
-                                                            const updated = [...sponsorPrices]
-                                                            updated[idx].price = e.target.value
-                                                            setSponsorPrices(updated)
-                                                        }}
-                                                        className="flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
-                                                    />
+                                                    <div className="relative flex-1">
+                                                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-black/40 select-none">₹</span>
+                                                        <input
+                                                            type="text"
+                                                            required
+                                                            placeholder="Price (e.g., 50,000)"
+                                                            value={sp.price}
+                                                            onChange={(e) => {
+                                                                const updated = [...sponsorPrices]
+                                                                updated[idx].price = e.target.value
+                                                                setSponsorPrices(updated)
+                                                            }}
+                                                            className="w-full h-10 pl-8 pr-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                        />
+                                                    </div>
                                                     {sponsorPrices.length > 1 && (
                                                         <button
                                                             type="button"
@@ -1694,11 +1703,11 @@ export default function ProposalPage() {
                                                         <div
                                                             key={p.id}
                                                             onClick={() => setSelectedProposal(p)}
-                                                            className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex flex-col justify-between max-w-[320px] w-full"
+                                                            className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex flex-col justify-between max-w-[280px] w-full"
                                                         >
                                                             <div className="relative">
                                                                 {/* Image */}
-                                                                <div className="relative aspect-[16/10] overflow-hidden bg-slate-50 border-b-[3px] border-black rounded-t-[21px]">
+                                                                <div className="relative aspect-square overflow-hidden bg-slate-50 border-b-[3px] border-black rounded-t-[21px]">
                                                                     {imgUrl ? (
                                                                         // eslint-disable-next-line @next/next/no-img-element
                                                                         <img
@@ -1987,13 +1996,17 @@ export default function ProposalPage() {
                             {/* Venue */}
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-label-sm font-semibold text-text-primary">Venue *</label>
-                                <input
-                                    type="text"
-                                    required
+                                <AddressAutocompleteInput
                                     value={projVenue}
-                                    onChange={(e) => setProjVenue(e.target.value)}
+                                    error={false}
+                                    onChange={setProjVenue}
+                                    onPlaceSelect={(fields) => {
+                                        setProjVenue(fields.venueName || fields.fullAddress)
+                                        if (fields.city) {
+                                            setProjCity(fields.city)
+                                        }
+                                    }}
                                     placeholder="Venue"
-                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
                                 />
                             </div>
 

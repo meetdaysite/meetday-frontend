@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Icon } from "@/components/ui/Icon"
 import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
 import { useHostStore } from "@/store/hostStore"
@@ -28,6 +28,7 @@ export default function ProfilePage() {
 	const { profile, clearProfile } = useHostStore()
 	const { user, signOut } = useAuthStore()
 	const router = useRouter()
+	const searchParams = useSearchParams()
 
 	const [showDeleteModal, setShowDeleteModal] = useState(false)
 	const [showKycForm, setShowKycForm] = useState(false)
@@ -52,6 +53,24 @@ export default function ProfilePage() {
 				.finally(() => setCommunityLoading(false))
 		}
 	}, [profile?.id])
+
+	// Auto-open panels based on query params on mount
+	useEffect(() => {
+		if (profile?.id) {
+			const open = searchParams ? searchParams.get("open") : null
+			if (open === "community") {
+				setShowCommunityModal(true)
+				setIsEditingCommunity(true)
+				setShowVerificationsModal(false)
+				setShowEditProfileModal(false)
+			} else if (open === "kyc") {
+				setShowVerificationsModal(true)
+				setIsEditingVerifications(profile.kycStatus !== "VERIFIED")
+				setShowCommunityModal(false)
+				setShowEditProfileModal(false)
+			}
+		}
+	}, [searchParams, profile])
 
 	const handleSignOut = async () => {
 		clearProfile()
@@ -112,7 +131,10 @@ export default function ProfilePage() {
 			)}>
 				
 				{/* Left Column: Profile details */}
-				<div className="px-4 lg:px-6 py-8 flex-1 flex flex-col gap-8 overflow-y-auto h-full max-w-3xl w-full mx-auto">
+				<div className={clsx(
+					"px-4 lg:px-6 py-8 flex-1 flex flex-col gap-8 overflow-y-auto h-full w-full",
+					isPanelOpen ? "max-w-none" : "max-w-3xl mx-auto"
+				)}>
 					{/* Header */}
 					<div>
 						<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
@@ -145,13 +167,6 @@ export default function ProfilePage() {
 										{profile?.hostType === "INDIVIDUAL" ? "Individual Host" : "Business Host"}
 									</span>
 								</div>
-
-								<button 
-									onClick={handleEditProfileClick}
-									className="ml-auto font-heading font-black text-sm text-black hover:underline cursor-pointer"
-								>
-									Edit
-								</button>
 							</div>
 
 							{/* Divider */}
@@ -269,6 +284,7 @@ export default function ProfilePage() {
 								isEditingCommunity ? (
 									<ActivateCommunityModal
 										hostId={profile.id}
+										profileCommunityName={profile.communityName || ""}
 										profileInstagram={profile.socialLinks?.instagram || ""}
 										profileLinkedin={profile.socialLinks?.linkedin || ""}
 										profileYoutube={profile.socialLinks?.youtube || ""}
