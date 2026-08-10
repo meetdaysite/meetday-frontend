@@ -63,14 +63,6 @@ function SelectField({ label, value, onChange, options }: {
 	)
 }
 
-// ─── Page Options ─────────────────────────────────────────────────────────────
-const GENDER_OPTIONS = [
-	{ value: "MALE", label: "Male" },
-	{ value: "FEMALE", label: "Female" },
-	{ value: "OTHER", label: "Other" },
-	{ value: "PREFER_NOT_TO_SAY", label: "Prefer not to say" },
-]
-
 const HOST_TYPE_OPTIONS = [
 	{ value: "INDIVIDUAL", label: "Individual Host" },
 	{ value: "BUSINESS", label: "Business Host" },
@@ -80,7 +72,10 @@ export default function EditProfilePage() {
 	const router = useRouter()
 	const { profile, setProfile } = useHostStore()
 
-	const [displayName, setDisplayName] = useState("")
+	const [firstName, setFirstName] = useState("")
+	const [lastName, setLastName] = useState("")
+	const [communityName, setCommunityName] = useState("")
+	const [phone, setPhone] = useState("")
 	const [email, setEmail] = useState("")
 	const [gender, setGender] = useState("")
 	const [hostType, setHostType] = useState<"INDIVIDUAL" | "BUSINESS">("INDIVIDUAL")
@@ -96,8 +91,12 @@ export default function EditProfilePage() {
 	// Pre-populate from store
 	useEffect(() => {
 		if (!profile) return
-		setDisplayName(profile.displayName ?? "")
-		setEmail((profile as any).email || useAuthStore.getState().user?.email || "")
+		const hostUser = (profile as any)?.user
+		setFirstName(hostUser?.firstName || "")
+		setLastName(hostUser?.lastName || "")
+		setCommunityName(profile.communityName || "")
+		setPhone(hostUser?.phone || "")
+		setEmail(hostUser?.email || "")
 		setGender(profile.gender ?? "")
 		setHostType(profile.hostType ?? "INDIVIDUAL")
 	}, [profile])
@@ -144,13 +143,21 @@ export default function EditProfilePage() {
 	async function handleSave() {
 		setSaving(true)
 		try {
+			// Update auth user details (first/last name)
+			await updateUserDetails({
+				firstName: firstName.trim() || undefined,
+				lastName: lastName.trim() || undefined,
+			})
+
+			// Update host profile
 			await updateHostProfile({
 				avatarUrl: avatarKey === "" ? null : (avatarKey ?? undefined),
-				displayName: displayName.trim() || undefined,
-				email: email.trim() || undefined,
+				displayName: `${firstName} ${lastName}`.trim() || undefined,
+				communityName: communityName.trim() || undefined,
 				gender: gender || undefined,
 				hostType: hostType || undefined,
 			})
+
 			const fresh = await getHostProfile()
 			setProfile(fresh)
 			showToast("Profile updated.", "success")
@@ -245,23 +252,51 @@ export default function EditProfilePage() {
 					<SectionCard title="Basic Info">
 						<div className="flex flex-col gap-4">
 							<TextField
-								label="Display Name"
-								value={displayName}
-								onChange={e => setDisplayName(e.target.value)}
-								placeholder="How you appear to attendees"
+								label="First Name"
+								value={firstName}
+								onChange={e => setFirstName(e.target.value)}
+								placeholder="Enter your first name"
+							/>
+							<TextField
+								label="Last Name"
+								value={lastName}
+								onChange={e => setLastName(e.target.value)}
+								placeholder="Enter your last name"
+							/>
+							<TextField
+								label="Community Name"
+								value={communityName}
+								onChange={e => setCommunityName(e.target.value)}
+								placeholder="e.g. Bangalore Founders Circle"
+								hint="The community or experience you run"
+							/>
+							<TextField
+								label="Phone Number"
+								value={phone}
+								disabled
+								readOnly
+								placeholder="Not specified"
+								hint="Phone number cannot be changed"
 							/>
 							<TextField
 								label="Email Address"
 								type="email"
 								value={email}
-								onChange={e => setEmail(e.target.value)}
+								disabled
+								readOnly
 								placeholder="Enter your email address"
+								hint="Email address cannot be changed"
 							/>
 							<SelectField
 								label="Gender"
 								value={gender}
 								onChange={setGender}
-								options={GENDER_OPTIONS}
+								options={[
+									{ value: "MALE", label: "Male" },
+									{ value: "FEMALE", label: "Female" },
+									{ value: "NON_BINARY", label: "Non-binary" },
+									{ value: "PREFER_NOT_TO_SAY", label: "Prefer not to say" },
+								]}
 							/>
 							<SelectField
 								label="Host Type"

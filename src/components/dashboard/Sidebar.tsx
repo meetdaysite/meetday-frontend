@@ -61,7 +61,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 		}
 	}, [profile?.id])
 	const { notifications, init: initNotifs, markRead } = useNotificationStore()
-	const [dismissedNotifIds, setDismissedNotifIds] = useState([])
+	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
 
 	useEffect(() => {
 		initNotifs()

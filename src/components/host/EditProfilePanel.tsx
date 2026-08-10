@@ -135,9 +135,6 @@ export function EditProfilePanel({ onClose, onSuccess }: EditProfilePanelProps) 
 				hostType: hostType || undefined,
 			})
 
-			// Reload user details in AuthStore so UI gets updated names
-			await useAuthStore.getState().reloadUser?.().catch(() => {})
-
 			const fresh = await getHostProfile()
 			setProfile(fresh)
 			toast.success("Profile updated successfully!")

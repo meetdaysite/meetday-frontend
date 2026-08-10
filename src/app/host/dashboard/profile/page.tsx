@@ -108,7 +108,7 @@ export default function ProfilePage() {
 
 			<div className={clsx(
 				"flex-1 min-h-0 w-full overflow-hidden relative",
-				isPanelOpen ? "lg:grid lg:grid-cols-[65%_35%]" : "flex"
+				isPanelOpen ? "md:grid md:grid-cols-[65%_35%]" : "flex"
 			)}>
 				
 				{/* Left Column: Profile details */}

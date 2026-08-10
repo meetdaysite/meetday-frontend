@@ -130,6 +130,7 @@ export type HostProfile = {
 export type UpdateHostProfilePayload = {
 	avatarUrl?: string | null
 	displayName?: string
+	communityName?: string | null
 	email?: string
 	hostType?: "INDIVIDUAL" | "BUSINESS"
 	hostBio?: string
