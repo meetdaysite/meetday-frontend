@@ -3,14 +3,13 @@
 import { create } from "zustand"
 import {
 	signInWithPopup,
-	signInWithPhoneNumber,
+	signInWithCustomToken,
 	GoogleAuthProvider,
-	RecaptchaVerifier,
-	type ConfirmationResult,
 	type User,
 	signOut as firebaseSignOut,
 } from "firebase/auth"
 import { auth } from "@/lib/firebase"
+import { ApiError } from "@/lib/errors"
 import { useBookingStore } from "./bookingStore"
 import { useAttendeeProfileStore } from "./attendeeProfileStore"
 import { useAttendeeSessionStore } from "./attendeeSessionStore"
@@ -19,8 +18,9 @@ import { useHostStore } from "./hostStore"
 import { useDashboardStore } from "./dashboardStore"
 import { useNotificationStore } from "./notificationStore"
 
-let _confirmation: ConfirmationResult | null = null
-let _recaptcha: RecaptchaVerifier | null = null
+// Phone number currently awaiting OTP verification. Module-level (not persisted) — a hard
+// page refresh loses it, same recovery behavior as the old Firebase confirmationResult had.
+let _pendingPhone: string | null = null
 
 // Audited allow-list of identity-scoped keys (see localStorage/sessionStorage.setItem
 // call sites app-wide). Deliberately excludes non-identity UI prefs like
@@ -47,28 +47,28 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
 
 // Firebase/provider errors (e.g. raw REST error bodies like BILLING_NOT_ENABLED) must
 // never reach the user verbatim — map known codes to friendly text, generic otherwise.
+// Our own backend's OTP errors already carry a human-readable message (see ApiError below).
 function toFriendlyAuthError(error: unknown): Error {
+	if (error instanceof ApiError) return new Error(error.message)
 	const code = (error as { code?: string } | null)?.code
 	if (code && AUTH_ERROR_MESSAGES[code]) return new Error(AUTH_ERROR_MESSAGES[code])
 	return new Error("Something went wrong. Please try again.")
 }
 
-// RecaptchaVerifier.clear() doesn't reliably tear down an invisible widget that
-// partially rendered before an error — emptying the container DOM node guarantees
-// the next attempt (without a page reload) gets a genuinely fresh widget.
-function resetRecaptcha(containerId: string) {
-	if (_recaptcha) {
-		try {
-			_recaptcha.clear()
-		} catch {
-			/* widget may already be torn down */
-		}
-		_recaptcha = null
+// Our own OTP endpoints are unauthenticated (@Public) — call them directly with fetch rather
+// than the shared apiClient, to avoid a circular import with axios.ts (which imports this store).
+async function postPublic<T>(path: string, body: unknown): Promise<T> {
+	const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}${path}`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(body),
+	})
+	const json = await res.json().catch(() => ({}))
+	if (!res.ok) {
+		const message = Array.isArray(json?.message) ? String(json.message[0]) : String(json?.message ?? "Something went wrong. Please try again.")
+		throw new ApiError(message, res.status, json)
 	}
-	if (typeof document !== "undefined") {
-		const container = document.getElementById(containerId)
-		if (container) container.innerHTML = ""
-	}
+	return json.data as T
 }
 
 type AuthStore = {
@@ -89,7 +89,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 	setUser: (user) => set({ user }),
 	setAuthLoading: (authLoading) => set({ authLoading }),
 
-	sendOtp: async (phone, recaptchaContainerId) => {
+	sendOtp: async (phone) => {
 		// A different user is already signed in — drop their session and app state
 		// before starting a fresh OTP flow, so no stale profile data survives the switch.
 		const currentUser = auth.currentUser
@@ -97,36 +97,34 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 			await get().signOut()
 		}
 
-		resetRecaptcha(recaptchaContainerId)
-		_recaptcha = new RecaptchaVerifier(auth, recaptchaContainerId, { size: "invisible" })
-
+		_pendingPhone = null
 		try {
-			_confirmation = await signInWithPhoneNumber(auth, phone, _recaptcha)
+			await postPublic("/auth/phone-otp/send", { phone })
+			_pendingPhone = phone
 		} catch (err) {
-			const error = err as { code?: string; message?: string }
-			console.log("Firebase error:", error);
-			console.log("Code:", error.code);
-			console.log("Message:", error.message);
-
-			resetRecaptcha(recaptchaContainerId);
-			throw toFriendlyAuthError(err);
+			throw toFriendlyAuthError(err)
 		}
 	},
 
 	confirmOtp: async (code) => {
-		if (!_confirmation) throw new Error("Your session expired. Please request a new code.")
+		if (!_pendingPhone) throw new Error("Your session expired. Please request a new code.")
 		try {
-			const credential = await _confirmation.confirm(code)
+			const { customToken } = await postPublic<{ customToken: string }>("/auth/phone-otp/verify", {
+				phone: _pendingPhone,
+				otp: code,
+			})
+			const credential = await signInWithCustomToken(auth, customToken)
+			_pendingPhone = null
 			return await credential.user.getIdToken()
 		} catch (err) {
 			throw toFriendlyAuthError(err)
 		}
 	},
 
-	// The pending confirmation lives in a module-level variable, not persisted state —
-	// it's lost on a hard page refresh. Verify pages check this on mount to detect that
-	// and recover instead of letting confirmOtp throw into a dead end.
-	hasPendingOtp: () => _confirmation !== null,
+	// The pending phone lives in a module-level variable, not persisted state — it's lost on
+	// a hard page refresh. Verify pages check this on mount to detect that and recover instead
+	// of letting confirmOtp throw into a dead end.
+	hasPendingOtp: () => _pendingPhone !== null,
 
 	signInWithGoogle: async () => {
 		const provider = new GoogleAuthProvider()

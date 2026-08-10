@@ -12,6 +12,8 @@ import { AuthTabs } from "@/components/auth/AuthTabs"
 import { Button } from "@/components/ui/Button"
 import { Checkbox } from "@/components/ui/Checkbox"
 import { PhoneField } from "@/components/auth/PhoneField"
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton"
+import { useGoogleSignIn } from "@/hooks/useGoogleSignIn"
 import { useAuth } from "@/context/AuthContext"
 import { useAuthSessionStore } from "@/store/authSessionStore"
 import { DEFAULT_COUNTRY, type Country } from "@/lib/countries"
@@ -41,6 +43,7 @@ export default function SignupPage() {
 	const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY)
 	const [loading, setLoading] = useState(false)
 	const { sendOtp } = useAuth()
+	const { loading: googleLoading, handleGoogleSignIn } = useGoogleSignIn("signup", "host")
 	const setSession = useAuthSessionStore((s) => s.setSession)
 	const router = useRouter()
 
@@ -125,6 +128,15 @@ export default function SignupPage() {
 					</Link>
 				</p>
 			</form>
+
+			<div className="flex items-center gap-3 mt-5">
+				<div className="h-px flex-1 bg-border-default" />
+				<span className="text-caption text-text-muted">or</span>
+				<div className="h-px flex-1 bg-border-default" />
+			</div>
+			<div className="mt-5">
+				<GoogleSignInButton onClick={handleGoogleSignIn} loading={googleLoading} />
+			</div>
 
 			{/* Bottom Section: Indicator Dots */}
 			<div className="flex gap-2 justify-center items-center mt-8 mb-2">
