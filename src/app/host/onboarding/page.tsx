@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import Image from "next/image"
 import { useForm, useFormContext, FormProvider, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -22,6 +21,7 @@ import {
 } from "@/lib/api"
 import { useHostStore } from "@/store/hostStore"
 import { useAuthSessionStore, useAuthSessionHydrated } from "@/store/authSessionStore"
+import { useAuth } from "@/context/AuthContext"
 import { AuthShell } from "@/components/auth/AuthShell"
 import { Button } from "@/components/ui/Button"
 import { TextField } from "@/components/ui/TextField"
@@ -1219,6 +1219,7 @@ export default function OnboardingPage() {
 	const [isRegistered, setIsRegistered] = useState(false)
 	const { phone, email: sessionEmail, clearSession } = useAuthSessionStore()
 	const sessionHydrated = useAuthSessionHydrated()
+	const { signOut } = useAuth()
 	const { setProfile } = useHostStore()
 	const router = useRouter()
 
@@ -1375,15 +1376,22 @@ export default function OnboardingPage() {
 				</div>
 			)}
 
-			<Link
-				href="/host/login"
+			<button
+				type="button"
+				onClick={async () => {
+					// Sign out first — otherwise the login page's own "already authenticated"
+					// guard immediately bounces back to a dashboard with no profile yet.
+					clearSession()
+					await signOut()
+					router.replace("/host/login")
+				}}
 				className="inline-flex items-center gap-1.5 text-xs font-bold text-black/50 hover:text-black transition-colors mb-4"
 			>
 				<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
 					<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
 				</svg>
 				Back to login
-			</Link>
+			</button>
 
 			<div className="flex flex-col flex-grow justify-between min-h-[380px] h-full">
 				

@@ -139,6 +139,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
 	signOut: async () => {
 		await firebaseSignOut(auth)
+		// Clear `user` synchronously here rather than waiting for the async
+		// onAuthStateChanged listener to fire — callers that navigate right after
+		// signOut() (e.g. "Back to login") would otherwise race a stale `user` still
+		// being truthy when the destination page's auth guard runs.
+		set({ user: null })
 		useBookingStore.getState().reset()
 		useAttendeeProfileStore.getState().clearProfile()
 		useAttendeeSessionStore.getState().clearSession()
