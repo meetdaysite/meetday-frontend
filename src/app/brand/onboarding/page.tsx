@@ -17,21 +17,25 @@ import { OnboardingLeftPanel } from "@/components/onboarding/OnboardingLeftPanel
 import DangerTriangleSvg from "@/icons/outlined/danger-triangle.svg"
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
-// Minimal brand onboarding: phone is already captured via OTP during signup, so we
-// only need an email address and the brand name here.
 const schema = z.object({
 	email: z.string().email("Enter a valid email address"),
 	brandName: z.string().min(1, "Brand name is required"),
+	phone: z
+		.string()
+		.min(10, "Enter a valid 10-digit phone number")
+		.max(10, "Enter a valid 10-digit phone number")
+		.regex(/^\d+$/, "Phone number must contain only digits"),
 })
 
 type FormValues = z.infer<typeof schema>
 
-function buildBrandRegisterPayload(values: FormValues, phone?: string): BrandRegisterPayload {
+function buildBrandRegisterPayload(values: FormValues, sessionPhone?: string): BrandRegisterPayload {
+	const phone = sessionPhone || (values.phone ? `+91${values.phone}` : undefined)
 	return {
 		firstName: "Brand",
 		lastName: values.brandName,
 		email: values.email,
-		phone: phone || undefined,
+		phone,
 		accountType: "BRAND",
 		brandName: values.brandName,
 	}
@@ -76,6 +80,7 @@ export default function OnboardingPage() {
 		defaultValues: {
 			email: sessionEmail || "",
 			brandName: "",
+			phone: "",
 		},
 	})
 
@@ -162,6 +167,16 @@ export default function OnboardingPage() {
 							{...register("brandName")}
 							error={!!errors.brandName}
 							helperText={errors.brandName?.message}
+							size="md"
+						/>
+
+						<TextField
+							label="Phone number"
+							placeholder="98765 43210"
+							hint="We use this to reach you about your brand account"
+							{...register("phone")}
+							error={!!errors.phone}
+							helperText={errors.phone?.message}
 							size="md"
 						/>
 

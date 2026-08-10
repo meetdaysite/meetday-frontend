@@ -73,6 +73,8 @@ export default function LoginPage() {
 				</p>
 			</div>
 
+			{/* Phone OTP sign-in paused until Fast2SMS DLT registration is approved — Google
+			    Sign-In is the sole login method in the meantime. Uncomment to re-enable.
 			<form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
 				<Controller
 					control={control}
@@ -114,9 +116,17 @@ export default function LoginPage() {
 				<span className="text-caption text-text-muted">or</span>
 				<div className="h-px flex-1 bg-border-default" />
 			</div>
+			*/}
 			<div className="mt-5">
 				<GoogleSignInButton onClick={handleGoogleSignIn} loading={googleLoading} />
 			</div>
+
+			<p className="text-center text-body-sm text-text-secondary mt-4">
+				New to meetday?{" "}
+				<Link href="/brand/signup" className="font-medium text-text-link hover:underline">
+					Create an account
+				</Link>
+			</p>
 		</BrandAuthShell>
 	)
 }

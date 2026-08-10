@@ -44,12 +44,13 @@ import DuotoneShieldCheckSvg from "@/icons/duotone/shield-check.svg"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
 
 
-function buildRegisterPayload(values: FormValues, phone?: string): RegisterPayload {
+function buildRegisterPayload(values: FormValues, sessionPhone?: string): RegisterPayload {
+	const phone = sessionPhone || (values.phone ? `+91${values.phone}` : undefined)
 	return {
 		firstName: values.firstName,
 		lastName: values.lastName,
 		email: values.email,
-		phone: phone || undefined,
+		phone,
 		accountType: "HOST",
 		hostType: values.accountType === "Individual" ? "INDIVIDUAL" : "BUSINESS",
 		displayName: `${values.firstName} ${values.lastName}`.trim() || undefined,
@@ -96,6 +97,11 @@ const schema = z.object({
 	accountType: z.enum(["Individual", "Business"]).refine(v => !!v, "Select an option"),
 	email: z.string().email("Enter a valid email address"),
 	// Step 2
+	phone: z
+		.string()
+		.min(10, "Enter a valid 10-digit phone number")
+		.max(10, "Enter a valid 10-digit phone number")
+		.regex(/^\d+$/, "Phone number must contain only digits"),
 	displayName: z.string().optional(),
 	bio: z.string().optional(),
 	tagline: z.string().optional(),
@@ -162,7 +168,7 @@ const STEP_FIELDS: (keyof FormValues)[][] = [
 */
 const STEP_FIELDS: (keyof FormValues)[][] = [
 	["accountType"],
-	["firstName", "lastName", "communityName", "email", "categoryIds"],
+	["firstName", "lastName", "communityName", "email", "phone", "categoryIds"],
 ]
 
 // Commented out original STEP_BUTTON_LABELS config
@@ -1142,6 +1148,15 @@ function StepTwo({ isEmailReadOnly, categories }: { isEmailReadOnly: boolean; ca
 				helperText={errors.communityName?.message}
 				size="md"
 			/>
+			<TextField
+				label="Phone number"
+				placeholder="98765 43210"
+				hint="We use this to reach you about your hosting account"
+				{...register("phone")}
+				error={!!errors.phone}
+				helperText={errors.phone?.message}
+				size="md"
+			/>
 			<Controller
 				control={control}
 				name="gender"
@@ -1283,6 +1298,7 @@ export default function OnboardingPage() {
 			lastName: "",
 			accountType: undefined,
 			email: sessionEmail || "",
+			phone: "",
 			displayName: "",
 			bio: "",
 			tagline: "",

@@ -85,10 +85,12 @@ export default function LoginPage() {
 					Log In
 				</h1>
 				<p className="text-body-sm text-text-secondary mt-2">
-					Welcome back! Enter your phone number to sign in.
+					Welcome back! Sign in with Google to continue.
 				</p>
 			</div>
 
+			{/* Phone OTP sign-in paused until Fast2SMS DLT registration is approved — Google
+			    Sign-In is the sole login method in the meantime. Uncomment to re-enable.
 			<form className="flex flex-col gap-5 mt-2" onSubmit={handleSubmit(onSubmit)}>
 				<Controller
 					control={control}
@@ -131,9 +133,17 @@ export default function LoginPage() {
 				<span className="text-caption text-text-muted">or</span>
 				<div className="h-px flex-1 bg-border-default" />
 			</div>
+			*/}
 			<div className="mt-5">
 				<GoogleSignInButton onClick={handleGoogleSignIn} loading={googleLoading} />
 			</div>
+
+			<p className="text-center text-body-sm text-text-secondary mt-4">
+				New to Meetday?{" "}
+				<Link href="/host/signup" className="font-semibold text-text-link hover:underline">
+					Create an account
+				</Link>
+			</p>
 
 			{/* Bottom Section: Indicator Dots */}
 			<div className="flex gap-2 justify-center items-center mt-8 mb-2">

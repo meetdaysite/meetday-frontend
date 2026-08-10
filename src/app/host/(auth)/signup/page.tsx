@@ -88,10 +88,12 @@ export default function SignupPage() {
 					Create Account
 				</h1>
 				<p className="text-body-sm text-text-secondary mt-2">
-					First time here? Set up your account and start hosting!
+					First time here? Sign up with Google to start hosting!
 				</p>
 			</div>
 
+			{/* Phone OTP signup paused until Fast2SMS DLT registration is approved — Google
+			    Sign-In is the sole signup method in the meantime. Uncomment to re-enable.
 			<form className="flex flex-col gap-5 mt-2" onSubmit={handleSubmit(onSubmit)}>
 				<Controller
 					control={control}
@@ -134,9 +136,17 @@ export default function SignupPage() {
 				<span className="text-caption text-text-muted">or</span>
 				<div className="h-px flex-1 bg-border-default" />
 			</div>
+			*/}
 			<div className="mt-5">
 				<GoogleSignInButton onClick={handleGoogleSignIn} loading={googleLoading} />
 			</div>
+
+			<p className="text-center text-body-sm text-text-secondary mt-4">
+				Already have an account?{" "}
+				<Link href="/host/login" className="font-semibold text-text-link hover:underline">
+					Log in
+				</Link>
+			</p>
 
 			{/* Bottom Section: Indicator Dots */}
 			<div className="flex gap-2 justify-center items-center mt-8 mb-2">

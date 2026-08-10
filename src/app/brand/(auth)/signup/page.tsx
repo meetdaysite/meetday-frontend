@@ -77,6 +77,8 @@ export default function SignupPage() {
 				</p>
 			</div>
 
+			{/* Phone OTP signup paused until Fast2SMS DLT registration is approved — Google
+			    Sign-In is the sole signup method in the meantime. Uncomment to re-enable.
 			<form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
 				<Controller
 					control={control}
@@ -157,9 +159,57 @@ export default function SignupPage() {
 				<span className="text-caption text-text-muted">or</span>
 				<div className="h-px flex-1 bg-border-default" />
 			</div>
-			<div className="mt-5">
-				<GoogleSignInButton onClick={handleGoogleSignIn} loading={googleLoading} />
+			*/}
+			<div className="flex flex-col gap-1 mb-4">
+				<Controller
+					control={control}
+					name="agreed"
+					render={({ field }) => (
+						<label className="flex items-start gap-2.5 cursor-pointer">
+							<Checkbox
+								checked={!!field.value}
+								onChange={(checked) => field.onChange(checked || undefined)}
+								size="sm"
+							/>
+							<span className="text-body-sm text-text-secondary leading-snug">
+								I agree to the{" "}
+								<a
+									href="https://www.meetday.ai/terms"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="font-medium text-text-link hover:underline"
+								>
+									Terms of service
+								</a>{" "}
+								and{" "}
+								<a
+									href="https://www.meetday.ai/privacy"
+									target="_blank"
+									rel="noopener noreferrer"
+									className="font-medium text-text-link hover:underline"
+								>
+									Privacy Policy
+								</a>
+							</span>
+						</label>
+					)}
+				/>
 			</div>
+			<div>
+				<GoogleSignInButton
+					onClick={handleGoogleSignIn}
+					loading={googleLoading}
+					disabled={!agreed}
+					label={!agreed ? "Agree to terms to continue" : "Continue with Google"}
+				/>
+			</div>
+
+			<p className="text-center text-body-sm text-text-secondary mt-4">
+				Already have an account?{" "}
+				<Link href="/brand/login" className="font-medium text-text-link hover:underline">
+					Log in
+				</Link>
+			</p>
 		</BrandAuthShell>
 	)
 }

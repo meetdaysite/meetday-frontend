@@ -3,6 +3,7 @@
 interface GoogleSignInButtonProps {
 	onClick: () => void
 	loading?: boolean
+	disabled?: boolean
 	label?: string
 }
 
@@ -17,12 +18,12 @@ function GoogleLogo() {
 	)
 }
 
-export function GoogleSignInButton({ onClick, loading, label = "Continue with Google" }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({ onClick, loading, disabled, label = "Continue with Google" }: GoogleSignInButtonProps) {
 	return (
 		<button
 			type="button"
 			onClick={onClick}
-			disabled={loading}
+			disabled={loading || disabled}
 			className="w-full flex items-center justify-center gap-2.5 h-(--size-action-md) px-4 rounded-action border border-border-default bg-surface-card text-label-sm font-medium text-text-primary hover:bg-surface-card-muted transition-colors duration-(--duration-120) disabled:opacity-60"
 		>
 			<GoogleLogo />
