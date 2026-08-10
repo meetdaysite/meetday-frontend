@@ -35,6 +35,22 @@ function CheckIcon({ done }: { done: boolean }) {
 	return <Icon as={ClockCircleSvg} size="sm" color="muted" className="shrink-0" />
 }
 
+// A burst of profile fetches right after registration (onboarding's own fetch + this layout's)
+// can trip the backend's rate limiter (429) — retry a couple of times with backoff before
+// surfacing the scary "Failed to load profile" screen for what's really just a transient blip.
+async function getHostProfileWithRetry(): Promise<HostProfile> {
+	const delays = [500, 1500]
+	for (const delay of delays) {
+		try {
+			return await getHostProfile()
+		} catch (e) {
+			if (!(e instanceof ApiError && e.statusCode === 429)) throw e
+			await new Promise(r => setTimeout(r, delay))
+		}
+	}
+	return getHostProfile()
+}
+
 function UnderReviewScreen({
 	status,
 	profile,
@@ -211,7 +227,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		let cancelled = false
 		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setProfileError(false)
-		getHostProfile()
+		getHostProfileWithRetry()
 			.then(p => {
 				if (cancelled) return
 				setProfile(p)
