@@ -1,36 +1,36 @@
 "use client"
 
-import Image from "next/image"
 import { Icon } from "@/components/ui/Icon"
-import type { ActivatedCommunity } from "./ActivateCommunityModal"
-import { getCategories, type Category } from "@/lib/api"
-import { useState, useEffect } from "react"
+import type { HostCommunityProfile } from "@/lib/api"
 import UploadSvg from "@/icons/outlined/upload.svg"
+import clsx from "clsx"
 
 interface CommunityProfileDetailsPanelProps {
-	community: ActivatedCommunity
+	community: HostCommunityProfile
+	socialLinks?: {
+		instagram?: string
+		linkedin?: string
+		youtube?: string
+		portfolio?: string
+	}
 	onEdit: () => void
 	onClose: () => void
 }
 
+const STATUS_CONFIG: Record<HostCommunityProfile["approvalStatus"], { label: string; className: string }> = {
+	APPROVED: { label: "Live to brands", className: "bg-green-50 border-green-600 text-green-800" },
+	PENDING: { label: "Pending admin approval", className: "bg-amber-50 border-amber-500 text-amber-800" },
+	REJECTED: { label: "Rejected — needs changes", className: "bg-red-50 border-red-500 text-red-700" },
+	SUSPENDED: { label: "Suspended", className: "bg-black/5 border-black/30 text-black/60" },
+}
+
 export function CommunityProfileDetailsPanel({
 	community,
+	socialLinks,
 	onEdit,
 	onClose,
 }: CommunityProfileDetailsPanelProps) {
-	const [categories, setCategories] = useState<Category[]>([])
-	const logoUrl = community.logo ? URL.createObjectURL(community.logo) : null
-
-	useEffect(() => {
-		getCategories().then(setCategories).catch(() => {})
-		return () => {
-			if (logoUrl) URL.revokeObjectURL(logoUrl)
-		}
-	}, [community.logo])
-
-	const communityCategoryNames = community.categoryIds
-		? community.categoryIds.map(id => categories.find(c => c.id === id)?.name).filter(Boolean)
-		: []
+	const statusConfig = STATUS_CONFIG[community.approvalStatus]
 
 	return (
 		<div className="w-full h-full flex flex-col bg-white p-6 overflow-y-auto animate-in fade-in duration-150">
@@ -50,12 +50,20 @@ export function CommunityProfileDetailsPanel({
 
 			{/* Panel Content */}
 			<div className="flex-grow flex flex-col gap-6">
+				{/* Approval status banner */}
+				<div className={clsx("rounded-xl px-3.5 py-2.5 text-xs font-semibold border-2", statusConfig.className)}>
+					{statusConfig.label}
+					{community.approvalStatus === "REJECTED" && community.adminRejectionRemark && (
+						<>: {community.adminRejectionRemark}</>
+					)}
+				</div>
+
 				{/* Top Card Header */}
 				<div className="flex items-center gap-4">
 					<div className="size-16 rounded-xl border-2 border-black overflow-hidden bg-slate-50 flex items-center justify-center shrink-0">
-						{logoUrl ? (
+						{community.logoUrl ? (
 							// eslint-disable-next-line @next/next/no-img-element
-							<img src={logoUrl} alt={community.name} className="size-full object-cover" />
+							<img src={community.logoUrl} alt={community.name} className="size-full object-cover" />
 						) : (
 							<Icon as={UploadSvg} size="md" color="muted" />
 						)}
@@ -89,13 +97,13 @@ export function CommunityProfileDetailsPanel({
 				</div>
 
 				{/* Categories */}
-				{communityCategoryNames.length > 0 && (
+				{community.categories.length > 0 && (
 					<div className="flex flex-col gap-2">
 						<span className="text-xs font-bold text-black/50">Experience Categories</span>
 						<div className="flex flex-wrap gap-1.5">
-							{communityCategoryNames.map((name) => (
-								<span key={name} className="px-2.5 py-1 bg-[#FFC940]/10 text-[#6C32D1] border border-[#6C32D1]/20 rounded-lg text-xs font-bold">
-									{name}
+							{community.categories.map((cat) => (
+								<span key={cat.id} className="px-2.5 py-1 bg-[#FFC940]/10 text-[#6C32D1] border border-[#6C32D1]/20 rounded-lg text-xs font-bold">
+									{cat.name}
 								</span>
 							))}
 						</div>
@@ -106,35 +114,35 @@ export function CommunityProfileDetailsPanel({
 				<div className="flex flex-col gap-2.5 border-t border-black/10 pt-4 mt-2">
 					<span className="text-xs font-bold text-black/50">Links & Socials</span>
 					<div className="flex flex-col gap-2">
-						{community.instagram && (
+						{socialLinks?.instagram && (
 							<div className="flex justify-between items-center text-sm font-semibold">
 								<span className="text-black/40">Instagram</span>
-								<a href={`https://${community.instagram}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline">
-									{community.instagram.replace("instagram.com/", "@")}
+								<a href={`https://${socialLinks.instagram}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline">
+									{socialLinks.instagram.replace("instagram.com/", "@")}
 								</a>
 							</div>
 						)}
-						{community.linkedin && (
+						{socialLinks?.linkedin && (
 							<div className="flex justify-between items-center text-sm font-semibold">
 								<span className="text-black/40">LinkedIn</span>
-								<a href={`https://${community.linkedin}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline truncate max-w-[200px]">
-									{community.linkedin}
+								<a href={`https://${socialLinks.linkedin}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline truncate max-w-[200px]">
+									{socialLinks.linkedin}
 								</a>
 							</div>
 						)}
-						{community.youtube && (
+						{socialLinks?.youtube && (
 							<div className="flex justify-between items-center text-sm font-semibold">
 								<span className="text-black/40">YouTube</span>
-								<a href={`https://${community.youtube}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline truncate max-w-[200px]">
-									{community.youtube}
+								<a href={`https://${socialLinks.youtube}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline truncate max-w-[200px]">
+									{socialLinks.youtube}
 								</a>
 							</div>
 						)}
-						{community.portfolio && (
+						{socialLinks?.portfolio && (
 							<div className="flex justify-between items-center text-sm font-semibold">
 								<span className="text-black/40">Website</span>
-								<a href={`https://${community.portfolio}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline truncate max-w-[200px]">
-									{community.portfolio}
+								<a href={`https://${socialLinks.portfolio}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline truncate max-w-[200px]">
+									{socialLinks.portfolio}
 								</a>
 							</div>
 						)}
@@ -155,3 +163,4 @@ export function CommunityProfileDetailsPanel({
 		</div>
 	)
 }
+

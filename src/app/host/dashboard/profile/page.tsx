@@ -7,8 +7,9 @@ import { Icon } from "@/components/ui/Icon"
 import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
 import { useHostStore } from "@/store/hostStore"
 import { useAuthStore } from "@/store/authStore"
+import { getHostCommunityProfile, type HostCommunityProfile } from "@/lib/api"
 import { HostDetailsPrompt } from "@/components/host/HostDetailsPrompt"
-import { ActivateCommunityModal, type ActivatedCommunity } from "@/components/host/ActivateCommunityModal"
+import { ActivateCommunityModal } from "@/components/host/ActivateCommunityModal"
 import { CommunityProfileDetailsPanel } from "@/components/host/CommunityProfileDetailsPanel"
 import { VerificationsDetailsPanel } from "@/components/host/VerificationsDetailsPanel"
 import { EditProfilePanel } from "@/components/host/EditProfilePanel"
@@ -34,33 +35,17 @@ export default function ProfilePage() {
 	// Right panel states
 	const [showCommunityModal, setShowCommunityModal] = useState(false)
 	const [isEditingCommunity, setIsEditingCommunity] = useState(false)
-	const [community, setCommunity] = useState<ActivatedCommunity | null>(null)
+	const [community, setCommunity] = useState<HostCommunityProfile | null>(null)
 
 	const [showVerificationsModal, setShowVerificationsModal] = useState(false)
 	const [isEditingVerifications, setIsEditingVerifications] = useState(false)
 
 	const [showEditProfileModal, setShowEditProfileModal] = useState(false)
 
-	// Fetch community status from IndexedDB on mount
+	// Fetch community profile status from the backend on mount
 	useEffect(() => {
 		if (profile?.id) {
-			const DB_NAME = "MeetdayProposalDB"
-			const STORE_NAME = "proposals"
-			const COMMUNITY_KEY = "activated_community"
-			const request = indexedDB.open(DB_NAME, 1)
-			request.onsuccess = () => {
-				const db = request.result
-				if (db.objectStoreNames.contains(STORE_NAME)) {
-					const tx = db.transaction(STORE_NAME, "readonly")
-					const store = tx.objectStore(STORE_NAME)
-					const getReq = store.get(`${COMMUNITY_KEY}_${profile.id}`)
-					getReq.onsuccess = () => {
-						if (getReq.result) {
-							setCommunity(getReq.result)
-						}
-					}
-				}
-			}
+			getHostCommunityProfile().then(setCommunity).catch(() => {})
 		}
 	}, [profile?.id])
 
@@ -286,6 +271,7 @@ export default function ProfilePage() {
 								) : (
 									<CommunityProfileDetailsPanel
 										community={community!}
+										socialLinks={profile?.socialLinks}
 										onEdit={() => setIsEditingCommunity(true)}
 										onClose={() => setShowCommunityModal(false)}
 									/>

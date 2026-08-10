@@ -865,9 +865,10 @@ export default function ProposalPage() {
             setProposals((prev) => prev.map((p) => (p.id === stored.id ? stored : p)))
             if (selectedProposal?.id === stored.id) setSelectedProposal(stored)
             toast.success("Proposal submitted for admin approval!")
-        } catch (err) {
+        } catch (err: any) {
             console.error(err)
-            toast.error("Failed to submit proposal.")
+            const errMsg = err?.message || err?.response?.data?.message || "Failed to submit proposal."
+            toast.error(errMsg)
         }
     }
 
@@ -1140,23 +1141,16 @@ export default function ProposalPage() {
         }
     }
 
-    const handleDeactivate = () => {
-        if (confirm("Are you sure you want to deactivate the community? Your sponsorship proposals will remain saved and reappear once you reactivate.")) {
-            const DB_NAME = "MeetdayProposalDB"
-            const STORE_NAME = "proposals"
-            const COMMUNITY_KEY = "activated_community"
-            const request = indexedDB.open(DB_NAME, 1)
-            request.onsuccess = () => {
-                const db = request.result
-                if (db.objectStoreNames.contains(STORE_NAME)) {
-                    const tx = db.transaction(STORE_NAME, "readwrite")
-                    const store = tx.objectStore(STORE_NAME)
-                    store.delete(`${COMMUNITY_KEY}_${hostId}`)
-                }
-            }
+    const handleDeactivate = async () => {
+        if (!confirm("Are you sure you want to deactivate the community? Your sponsorship proposals will remain saved and reappear once you reactivate.")) return
+        try {
+            await deactivateHostCommunityProfile()
             setCommunity(null)
             setSelectedProposal(null)
             toast.success("Community deactivated.")
+        } catch (err) {
+            console.error(err)
+            toast.error("Failed to deactivate community.")
         }
     }
 

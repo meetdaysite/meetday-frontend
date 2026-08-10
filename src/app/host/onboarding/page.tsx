@@ -131,9 +131,7 @@ const schema = z.object({
 	yearsOfExperience: z.coerce.number().optional(),
 	totalEventsHosted: z.coerce.number().optional(),
 	categoryIds: z.array(z.string()).min(1, "Select at least one category"),
-	// Commented out original fields and made them optional
-	// operatingCities: z.array(z.string()).min(1, "Add at least one city"),
-	operatingCities: z.array(z.string()).optional(),
+	operatingCities: z.array(z.string()).min(1, "Add at least one city"),
 	portfolioLinks: z.array(z.string()).optional(),
 	// Step 5
 	// Commented out original fields and made them optional
@@ -168,7 +166,7 @@ const STEP_FIELDS: (keyof FormValues)[][] = [
 */
 const STEP_FIELDS: (keyof FormValues)[][] = [
 	["accountType"],
-	["firstName", "lastName", "communityName", "email", "phone", "categoryIds"],
+	["firstName", "lastName", "communityName", "email", "phone", "categoryIds", "operatingCities"],
 ]
 
 // Commented out original STEP_BUTTON_LABELS config
@@ -1111,8 +1109,20 @@ function StepTwo({ isEmailReadOnly, categories }: { isEmailReadOnly: boolean; ca
 	const {
 		register,
 		control,
+		getValues,
+		setValue,
 		formState: { errors },
 	} = useFormContext<FormValues>()
+	const [cityInput, setCityInput] = useState("")
+
+	function addCity() {
+		const trimmed = cityInput.trim()
+		if (!trimmed) return
+		const current = getValues("operatingCities") ?? []
+		if (current.includes(trimmed)) { setCityInput(""); return }
+		setValue("operatingCities", [...current, trimmed])
+		setCityInput("")
+	}
 
 	const genderOptions = [
 		{ value: "MALE", label: "Male" },
@@ -1229,6 +1239,61 @@ function StepTwo({ isEmailReadOnly, categories }: { isEmailReadOnly: boolean; ca
 				)}
 				{errors.categoryIds && (
 					<p className="text-caption text-text-danger">{errors.categoryIds.message}</p>
+				)}
+			</div>
+			<div className="flex flex-col gap-2">
+				<div className="flex items-center justify-between">
+					<p className="text-label-sm font-semibold text-text-primary">Operating cities</p>
+					<span className="text-caption text-text-muted">Add at least one</span>
+				</div>
+				<div className="flex gap-2">
+					<TextField
+						placeholder="e.g. Mumbai"
+						value={cityInput}
+						onChange={e => setCityInput((e.target as HTMLInputElement).value)}
+						onKeyDown={(e: React.KeyboardEvent) => {
+							if (e.key === "Enter") { e.preventDefault(); addCity() }
+						}}
+						size="md"
+						className="flex-1"
+					/>
+					<button
+						type="button"
+						onClick={addCity}
+						className="px-4 rounded-input border border-border-default bg-surface-canvas text-label-sm font-semibold text-text-primary hover:bg-action-secondary-hover transition-colors"
+					>
+						Add
+					</button>
+				</div>
+				<Controller
+					control={control}
+					name="operatingCities"
+					render={({ field }) => {
+						const cities = field.value ?? []
+						if (!cities.length) return <></>
+						return (
+							<div className="flex flex-wrap gap-2 mt-1">
+								{cities.map(city => (
+									<span
+										key={city}
+										className="flex items-center gap-1.5 px-3 py-1 rounded-avatar border border-border-default bg-surface-canvas text-label-sm text-text-primary"
+									>
+										{city}
+										<button
+											type="button"
+											onClick={() => field.onChange(cities.filter(c => c !== city))}
+											className="text-text-muted hover:text-text-primary transition-colors leading-none"
+										>
+											×
+										</button>
+									</span>
+								))}
+							</div>
+						)
+					}}
+				/>
+				{errors.operatingCities && (
+					<p className="text-caption text-text-danger">{errors.operatingCities.message}</p>
 				)}
 			</div>
 		</div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { useDashboardStore } from "@/store/dashboardStore"
@@ -115,13 +116,14 @@ export default function DashboardWelcomePage() {
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
 							Set up ticket types, dates, venue details, and invite your community to a brand new unforgettable experience.
 						</p>
-						<Link
-							href="/host/dashboard/create"
-							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
+						<button
+							type="button"
+							onClick={() => toast.info("Hosting experiences is coming soon — stay tuned!")}
+							className="w-full py-3 bg-black/10 text-black/40 border-[3px] border-black/20 rounded-2xl font-black text-center text-xs tracking-wider cursor-not-allowed flex items-center justify-center gap-2 select-none"
 						>
 							LIST EXPERIENCE
 							<span className="text-base font-bold">➔</span>
-						</Link>
+						</button>
 					</div>
 				</div>
 

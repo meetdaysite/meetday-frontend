@@ -5,6 +5,7 @@ import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import clsx from "clsx"
+import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
 import type { ComponentType, SVGProps } from "react"
@@ -25,7 +26,7 @@ type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 const NAV_ITEMS_TOP = [
 	{ label: "Dashboard", href: "/host/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "My Sponsorships", href: "/host/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
-	{ label: "My Experiences", href: "/host/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg },
+	{ label: "My Experiences", href: "/host/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg, disabled: true },
 ]
 
 const NAV_ITEMS_BOTTOM = [
@@ -77,8 +78,22 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 
 			{/* Navigation Top Items */}
 			<nav className="flex-1 px-4 flex flex-col gap-1 mt-1">
-				{NAV_ITEMS_TOP.map(({ label, href, outlined: Outlined, filled: Filled }) => {
+				{NAV_ITEMS_TOP.map(({ label, href, outlined: Outlined, filled: Filled, disabled }) => {
 					const isActive = href === "/host/dashboard" ? pathname === href : pathname.startsWith(href)
+					if (disabled) {
+						return (
+							<button
+								key={href}
+								type="button"
+								onClick={() => toast.info("Hosting experiences is coming soon — stay tuned!")}
+								className="flex items-center gap-2.5 px-4 py-2 rounded-2xl text-sm font-normal text-white/50 cursor-not-allowed"
+							>
+								<Icon as={Outlined} size="md" className="text-white/50 shrink-0" />
+								<span className="flex-1 text-left">{label}</span>
+								<span className="text-[9px] font-black uppercase tracking-wider bg-white/15 px-1.5 py-0.5 rounded">Soon</span>
+							</button>
+						)
+					}
 					return (
 						<Link
 							key={href}

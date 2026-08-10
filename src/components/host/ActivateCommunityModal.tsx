@@ -4,64 +4,25 @@ import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
-import { getCategories, updateHostProfile, type Category } from "@/lib/api"
+import {
+	getCategories,
+	updateHostProfile,
+	getHostCommunityProfile,
+	activateHostCommunityProfile,
+	getUploadUrl,
+	type Category,
+	type HostCommunityProfile,
+} from "@/lib/api"
 import UploadSvg from "@/icons/outlined/upload.svg"
 import clsx from "clsx"
 
-// ─── IndexedDB Setup ─────────────────────────────────────────────────────────
-const DB_NAME = "MeetdayProposalDB"
-const STORE_NAME = "proposals"
-const COMMUNITY_KEY = "activated_community"
+// Re-exported so existing imports elsewhere (ActivatedCommunity) keep working.
+export type ActivatedCommunity = HostCommunityProfile
 
-export interface ActivatedCommunity {
-	name: string
-	about: string
-	logo: File | Blob | null
-	logoName: string
-	size: string
-	avgGuestCount: string
-	experiencesPerYear: string
-	categoryIds: string[]
-	instagram?: string
-	linkedin?: string
-	youtube?: string
-	portfolio?: string
-	activatedAt: string
-}
-
-function initDB(): Promise<IDBDatabase> {
-	return new Promise((resolve, reject) => {
-		const request = indexedDB.open(DB_NAME, 1)
-		request.onerror = () => reject(request.error)
-		request.onsuccess = () => resolve(request.result)
-		request.onupgradeneeded = () => {
-			request.result.createObjectStore(STORE_NAME)
-		}
-	})
-}
-
-function saveCommunity(community: ActivatedCommunity, hostId: string): Promise<ActivatedCommunity> {
-	return initDB().then((db) => {
-		return new Promise<ActivatedCommunity>((resolve, reject) => {
-			const transaction = db.transaction(STORE_NAME, "readwrite")
-			const store = transaction.objectStore(STORE_NAME)
-			const request = store.put(community, `${COMMUNITY_KEY}_${hostId}`)
-			request.onerror = () => reject(request.error)
-			request.onsuccess = () => resolve(community)
-		})
-	})
-}
-
-function getCommunity(hostId: string): Promise<ActivatedCommunity | null> {
-	return initDB().then((db) => {
-		return new Promise<ActivatedCommunity | null>((resolve, reject) => {
-			const transaction = db.transaction(STORE_NAME, "readonly")
-			const store = transaction.objectStore(STORE_NAME)
-			const request = store.get(`${COMMUNITY_KEY}_${hostId}`)
-			request.onerror = () => reject(request.error)
-			request.onsuccess = () => resolve(request.result || null)
-		})
-	})
+async function uploadLogoAndGetKey(file: File): Promise<string> {
+	const { url, key } = await getUploadUrl({ context: "SPONSORSHIP_MEDIA", contentType: file.type })
+	await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
+	return key
 }
 
 interface ActivateCommunityModalProps {
@@ -86,7 +47,7 @@ export function ActivateCommunityModal({
 	inline = false,
 }: ActivateCommunityModalProps) {
 	const [categories, setCategories] = useState<Category[]>([])
-	const [community, setCommunity] = useState<ActivatedCommunity | null>(null)
+	const [community, setCommunity] = useState<HostCommunityProfile | null>(null)
 
 	// Form fields
 	const [communityName, setCommunityName] = useState("")
@@ -101,37 +62,38 @@ export function ActivateCommunityModal({
 	const [linkedin, setLinkedin] = useState("")
 	const [youtube, setYoutube] = useState("")
 	const [portfolio, setPortfolio] = useState("")
+	const [submitting, setSubmitting] = useState(false)
 
 	const logoInputRef = useRef<HTMLInputElement>(null)
 
 	// Fetch categories & existing community on mount
 	useEffect(() => {
 		getCategories().then(setCategories).catch(() => {})
-		getCommunity(hostId).then((existing) => {
-			if (existing) {
-				setCommunity(existing)
-				setCommunityName(existing.name)
-				setAboutCommunity(existing.about)
-				setCommunitySize(existing.size)
-				setAvgGuestCount(existing.avgGuestCount)
-				setExperiencesPerYear(existing.experiencesPerYear)
-				setCategoryIds(existing.categoryIds)
-				setInstagram(existing.instagram || "")
-				setLinkedin(existing.linkedin || "")
-				setYoutube(existing.youtube || "")
-				setPortfolio(existing.portfolio || "")
-				if (existing.logo) {
-					setLogoFile(existing.logo as File)
-					setLogoPreviewUrl(URL.createObjectURL(existing.logo))
+		getHostCommunityProfile()
+			.then((existing) => {
+				if (existing) {
+					setCommunity(existing)
+					setCommunityName(existing.name)
+					setAboutCommunity(existing.about)
+					setCommunitySize(existing.size)
+					setAvgGuestCount(existing.avgGuestCount)
+					setExperiencesPerYear(existing.experiencesPerYear)
+					setCategoryIds(existing.categories.map((c) => c.id))
+					setLogoPreviewUrl(existing.logoUrl)
+					setInstagram(profileInstagram)
+					setLinkedin(profileLinkedin)
+					setYoutube(profileYoutube)
+					setPortfolio(profilePortfolio)
+				} else {
+					setInstagram(profileInstagram)
+					setLinkedin(profileLinkedin)
+					setYoutube(profileYoutube)
+					setPortfolio(profilePortfolio)
 				}
-			} else {
-				setInstagram(profileInstagram)
-				setLinkedin(profileLinkedin)
-				setYoutube(profileYoutube)
-				setPortfolio(profilePortfolio)
-			}
-		})
-	}, [hostId, profileInstagram, profileLinkedin, profileYoutube, profilePortfolio])
+			})
+			.catch(() => {})
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [hostId])
 
 	// Handle Logo change
 	const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,7 +120,7 @@ export function ActivateCommunityModal({
 		}
 	}
 
-	const handleActivationSubmit = (e: React.FormEvent) => {
+	const handleActivationSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 
 		if (!communityName.trim()) {
@@ -169,7 +131,7 @@ export function ActivateCommunityModal({
 			toast.error("About the community description is required.")
 			return
 		}
-		if (!logoFile) {
+		if (!logoFile && !community?.logoKey) {
 			toast.error("Logo image is required.")
 			return
 		}
@@ -194,41 +156,43 @@ export function ActivateCommunityModal({
 			return
 		}
 
-		const communityData: ActivatedCommunity = {
-			name: communityName,
-			about: aboutCommunity,
-			logo: logoFile,
-			logoName: logoFile.name,
-			size: communitySize,
-			avgGuestCount: avgGuestCount,
-			experiencesPerYear: experiencesPerYear,
-			categoryIds: categoryIds,
-			instagram: instagram.trim() || undefined,
-			linkedin: linkedin.trim() || undefined,
-			youtube: youtube.trim() || undefined,
-			portfolio: portfolio.trim() || undefined,
-			activatedAt: community?.activatedAt || new Date().toISOString(),
-		}
+		setSubmitting(true)
+		try {
+			const logoKey = logoFile ? await uploadLogoAndGetKey(logoFile) : community!.logoKey
 
-		saveCommunity(communityData, hostId)
-			.then(async (saved) => {
-				onSuccess(saved)
-				try {
-					await updateHostProfile({
-						socialLinks: {
-							instagram: instagram.trim() || undefined,
-							linkedin: linkedin.trim() || undefined,
-							youtube: youtube.trim() || undefined,
-							portfolio: portfolio.trim() || undefined,
-						},
-					})
-				} catch {}
-				toast.success(community ? "Community details updated!" : "Community activated successfully!")
-				onClose()
+			const saved = await activateHostCommunityProfile({
+				name: communityName.trim(),
+				about: aboutCommunity.trim(),
+				logoKey,
+				size: communitySize.trim(),
+				avgGuestCount: avgGuestCount.trim(),
+				experiencesPerYear: experiencesPerYear.trim(),
+				categoryIds,
 			})
-			.catch(() => {
-				toast.error("Failed to activate community.")
-			})
+
+			try {
+				await updateHostProfile({
+					socialLinks: {
+						instagram: instagram.trim() || undefined,
+						linkedin: linkedin.trim() || undefined,
+						youtube: youtube.trim() || undefined,
+						portfolio: portfolio.trim() || undefined,
+					},
+				})
+			} catch {}
+
+			onSuccess(saved)
+			toast.success(
+				community
+					? "Community details updated — pending admin re-approval."
+					: "Community submitted for admin approval!",
+			)
+			onClose()
+		} catch {
+			toast.error("Failed to activate community.")
+		} finally {
+			setSubmitting(false)
+		}
 	}
 
 	const content = (
@@ -253,6 +217,23 @@ export function ActivateCommunityModal({
 
 			{/* Modal Body (Scrollable) */}
 			<form onSubmit={handleActivationSubmit} className="flex-1 pr-1 flex flex-col gap-4">
+
+				{community && (
+					<div className={clsx(
+						"rounded-xl px-3.5 py-2.5 text-xs font-semibold border-2",
+						community.approvalStatus === "APPROVED" && "bg-green-50 border-green-600 text-green-800",
+						community.approvalStatus === "PENDING" && "bg-amber-50 border-amber-500 text-amber-800",
+						community.approvalStatus === "REJECTED" && "bg-red-50 border-red-500 text-red-700",
+						community.approvalStatus === "SUSPENDED" && "bg-black/5 border-black/30 text-black/60",
+					)}>
+						{community.approvalStatus === "APPROVED" && "Live to brands. Editing will send it back for admin re-approval."}
+						{community.approvalStatus === "PENDING" && "Awaiting admin approval — you won't be shown to brands until it's approved."}
+						{community.approvalStatus === "REJECTED" && (
+							<>Rejected by admin{community.adminRejectionRemark ? `: ${community.adminRejectionRemark}` : "."} Update and resubmit for review.</>
+						)}
+						{community.approvalStatus === "SUSPENDED" && "Suspended by admin. Contact support for details."}
+					</div>
+				)}
 				
 				{/* Community Name */}
 				<div className="flex flex-col gap-1.5">
@@ -490,9 +471,10 @@ export function ActivateCommunityModal({
 					</button>
 					<button
 						type="submit"
-						className="bg-[#FFC940] border-[3px] border-black text-black rounded-2xl px-4 py-2 font-bold text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+						disabled={submitting}
+						className="bg-[#FFC940] border-[3px] border-black text-black rounded-2xl px-4 py-2 font-bold text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all disabled:opacity-50 disabled:pointer-events-none"
 					>
-						{community ? "Update Details" : "Activate"}
+						{submitting ? "Saving…" : community ? "Update Details" : "Activate"}
 					</button>
 				</div>
 			</form>
