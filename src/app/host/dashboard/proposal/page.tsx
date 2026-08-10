@@ -450,32 +450,10 @@ export default function ProposalPage() {
         if (!hostId) return
         setLoading(true)
 
-        const loadCommunity = () => {
-            return new Promise((resolve) => {
-                const DB_NAME = "MeetdayProposalDB"
-                const STORE_NAME = "proposals"
-                const COMMUNITY_KEY = "activated_community"
-                const request = indexedDB.open(DB_NAME, 1)
-                request.onerror = () => resolve(null)
-                request.onsuccess = () => {
-                    const db = request.result
-                    if (db.objectStoreNames.contains(STORE_NAME)) {
-                        const tx = db.transaction(STORE_NAME, "readonly")
-                        const store = tx.objectStore(STORE_NAME)
-                        const getReq = store.get(`${COMMUNITY_KEY}_${hostId}`)
-                        getReq.onsuccess = () => resolve(getReq.result || null)
-                        getReq.onerror = () => resolve(null)
-                    } else {
-                        resolve(null)
-                    }
-                }
-            })
-        }
-
-        Promise.all([getProposals(hostId), loadCommunity()])
+        Promise.all([getProposals(hostId), getHostCommunityProfile().catch(() => null)])
             .then(([p, c]) => {
                 setProposals(p)
-                setCommunity(c as any)
+                setCommunity(c)
                 if (urlProposalId) {
                     const found = p.find(item => item.id === urlProposalId)
                     if (found) {

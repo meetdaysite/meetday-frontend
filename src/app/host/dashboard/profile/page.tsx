@@ -43,9 +43,13 @@ export default function ProfilePage() {
 	const [showEditProfileModal, setShowEditProfileModal] = useState(false)
 
 	// Fetch community profile status from the backend on mount
+	const [communityLoading, setCommunityLoading] = useState(true)
 	useEffect(() => {
 		if (profile?.id) {
-			getHostCommunityProfile().then(setCommunity).catch(() => {})
+			getHostCommunityProfile()
+				.then(setCommunity)
+				.catch(() => {})
+				.finally(() => setCommunityLoading(false))
 		}
 	}, [profile?.id])
 
@@ -60,6 +64,7 @@ export default function ProfilePage() {
 	const avatarUrl = profile?.avatarUrl
 
 	const handleCommunityProfileClick = () => {
+		if (communityLoading) return
 		setShowCommunityModal(true)
 		setShowVerificationsModal(false)
 		setShowEditProfileModal(false)
@@ -179,7 +184,10 @@ export default function ProfilePage() {
 						{/* Community Profile */}
 						<div 
 							onClick={handleCommunityProfileClick}
-							className="flex items-center justify-between py-4 border-b border-black/10 cursor-pointer hover:bg-black/[0.01]"
+							className={clsx(
+								"flex items-center justify-between py-4 border-b border-black/10 hover:bg-black/[0.01]",
+								communityLoading ? "cursor-wait opacity-60" : "cursor-pointer",
+							)}
 						>
 							<span className="font-heading font-black text-base text-black">Community Profile</span>
 							<div className="flex items-center gap-3">
@@ -187,7 +195,7 @@ export default function ProfilePage() {
 									type="button"
 									className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
 								>
-									{community ? "VIEW DETAILS" : "ACTIVATE NOW"}
+									{communityLoading ? "LOADING…" : community ? "VIEW DETAILS" : "ACTIVATE NOW"}
 								</button>
 								<span className="text-black/50 font-black text-lg">&gt;</span>
 							</div>
