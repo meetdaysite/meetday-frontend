@@ -10,7 +10,7 @@ import { toast } from "sonner"
 import { ApiError, getApiErrorMessage } from "@/lib/errors"
 import { registerBrand, getBrandProfile, type BrandRegisterPayload } from "@/lib/api"
 import { useHostStore } from "@/store/hostStore"
-import { useAuthSessionStore } from "@/store/authSessionStore"
+import { useAuthSessionStore, useAuthSessionHydrated } from "@/store/authSessionStore"
 import { Button } from "@/components/ui/Button"
 import { TextField } from "@/components/ui/TextField"
 import { Icon } from "@/components/ui/Icon"
@@ -61,16 +61,19 @@ const PANEL_CONFIG = {
 export default function OnboardingPage() {
 	const [loadingMessage, setLoadingMessage] = useState<string | null>(null)
 	const { phone, email: sessionEmail, clearSession } = useAuthSessionStore()
+	const sessionHydrated = useAuthSessionHydrated()
 	const { setProfile } = useHostStore()
 	const router = useRouter()
 
-	// Guard: only reachable from signup flow
+	// Guard: only reachable from signup flow — wait for the persisted session to hydrate
+	// before checking, otherwise a hard refresh reads stale empty defaults and bounces
+	// an in-progress signup back to /brand/signup.
 	useEffect(() => {
+		if (!sessionHydrated) return
 		if (!phone && !sessionEmail) {
 			router.replace("/brand/signup")
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [])
+	}, [sessionHydrated, phone, sessionEmail, router])
 
 	const {
 		register,

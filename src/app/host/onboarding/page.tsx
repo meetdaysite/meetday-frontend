@@ -21,7 +21,7 @@ import {
 	type RegisterPayload,
 } from "@/lib/api"
 import { useHostStore } from "@/store/hostStore"
-import { useAuthSessionStore } from "@/store/authSessionStore"
+import { useAuthSessionStore, useAuthSessionHydrated } from "@/store/authSessionStore"
 import { AuthShell } from "@/components/auth/AuthShell"
 import { Button } from "@/components/ui/Button"
 import { TextField } from "@/components/ui/TextField"
@@ -1218,16 +1218,19 @@ export default function OnboardingPage() {
 	const [categories, setCategories] = useState<Category[]>([])
 	const [isRegistered, setIsRegistered] = useState(false)
 	const { phone, email: sessionEmail, clearSession } = useAuthSessionStore()
+	const sessionHydrated = useAuthSessionHydrated()
 	const { setProfile } = useHostStore()
 	const router = useRouter()
 
-	// Guard: only reachable from signup flow
+	// Guard: only reachable from signup flow — wait for the persisted session to hydrate
+	// before checking, otherwise a hard refresh reads stale empty defaults and bounces
+	// an in-progress signup back to /host/signup.
 	useEffect(() => {
+		if (!sessionHydrated) return
 		if (!phone && !sessionEmail) {
 			router.replace("/host/signup")
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [])
+	}, [sessionHydrated, phone, sessionEmail, router])
 
 	// Fetch categories on mount (public endpoint)
 	useEffect(() => {
