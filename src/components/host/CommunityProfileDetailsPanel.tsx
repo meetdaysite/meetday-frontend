@@ -7,6 +7,7 @@ import clsx from "clsx"
 
 interface CommunityProfileDetailsPanelProps {
 	community: HostCommunityProfile
+	operatingCities?: string[]
 	socialLinks?: {
 		instagram?: string
 		linkedin?: string
@@ -26,6 +27,7 @@ const STATUS_CONFIG: Record<HostCommunityProfile["approvalStatus"], { label: str
 
 export function CommunityProfileDetailsPanel({
 	community,
+	operatingCities,
 	socialLinks,
 	onEdit,
 	onClose,
@@ -104,6 +106,20 @@ export function CommunityProfileDetailsPanel({
 							{community.categories.map((cat) => (
 								<span key={cat.id} className="px-2.5 py-1 bg-[#FFC940]/10 text-[#6C32D1] border border-[#6C32D1]/20 rounded-lg text-xs font-bold">
 									{cat.name}
+								</span>
+							))}
+						</div>
+					</div>
+				)}
+
+				{/* Operating Cities */}
+				{operatingCities && operatingCities.length > 0 && (
+					<div className="flex flex-col gap-2">
+						<span className="text-xs font-bold text-black/50">Operating Cities</span>
+						<div className="flex flex-wrap gap-1.5">
+							{operatingCities.map((city) => (
+								<span key={city} className="px-2.5 py-1 bg-slate-50 text-black/70 border border-black/10 rounded-lg text-xs font-bold">
+									{city}
 								</span>
 							))}
 						</div>

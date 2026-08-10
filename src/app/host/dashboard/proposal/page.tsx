@@ -469,6 +469,18 @@ export default function ProposalPage() {
             })
     }, [hostId, urlProposalId])
 
+    // Poll community approval status while pending, so the create-proposal button
+    // unlocks automatically once an admin approves it — no manual refresh needed.
+    useEffect(() => {
+        if (!hostId || !community || community.approvalStatus === "APPROVED") return
+        const interval = setInterval(() => {
+            getHostCommunityProfile()
+                .then((c) => setCommunity(c))
+                .catch(() => {})
+        }, 15000)
+        return () => clearInterval(interval)
+    }, [hostId, community])
+
     useEffect(() => {
         let cancelled = false
         let objectUrl: string | null = null
@@ -600,7 +612,19 @@ export default function ProposalPage() {
         }
     }, [displayDetails, docxRenderer, pptxViewerClass, docBlob])
 
+    const isCommunityApproved = community?.approvalStatus === "APPROVED"
+
     const openProposalForm = (p?: StoredProposal) => {
+        // Editing an already-created proposal is always allowed; only NEW proposal
+        // creation is gated on the community profile being admin-approved.
+        if (!p && !isCommunityApproved) {
+            toast.error(
+                community?.approvalStatus === "REJECTED"
+                    ? "Your community profile was rejected by admin. Update it and wait for re-approval before creating a proposal."
+                    : "Your community profile is still pending admin approval. You'll be able to create a proposal once it's approved.",
+            )
+            return
+        }
         if (p) {
             const data = ((activeTab === "UNDER_REVIEW" || p.status === "UNDER_REVIEW") && p.pendingRevision) 
                 ? p.pendingRevision 
@@ -1720,9 +1744,13 @@ export default function ProposalPage() {
                                         {proposals.length > 0 && (
                                             <button
                                                 onClick={() => openProposalForm()}
-                                                className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer"
+                                                title={!isCommunityApproved ? "Your community profile must be admin-approved first" : undefined}
+                                                className={clsx(
+                                                    "text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer",
+                                                    isCommunityApproved ? "bg-[#EE2C2C]" : "bg-black/30",
+                                                )}
                                             >
-                                                + CREATE NEW
+                                                {isCommunityApproved ? "+ CREATE NEW" : "PENDING APPROVAL"}
                                             </button>
                                         )}
                                     </div>
@@ -1917,9 +1945,13 @@ export default function ProposalPage() {
                                         </p>
                                         <button
                                             onClick={() => openProposalForm()}
-                                            className="bg-[#EE2C2C] text-white text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer"
+                                            title={!isCommunityApproved ? "Your community profile must be admin-approved first" : undefined}
+                                            className={clsx(
+                                                "text-white text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer",
+                                                isCommunityApproved ? "bg-[#EE2C2C]" : "bg-black/30",
+                                            )}
                                         >
-                                            GET STARTED
+                                            {isCommunityApproved ? "GET STARTED" : "PENDING ADMIN APPROVAL"}
                                         </button>
                                     </div>
                                 )}
@@ -1953,6 +1985,7 @@ export default function ProposalPage() {
                                          profileLinkedin={profile?.socialLinks?.linkedin || ""}
                                          profileYoutube={profile?.socialLinks?.youtube || ""}
                                          profilePortfolio={profile?.socialLinks?.portfolio || ""}
+                                         profileOperatingCities={profile?.operatingCities || []}
                                          onClose={() => setShowActivateModal(false)}
                                          onSuccess={(saved) => {
                                              setCommunity(saved as any)

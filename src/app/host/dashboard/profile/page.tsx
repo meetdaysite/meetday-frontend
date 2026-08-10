@@ -263,6 +263,7 @@ export default function ProfilePage() {
 										profileLinkedin={profile.socialLinks?.linkedin || ""}
 										profileYoutube={profile.socialLinks?.youtube || ""}
 										profilePortfolio={profile.socialLinks?.portfolio || ""}
+										profileOperatingCities={profile.operatingCities || []}
 										onClose={() => {
 											if (!community) {
 												setShowCommunityModal(false)
@@ -279,6 +280,7 @@ export default function ProfilePage() {
 								) : (
 									<CommunityProfileDetailsPanel
 										community={community!}
+										operatingCities={profile?.operatingCities}
 										socialLinks={profile?.socialLinks}
 										onEdit={() => setIsEditingCommunity(true)}
 										onClose={() => setShowCommunityModal(false)}

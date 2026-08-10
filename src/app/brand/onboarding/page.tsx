@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -139,6 +140,15 @@ export default function OnboardingPage() {
 			{/* Right panel */}
 			<div className="flex-1 overflow-y-auto bg-surface-card flex flex-col">
 				<div className="flex-1 w-full max-w-175 mx-auto px-8 py-8">
+					<Link
+						href="/brand/login"
+						className="inline-flex items-center gap-1.5 text-xs font-bold text-text-tertiary hover:text-text-primary transition-colors mb-4"
+					>
+						<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+						</svg>
+						Back to login
+					</Link>
 					<div className="mb-6">
 						<h1 className="text-heading-md text-text-primary leading-tight">
 							Set up your <span className="text-text-brand">brand profile</span>

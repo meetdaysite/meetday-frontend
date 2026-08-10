@@ -31,6 +31,7 @@ interface ActivateCommunityModalProps {
 	profileLinkedin?: string
 	profileYoutube?: string
 	profilePortfolio?: string
+	profileOperatingCities?: string[]
 	onClose: () => void
 	onSuccess: (community: ActivatedCommunity) => void
 	inline?: boolean
@@ -42,6 +43,7 @@ export function ActivateCommunityModal({
 	profileLinkedin = "",
 	profileYoutube = "",
 	profilePortfolio = "",
+	profileOperatingCities = [],
 	onClose,
 	onSuccess,
 	inline = false,
@@ -62,9 +64,18 @@ export function ActivateCommunityModal({
 	const [linkedin, setLinkedin] = useState("")
 	const [youtube, setYoutube] = useState("")
 	const [portfolio, setPortfolio] = useState("")
+	const [operatingCities, setOperatingCities] = useState<string[]>([])
+	const [cityInput, setCityInput] = useState("")
 	const [submitting, setSubmitting] = useState(false)
 
 	const logoInputRef = useRef<HTMLInputElement>(null)
+
+	function addCity() {
+		const trimmed = cityInput.trim()
+		if (!trimmed) return
+		setOperatingCities((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]))
+		setCityInput("")
+	}
 
 	// Fetch categories & existing community on mount
 	useEffect(() => {
@@ -84,11 +95,13 @@ export function ActivateCommunityModal({
 					setLinkedin(profileLinkedin)
 					setYoutube(profileYoutube)
 					setPortfolio(profilePortfolio)
+					setOperatingCities(profileOperatingCities)
 				} else {
 					setInstagram(profileInstagram)
 					setLinkedin(profileLinkedin)
 					setYoutube(profileYoutube)
 					setPortfolio(profilePortfolio)
+					setOperatingCities(profileOperatingCities)
 				}
 			})
 			.catch(() => {})
@@ -155,6 +168,10 @@ export function ActivateCommunityModal({
 			toast.error("Instagram profile link is required.")
 			return
 		}
+		if (operatingCities.length === 0) {
+			toast.error("Add at least one operating city.")
+			return
+		}
 
 		setSubmitting(true)
 		try {
@@ -178,6 +195,7 @@ export function ActivateCommunityModal({
 						youtube: youtube.trim() || undefined,
 						portfolio: portfolio.trim() || undefined,
 					},
+					operatingCities,
 				})
 			} catch {}
 
@@ -397,6 +415,58 @@ export function ActivateCommunityModal({
 									</button>
 								)
 							})}
+						</div>
+					)}
+				</div>
+
+				{/* Operating Cities */}
+				<div className="flex flex-col gap-1.5">
+					<div className="flex items-center justify-between">
+						<label className="text-xs font-bold text-black">Operating cities *</label>
+						<span className="text-[10px] text-black/40">Add at least one</span>
+					</div>
+					<div className="flex items-center gap-2">
+						<input
+							type="text"
+							value={cityInput}
+							onChange={(e) => setCityInput(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") { e.preventDefault(); addCity() }
+							}}
+							placeholder="e.g. Mumbai"
+							className={clsx(
+								"flex-1 h-10 px-4 rounded-xl bg-white text-black outline-none text-sm transition-colors",
+								inline ? "border border-black/15 focus:border-black/35" : "border-2 border-black"
+							)}
+						/>
+						<Button
+							type="button"
+							variant="secondary"
+							size="xs"
+							radius="md"
+							onClick={addCity}
+							className="bg-white border-2 border-black text-black text-[10px] py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all"
+						>
+							Add
+						</Button>
+					</div>
+					{operatingCities.length > 0 && (
+						<div className="flex flex-wrap gap-2 mt-1">
+							{operatingCities.map((city) => (
+								<span
+									key={city}
+									className="flex items-center gap-1.5 px-3 py-1 rounded-full border-2 border-black bg-white text-xs font-bold text-black"
+								>
+									{city}
+									<button
+										type="button"
+										onClick={() => setOperatingCities((prev) => prev.filter((c) => c !== city))}
+										className="text-black/50 hover:text-black transition-colors leading-none"
+									>
+										×
+									</button>
+								</span>
+							))}
 						</div>
 					)}
 				</div>
