@@ -128,6 +128,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
 	signInWithGoogle: async () => {
 		const provider = new GoogleAuthProvider()
+		// Force the account chooser every time — without this, Chrome/Google can silently
+		// re-use a cached/remembered session (no explicit account pick), which is confusing
+		// when testing with multiple accounts and can sign in as the wrong one unnoticed.
+		provider.setCustomParameters({ prompt: "select_account" })
 		const credential = await signInWithPopup(auth, provider)
 		const idToken = await credential.user.getIdToken()
 		return { idToken, email: credential.user.email, displayName: credential.user.displayName }
