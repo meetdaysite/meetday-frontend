@@ -91,14 +91,20 @@ export default function OnboardingPage() {
 				if (!(e instanceof ApiError && e.statusCode === 409)) throw e
 			}
 
+			// A 409 above is only truly "safe to ignore" when it's this same Firebase
+			// identity re-submitting. If the email actually belongs to a different account,
+			// this identity still has no BrandProfile — don't silently push to a dashboard
+			// that will just 404-loop.
 			try {
 				const profile = await getBrandProfile()
 				setProfile(profile)
+				clearSession()
+				router.push("/brand/dashboard")
 			} catch {
-				// profile fetch failure shouldn't block navigation
+				toast.error(
+					"This email is already linked to a different account. Please use a different one, or log in instead.",
+				)
 			}
-			clearSession()
-			router.push("/brand/dashboard")
 		} catch (e) {
 			toast.error(getApiErrorMessage(e))
 		} finally {

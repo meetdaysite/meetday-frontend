@@ -1300,14 +1300,21 @@ export default function OnboardingPage() {
 					if (!(e instanceof ApiError && e.statusCode === 409)) throw e
 				}
 
+				// A 409 above is only truly "safe to ignore" when it's this same Firebase
+				// identity re-submitting. If the email/phone actually belongs to a different
+				// account (e.g. same email already used to register via phone, now signing up
+				// again via Google — a different Firebase UID), this identity still has no
+				// HostProfile — don't silently push to a dashboard that will just 404-loop.
 				try {
 					const profile = await getHostProfile()
 					setProfile(profile)
+					clearSession()
+					router.push("/host/dashboard")
 				} catch {
-					// profile fetch failure shouldn't block navigation
+					toast.error(
+						"This email or phone number is already linked to a different account. Please use a different one, or log in instead.",
+					)
 				}
-				clearSession()
-				router.push("/host/dashboard")
 			} catch (e) {
 				toast.error(getApiErrorMessage(e))
 			} finally {
