@@ -91,18 +91,18 @@ export default function RootPage() {
 						priority 
 					/>
 				</Link>
-				<nav className="flex items-center gap-6 md:gap-8">
+				<nav className="flex items-center gap-3 sm:gap-6 md:gap-8">
 					<a 
 						href="https://meetday.ai" 
 						target="_blank" 
 						rel="noopener noreferrer" 
-						className="text-black font-semibold text-sm hover:text-[#EE2C2C] transition-colors"
+						className="text-black font-semibold text-xs sm:text-sm hover:text-[#EE2C2C] transition-colors"
 					>
 						Our Story
 					</a>
 					<a 
 						href="mailto:info@meetday.ai"
-						className="px-6 py-2.5 bg-[#EE2C2C] text-white border-2 border-black rounded-full font-bold text-sm shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+						className="px-4 sm:px-6 py-2 sm:py-2.5 bg-[#EE2C2C] text-white border-2 border-black rounded-full font-bold text-xs sm:text-sm shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
 					>
 						Contact Us
 					</a>

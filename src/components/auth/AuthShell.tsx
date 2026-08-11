@@ -127,6 +127,19 @@ export function AuthShell({ children, size = "default" }: AuthShellProps) {
 					{/* Scrollable Container inside the card */}
 					<div className="w-full flex-1 overflow-y-auto pr-6 flex flex-col min-h-0">
 						<div className="w-full flex flex-col gap-4 my-auto auth-card-content">
+							{/* Logo visible only on mobile/tablet */}
+							<div className="lg:hidden flex justify-center mb-2">
+								<Link href="/">
+									<Image 
+										src="/assets/brand_logo.svg" 
+										alt="Meetday" 
+										width={120} 
+										height={32} 
+										priority 
+										className="h-8 w-auto"
+									/>
+								</Link>
+							</div>
 							{children}
 						</div>
 					</div>

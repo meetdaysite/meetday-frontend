@@ -1436,7 +1436,7 @@ export default function ProposalPage() {
                                         </div>
 
                                         {/* Date, City */}
-                                        <div className="grid grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                             <div className="flex flex-col gap-1.5">
                                                 <label className="text-xs font-bold text-black">Start Date *</label>
                                                 <input
@@ -1547,7 +1547,7 @@ export default function ProposalPage() {
                                         </div>
 
                                         {/* Age Group, Number of Guests */}
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="flex flex-col gap-1.5">
                                                 <label className="text-xs font-bold text-black">Age Group *</label>
                                                 <input

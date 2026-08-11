@@ -22,8 +22,8 @@ export const metadata: Metadata = {
 	title: "Meetday",
 	description: "The social network that happens in real life.",
 	openGraph: {
-		title: "Meetday",
-		description: "The social network that happens in real life.",
+		title: "meetday.ai",
+		description: "A unified platform for brands and communities to partner.",
 		images: [
 			{
 				url: "/images/Image.png",
@@ -36,8 +36,8 @@ export const metadata: Metadata = {
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Meetday",
-		description: "The social network that happens in real life.",
+		title: "meetday.ai",
+		description: "A unified platform for brands and communities to partner.",
 		images: ["/images/Image.png"],
 	},
 }
