@@ -115,12 +115,18 @@ export default function VerifyPage() {
 					router.replace("/brand/login")
 					return
 				}
-				if (me.role.name !== "BRAND") {
-					await signOut()
-					toast.error(
-						"This phone number is already registered as a different account type. Please use a different number to sign up as a brand.",
-					)
-					router.replace("/brand/login")
+				// One login can hold host, brand, and admin access at once — a different primary
+				// `role` no longer means "wrong account", only the absence of a brand profile does.
+				if (!me.hasBrandAccess) {
+					if (intent === "login") {
+						await signOut()
+						toast.error("No brand account found for this number yet. Please sign up.")
+						router.replace("/brand/signup")
+						return
+					}
+					// Signing up: this identity exists but has no brand profile yet — let them
+					// through to onboarding to attach one.
+					router.push("/brand/onboarding")
 					return
 				}
 			}

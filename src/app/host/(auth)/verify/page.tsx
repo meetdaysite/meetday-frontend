@@ -115,6 +115,7 @@ export default function VerifyPage() {
 
 			const { exists } = await checkPhone(phone)
 
+			let hasHostAccess = false
 			if (exists) {
 				const me = await getAuthMe()
 				if (me.attendeeProfile !== null) {
@@ -123,27 +124,31 @@ export default function VerifyPage() {
 					router.replace("/host/login")
 					return
 				}
+				hasHostAccess = me.hasHostAccess
 			}
 
 			if (intent === "login") {
-				if (exists) {
+				if (hasHostAccess) {
 					const profile = await getHostProfile()
 					setProfile(profile)
 					clearSession()
 					router.push("/host/dashboard")
 				} else {
-					// Firebase sign-in succeeded but no host record exists — don't leave the
-					// user authenticated with no matching profile.
+					// Firebase sign-in succeeded but this identity has no host profile yet — don't
+					// leave the user authenticated with no matching profile.
 					await signOut()
-					toast.error("No account found for this number. Please sign up.")
+					toast.error("No host account found for this number yet. Please sign up.")
 					router.replace("/host/signup")
 				}
 			} else {
-				if (exists) {
+				if (hasHostAccess) {
 					await signOut()
 					toast.error("An account already exists for this number. Please log in.")
 					router.replace("/host/login")
 				} else {
+					// One login can hold host, brand, and admin access at once — this identity
+					// may already exist (e.g. as BRAND or an admin) but just needs a host profile
+					// attached, so let them through to onboarding either way.
 					router.push("/host/onboarding")
 				}
 			}

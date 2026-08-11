@@ -21,7 +21,6 @@ export function useGoogleSignIn(intent: "login" | "signup", app: AppKind) {
 	const { setProfile } = useHostStore()
 	const router = useRouter()
 	const base = `/${app}`
-	const expectedRole = app === "host" ? "HOST" : "BRAND"
 
 	async function handleGoogleSignIn() {
 		setLoading(true)
@@ -37,13 +36,23 @@ export function useGoogleSignIn(intent: "login" | "signup", app: AppKind) {
 			}
 
 			if (me) {
-				if (me.role.name !== expectedRole) {
-					await signOut()
-					toast.error(
-						`This Google account is already registered as a different account type. Please use a different Google account to sign up as a ${app}.`,
-					)
+				// One login can hold host, brand, and admin access at once — a different primary
+				// `role` no longer means "wrong account", only the absence of this app's profile does.
+				const hasAccess = app === "host" ? me.hasHostAccess : me.hasBrandAccess
+
+				if (!hasAccess) {
+					if (intent === "login") {
+						await signOut()
+						toast.error(`No ${app} account found for this Google account yet. Please sign up.`)
+						router.replace(`${base}/signup`)
+						return
+					}
+					// Signing up: this identity exists (e.g. as the other app, or an admin) but has
+					// no profile here yet — let them through to onboarding to attach one.
+					router.push(`${base}/onboarding`)
 					return
 				}
+
 				if (intent === "signup") {
 					await signOut()
 					toast.error("An account already exists for this Google account. Please log in.")
