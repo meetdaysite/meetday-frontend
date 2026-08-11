@@ -201,6 +201,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 	const [sidebarOpen, setSidebarOpen] = useState(false)
 	const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 	const [profileError, setProfileError] = useState(false)
+	const [needsSignup, setNeedsSignup] = useState(false)
 	const { user, authLoading, signOut } = useAuthStore()
 	const { profile, setProfile, clearProfile } = useHostStore()
 	const initNotifications = useNotificationStore(s => s.init)
@@ -227,6 +228,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		let cancelled = false
 		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setProfileError(false)
+		setNeedsSignup(false)
 		getHostProfileWithRetry()
 			.then(p => {
 				if (cancelled) return
@@ -237,18 +239,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 				if (e instanceof ApiError && (e.statusCode === 404 || e.statusCode === 403)) {
 					// 404: never registered at all. 403: this identity is registered (e.g. as BRAND or
 					// an admin) but hasn't completed HOST signup yet — one login can hold host, brand,
-					// and admin access at once, so send them to onboarding to attach a host profile
-					// instead of signing them out. If they're a genuine attendee, send them there instead.
-					// Wait for the attendee-profile fetch to actually settle first — reading it
-					// immediately here raced a still-in-flight fetch and could send a genuine attendee
-					// to /host/onboarding instead of /attendee.
+					// and admin access at once. The onboarding page only works when reached from the
+					// signup flow (it needs session data set during phone/email verification), so
+					// redirecting there directly bounces back to /host/signup which then bounces back
+					// here (already authenticated) — an infinite loop. Show a screen instead. If they're
+					// a genuine attendee, send them there instead.
 					await useAttendeeProfileStore.getState().waitUntilLoaded()
 					if (cancelled) return
 					const meProfile = useAttendeeProfileStore.getState().profile
 					if (meProfile?.attendeeProfile != null) {
 						router.replace("/attendee")
 					} else {
-						router.replace("/host/onboarding")
+						setNeedsSignup(true)
 					}
 				} else {
 					// Don't redirect to /login — the user is still authenticated in Firebase,
@@ -271,7 +273,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 	}, [profile])
 
 	// Show loading while Firebase resolves auth or while profile is being fetched
-	if (authLoading || (!profile && !!user && !profileError)) return <LoadingScreen />
+	if (authLoading || (!profile && !!user && !profileError && !needsSignup)) return <LoadingScreen />
+
+	if (needsSignup) {
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-surface-page px-4">
+				<div className="w-full max-w-md flex flex-col items-center gap-6 py-12 text-center">
+					<h1 className="text-heading-sm text-text-primary font-bold">Complete your Host signup</h1>
+					<p className="text-body-sm text-text-secondary max-w-sm">
+						You&apos;re signed in, but this account hasn&apos;t set up a Host profile yet. Finish signup to
+						access the Host dashboard.
+					</p>
+					<Button
+						variant="primary"
+						onClick={async () => {
+							// Sign out first — otherwise /host/signup's own "already authenticated" guard
+							// immediately bounces back to this dashboard, looping.
+							clearProfile()
+							await signOut()
+							router.replace("/host/signup")
+						}}
+					>
+						Complete Host signup
+					</Button>
+					<button
+						onClick={handleSignOut}
+						className="text-label-sm font-medium text-text-secondary hover:text-text-primary transition-colors underline underline-offset-2"
+					>
+						Sign out
+					</button>
+				</div>
+			</div>
+		)
+	}
 
 	if (profileError) {
 		return (
