@@ -148,12 +148,12 @@ export default function DashboardWelcomePage() {
 				<div className="flex flex-col gap-10 pb-8">
 					{/* Row 1: Approved Sponsorships */}
 					<div className="flex flex-col w-full">
-						<div className="flex items-center justify-between w-full mb-4">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
 							<div>
 								<h2 className="text-xl font-heading font-black text-black">Sponsorship Proposals</h2>
 								<p className="text-xs font-semibold text-black/50 mt-1">View your approved proposals.</p>
 							</div>
-							<Link href="/host/dashboard/proposal" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1">
+							<Link href="/host/dashboard/proposal" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
 								View All Proposals &gt;
 							</Link>
 						</div>
@@ -176,7 +176,7 @@ export default function DashboardWelcomePage() {
 								<p className="text-[11px] font-semibold text-black/40">Submit your first proposal for admin approval to get sponsored.</p>
 							</div>
 						) : (
-							<div className="flex flex-wrap gap-4">
+							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
 								{approvedSponsorships.map((prop) => {
 									const imgUrl = typeof prop.image === "string" ? prop.image : prop.image ? URL.createObjectURL(prop.image) : null
 									const parts = prop.date ? prop.date.split("-") : []
@@ -186,7 +186,7 @@ export default function DashboardWelcomePage() {
 										<Link
 											key={prop.id}
 											href={`/host/dashboard/proposal?proposalId=${prop.id}`}
-											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-col justify-between max-w-[190px] w-full"
+											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-col justify-between w-[220px] shrink-0"
 										>
 											<div>
 												{/* Image */}
@@ -249,12 +249,12 @@ export default function DashboardWelcomePage() {
 
 					{/* Row 2: Upcoming Events / Curated Experiences */}
 					<div className="flex flex-col w-full">
-						<div className="flex items-center justify-between w-full mb-4">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
 							<div>
 								<h2 className="text-xl font-heading font-black text-black">Curated Experiences</h2>
 								<p className="text-xs font-semibold text-black/50 mt-1">Your published or live experiences.</p>
 							</div>
-							<Link href="/host/dashboard/events" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1">
+							<Link href="/host/dashboard/events" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
 								View All Events &gt;
 							</Link>
 						</div>

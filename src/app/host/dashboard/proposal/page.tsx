@@ -207,6 +207,7 @@ export default function ProposalPage() {
 
     // Modal State
     const [showActivateModal, setShowActivateModal] = useState(false)
+    const [showCommunityMobilePanel, setShowCommunityMobilePanel] = useState(false)
     const [communityName, setCommunityName] = useState("")
     const [aboutCommunity, setAboutCommunity] = useState("")
     const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -1707,8 +1708,34 @@ export default function ProposalPage() {
                                     /* State 3: Show list/grid of proposals overview cards styled like My Events */
                                     <div className="flex flex-col gap-6 w-full animate-in fade-in duration-150">
 
+                                        {/* Mobile Community Header */}
+                                        {community && (
+                                            <div 
+                                                onClick={() => setShowCommunityMobilePanel(true)}
+                                                className="sm:hidden flex items-center gap-3 p-3 bg-slate-50 border-[2px] border-black rounded-xl cursor-pointer hover:bg-slate-100 transition-all"
+                                            >
+                                                {communityLogoUrl ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img 
+                                                        src={communityLogoUrl} 
+                                                        alt={community.name} 
+                                                        className="size-8 rounded-lg object-cover border border-black/20 shrink-0" 
+                                                    />
+                                                ) : (
+                                                    <div className="size-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center font-bold text-sm border border-black/20 shrink-0">
+                                                        {community.name.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-[9px] font-bold text-black/50 leading-none">COMMUNITY PROFILE</p>
+                                                    <p className="text-xs font-black text-black truncate mt-1">{community.name}</p>
+                                                </div>
+                                                <span className="text-black/40 text-xs font-bold">➔</span>
+                                            </div>
+                                        )}
+
                                         {/* Status tabs */}
-                                        <div className="flex flex-wrap gap-5 border-b border-black/10 pb-2 mb-4">
+                                        <div className="flex flex-row overflow-x-auto whitespace-nowrap scrollbar-none gap-3 sm:gap-5 border-b border-black/10 pb-2 mb-4 w-full">
                                             {[
                                                 { value: "ALL", label: `ALL (${allCount})` },
                                                 { value: "DRAFT", label: `DRAFT (${draftCount})` },
@@ -1722,7 +1749,7 @@ export default function ProposalPage() {
                                                         key={tab.value}
                                                         onClick={() => setActiveTab(tab.value as any)}
                                                         className={clsx(
-                                                            "text-[10px] font-black uppercase tracking-wider pb-2 relative transition-colors",
+                                                            "text-[8px] sm:text-[10px] font-black uppercase tracking-wider pb-2 relative transition-colors shrink-0",
                                                             isActive ? "text-[#EE2C2C]" : "text-black/40 hover:text-black"
                                                         )}
                                                     >
@@ -1742,7 +1769,7 @@ export default function ProposalPage() {
                                                 </p>
                                             </div>
                                         ) : (
-                                            <div className="flex flex-wrap gap-4">
+                                            <div className="flex flex-row overflow-x-auto sm:flex-wrap sm:overflow-x-visible gap-4 pb-4 sm:pb-0 w-full">
                                                 {filteredProposals.map((p) => {
                                                     const isViewingRevision = activeTab === "UNDER_REVIEW" && p.pendingRevision != null;
                                                     const cardData = isViewingRevision ? p.pendingRevision! : p;
@@ -1757,7 +1784,7 @@ export default function ProposalPage() {
                                                         <div
                                                             key={p.id}
                                                             onClick={() => setSelectedProposal(p)}
-                                                            className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex flex-col justify-between max-w-[160px] w-full"
+                                                            className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex flex-col justify-between w-[220px] shrink-0 sm:w-full sm:shrink sm:max-w-[160px]"
                                                         >
                                                             <div className="relative">
                                                                 {/* Image */}
@@ -1937,6 +1964,40 @@ export default function ProposalPage() {
                      </>
                  )}
             </div>
+
+             {/* Mobile-only Community Profile Drawer */}
+             {showCommunityMobilePanel && community && (
+                 <>
+                     {/* Backdrop */}
+                     <div 
+                         onClick={() => setShowCommunityMobilePanel(false)}
+                         className="sm:hidden fixed inset-0 bg-black/40 z-40 backdrop-blur-xs"
+                     />
+                     {/* Drawer */}
+                     <div className="sm:hidden fixed inset-y-0 right-0 w-full max-w-[380px] bg-white border-l-4 border-black z-50 overflow-y-auto shadow-modal flex flex-col animate-in slide-in-from-right duration-300">
+                         <div className="flex justify-between items-center p-4 border-b border-black/10 shrink-0">
+                             <h3 className="font-heading font-black text-black text-base">Community Profile</h3>
+                             <button 
+                                 onClick={() => setShowCommunityMobilePanel(false)}
+                                 className="text-black font-extrabold text-sm p-2"
+                             >
+                                 ✕
+                             </button>
+                         </div>
+                         <div className="flex-1 min-h-0">
+                             <CommunityProfileDetailsPanel
+                                 community={community}
+                                 operatingCities={profile?.operatingCities}
+                                 socialLinks={profile?.socialLinks}
+                                 onEdit={() => {
+                                     setShowCommunityMobilePanel(false)
+                                     openActivationModal()
+                                 }}
+                             />
+                         </div>
+                     </div>
+                 </>
+             )}
         </div>
     )
 }

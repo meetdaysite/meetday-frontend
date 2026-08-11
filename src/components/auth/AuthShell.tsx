@@ -119,27 +119,29 @@ export function AuthShell({ children, size = "default" }: AuthShellProps) {
 			</div>
 
 			{/* ── Right Side Panel: Form Card ── */}
-			<div className="flex-1 flex items-center justify-center px-6 py-6 lg:px-10 lg:py-10 z-10 min-h-screen">
+			<div className="flex-1 flex flex-col items-center justify-center px-6 py-6 lg:px-10 lg:py-10 z-10 min-h-screen">
 				
+				{/* Logo visible only on mobile/tablet on the red background */}
+				<div className="lg:hidden flex justify-center mb-6 z-20">
+					<Link href="/">
+						<Image 
+							src="/assets/brand_logo.svg" 
+							alt="Meetday" 
+							width={130} 
+							height={36} 
+							priority 
+							style={{ filter: "brightness(0) invert(1)" }} 
+							className="h-8 w-auto"
+						/>
+					</Link>
+				</div>
+
 				{/* The Onboarding Form Card */}
-				<div className="w-full lg:w-[35vw] max-w-[500px] min-w-[320px] bg-white border-[4px] border-black rounded-[36px] pl-8 pr-2 py-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative flex flex-col h-[85vh]">
+				<div className="w-full lg:w-[35vw] max-w-[500px] min-w-[320px] bg-white border-[4px] border-black rounded-[36px] pl-8 pr-2 py-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative flex flex-col h-auto max-h-[85vh] lg:h-[85vh]">
 					
 					{/* Scrollable Container inside the card */}
 					<div className="w-full flex-1 overflow-y-auto pr-6 flex flex-col min-h-0">
 						<div className="w-full flex flex-col gap-4 my-auto auth-card-content">
-							{/* Logo visible only on mobile/tablet */}
-							<div className="lg:hidden flex justify-center mb-2">
-								<Link href="/">
-									<Image 
-										src="/assets/brand_logo.svg" 
-										alt="Meetday" 
-										width={120} 
-										height={32} 
-										priority 
-										className="h-8 w-auto"
-									/>
-								</Link>
-							</div>
 							{children}
 						</div>
 					</div>

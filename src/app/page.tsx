@@ -221,13 +221,13 @@ export default function RootPage() {
 				</p>
 
 				{/* Cards Container */}
-				<div className="w-full max-w-3xl px-6 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mt-8 md:mt-10 mb-12 z-20">
+				<div className="w-full max-w-3xl px-3 sm:px-6 grid grid-cols-2 gap-3 md:gap-8 mt-8 md:mt-10 mb-12 z-20">
 					
 					{/* Hosts Card */}
-					<div className="bg-white border-[4px] border-black rounded-[36px] p-4 md:p-5 flex flex-col items-center shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
+					<div className="bg-white border-[2px] md:border-[4px] border-black rounded-[20px] md:rounded-[36px] p-2.5 md:p-5 flex flex-col items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
 						
 						{/* Image */}
-						<div className="relative w-full aspect-[4/3] border-[3px] border-black rounded-2xl overflow-hidden bg-slate-100 group">
+						<div className="relative w-full aspect-[4/3] border-[2px] md:border-[3px] border-black rounded-lg md:rounded-2xl overflow-hidden bg-slate-100 group">
 							<Image
 								src="/images/host.png"
 								alt="Hosts"
@@ -238,23 +238,23 @@ export default function RootPage() {
 							/>
 						</div>
 						
-						<p className="mt-4 text-black font-semibold text-center text-sm sm:text-base leading-relaxed flex-grow max-w-sm">
+						<p className="mt-2 md:mt-4 text-black font-semibold text-center text-[9px] sm:text-sm md:text-base leading-relaxed flex-grow max-w-sm">
 							Create experiences, pitch sponsorship proposals, and turn your community into a sustainable business.
 						</p>
 						
 						<Link 
 							href="/host"
-							className="w-full mt-5 py-3.5 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-bold text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+							className="w-full mt-3 md:mt-5 py-2 md:py-3.5 bg-[#EE2C2C] text-white border-[2px] md:border-[3px] border-black rounded-xl md:rounded-2xl font-bold text-center text-xs md:text-base shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
 						>
 							Hosts
 						</Link>
 					</div>
 
 					{/* Brands Card */}
-					<div className="bg-white border-[4px] border-black rounded-[36px] p-4 md:p-5 flex flex-col items-center shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
+					<div className="bg-white border-[2px] md:border-[4px] border-black rounded-[20px] md:rounded-[36px] p-2.5 md:p-5 flex flex-col items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
 						
 						{/* Image */}
-						<div className="relative w-full aspect-[4/3] border-[3px] border-black rounded-2xl overflow-hidden bg-slate-100 group">
+						<div className="relative w-full aspect-[4/3] border-[2px] md:border-[3px] border-black rounded-lg md:rounded-2xl overflow-hidden bg-slate-100 group">
 							<Image
 								src="/images/brand.png"
 								alt="Brands"
@@ -265,17 +265,43 @@ export default function RootPage() {
 							/>
 						</div>
 						
-						<p className="mt-4 text-black font-semibold text-center text-sm sm:text-base leading-relaxed flex-grow max-w-sm">
+						<p className="mt-2 md:mt-4 text-black font-semibold text-center text-[9px] sm:text-sm md:text-base leading-relaxed flex-grow max-w-sm">
 							Launch campaigns and tap into active IRL communities to market and distribute your products.
 						</p>
 						
 						<button 
 							disabled
-							className="w-full mt-5 py-3.5 bg-black/10 text-black/40 border-[3px] border-black/20 rounded-2xl font-bold text-center cursor-not-allowed select-none"
+							className="w-full mt-3 md:mt-5 py-2 md:py-3.5 bg-black/10 text-black/40 border-[2px] md:border-[3px] border-black/20 rounded-xl md:rounded-2xl font-bold text-center text-[9px] sm:text-xs md:text-base cursor-not-allowed select-none"
 						>
-							Brands (Coming Soon)
+							Brands (Soon)
 						</button>
 					</div>
+				</div>
+
+				{/* Mobile Pills/Badges list (Visible only on mobile, placed haphazardly, tilted and floating) */}
+				<div className="md:hidden w-full relative h-[210px] overflow-hidden mb-28 z-20">
+					{[
+						{ text: "RAISE SPONSORSHIP", bg: "#F8EFE2", textColor: "#EE2C2C", pos: "left-[4%] top-[8%]", rot: "rotate-[-6deg]", anim: "animate-float-1" },
+						{ text: "CREATE EXPERIENCES", bg: "#FFD9D9", textColor: "#000000", pos: "right-[4%] top-[18%]", rot: "rotate-[5deg]", anim: "animate-float-2" },
+						{ text: "BACKED BY DATA", bg: "#F8EFE2", textColor: "#EE2C2C", pos: "left-[36%] top-[38%]", rot: "rotate-[-3deg]", anim: "animate-float-3" },
+						{ text: "VERIFIED USERS", bg: "#FFCE29", textColor: "#000000", pos: "left-[6%] top-[48%]", rot: "rotate-[8deg]", anim: "animate-float-4" },
+						{ text: "ENGAGE GEN Z AUDIENCE", bg: "#FFD9D9", textColor: "#000000", pos: "right-[6%] top-[54%]", rot: "rotate-[-8deg]", anim: "animate-float-1" },
+						{ text: "OPTIMIZE BUDGETS", bg: "#F8EFE2", textColor: "#EE2C2C", pos: "left-[36%] top-[70%]", rot: "rotate-[-5deg]", anim: "animate-float-4" },
+						{ text: "TRUSTED PAYMENTS", bg: "#FFD9D9", textColor: "#000000", pos: "left-[4%] top-[72%]", rot: "rotate-[4deg]", anim: "animate-float-3" },
+						{ text: "GROW COMMUNITY", bg: "#FFCE29", textColor: "#000000", pos: "right-[4%] top-[80%]", rot: "rotate-[6deg]", anim: "animate-float-2" }
+					].map((b, idx) => (
+						<div 
+							key={idx}
+							className={`absolute ${b.pos} ${b.rot} ${b.anim} transition-transform duration-300`}
+						>
+							<span 
+								className="px-3 py-1.5 border-[2px] border-black rounded-full font-bold text-[9px] tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase whitespace-nowrap block"
+								style={{ backgroundColor: b.bg, color: b.textColor }}
+							>
+								{b.text}
+							</span>
+						</div>
+					))}
 				</div>
 
 				{/* Custom Bottom Wave red background wrapper */}
