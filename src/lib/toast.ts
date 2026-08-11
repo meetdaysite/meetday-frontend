@@ -9,6 +9,6 @@ export const toast = {
 		useToastStore.getState().addToast(msg, undefined, "info")
 	},
 	error: (msg: string) => {
-		sonnerToast.error(msg)
+		useToastStore.getState().addToast(msg, undefined, "error")
 	}
 }

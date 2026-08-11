@@ -247,7 +247,7 @@ export function ActivateCommunityModal({
 						community.approvalStatus === "REJECTED" && "bg-red-50 border-red-500 text-red-700",
 						community.approvalStatus === "SUSPENDED" && "bg-black/5 border-black/30 text-black/60",
 					)}>
-						{community.approvalStatus === "APPROVED" && "Live to brands. Editing will send it back for admin re-approval."}
+						{community.approvalStatus === "APPROVED" && "Live to Brands. Editing will send it back for admin re-approval."}
 						{community.approvalStatus === "PENDING" && "Awaiting admin approval — you won't be shown to brands until it's approved."}
 						{community.approvalStatus === "REJECTED" && (
 							<>Rejected by admin{community.adminRejectionRemark ? `: ${community.adminRejectionRemark}` : "."} Update and resubmit for review.</>

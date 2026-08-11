@@ -9,7 +9,7 @@ import { updateHostProfile, getHostProfile, getUploadUrl, updateUserDetails } fr
 import { getApiErrorMessage } from "@/lib/errors"
 import { Icon } from "@/components/ui/Icon"
 import UserSvg from "@/icons/outlined/user.svg"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 import clsx from "clsx"
 
 // ─── Select Field Helper ──────────────────────────────────────────────────────

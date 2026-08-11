@@ -269,12 +269,12 @@ export default function RootPage() {
 							Launch campaigns and tap into active IRL communities to market and distribute your products.
 						</p>
 						
-						<Link 
-							href="/brand/login"
-							className="w-full mt-5 py-3.5 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-bold text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+						<button 
+							disabled
+							className="w-full mt-5 py-3.5 bg-black/10 text-black/40 border-[3px] border-black/20 rounded-2xl font-bold text-center cursor-not-allowed select-none"
 						>
-							Brands
-						</Link>
+							Brands (Coming Soon)
+						</button>
 					</div>
 				</div>
 

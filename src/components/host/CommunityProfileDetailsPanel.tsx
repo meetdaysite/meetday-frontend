@@ -19,7 +19,7 @@ interface CommunityProfileDetailsPanelProps {
 }
 
 const STATUS_CONFIG: Record<HostCommunityProfile["approvalStatus"], { label: string; className: string }> = {
-	APPROVED: { label: "Live to brands", className: "bg-green-50 border-green-600 text-green-800" },
+	APPROVED: { label: "Live to Brands", className: "bg-green-50 border-green-600 text-green-800" },
 	PENDING: { label: "Pending admin approval", className: "bg-amber-50 border-amber-500 text-amber-800" },
 	REJECTED: { label: "Rejected — needs changes", className: "bg-red-50 border-red-500 text-red-700" },
 	SUSPENDED: { label: "Suspended", className: "bg-black/5 border-black/30 text-black/60" },

@@ -688,7 +688,11 @@ export default function ProposalPage() {
                 return exists ? prev.map((p) => (p.id === stored.id ? stored : p)) : [...prev, stored]
             })
             setUploadProgress(100)
+            const wasEditing = !!selectedProposal
             resetProposalForm()
+            if (wasEditing) {
+                setSelectedProposal(stored)
+            }
             toast.success("Proposal details saved successfully!")
         } catch (err: any) {
             console.error(err)
@@ -1114,7 +1118,7 @@ export default function ProposalPage() {
                                 </p>
                             </div>
                         </div>
-                    ) : selectedProposal && !isEditingInPlace ? (
+                    ) : selectedProposal && !showProposalForm ? (
                         /* Proposal Details Section - rendered inline instead of a modal! */
                         <div className="flex flex-col gap-6 animate-in fade-in duration-150">
                             {/* Header */}
@@ -1149,8 +1153,7 @@ export default function ProposalPage() {
                                         size="sm"
                                         radius="pill"
                                         onClick={() => {
-                                            handleEditDetails()
-                                            setShowProjectModal(true)
+                                            openProposalForm(selectedProposal)
                                         }}
                                     >
                                         Edit Details
@@ -1224,7 +1227,15 @@ export default function ProposalPage() {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
                                             <div>
                                                 <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Date & City</p>
-                                                <p className="text-sm font-bold text-text-primary mt-0">{displayDetails?.date} • {displayDetails?.city}</p>
+                                                <p className="text-sm font-bold text-text-primary mt-0">
+                                                    {(() => {
+                                                        const startParts = displayDetails?.date ? displayDetails.date.split("-") : [];
+                                                        const startDisplay = startParts.length === 3 ? `${startParts[2]}/${startParts[1]}/${startParts[0]}` : displayDetails?.date;
+                                                        const endParts = displayDetails?.endDate ? displayDetails.endDate.split("-") : [];
+                                                        const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : displayDetails?.endDate;
+                                                        return endDisplay && endDisplay !== startDisplay ? `${startDisplay} - ${endDisplay}` : startDisplay;
+                                                    })()} • {displayDetails?.city}
+                                                </p>
                                             </div>
                                             <div>
                                                 <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue</p>
@@ -1391,7 +1402,7 @@ export default function ProposalPage() {
 
                                         {/* Logo/Image Upload */}
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-xs font-bold text-black">Logo *</label>
+                                            <label className="text-xs font-bold text-black">Project Logo *</label>
                                             <div className="flex items-center gap-4">
                                                 {projImagePreview ? (
                                                     // eslint-disable-next-line @next/next/no-img-element
@@ -1419,7 +1430,7 @@ export default function ProposalPage() {
                                                     >
                                                         Choose Image
                                                     </button>
-                                                    <span className="text-[10px] text-black/40">JPEG, JPG, PNG accepted. Max 5MB.</span>
+                                                    <span className="text-[10px] text-black/40">JPEG, JPG, PNG accepted (1:1 ratio, max 5MB).</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -1585,9 +1596,11 @@ export default function ProposalPage() {
                                                         Choose Document
                                                     </button>
                                                     <span className="text-[10px] text-black/40">PDF accepted. Max 10MB.</span>
-                                                    {projDoc && (
+                                                    {projDoc ? (
                                                         <span className="text-xs font-semibold text-black truncate max-w-xs">{projDoc.name}</span>
-                                                    )}
+                                                    ) : selectedProposal?.docName ? (
+                                                        <span className="text-xs font-semibold text-black truncate max-w-xs">{selectedProposal.docName}</span>
+                                                    ) : null}
                                                 </div>
                                             </div>
                                         </div>
@@ -1729,28 +1742,26 @@ export default function ProposalPage() {
                                                 </p>
                                             </div>
                                         ) : (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                                            <div className="flex flex-wrap gap-4">
                                                 {filteredProposals.map((p) => {
                                                     const isViewingRevision = activeTab === "UNDER_REVIEW" && p.pendingRevision != null;
                                                     const cardData = isViewingRevision ? p.pendingRevision! : p;
                                                     const imgUrl = typeof cardData.image === "string" ? cardData.image : cardData.image ? URL.createObjectURL(cardData.image) : null;
-                                                    
                                                     // Format date from YYYY-MM-DD to DD/MM/YYYY
                                                     const parts = cardData.date ? cardData.date.split("-") : [];
                                                     const startDisplay = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : cardData.date;
                                                     const endParts = cardData.endDate ? cardData.endDate.split("-") : [];
                                                     const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : cardData.endDate;
                                                     const displayDate = endDisplay && endDisplay !== startDisplay ? `${startDisplay} - ${endDisplay}` : startDisplay;
-
                                                     return (
                                                         <div
                                                             key={p.id}
                                                             onClick={() => setSelectedProposal(p)}
-                                                            className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex flex-col justify-between max-w-[280px] w-full"
+                                                            className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex flex-col justify-between max-w-[160px] w-full"
                                                         >
                                                             <div className="relative">
                                                                 {/* Image */}
-                                                                <div className="relative aspect-square overflow-hidden bg-slate-50 border-b-[3px] border-black rounded-t-[21px]">
+                                                                <div className="relative aspect-square overflow-hidden bg-slate-50 border-b-[3px] border-black rounded-t-[17px]">
                                                                     {imgUrl ? (
                                                                         // eslint-disable-next-line @next/next/no-img-element
                                                                         <img
@@ -1832,20 +1843,22 @@ export default function ProposalPage() {
                                                                 </div>
 
                                                                 {/* Content */}
-                                                                <div className="p-4 flex flex-col gap-1">
-                                                                    <h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">{cardData.name}</h3>
-                                                                    <p className="text-[10px] font-bold text-black/50">{cardData.city} • {cardData.venue}</p>
-                                                                    <p className="text-[10px] font-semibold text-black/70 truncate mt-1">{cardData.about}</p>
+                                                                <div className="p-3 flex flex-col gap-1">
+                                                                    <h3 className="font-heading font-black text-sm text-black truncate group-hover:text-[#EE2C2C] transition-colors">{cardData.name}</h3>
+                                                                    <p className="text-[9px] font-bold text-black/50">{cardData.city} • {cardData.venue}</p>
+                                                                    <p className="text-[9px] font-semibold text-black/70 line-clamp-3 mt-0.5">{cardData.about}</p>
                                                                 </div>
                                                             </div>
 
                                                             {/* Footer info */}
-                                                            <div className="p-4 pt-0">
-                                                                <div className="flex items-center gap-2 mt-1">
-                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                                                            <div className="p-3 pt-0 flex flex-col gap-2 mt-0.5">
+                                                                <div>
+                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[9px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
                                                                         {displayDate}
                                                                     </span>
-                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                                                                </div>
+                                                                <div>
+                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[9px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
                                                                         {cardData.guestCount} Guests
                                                                     </span>
                                                                 </div>
@@ -1924,312 +1937,6 @@ export default function ProposalPage() {
                      </>
                  )}
             </div>
-            {/* ─── Project Details & PDF Modal ────────────────────────────────────────── */}
-            {showProjectModal && selectedProposal && isEditingInPlace && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
-                    <form
-                        onSubmit={handleSaveInPlace}
-                        className="bg-surface-card rounded-panel border border-border-default shadow-floating w-full max-w-2xl p-6 my-8 max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-150"
-                    >
-                        {/* Modal Header */}
-                        <div className="flex justify-between items-center pb-4 mb-4 border-b border-border-default shrink-0">
-                            <div>
-                                <h2 className="text-heading-xs font-semibold text-text-primary">Edit Project Details</h2>
-                                <p className="text-caption text-text-tertiary">Modify project overview fields</p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setIsEditingInPlace(false)}
-                                className="text-text-secondary hover:text-text-primary size-8 rounded-full flex items-center justify-center hover:bg-surface-card-muted transition-colors"
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        {/* Modal Body */}
-                        <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4">
-                            {/* Name */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Project Name *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={projName}
-                                    onChange={(e) => setProjName(e.target.value)}
-                                    placeholder="Project Name"
-                                    className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                />
-                            </div>
-
-                            {/* About */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">About the Project *</label>
-                                <textarea
-                                    required
-                                    value={projAbout}
-                                    onChange={(e) => setProjAbout(e.target.value)}
-                                    placeholder="Describe the project..."
-                                    rows={3}
-                                    className="p-3 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors resize-y"
-                                />
-                            </div>
-
-                            {/* Image picker */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Project Image *</label>
-                                <div className="flex items-center gap-4">
-                                    {projImagePreview ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={projImagePreview} alt="Preview" className="size-16 rounded-xl object-cover border border-border-default" />
-                                    ) : projectImageUrl ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={projectImageUrl} alt="Current" className="size-16 rounded-xl object-cover border border-border-default" />
-                                    ) : (
-                                        <div className="size-16 rounded-xl bg-surface-card-muted border border-dashed border-border-default flex items-center justify-center text-text-tertiary text-xs">
-                                            No Image
-                                        </div>
-                                    )}
-                                    <div className="flex flex-col gap-1">
-                                        <input
-                                            ref={projImageInputRef}
-                                            type="file"
-                                            accept="image/jpeg,image/jpg,image/png"
-                                            className="hidden"
-                                            onChange={handleProjImageChange}
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="secondary"
-                                            size="xs"
-                                            radius="md"
-                                            onClick={() => projImageInputRef.current?.click()}
-                                        >
-                                            Change Image
-                                        </Button>
-                                        <span className="text-[10px] text-text-tertiary">JPEG, JPG, PNG accepted. Max 5MB.</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Date, City */}
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">Start Date *</label>
-                                    <input
-                                        type="date"
-                                        required
-                                        value={projDate}
-                                        onChange={(e) => setProjDate(e.target.value)}
-                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">End Date *</label>
-                                    <input
-                                        type="date"
-                                        required
-                                        min={projDate || undefined}
-                                        value={projEndDate}
-                                        onChange={(e) => setProjEndDate(e.target.value)}
-                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">City *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={projCity}
-                                        onChange={(e) => setProjCity(e.target.value)}
-                                        placeholder="City"
-                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Venue */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Venue *</label>
-                                <AddressAutocompleteInput
-                                    value={projVenue}
-                                    error={false}
-                                    onChange={setProjVenue}
-                                    onPlaceSelect={(fields) => {
-                                        setProjVenue(fields.venueName || fields.fullAddress)
-                                        if (fields.city) {
-                                            setProjCity(fields.city)
-                                        }
-                                    }}
-                                    placeholder="Venue"
-                                />
-                            </div>
-
-                            {/* Audience Profile (Multiple Submission Input Box) */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-label-sm font-semibold text-text-primary">Audience Profile *</label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={newAudience}
-                                        onChange={(e) => setNewAudience(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter") {
-                                                e.preventDefault()
-                                                const trimmed = newAudience.trim()
-                                                if (trimmed && !projAudience.includes(trimmed)) {
-                                                    setProjAudience([...projAudience, trimmed])
-                                                    setNewAudience("")
-                                                }
-                                            }
-                                        }}
-                                        placeholder="e.g. Tech Founders (press Add or Enter)"
-                                        className="flex-1 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        size="sm"
-                                        radius="md"
-                                        onClick={() => {
-                                            const trimmed = newAudience.trim()
-                                            if (trimmed && !projAudience.includes(trimmed)) {
-                                                setProjAudience([...projAudience, trimmed])
-                                                setNewAudience("")
-                                            }
-                                        }}
-                                    >
-                                        Add
-                                    </Button>
-                                </div>
-                                {projAudience.length > 0 ? (
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                        {projAudience.map((aud, idx) => (
-                                            <span
-                                                key={idx}
-                                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-badge text-label-sm font-medium bg-surface-brand-soft text-text-brand border border-border-brand animate-in fade-in duration-100"
-                                            >
-                                                {aud}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setProjAudience(projAudience.filter((_, i) => i !== idx))}
-                                                    className="size-4 hover:bg-surface-brand-hover rounded-full flex items-center justify-center text-text-brand text-xs font-bold transition-colors"
-                                                >
-                                                    ✕
-                                                </button>
-                                            </span>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-[11px] text-text-tertiary">Add at least one targeted audience profile.</p>
-                                )}
-                            </div>
-
-                            {/* Age Group, Guests */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">Age Group *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={projAgeGroup}
-                                        onChange={(e) => setProjAgeGroup(e.target.value)}
-                                        placeholder="Age Group"
-                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">Guests Count *</label>
-                                    <input
-                                        type="number"
-                                        required
-                                        min="1"
-                                        value={projGuestCount}
-                                        onChange={(e) => setProjGuestCount(e.target.value)}
-                                        placeholder="Guests"
-                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Sponsor Price Tiers */}
-                            <div className="flex flex-col gap-2.5">
-                                <div className="flex justify-between items-center">
-                                    <label className="text-label-sm font-semibold text-text-primary">Sponsor Pricing *</label>
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        size="xs"
-                                        radius="md"
-                                        onClick={() => setSponsorPrices([...sponsorPrices, { name: "", price: "" }])}
-                                    >
-                                        + Add Sponsor Price
-                                    </Button>
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                    {sponsorPrices.map((sp, idx) => (
-                                        <div key={idx} className="flex gap-2 items-center animate-in fade-in duration-100">
-                                            <input
-                                                type="text"
-                                                required
-                                                value={sp.name}
-                                                onChange={(e) => {
-                                                    const next = [...sponsorPrices]
-                                                    next[idx] = { ...next[idx], name: e.target.value }
-                                                    setSponsorPrices(next)
-                                                }}
-                                                placeholder="Sponsor Tier Name (e.g. Gold)"
-                                                className="flex-1 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                            />
-                                            <input
-                                                type="text"
-                                                required
-                                                value={sp.price}
-                                                onChange={(e) => {
-                                                    const next = [...sponsorPrices]
-                                                    next[idx] = { ...next[idx], price: e.target.value }
-                                                    setSponsorPrices(next)
-                                                }}
-                                                placeholder="Price (e.g. $5,000)"
-                                                className="w-48 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
-                                            />
-                                            {sponsorPrices.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setSponsorPrices(sponsorPrices.filter((_, i) => i !== idx))}
-                                                    className="size-10 rounded-input border border-border-default bg-surface-canvas flex items-center justify-center text-text-secondary hover:text-red-600 hover:border-red-200 transition-colors shrink-0 text-lg font-bold"
-                                                >
-                                                    ×
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Modal Footer */}
-                        <div className="flex gap-3 justify-end mt-4 pt-4 border-t border-border-default shrink-0">
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                radius="md"
-                                onClick={() => setIsEditingInPlace(false)}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type="submit"
-                                variant="primary"
-                                size="sm"
-                                radius="md"
-                            >
-                                Save details
-                            </Button>
-                        </div>
-                    </form>
-                </div>
-            )}
         </div>
     )
 }
