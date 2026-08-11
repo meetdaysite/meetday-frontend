@@ -125,6 +125,8 @@ export type HostProfile = {
 		pincode: string
 		country?: string
 	}
+	phone?: string | null
+	email?: string | null
 }
 
 export type UpdateHostProfilePayload = {

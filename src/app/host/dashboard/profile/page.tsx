@@ -79,7 +79,7 @@ export default function ProfilePage() {
 	}
 
 	const email = user?.email || (profile as any)?.email || ""
-	const phone = (profile as any)?.user?.phone || ""
+	const phone = profile?.phone || ""
 	const displayName = profile?.displayName || "Host"
 	const avatarUrl = profile?.avatarUrl
 
