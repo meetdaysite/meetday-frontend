@@ -31,6 +31,7 @@ import {
 import { ActivateCommunityModal } from "@/components/host/ActivateCommunityModal"
 import { CommunityProfileDetailsPanel } from "@/components/host/CommunityProfileDetailsPanel"
 import { AddressAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
+import PdfViewer from "@/components/pdf/PdfViewer"
 
 import UploadSvg from "@/icons/outlined/upload.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
@@ -1289,18 +1290,13 @@ export default function ProposalPage() {
                                         </div>
                                     </div>
                                 )}
-
                                 {/* Bottom - PDF Preview */}
                                 <div className="flex flex-col gap-3">
                                     <h4 className="text-sm font-bold text-text-primary">Document Preview</h4>
                                     {displayDetails?.docType?.includes("pdf") || displayDetails?.docName?.toLowerCase().endsWith(".pdf") ? (
-                                        <div className="border border-border-default rounded-action overflow-hidden bg-surface-card shadow-sm h-[750px]">
+                                        <div className="border border-border-default rounded-action overflow-hidden bg-surface-card shadow-sm h-[80vh] md:h-[750px] relative">
                                             {previewUrl ? (
-                                                <iframe
-                                                    src={`${previewUrl}#toolbar=0&navpanes=0&view=FitH`}
-                                                    className="w-full h-full border-none"
-                                                    title="Proposal Preview"
-                                                />
+                                                <PdfViewer url={previewUrl} />
                                             ) : (
                                                 <div className="flex items-center justify-center h-full text-xs text-text-tertiary">Loading document preview...</div>
                                             )}

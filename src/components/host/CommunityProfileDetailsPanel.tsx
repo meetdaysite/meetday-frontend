@@ -74,7 +74,7 @@ export function CommunityProfileDetailsPanel({
 					</div>
 					<div className="flex flex-col gap-1">
 						<h3 className="text-lg font-heading font-black text-black leading-none">{community.name}</h3>
-						<span className="inline-block bg-[#1E1B4B] text-white text-[8px] font-black px-2.5 py-0.5 rounded-lg uppercase tracking-wider w-max mt-1">
+						<span className="inline-block bg-[#1E1B4B] text-white text-[11px] font-black px-3 py-1 rounded-lg uppercase tracking-wider w-max mt-1.5">
 							{community.size} Members
 						</span>
 					</div>
