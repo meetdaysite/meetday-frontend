@@ -1297,7 +1297,7 @@ export default function ProposalPage() {
                                         <div className="border border-border-default rounded-action overflow-hidden bg-surface-card shadow-sm h-[750px]">
                                             {previewUrl ? (
                                                 <iframe
-                                                    src={`${previewUrl}#toolbar=0&navpanes=0`}
+                                                    src={`${previewUrl}#toolbar=0&navpanes=0&view=FitH`}
                                                     className="w-full h-full border-none"
                                                     title="Proposal Preview"
                                                 />
