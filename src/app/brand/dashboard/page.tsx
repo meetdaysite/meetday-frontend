@@ -24,6 +24,12 @@ function formatDate(value: string | null): string {
 	}
 }
 
+function formatDateRange(start: string | null, end: string | null): string {
+	if (!start) return "Date TBD"
+	if (!end || end === start) return formatDate(start)
+	return `${formatDate(start)} - ${formatDate(end)}`
+}
+
 function ProposalCard({
 	proposal,
 	onClick,
@@ -58,7 +64,7 @@ function ProposalCard({
 					<p className="text-body-sm text-text-secondary line-clamp-2">{proposal.about}</p>
 				)}
 				<div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-text-muted mt-1">
-					<span>{formatDate(proposal.eventDate)}</span>
+					<span>{formatDateRange(proposal.eventDate, proposal.eventEndDate)}</span>
 					{proposal.city && <span>{proposal.city}</span>}
 				</div>
 				{proposal.hostProfile?.categories?.length > 0 && (

@@ -495,6 +495,7 @@ export type SponsorshipProposalPayload = {
 	about?: string
 	imageKey?: string
 	eventDate?: string
+	eventEndDate?: string
 	venue?: string
 	city?: string
 	audienceProfile?: string[]
@@ -515,6 +516,7 @@ export type SponsorshipProposal = {
 	imageKey: string | null
 	imageUrl?: string | null
 	eventDate: string | null
+	eventEndDate: string | null
 	venue: string | null
 	city: string | null
 	audienceProfile: string[]

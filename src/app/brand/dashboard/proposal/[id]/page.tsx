@@ -25,6 +25,12 @@ function formatDate(value: string | null): string {
 	}
 }
 
+function formatDateRange(start: string | null, end: string | null): string {
+	if (!start) return "Date TBD"
+	if (!end || end === start) return formatDate(start)
+	return `${formatDate(start)} - ${formatDate(end)}`
+}
+
 export default function ProposalDetailPage() {
 	const params = useParams<{ id: string }>()
 	const router = useRouter()
@@ -107,7 +113,7 @@ export default function ProposalDetailPage() {
 							<h1 className="text-heading-sm font-semibold text-text-primary">{proposal.name || "Untitled proposal"}</h1>
 							<p className="text-body-sm text-text-secondary">Hosted by {hostName}</p>
 							<div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-text-muted mt-1">
-								<span>{formatDate(proposal.eventDate)}</span>
+								<span>{formatDateRange(proposal.eventDate, proposal.eventEndDate)}</span>
 								{proposal.venue && <span>{proposal.venue}</span>}
 								{proposal.city && <span>{proposal.city}</span>}
 								{proposal.guestCount && <span>{proposal.guestCount} guests</span>}

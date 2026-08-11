@@ -50,6 +50,7 @@ export interface StoredProposal {
     image: File | Blob | string | null
     imageName: string
     date: string
+    endDate: string
     venue: string
     city: string
     audienceProfile: string | string[]
@@ -69,6 +70,7 @@ export interface StoredProposal {
         image: File | Blob | string | null
         imageName: string
         date: string
+        endDate: string
         venue: string
         city: string
         audienceProfile: string | string[]
@@ -91,6 +93,7 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
         image: p.imageUrl || null,
         imageName: p.imageKey ? p.imageKey.split("/").pop() || "" : "",
         date: p.eventDate ? p.eventDate.substring(0, 10) : "",
+        endDate: p.eventEndDate ? p.eventEndDate.substring(0, 10) : "",
         venue: p.venue || "",
         city: p.city || "",
         audienceProfile: p.audienceProfile || [],
@@ -111,6 +114,7 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
                 image: (p.pendingRevision.imageUrl as string) || p.imageUrl || null,
                 imageName: p.pendingRevision.imageKey ? String(p.pendingRevision.imageKey).split("/").pop() || "" : p.imageKey?.split("/").pop() || "",
                 date: (p.pendingRevision.eventDate as string)?.substring(0, 10) || (p.eventDate || "").substring(0, 10),
+                endDate: (p.pendingRevision.eventEndDate as string)?.substring(0, 10) || (p.eventEndDate || "").substring(0, 10),
                 venue: (p.pendingRevision.venue as string) || p.venue || "",
                 city: (p.pendingRevision.city as string) || p.city || "",
                 audienceProfile: (p.pendingRevision.audienceProfile as string[]) || p.audienceProfile || [],
@@ -175,6 +179,7 @@ export default function ProposalPage() {
     const [projImage, setProjImage] = useState<File | null>(null)
     const [projImagePreview, setProjImagePreview] = useState<string | null>(null)
     const [projDate, setProjDate] = useState("")
+    const [projEndDate, setProjEndDate] = useState("")
     const [projVenue, setProjVenue] = useState("")
     const [projCity, setProjCity] = useState("")
     const [projAudience, setProjAudience] = useState<string[]>([])
@@ -261,6 +266,7 @@ export default function ProposalPage() {
                 image: selectedProposal.pendingRevision.image,
                 imageName: selectedProposal.pendingRevision.imageName,
                 date: selectedProposal.pendingRevision.date,
+                endDate: selectedProposal.pendingRevision.endDate,
                 venue: selectedProposal.pendingRevision.venue,
                 city: selectedProposal.pendingRevision.city,
                 audienceProfile: selectedProposal.pendingRevision.audienceProfile,
@@ -281,6 +287,7 @@ export default function ProposalPage() {
             image: selectedProposal.image,
             imageName: selectedProposal.imageName,
             date: selectedProposal.date,
+            endDate: selectedProposal.endDate,
             venue: selectedProposal.venue,
             city: selectedProposal.city,
             audienceProfile: selectedProposal.audienceProfile,
@@ -503,6 +510,7 @@ export default function ProposalPage() {
             setProjAbout(data.about)
             setProjImage(null)
             setProjDate(data.date)
+            setProjEndDate(data.endDate)
             setProjVenue(data.venue)
             setProjCity(data.city)
             setProjAudience(Array.isArray(data.audienceProfile) ? data.audienceProfile : data.audienceProfile ? data.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
@@ -516,6 +524,7 @@ export default function ProposalPage() {
             setProjAbout("")
             setProjImage(null)
             setProjDate("")
+            setProjEndDate("")
             setProjVenue("")
             setProjCity("")
             setProjAudience([])
@@ -588,6 +597,14 @@ export default function ProposalPage() {
             toast.error("Date is required.")
             return
         }
+        if (!projEndDate) {
+            toast.error("End date is required.")
+            return
+        }
+        if (projEndDate < projDate) {
+            toast.error("End date cannot be before the start date.")
+            return
+        }
         if (!projVenue.trim()) {
             toast.error("Venue is required.")
             return
@@ -631,6 +648,7 @@ export default function ProposalPage() {
                 name: projName,
                 about: projAbout,
                 eventDate: projDate,
+                eventEndDate: projEndDate,
                 venue: projVenue,
                 city: projCity,
                 audienceProfile: projAudience,
@@ -737,6 +755,7 @@ export default function ProposalPage() {
         setProjAbout("")
         setProjImage(null)
         setProjDate("")
+        setProjEndDate("")
         setProjVenue("")
         setProjCity("")
         setProjAudience([])
@@ -755,6 +774,7 @@ export default function ProposalPage() {
         setProjAbout(displayDetails.about)
         setProjImage(null)
         setProjDate(displayDetails.date)
+        setProjEndDate(displayDetails.endDate)
         setProjVenue(displayDetails.venue)
         setProjCity(displayDetails.city)
         setProjAudience(Array.isArray(displayDetails.audienceProfile) ? displayDetails.audienceProfile : displayDetails.audienceProfile ? displayDetails.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
@@ -781,6 +801,14 @@ export default function ProposalPage() {
         }
         if (!projDate) {
             toast.error("Date is required.")
+            return
+        }
+        if (!projEndDate) {
+            toast.error("End date is required.")
+            return
+        }
+        if (projEndDate < projDate) {
+            toast.error("End date cannot be before the start date.")
             return
         }
         if (!projVenue.trim()) {
@@ -820,6 +848,7 @@ export default function ProposalPage() {
                 name: projName,
                 about: projAbout,
                 eventDate: projDate,
+                eventEndDate: projEndDate,
                 venue: projVenue,
                 city: projCity,
                 audienceProfile: projAudience,
@@ -1396,14 +1425,25 @@ export default function ProposalPage() {
                                         </div>
 
                                         {/* Date, City */}
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-3 gap-4">
                                             <div className="flex flex-col gap-1.5">
-                                                <label className="text-xs font-bold text-black">Date *</label>
+                                                <label className="text-xs font-bold text-black">Start Date *</label>
                                                 <input
                                                     type="date"
                                                     required
                                                     value={projDate}
                                                     onChange={(e) => setProjDate(e.target.value)}
+                                                    className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-1.5">
+                                                <label className="text-xs font-bold text-black">End Date *</label>
+                                                <input
+                                                    type="date"
+                                                    required
+                                                    min={projDate || undefined}
+                                                    value={projEndDate}
+                                                    onChange={(e) => setProjEndDate(e.target.value)}
                                                     className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
                                                 />
                                             </div>
@@ -1697,7 +1737,10 @@ export default function ProposalPage() {
                                                     
                                                     // Format date from YYYY-MM-DD to DD/MM/YYYY
                                                     const parts = cardData.date ? cardData.date.split("-") : [];
-                                                    const displayDate = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : cardData.date;
+                                                    const startDisplay = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : cardData.date;
+                                                    const endParts = cardData.endDate ? cardData.endDate.split("-") : [];
+                                                    const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : cardData.endDate;
+                                                    const displayDate = endDisplay && endDisplay !== startDisplay ? `${startDisplay} - ${endDisplay}` : startDisplay;
 
                                                     return (
                                                         <div
@@ -1969,14 +2012,25 @@ export default function ProposalPage() {
                             </div>
 
                             {/* Date, City */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-3 gap-4">
                                 <div className="flex flex-col gap-1.5">
-                                    <label className="text-label-sm font-semibold text-text-primary">Date *</label>
+                                    <label className="text-label-sm font-semibold text-text-primary">Start Date *</label>
                                     <input
                                         type="date"
                                         required
                                         value={projDate}
                                         onChange={(e) => setProjDate(e.target.value)}
+                                        className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <label className="text-label-sm font-semibold text-text-primary">End Date *</label>
+                                    <input
+                                        type="date"
+                                        required
+                                        min={projDate || undefined}
+                                        value={projEndDate}
+                                        onChange={(e) => setProjEndDate(e.target.value)}
                                         className="h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-text-primary outline-none focus:border-border-focused hover:border-border-strong text-sm transition-colors"
                                     />
                                 </div>
