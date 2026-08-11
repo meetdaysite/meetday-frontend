@@ -21,6 +21,25 @@ const bricolage = Bricolage_Grotesque({
 export const metadata: Metadata = {
 	title: "Meetday",
 	description: "The social network that happens in real life.",
+	openGraph: {
+		title: "Meetday",
+		description: "The social network that happens in real life.",
+		images: [
+			{
+				url: "/images/Image.png",
+				width: 1200,
+				height: 630,
+				alt: "Meetday",
+			},
+		],
+		type: "website",
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Meetday",
+		description: "The social network that happens in real life.",
+		images: ["/images/Image.png"],
+	},
 }
 
 export default function RootLayout({
