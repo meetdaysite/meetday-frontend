@@ -234,11 +234,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 			})
 			.catch(async e => {
 				if (cancelled) return
-				if (e instanceof ApiError && e.statusCode === 404) {
-					// If the signed-in user has an attendee profile they're not a host — send to
-					// their portal. Wait for the attendee-profile fetch to actually settle first —
-					// reading it immediately here raced a still-in-flight fetch and could send a
-					// genuine attendee to /host/onboarding instead of /attendee.
+				if (e instanceof ApiError && (e.statusCode === 404 || e.statusCode === 403)) {
+					// 404: never registered at all. 403: this identity is registered (e.g. as BRAND or
+					// an admin) but hasn't completed HOST signup yet — one login can hold host, brand,
+					// and admin access at once, so send them to onboarding to attach a host profile
+					// instead of signing them out. If they're a genuine attendee, send them there instead.
+					// Wait for the attendee-profile fetch to actually settle first — reading it
+					// immediately here raced a still-in-flight fetch and could send a genuine attendee
+					// to /host/onboarding instead of /attendee.
 					await useAttendeeProfileStore.getState().waitUntilLoaded()
 					if (cancelled) return
 					const meProfile = useAttendeeProfileStore.getState().profile
@@ -247,16 +250,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 					} else {
 						router.replace("/host/onboarding")
 					}
-				} else if (e instanceof ApiError && e.statusCode === 403) {
-					// This phone number/email belongs to a non-HOST account (e.g. already a BRAND) —
-					// sign out and send back to login with a clear explanation instead of a
-					// generic "failed to load profile" error screen.
-					clearProfile()
-					await signOut()
-					toast.error(
-						"This phone number is already registered as a different account type. Please use a different number to sign up as a host.",
-					)
-					router.replace("/host")
 				} else {
 					// Don't redirect to /login — the user is still authenticated in Firebase,
 					// which would cause an immediate bounce back to /dashboard and an infinite loop.
