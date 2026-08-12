@@ -55,6 +55,7 @@ export interface StoredProposal {
     venue: string
     venues: string[]
     city: string
+    venueCities: string[]
     audienceProfile: string | string[]
     ageGroup: string
     guestCount: string
@@ -76,6 +77,7 @@ export interface StoredProposal {
         venue: string
         venues: string[]
         city: string
+        venueCities: string[]
         audienceProfile: string | string[]
         ageGroup: string
         guestCount: string
@@ -100,6 +102,7 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
         venue: p.venue || "",
         venues: p.venues && p.venues.length > 0 ? p.venues : (p.venue ? [p.venue] : []),
         city: p.city || "",
+        venueCities: p.venueCities && p.venueCities.length > 0 ? p.venueCities : (p.city ? [p.city] : []),
         audienceProfile: p.audienceProfile || [],
         ageGroup: p.ageGroup || "",
         guestCount: p.guestCount || "",
@@ -122,6 +125,7 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
                 venue: (p.pendingRevision.venue as string) || p.venue || "",
                 venues: (p.pendingRevision.venues as string[]) || (p.venues && p.venues.length > 0 ? p.venues : (p.venue ? [p.venue] : [])),
                 city: (p.pendingRevision.city as string) || p.city || "",
+                venueCities: (p.pendingRevision.venueCities as string[]) || (p.venueCities && p.venueCities.length > 0 ? p.venueCities : (p.city ? [p.city] : [])),
                 audienceProfile: (p.pendingRevision.audienceProfile as string[]) || p.audienceProfile || [],
                 ageGroup: (p.pendingRevision.ageGroup as string) || p.ageGroup || "",
                 guestCount: (p.pendingRevision.guestCount as string) || p.guestCount || "",
@@ -134,6 +138,11 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
             }
             : undefined,
     }
+}
+
+// Index-matches a venueCities array to the venues array length, padding missing entries with "".
+function padVenueCities(venues: string[], cities: string[]): string[] {
+    return venues.map((_, i) => cities[i] ?? "")
 }
 
 export async function getProposals(_hostId: string): Promise<StoredProposal[]> {
@@ -186,7 +195,7 @@ export default function ProposalPage() {
     const [projDate, setProjDate] = useState("")
     const [projEndDate, setProjEndDate] = useState("")
     const [projVenues, setProjVenues] = useState<string[]>([""])
-    const [projCity, setProjCity] = useState("")
+    const [projVenueCities, setProjVenueCities] = useState<string[]>([""])
     const [projAudience, setProjAudience] = useState<string[]>([])
     const [newAudience, setNewAudience] = useState("")
     const [previewSlide, setPreviewSlide] = useState(0)
@@ -276,6 +285,7 @@ export default function ProposalPage() {
                 venue: selectedProposal.pendingRevision.venue,
                 venues: selectedProposal.pendingRevision.venues,
                 city: selectedProposal.pendingRevision.city,
+                venueCities: selectedProposal.pendingRevision.venueCities,
                 audienceProfile: selectedProposal.pendingRevision.audienceProfile,
                 ageGroup: selectedProposal.pendingRevision.ageGroup,
                 guestCount: selectedProposal.pendingRevision.guestCount,
@@ -298,6 +308,7 @@ export default function ProposalPage() {
             venue: selectedProposal.venue,
             venues: selectedProposal.venues,
             city: selectedProposal.city,
+            venueCities: selectedProposal.venueCities,
             audienceProfile: selectedProposal.audienceProfile,
             ageGroup: selectedProposal.ageGroup,
             guestCount: selectedProposal.guestCount,
@@ -520,7 +531,7 @@ export default function ProposalPage() {
             setProjDate(data.date)
             setProjEndDate(data.endDate)
             setProjVenues(data.venues && data.venues.length > 0 ? data.venues : [""])
-            setProjCity(data.city)
+            setProjVenueCities(padVenueCities(data.venues && data.venues.length > 0 ? data.venues : [""], data.venueCities || []))
             setProjAudience(Array.isArray(data.audienceProfile) ? data.audienceProfile : data.audienceProfile ? data.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
             setProjAgeGroup(data.ageGroup)
             setProjGuestCount(data.guestCount)
@@ -534,7 +545,7 @@ export default function ProposalPage() {
             setProjDate("")
             setProjEndDate("")
             setProjVenues([""])
-            setProjCity("")
+            setProjVenueCities([""])
             setProjAudience([])
             setProjAgeGroup("")
             setProjGuestCount("")
@@ -617,8 +628,8 @@ export default function ProposalPage() {
             toast.error("At least one venue is required.")
             return
         }
-        if (!projCity.trim()) {
-            toast.error("City is required.")
+        if (projVenues.some((v, idx) => v.trim() && !projVenueCities[idx]?.trim())) {
+            toast.error("Please add a city for every venue.")
             return
         }
         if (projAudience.length === 0) {
@@ -652,13 +663,16 @@ export default function ProposalPage() {
         setUploadProgress(10)
 
         try {
+            const filledVenueIdx = projVenues
+                .map((v, idx) => (v.trim() ? idx : -1))
+                .filter((idx) => idx !== -1)
             const payload: SponsorshipProposalPayload = {
                 name: projName,
                 about: projAbout,
                 eventDate: projDate,
                 eventEndDate: projEndDate,
-                venues: projVenues.map(v => v.trim()).filter(Boolean),
-                city: projCity,
+                venues: filledVenueIdx.map((idx) => projVenues[idx].trim()),
+                venueCities: filledVenueIdx.map((idx) => projVenueCities[idx]?.trim() || ""),
                 audienceProfile: projAudience,
                 ageGroup: projAgeGroup,
                 guestCount: projGuestCount,
@@ -769,7 +783,7 @@ export default function ProposalPage() {
         setProjDate("")
         setProjEndDate("")
         setProjVenues([""])
-        setProjCity("")
+        setProjVenueCities([""])
         setProjAudience([])
         setNewAudience("")
         setProjAgeGroup("")
@@ -788,7 +802,7 @@ export default function ProposalPage() {
         setProjDate(displayDetails.date)
         setProjEndDate(displayDetails.endDate)
         setProjVenues(displayDetails.venues && displayDetails.venues.length > 0 ? displayDetails.venues : [""])
-        setProjCity(displayDetails.city)
+        setProjVenueCities(padVenueCities(displayDetails.venues && displayDetails.venues.length > 0 ? displayDetails.venues : [""], displayDetails.venueCities || []))
         setProjAudience(Array.isArray(displayDetails.audienceProfile) ? displayDetails.audienceProfile : displayDetails.audienceProfile ? displayDetails.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
         setNewAudience("")
         setProjAgeGroup(displayDetails.ageGroup)
@@ -827,8 +841,8 @@ export default function ProposalPage() {
             toast.error("At least one venue is required.")
             return
         }
-        if (!projCity.trim()) {
-            toast.error("City is required.")
+        if (projVenues.some((v, idx) => v.trim() && !projVenueCities[idx]?.trim())) {
+            toast.error("Please add a city for every venue.")
             return
         }
         if (projAudience.length === 0) {
@@ -862,7 +876,7 @@ export default function ProposalPage() {
                 eventDate: projDate,
                 eventEndDate: projEndDate,
                 venues: projVenues.map(v => v.trim()).filter(Boolean),
-                city: projCity,
+                venueCities: projVenueCities.map(v => v.trim()).filter(Boolean),
                 audienceProfile: projAudience,
                 ageGroup: projAgeGroup,
                 guestCount: projGuestCount,
@@ -1231,10 +1245,10 @@ export default function ProposalPage() {
                                         <img src={projectImageUrl} alt={displayDetails?.name} className="size-36 object-cover rounded-xl border border-border-default shadow-sm shrink-0" />
                                     )}
                                     <div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-2.5 w-full flex flex-col justify-between gap-2">
-                                        {/* Row 1: Date & City, Venue */}
+                                        {/* Row 1: Date, Venue & City */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
                                             <div>
-                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Date & City</p>
+                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Date</p>
                                                 <p className="text-sm font-bold text-text-primary mt-0">
                                                     {(() => {
                                                         const startParts = displayDetails?.date ? displayDetails.date.split("-") : [];
@@ -1242,12 +1256,20 @@ export default function ProposalPage() {
                                                         const endParts = displayDetails?.endDate ? displayDetails.endDate.split("-") : [];
                                                         const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : displayDetails?.endDate;
                                                         return endDisplay && endDisplay !== startDisplay ? `${startDisplay} - ${endDisplay}` : startDisplay;
-                                                    })()} • {displayDetails?.city}
+                                                    })()}
                                                 </p>
                                             </div>
                                             <div>
-                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue</p>
-                                                <p className="text-sm font-bold text-text-primary mt-0">{displayDetails?.venue}</p>
+                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue & City</p>
+                                                <p className="text-sm font-bold text-text-primary mt-0">
+                                                    {(displayDetails?.venues && displayDetails.venues.length > 0 ? displayDetails.venues : [displayDetails?.venue || ""])
+                                                        .map((v, idx) => {
+                                                            const c = displayDetails?.venueCities?.[idx]
+                                                            return c ? `${v} (${c})` : v
+                                                        })
+                                                        .filter(Boolean)
+                                                        .join(", ")}
+                                                </p>
                                             </div>
                                         </div>
                                         {/* Divider */}
@@ -1438,8 +1460,8 @@ export default function ProposalPage() {
                                             </div>
                                         </div>
 
-                                        {/* Date, City */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        {/* Date */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="flex flex-col gap-1.5">
                                                 <label className="text-xs font-bold text-black">Start Date *</label>
                                                 <input
@@ -1461,17 +1483,6 @@ export default function ProposalPage() {
                                                     className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
                                                 />
                                             </div>
-                                            <div className="flex flex-col gap-1.5">
-                                                <label className="text-xs font-bold text-black">City *</label>
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    value={projCity}
-                                                    onChange={(e) => setProjCity(e.target.value)}
-                                                    placeholder="e.g. San Francisco"
-                                                    className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
-                                                />
-                                            </div>
                                         </div>
 
                                         {/* Venues */}
@@ -1480,7 +1491,10 @@ export default function ProposalPage() {
                                                 <label className="text-xs font-bold text-black">Venue *</label>
                                                 <button
                                                     type="button"
-                                                    onClick={() => setProjVenues([...projVenues, ""])}
+                                                    onClick={() => {
+                                                        setProjVenues([...projVenues, ""])
+                                                        setProjVenueCities([...projVenueCities, ""])
+                                                    }}
                                                     className="text-xs font-bold text-black hover:underline"
                                                 >
                                                     + Add Venue
@@ -1501,17 +1515,35 @@ export default function ProposalPage() {
                                                                 const updated = [...projVenues]
                                                                 updated[idx] = fields.venueName || fields.fullAddress
                                                                 setProjVenues(updated)
-                                                                if (fields.city) {
-                                                                    setProjCity(fields.city)
+                                                                if (fields.city && !projVenueCities[idx]?.trim()) {
+                                                                    const updatedCities = [...projVenueCities]
+                                                                    updatedCities[idx] = fields.city
+                                                                    setProjVenueCities(updatedCities)
                                                                 }
                                                             }}
                                                             placeholder="e.g. Palace of Fine Arts"
                                                         />
                                                     </div>
+                                                    <div className="w-40">
+                                                        <input
+                                                            type="text"
+                                                            value={projVenueCities[idx] || ""}
+                                                            onChange={(e) => {
+                                                                const updated = [...projVenueCities]
+                                                                updated[idx] = e.target.value
+                                                                setProjVenueCities(updated)
+                                                            }}
+                                                            placeholder="City *"
+                                                            className="w-full h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                        />
+                                                    </div>
                                                     {projVenues.length > 1 && (
                                                         <button
                                                             type="button"
-                                                            onClick={() => setProjVenues(projVenues.filter((_, i) => i !== idx))}
+                                                            onClick={() => {
+                                                                setProjVenues(projVenues.filter((_, i) => i !== idx))
+                                                                setProjVenueCities(projVenueCities.filter((_, i) => i !== idx))
+                                                            }}
                                                             className="text-red-500 hover:text-red-700 font-bold text-lg"
                                                         >
                                                             ✕
@@ -1904,7 +1936,15 @@ export default function ProposalPage() {
                                                                 {/* Content */}
                                                                 <div className="p-3 flex flex-col gap-1">
                                                                     <h3 className="font-heading font-black text-sm text-black truncate group-hover:text-[#EE2C2C] transition-colors">{cardData.name}</h3>
-                                                                    <p className="text-[9px] font-bold text-black/50">{cardData.city} • {cardData.venues && cardData.venues.length > 0 ? cardData.venues.join(", ") : cardData.venue}</p>
+                                                                    <p className="text-[9px] font-bold text-black/50">
+                                                                        {(cardData.venues && cardData.venues.length > 0 ? cardData.venues : [cardData.venue])
+                                                                            .map((v, idx) => {
+                                                                                const c = cardData.venueCities?.[idx] || (idx === 0 ? cardData.city : undefined)
+                                                                                return c ? `${v} (${c})` : v
+                                                                            })
+                                                                            .filter(Boolean)
+                                                                            .join(", ")}
+                                                                    </p>
                                                                     <p className="text-[9px] font-semibold text-black/70 line-clamp-3 mt-0.5">{cardData.about}</p>
                                                                 </div>
                                                             </div>

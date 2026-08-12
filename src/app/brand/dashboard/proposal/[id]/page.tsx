@@ -115,11 +115,20 @@ export default function ProposalDetailPage() {
 							<div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-text-muted mt-1">
 								<span>{formatDateRange(proposal.eventDate, proposal.eventEndDate)}</span>
 								{proposal.venues && proposal.venues.length > 0 ? (
-									<span>{proposal.venues.join(", ")}</span>
+									<span>
+										{proposal.venues
+											.map((v, idx) => {
+												const c = proposal.venueCities?.[idx]
+												return c ? `${v} (${c})` : v
+											})
+											.join(", ")}
+									</span>
 								) : (
-									proposal.venue && <span>{proposal.venue}</span>
+									<>
+										{proposal.venue && <span>{proposal.venue}</span>}
+										{proposal.city && <span>{proposal.city}</span>}
+									</>
 								)}
-								{proposal.city && <span>{proposal.city}</span>}
 								{proposal.guestCount && <span>{proposal.guestCount} guests</span>}
 							</div>
 						</div>
