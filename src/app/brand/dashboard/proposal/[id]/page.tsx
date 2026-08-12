@@ -114,7 +114,11 @@ export default function ProposalDetailPage() {
 							<p className="text-body-sm text-text-secondary">Hosted by {hostName}</p>
 							<div className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-text-muted mt-1">
 								<span>{formatDateRange(proposal.eventDate, proposal.eventEndDate)}</span>
-								{proposal.venue && <span>{proposal.venue}</span>}
+								{proposal.venues && proposal.venues.length > 0 ? (
+									<span>{proposal.venues.join(", ")}</span>
+								) : (
+									proposal.venue && <span>{proposal.venue}</span>
+								)}
 								{proposal.city && <span>{proposal.city}</span>}
 								{proposal.guestCount && <span>{proposal.guestCount} guests</span>}
 							</div>

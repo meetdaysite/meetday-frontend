@@ -502,6 +502,7 @@ export type SponsorshipProposalPayload = {
 	eventDate?: string
 	eventEndDate?: string
 	venue?: string
+	venues?: string[]
 	city?: string
 	audienceProfile?: string[]
 	ageGroup?: string
@@ -523,6 +524,7 @@ export type SponsorshipProposal = {
 	eventDate: string | null
 	eventEndDate: string | null
 	venue: string | null
+	venues: string[]
 	city: string | null
 	audienceProfile: string[]
 	ageGroup: string | null

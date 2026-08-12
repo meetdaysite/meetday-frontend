@@ -53,6 +53,7 @@ export interface StoredProposal {
     date: string
     endDate: string
     venue: string
+    venues: string[]
     city: string
     audienceProfile: string | string[]
     ageGroup: string
@@ -73,6 +74,7 @@ export interface StoredProposal {
         date: string
         endDate: string
         venue: string
+        venues: string[]
         city: string
         audienceProfile: string | string[]
         ageGroup: string
@@ -96,6 +98,7 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
         date: p.eventDate ? p.eventDate.substring(0, 10) : "",
         endDate: p.eventEndDate ? p.eventEndDate.substring(0, 10) : "",
         venue: p.venue || "",
+        venues: p.venues && p.venues.length > 0 ? p.venues : (p.venue ? [p.venue] : []),
         city: p.city || "",
         audienceProfile: p.audienceProfile || [],
         ageGroup: p.ageGroup || "",
@@ -117,6 +120,7 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
                 date: (p.pendingRevision.eventDate as string)?.substring(0, 10) || (p.eventDate || "").substring(0, 10),
                 endDate: (p.pendingRevision.eventEndDate as string)?.substring(0, 10) || (p.eventEndDate || "").substring(0, 10),
                 venue: (p.pendingRevision.venue as string) || p.venue || "",
+                venues: (p.pendingRevision.venues as string[]) || (p.venues && p.venues.length > 0 ? p.venues : (p.venue ? [p.venue] : [])),
                 city: (p.pendingRevision.city as string) || p.city || "",
                 audienceProfile: (p.pendingRevision.audienceProfile as string[]) || p.audienceProfile || [],
                 ageGroup: (p.pendingRevision.ageGroup as string) || p.ageGroup || "",
@@ -181,7 +185,7 @@ export default function ProposalPage() {
     const [projImagePreview, setProjImagePreview] = useState<string | null>(null)
     const [projDate, setProjDate] = useState("")
     const [projEndDate, setProjEndDate] = useState("")
-    const [projVenue, setProjVenue] = useState("")
+    const [projVenues, setProjVenues] = useState<string[]>([""])
     const [projCity, setProjCity] = useState("")
     const [projAudience, setProjAudience] = useState<string[]>([])
     const [newAudience, setNewAudience] = useState("")
@@ -270,6 +274,7 @@ export default function ProposalPage() {
                 date: selectedProposal.pendingRevision.date,
                 endDate: selectedProposal.pendingRevision.endDate,
                 venue: selectedProposal.pendingRevision.venue,
+                venues: selectedProposal.pendingRevision.venues,
                 city: selectedProposal.pendingRevision.city,
                 audienceProfile: selectedProposal.pendingRevision.audienceProfile,
                 ageGroup: selectedProposal.pendingRevision.ageGroup,
@@ -291,6 +296,7 @@ export default function ProposalPage() {
             date: selectedProposal.date,
             endDate: selectedProposal.endDate,
             venue: selectedProposal.venue,
+            venues: selectedProposal.venues,
             city: selectedProposal.city,
             audienceProfile: selectedProposal.audienceProfile,
             ageGroup: selectedProposal.ageGroup,
@@ -513,7 +519,7 @@ export default function ProposalPage() {
             setProjImage(null)
             setProjDate(data.date)
             setProjEndDate(data.endDate)
-            setProjVenue(data.venue)
+            setProjVenues(data.venues && data.venues.length > 0 ? data.venues : [""])
             setProjCity(data.city)
             setProjAudience(Array.isArray(data.audienceProfile) ? data.audienceProfile : data.audienceProfile ? data.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
             setProjAgeGroup(data.ageGroup)
@@ -527,7 +533,7 @@ export default function ProposalPage() {
             setProjImage(null)
             setProjDate("")
             setProjEndDate("")
-            setProjVenue("")
+            setProjVenues([""])
             setProjCity("")
             setProjAudience([])
             setProjAgeGroup("")
@@ -607,8 +613,8 @@ export default function ProposalPage() {
             toast.error("End date cannot be before the start date.")
             return
         }
-        if (!projVenue.trim()) {
-            toast.error("Venue is required.")
+        if (projVenues.every(v => !v.trim())) {
+            toast.error("At least one venue is required.")
             return
         }
         if (!projCity.trim()) {
@@ -651,7 +657,7 @@ export default function ProposalPage() {
                 about: projAbout,
                 eventDate: projDate,
                 eventEndDate: projEndDate,
-                venue: projVenue,
+                venues: projVenues.map(v => v.trim()).filter(Boolean),
                 city: projCity,
                 audienceProfile: projAudience,
                 ageGroup: projAgeGroup,
@@ -762,7 +768,7 @@ export default function ProposalPage() {
         setProjImage(null)
         setProjDate("")
         setProjEndDate("")
-        setProjVenue("")
+        setProjVenues([""])
         setProjCity("")
         setProjAudience([])
         setNewAudience("")
@@ -781,7 +787,7 @@ export default function ProposalPage() {
         setProjImage(null)
         setProjDate(displayDetails.date)
         setProjEndDate(displayDetails.endDate)
-        setProjVenue(displayDetails.venue)
+        setProjVenues(displayDetails.venues && displayDetails.venues.length > 0 ? displayDetails.venues : [""])
         setProjCity(displayDetails.city)
         setProjAudience(Array.isArray(displayDetails.audienceProfile) ? displayDetails.audienceProfile : displayDetails.audienceProfile ? displayDetails.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
         setNewAudience("")
@@ -817,8 +823,8 @@ export default function ProposalPage() {
             toast.error("End date cannot be before the start date.")
             return
         }
-        if (!projVenue.trim()) {
-            toast.error("Venue is required.")
+        if (projVenues.every(v => !v.trim())) {
+            toast.error("At least one venue is required.")
             return
         }
         if (!projCity.trim()) {
@@ -855,7 +861,7 @@ export default function ProposalPage() {
                 about: projAbout,
                 eventDate: projDate,
                 eventEndDate: projEndDate,
-                venue: projVenue,
+                venues: projVenues.map(v => v.trim()).filter(Boolean),
                 city: projCity,
                 audienceProfile: projAudience,
                 ageGroup: projAgeGroup,
@@ -1468,21 +1474,51 @@ export default function ProposalPage() {
                                             </div>
                                         </div>
 
-                                        {/* Venue */}
-                                        <div className="flex flex-col gap-1.5">
-                                            <label className="text-xs font-bold text-black">Venue *</label>
-                                            <AddressAutocompleteInput
-                                                value={projVenue}
-                                                error={false}
-                                                onChange={setProjVenue}
-                                                onPlaceSelect={(fields) => {
-                                                    setProjVenue(fields.venueName || fields.fullAddress)
-                                                    if (fields.city) {
-                                                        setProjCity(fields.city)
-                                                    }
-                                                }}
-                                                placeholder="e.g. Palace of Fine Arts"
-                                            />
+                                        {/* Venues */}
+                                        <div className="flex flex-col gap-3">
+                                            <div className="flex justify-between items-center">
+                                                <label className="text-xs font-bold text-black">Venue *</label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setProjVenues([...projVenues, ""])}
+                                                    className="text-xs font-bold text-black hover:underline"
+                                                >
+                                                    + Add Venue
+                                                </button>
+                                            </div>
+                                            {projVenues.map((v, idx) => (
+                                                <div key={idx} className="flex gap-3 items-center">
+                                                    <div className="flex-1">
+                                                        <AddressAutocompleteInput
+                                                            value={v}
+                                                            error={false}
+                                                            onChange={(val) => {
+                                                                const updated = [...projVenues]
+                                                                updated[idx] = val
+                                                                setProjVenues(updated)
+                                                            }}
+                                                            onPlaceSelect={(fields) => {
+                                                                const updated = [...projVenues]
+                                                                updated[idx] = fields.venueName || fields.fullAddress
+                                                                setProjVenues(updated)
+                                                                if (fields.city) {
+                                                                    setProjCity(fields.city)
+                                                                }
+                                                            }}
+                                                            placeholder="e.g. Palace of Fine Arts"
+                                                        />
+                                                    </div>
+                                                    {projVenues.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setProjVenues(projVenues.filter((_, i) => i !== idx))}
+                                                            className="text-red-500 hover:text-red-700 font-bold text-lg"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
 
                                         {/* Audience Profile */}
@@ -1868,7 +1904,7 @@ export default function ProposalPage() {
                                                                 {/* Content */}
                                                                 <div className="p-3 flex flex-col gap-1">
                                                                     <h3 className="font-heading font-black text-sm text-black truncate group-hover:text-[#EE2C2C] transition-colors">{cardData.name}</h3>
-                                                                    <p className="text-[9px] font-bold text-black/50">{cardData.city} • {cardData.venue}</p>
+                                                                    <p className="text-[9px] font-bold text-black/50">{cardData.city} • {cardData.venues && cardData.venues.length > 0 ? cardData.venues.join(", ") : cardData.venue}</p>
                                                                     <p className="text-[9px] font-semibold text-black/70 line-clamp-3 mt-0.5">{cardData.about}</p>
                                                                 </div>
                                                             </div>
@@ -1961,39 +1997,39 @@ export default function ProposalPage() {
                  )}
             </div>
 
-             {/* Mobile-only Community Profile Drawer */}
-             {showCommunityMobilePanel && community && (
-                 <>
-                     {/* Backdrop */}
-                     <div 
-                         onClick={() => setShowCommunityMobilePanel(false)}
-                         className="sm:hidden fixed inset-0 bg-black/40 z-40 backdrop-blur-xs"
-                     />
-                     {/* Drawer */}
-                     <div className="sm:hidden fixed inset-y-0 right-0 w-full max-w-[380px] bg-white border-l-4 border-black z-50 overflow-y-auto shadow-modal flex flex-col animate-in slide-in-from-right duration-300">
-                         <div className="flex justify-between items-center p-4 border-b border-black/10 shrink-0">
-                             <h3 className="font-heading font-black text-black text-base">Community Profile</h3>
-                             <button 
-                                 onClick={() => setShowCommunityMobilePanel(false)}
-                                 className="text-black font-extrabold text-sm p-2"
-                             >
-                                 ✕
-                             </button>
-                         </div>
-                         <div className="flex-1 min-h-0">
-                             <CommunityProfileDetailsPanel
-                                 community={community}
-                                 operatingCities={profile?.operatingCities}
-                                 socialLinks={profile?.socialLinks}
-                                 onEdit={() => {
-                                     setShowCommunityMobilePanel(false)
-                                     openActivationModal()
-                                 }}
-                             />
-                         </div>
-                     </div>
-                 </>
-             )}
+            {/* Mobile-only Community Profile Drawer */}
+            {showCommunityMobilePanel && community && (
+                <>
+                    {/* Backdrop */}
+                    <div 
+                        onClick={() => setShowCommunityMobilePanel(false)}
+                        className="sm:hidden fixed inset-0 bg-black/40 z-40 backdrop-blur-xs"
+                    />
+                    {/* Drawer */}
+                    <div className="sm:hidden fixed inset-y-0 right-0 w-full max-w-[380px] bg-white border-l-4 border-black z-50 overflow-y-auto shadow-modal flex flex-col animate-in slide-in-from-right duration-300">
+                        <div className="flex justify-between items-center p-4 border-b border-black/10 shrink-0">
+                            <h3 className="font-heading font-black text-black text-base">Community Profile</h3>
+                            <button 
+                                onClick={() => setShowCommunityMobilePanel(false)}
+                                className="text-black font-extrabold text-sm p-2"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="flex-1 min-h-0">
+                            <CommunityProfileDetailsPanel
+                                community={community}
+                                operatingCities={profile?.operatingCities}
+                                socialLinks={profile?.socialLinks}
+                                onEdit={() => {
+                                    setShowCommunityMobilePanel(false)
+                                    openActivationModal()
+                                }}
+                            />
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     )
 }
