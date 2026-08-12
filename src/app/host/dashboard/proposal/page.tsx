@@ -411,7 +411,7 @@ export default function ProposalPage() {
             cancelled = true
             if (objectUrl) URL.revokeObjectURL(objectUrl)
         }
-    }, [displayDetails])
+    }, [displayDetails?.docFile])
 
     useEffect(() => {
         if (!displayDetails?.image) {
@@ -427,7 +427,7 @@ export default function ProposalPage() {
         return () => {
             URL.revokeObjectURL(url)
         }
-    }, [displayDetails])
+    }, [displayDetails?.image])
 
     useEffect(() => {
         if (logoFile) {
@@ -1170,48 +1170,43 @@ export default function ProposalPage() {
                                         className="hidden"
                                         onChange={handleUpdateFile}
                                     />
-                                    <Button
-                                        variant="primary"
-                                        size="sm"
-                                        radius="pill"
+                                    <button
+                                        type="button"
+                                        className="bg-[#EE2C2C] text-white border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider select-none"
                                         onClick={() => {
                                             openProposalForm(selectedProposal)
                                         }}
                                     >
                                         Edit Details
-                                    </Button>
+                                    </button>
                                     {(selectedProposal.status === "DRAFT" || selectedProposal.status === "REJECTED") && (
-                                        <Button
-                                            variant="secondary"
-                                            size="sm"
-                                            radius="pill"
+                                        <button
+                                            type="button"
+                                            className="bg-[#6C32D1] text-white border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider select-none"
                                             onClick={() => {
                                                 submitProposalForApproval(selectedProposal)
                                                 setSelectedProposal(prev => prev ? { ...prev, status: "UNDER_REVIEW" } : null)
                                             }}
                                         >
                                             Submit for Approval
-                                        </Button>
+                                        </button>
                                     )}
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        radius="pill"
+                                    <button
+                                        type="button"
+                                        className="bg-white text-black border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider select-none"
                                         onClick={() => updateDocInputRef.current?.click()}
                                     >
                                         Update File
-                                    </Button>
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        radius="pill"
-                                        className="bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="bg-red-50 text-[#EE2C2C] border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider select-none"
                                         onClick={() => {
                                             handleDelete(selectedProposal.id);
                                         }}
                                     >
                                         Delete
-                                    </Button>
+                                    </button>
                                 </div>
                             </div>
 
@@ -1244,58 +1239,104 @@ export default function ProposalPage() {
                                         // eslint-disable-next-line @next/next/no-img-element
                                         <img src={projectImageUrl} alt={displayDetails?.name} className="size-36 object-cover rounded-xl border border-border-default shadow-sm shrink-0" />
                                     )}
-                                    <div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-2.5 w-full flex flex-col justify-between gap-2">
-                                        {/* Row 1: Date, Venue & City */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
-                                            <div>
-                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Date</p>
-                                                <p className="text-sm font-bold text-text-primary mt-0">
-                                                    {(() => {
-                                                        const startParts = displayDetails?.date ? displayDetails.date.split("-") : [];
-                                                        const startDisplay = startParts.length === 3 ? `${startParts[2]}/${startParts[1]}/${startParts[0]}` : displayDetails?.date;
-                                                        const endParts = displayDetails?.endDate ? displayDetails.endDate.split("-") : [];
-                                                        const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : displayDetails?.endDate;
-                                                        return endDisplay && endDisplay !== startDisplay ? `${startDisplay} - ${endDisplay}` : startDisplay;
-                                                    })()}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue & City</p>
-                                                <p className="text-sm font-bold text-text-primary mt-0">
-                                                    {(displayDetails?.venues && displayDetails.venues.length > 0 ? displayDetails.venues : [displayDetails?.venue || ""])
-                                                        .map((v, idx) => {
-                                                            const c = displayDetails?.venueCities?.[idx]
-                                                            return c ? `${v} (${c})` : v
-                                                        })
-                                                        .filter(Boolean)
-                                                        .join(", ")}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        {/* Divider */}
-                                        <hr className="border-border-default/15" />
-                                        {/* Row 2: Guests, Age Group */}
-                                        <div className="grid grid-cols-2 gap-1.5">
-                                            <div>
-                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Guests</p>
-                                                <p className="text-sm font-bold text-text-primary mt-0 break-words">{displayDetails?.guestCount}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Age Group</p>
-                                                <p className="text-sm font-bold text-text-primary mt-0 break-words">{displayDetails?.ageGroup}</p>
-                                            </div>
-                                        </div>
-                                        {/* Divider */}
-                                        <hr className="border-border-default/15" />
-                                        {/* Row 3: Audience */}
-                                        <div>
-                                            <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Audience</p>
-                                            <p className="text-sm font-bold text-text-primary mt-0 break-words" title={Array.isArray(displayDetails?.audienceProfile) ? displayDetails.audienceProfile.join(", ") : displayDetails?.audienceProfile}>
-                                                {Array.isArray(displayDetails?.audienceProfile) ? displayDetails.audienceProfile.join(", ") : displayDetails?.audienceProfile}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
+                                     <div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-4 w-full flex flex-col justify-between gap-4">
+                                         {/* Row 1: Date, Venue & City */}
+                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                             <div>
+                                                 <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Date</p>
+                                                 <div className="flex flex-col gap-2 mt-1">
+                                                     {(() => {
+                                                         const startParts = displayDetails?.date ? displayDetails.date.split("-") : [];
+                                                         const startDisplay = startParts.length === 3 ? `${startParts[2]}/${startParts[1]}/${startParts[0]}` : displayDetails?.date;
+                                                         const endParts = displayDetails?.endDate ? displayDetails.endDate.split("-") : [];
+                                                         const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : displayDetails?.endDate;
+                                                         return (
+                                                             <>
+                                                                 {startDisplay && (
+                                                                     <div className="flex items-center gap-2 text-xs font-semibold text-text-secondary">
+                                                                         <span className="w-10 shrink-0">Start:</span>
+                                                                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                                             {startDisplay}
+                                                                         </span>
+                                                                     </div>
+                                                                 )}
+                                                                 {endDisplay && endDisplay !== startDisplay && (
+                                                                     <div className="flex items-center gap-2 text-xs font-semibold text-text-secondary">
+                                                                         <span className="w-10 shrink-0">End:</span>
+                                                                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                                             {endDisplay}
+                                                                         </span>
+                                                                     </div>
+                                                                 )}
+                                                             </>
+                                                         );
+                                                     })()}
+                                                 </div>
+                                             </div>
+                                             <div>
+                                                 <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue & City</p>
+                                                 <div className="flex flex-col gap-2 mt-1">
+                                                     {(displayDetails?.venues && displayDetails.venues.length > 0 ? displayDetails.venues : [displayDetails?.venue || ""])
+                                                         .map((v, idx) => {
+                                                             const c = displayDetails?.venueCities?.[idx] || (idx === 0 ? displayDetails?.city : undefined)
+                                                             if (!v.trim()) return null
+                                                             return (
+                                                                 <div key={idx} className="flex flex-col items-start gap-1">
+                                                                     {c && (
+                                                                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                                             {c}
+                                                                         </span>
+                                                                     )}
+                                                                     <span className="text-xs font-semibold text-text-secondary">{v}</span>
+                                                                 </div>
+                                                             )
+                                                         })}
+                                                 </div>
+                                             </div>
+                                         </div>
+                                         {/* Divider */}
+                                         <hr className="border-border-default/15" />
+                                         {/* Row 2: Guests, Age Group */}
+                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                             <div>
+                                                 <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Guests</p>
+                                                 <div className="flex mt-1">
+                                                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                         {displayDetails?.guestCount} Guests
+                                                     </span>
+                                                 </div>
+                                             </div>
+                                             <div>
+                                                 <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Age Group</p>
+                                                 <div className="flex mt-1">
+                                                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                         {displayDetails?.ageGroup} Years
+                                                     </span>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                         {/* Divider */}
+                                         <hr className="border-border-default/15" />
+                                         {/* Row 3: Audience */}
+                                         <div>
+                                             <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Audience</p>
+                                             <div className="flex flex-wrap gap-1.5 mt-1">
+                                                 {(() => {
+                                                     const rawAud = displayDetails?.audienceProfile;
+                                                     const list = Array.isArray(rawAud) ? rawAud : (typeof rawAud === "string" ? rawAud.split(",").map(s => s.trim()) : []);
+                                                     return list.map((aud, i) => {
+                                                         if (!aud) return null;
+                                                         return (
+                                                             <span key={i} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#F5C343] text-black border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] uppercase tracking-wider">
+                                                                 {aud}
+                                                             </span>
+                                                         )
+                                                     }).filter(Boolean);
+                                                 })()}
+                                             </div>
+                                         </div>
+                                     </div>
+                                 </div>
 
                                 {/* Below Top Row: About Project */}
                                 <div className="bg-surface-card border border-border-default rounded-action p-5">
@@ -1848,95 +1889,95 @@ export default function ProposalPage() {
                                                         <div
                                                             key={p.id}
                                                             onClick={() => setSelectedProposal(p)}
-                                                            className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex flex-col justify-between w-[220px] shrink-0 sm:w-full sm:shrink sm:max-w-[160px]"
+                                                            className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-[380px] shrink-0"
                                                         >
-                                                            <div className="relative">
-                                                                {/* Image */}
-                                                                <div className="relative aspect-square overflow-hidden bg-slate-50 border-b-[3px] border-black rounded-t-[17px]">
-                                                                    {imgUrl ? (
-                                                                        // eslint-disable-next-line @next/next/no-img-element
-                                                                        <img
-                                                                            src={imgUrl}
-                                                                            alt={cardData.name}
-                                                                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-t-[18px]"
-                                                                            onLoad={() => imgUrl && imgUrl.startsWith("blob:") && URL.revokeObjectURL(imgUrl)}
-                                                                        />
-                                                                    ) : (
-                                                                        <div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-lg">
-                                                                            {cardData.name.substring(0, 2).toUpperCase()}
-                                                                        </div>
+                                                            {/* Image / Logo */}
+                                                            <div className="relative w-[120px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
+                                                                {imgUrl ? (
+                                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                                    <img
+                                                                        src={imgUrl}
+                                                                        alt={cardData.name}
+                                                                        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
+                                                                        onLoad={() => imgUrl && imgUrl.startsWith("blob:") && URL.revokeObjectURL(imgUrl)}
+                                                                    />
+                                                                ) : (
+                                                                    <div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
+                                                                        {cardData.name.substring(0, 2).toUpperCase()}
+                                                                    </div>
+                                                                )}
+                                                                
+                                                                {/* Status Badge */}
+                                                                <span
+                                                                    className={clsx(
+                                                                        "absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+                                                                        p.status === "DRAFT" && "bg-slate-100 text-black",
+                                                                        isViewingRevision && "bg-[#F5C343] text-black",
+                                                                        (!isViewingRevision && p.status === "UNDER_REVIEW") && "bg-[#F5C343] text-black",
+                                                                        p.status === "REJECTED" && "bg-[#EE2C2C] text-white",
+                                                                        (!isViewingRevision && (p.status === "PUBLISHED" || !p.status)) && "bg-green-400 text-black"
                                                                     )}
-                                                                    
-                                                                    {/* Status Badge */}
-                                                                    <span
-                                                                        className={clsx(
-                                                                            "absolute top-3 left-3 text-[8px] font-black px-2 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
-                                                                            p.status === "DRAFT" && "bg-slate-100 text-black",
-                                                                            isViewingRevision && "bg-[#F5C343] text-black",
-                                                                            (!isViewingRevision && p.status === "UNDER_REVIEW") && "bg-[#F5C343] text-black",
-                                                                            p.status === "REJECTED" && "bg-[#EE2C2C] text-white",
-                                                                            (!isViewingRevision && (p.status === "PUBLISHED" || !p.status)) && "bg-green-400 text-black"
-                                                                        )}
-                                                                    >
-                                                                        {p.status === "DRAFT" && "Draft"}
-                                                                        {isViewingRevision && "Revision Under Review"}
-                                                                        {!isViewingRevision && p.status === "UNDER_REVIEW" && "Under Review"}
-                                                                        {p.status === "REJECTED" && "Rejected"}
-                                                                        {!isViewingRevision && (p.status === "PUBLISHED" || !p.status) && "Published"}
-                                                                    </span>
-                                                                </div>
+                                                                >
+                                                                    {p.status === "DRAFT" && "Draft"}
+                                                                    {isViewingRevision && "Revision Under Review"}
+                                                                    {!isViewingRevision && p.status === "UNDER_REVIEW" && "Under Review"}
+                                                                    {p.status === "REJECTED" && "Rejected"}
+                                                                    {!isViewingRevision && (p.status === "PUBLISHED" || !p.status) && "Published"}
+                                                                </span>
+                                                            </div>
 
-                                                                {/* Kebab button */}
-                                                                <div className="absolute top-3 right-3 z-30" onClick={(e) => e.stopPropagation()}>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setOpenKebabId(openKebabId === p.id ? null : p.id)}
-                                                                        className="flex items-center justify-center size-6 rounded-full bg-white border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-50 text-black transition-colors"
-                                                                    >
-                                                                        <Icon as={DotsSvg} size="xs" />
-                                                                    </button>
-                                                                    {openKebabId === p.id && (
-                                                                        <div className="absolute right-0 top-8 z-40 w-36 bg-white border-[2px] border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] py-1 flex flex-col">
+                                                            {/* Kebab button */}
+                                                            <div className="absolute top-2 right-2 z-30" onClick={(e) => e.stopPropagation()}>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setOpenKebabId(openKebabId === p.id ? null : p.id)}
+                                                                    className="flex items-center justify-center size-5 rounded-full bg-white border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-50 text-black transition-colors"
+                                                                >
+                                                                    <Icon as={DotsSvg} size="xs" />
+                                                                </button>
+                                                                {openKebabId === p.id && (
+                                                                    <div className="absolute right-0 top-7 z-40 w-36 bg-white border-[2px] border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] py-1 flex flex-col">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setSelectedProposal(p)
+                                                                                setOpenKebabId(null)
+                                                                            }}
+                                                                            className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
+                                                                        >
+                                                                            View details
+                                                                        </button>
+                                                                        {(p.status === "DRAFT" || p.status === "REJECTED") && (
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={() => {
-                                                                                    setSelectedProposal(p)
+                                                                                    submitProposalForApproval(p)
                                                                                     setOpenKebabId(null)
                                                                                 }}
                                                                                 className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
                                                                             >
-                                                                                View details
+                                                                                Submit for Approval
                                                                             </button>
-                                                                            {(p.status === "DRAFT" || p.status === "REJECTED") && (
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => {
-                                                                                        submitProposalForApproval(p)
-                                                                                        setOpenKebabId(null)
-                                                                                    }}
-                                                                                    className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
-                                                                                >
-                                                                                    Submit for Approval
-                                                                                </button>
-                                                                            )}
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    handleDelete(p.id)
-                                                                                    setOpenKebabId(null)
-                                                                                }}
-                                                                                className="px-3 py-1.5 text-left text-xs text-[#EE2C2C] hover:bg-red-50 transition-colors font-black"
-                                                                            >
-                                                                                Delete
-                                                                            </button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
+                                                                        )}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                handleDelete(p.id)
+                                                                                setOpenKebabId(null)
+                                                                            }}
+                                                                            className="px-3 py-1.5 text-left text-xs text-[#EE2C2C] hover:bg-red-50 transition-colors font-black"
+                                                                        >
+                                                                            Delete
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
 
-                                                                {/* Content */}
-                                                                <div className="p-3 flex flex-col gap-1">
-                                                                    <h3 className="font-heading font-black text-sm text-black truncate group-hover:text-[#EE2C2C] transition-colors">{cardData.name}</h3>
-                                                                    <p className="text-[9px] font-bold text-black/50">
+                                                            {/* Content & Footer info */}
+                                                            <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+                                                                <div className="flex flex-col gap-1 pr-6">
+                                                                    <h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">{cardData.name}</h3>
+                                                                    <p className="text-[11px] font-bold text-black/50 truncate">
                                                                         {(cardData.venues && cardData.venues.length > 0 ? cardData.venues : [cardData.venue])
                                                                             .map((v, idx) => {
                                                                                 const c = cardData.venueCities?.[idx] || (idx === 0 ? cardData.city : undefined)
@@ -1945,19 +1986,14 @@ export default function ProposalPage() {
                                                                             .filter(Boolean)
                                                                             .join(", ")}
                                                                     </p>
-                                                                    <p className="text-[9px] font-semibold text-black/70 line-clamp-3 mt-0.5">{cardData.about}</p>
+                                                                    <p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">{cardData.about}</p>
                                                                 </div>
-                                                            </div>
 
-                                                            {/* Footer info */}
-                                                            <div className="p-3 pt-0 flex flex-col gap-2 mt-0.5">
-                                                                <div>
-                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[9px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                                                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
                                                                         {displayDate}
                                                                     </span>
-                                                                </div>
-                                                                <div>
-                                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[9px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
                                                                         {cardData.guestCount} Guests
                                                                     </span>
                                                                 </div>

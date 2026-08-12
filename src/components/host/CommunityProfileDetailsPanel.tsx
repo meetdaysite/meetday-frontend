@@ -83,7 +83,7 @@ export function CommunityProfileDetailsPanel({
 					<div className="flex flex-col gap-1">
 						<h3 className="text-lg font-heading font-black text-black leading-none">{community.name}</h3>
 						<div className="flex items-center gap-1.5 mt-1.5">
-							<span className="inline-block bg-[#1E1B4B] text-white text-[11px] font-black px-2.5 py-0.5 rounded-md uppercase tracking-wider">
+							<span className="inline-block bg-[#F5C343] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[11px] font-black px-2.5 py-0.5 rounded-md uppercase tracking-wider">
 								{community.size}
 							</span>
 							<span className="text-[11px] font-black text-black/60 uppercase tracking-wider">
@@ -143,7 +143,7 @@ export function CommunityProfileDetailsPanel({
 
 				{/* Social Links */}
 				<div className="flex flex-col gap-2.5 border-t border-black/10 pt-4 mt-2">
-					<span className="text-xs font-bold text-black/50">Links & Socials</span>
+					<span className="text-xs font-bold text-black/50">Digital Presence</span>
 					<div className="flex flex-col gap-2">
 						{socialLinks?.instagram && (
 							<div className="flex justify-between items-center text-sm font-semibold">

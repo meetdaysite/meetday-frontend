@@ -186,56 +186,51 @@ export default function DashboardWelcomePage() {
 										<Link
 											key={prop.id}
 											href={`/host/dashboard/proposal?proposalId=${prop.id}`}
-											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-col justify-between w-[220px] shrink-0"
+											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-[380px] shrink-0"
 										>
-											<div>
-												{/* Image */}
-												<div className="relative aspect-square overflow-hidden bg-slate-50 border-b-[3px] border-black rounded-t-[17px]">
-													{imgUrl ? (
-														// eslint-disable-next-line @next/next/no-img-element
-														<img
-															src={imgUrl}
-															alt={prop.name}
-															className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-t-[14px]"
-															onLoad={() => imgUrl.startsWith("blob:") && URL.revokeObjectURL(imgUrl)}
-														/>
-													) : (
-														<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
-															{prop.name.substring(0, 2).toUpperCase()}
-														</div>
-													)}
+											{/* Image / Logo */}
+											<div className="relative w-[120px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
+												{imgUrl ? (
+													// eslint-disable-next-line @next/next/no-img-element
+													<img
+														src={imgUrl}
+														alt={prop.name}
+														className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
+														onLoad={() => imgUrl.startsWith("blob:") && URL.revokeObjectURL(imgUrl)}
+													/>
+												) : (
+													<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
+														{prop.name.substring(0, 2).toUpperCase()}
+													</div>
+												)}
 
-													{/* Status Badge */}
-													<span className="absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-green-400 text-black">
-														Published
-													</span>
-												</div>
+												{/* Status Badge */}
+												<span className="absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-green-400 text-black">
+													Published
+												</span>
+											</div>
 
-												{/* Content */}
-												<div className="p-3 flex flex-col gap-1">
-													<h3 className="font-heading font-black text-sm text-black truncate group-hover:text-[#EE2C2C] transition-colors">
+											{/* Content & Footer info */}
+											<div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+												<div className="flex flex-col gap-1">
+													<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">
 														{prop.name}
 													</h3>
-													<p className="text-[9px] font-bold text-black/50">
+													<p className="text-[11px] font-bold text-black/50 truncate">
 														{prop.city} • {prop.venue}
 													</p>
-													<p className="text-[9px] font-semibold text-black/70 line-clamp-3 mt-0.5">
+													<p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">
 														{prop.about}
 													</p>
 												</div>
-											</div>
 
-											{/* Footer Info */}
-											<div className="p-3 pt-0 flex flex-col gap-2 mt-0.5">
-												{displayDate && (
-													<div>
-														<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[9px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+												<div className="flex flex-wrap gap-1.5 mt-2">
+													{displayDate && (
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
 															{displayDate}
 														</span>
-													</div>
-												)}
-												<div>
-													<span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[9px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+													)}
+													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
 														{prop.guestCount} Guests
 													</span>
 												</div>
