@@ -186,8 +186,8 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 								className="flex items-center gap-2.5 px-4 py-2 rounded-2xl text-sm font-normal text-white/50 cursor-not-allowed"
 							>
 								<Icon as={Outlined} size="md" className="text-white/50 shrink-0" />
-								<span className="flex-1 text-left">{label}</span>
-								<span className="text-[9px] font-black uppercase tracking-wider bg-white/15 px-1.5 py-0.5 rounded">Soon</span>
+								<span className="flex-1 text-left whitespace-nowrap">{label}</span>
+								<span className="text-[9px] font-black uppercase tracking-wider bg-white/15 px-1.5 py-0.5 rounded shrink-0">Soon</span>
 							</button>
 						)
 					}
@@ -208,7 +208,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 								size="md"
 								className="text-white shrink-0"
 							/>
-							<span className="flex-1">{label}</span>
+							<span className="flex-1 whitespace-nowrap">{label}</span>
 						</Link>
 					)
 				})}

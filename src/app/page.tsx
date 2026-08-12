@@ -216,7 +216,7 @@ export default function RootPage() {
 					</h1>
 				</div>
 
-				<p className="mt-4 text-black/80 text-base sm:text-lg md:text-xl font-medium leading-relaxed max-w-2xl font-sans text-center z-10">
+				<p className="mt-4 text-black/80 text-sm sm:text-lg md:text-xl font-medium leading-relaxed max-w-2xl font-sans text-center z-10 px-8 sm:px-0">
 					Whether you’re looking <span className="inline-block hover:scale-125 transition-transform duration-200">👀</span> to <strong>market</strong> your products, <strong>monetize</strong> your IRL community, or explore how we’re building <span className="inline-block hover:scale-125 transition-transform duration-200">💪</span> the real-world social layer, you’re in the right place.
 				</p>
 
@@ -278,30 +278,57 @@ export default function RootPage() {
 					</div>
 				</div>
 
-				{/* Mobile Pills/Badges list (Visible only on mobile, placed haphazardly, tilted and floating) */}
-				<div className="md:hidden w-full relative h-[210px] overflow-hidden mb-28 z-20">
-					{[
-						{ text: "RAISE SPONSORSHIP", bg: "#F8EFE2", textColor: "#EE2C2C", pos: "left-[4%] top-[8%]", rot: "rotate-[-6deg]", anim: "animate-float-1" },
-						{ text: "CREATE EXPERIENCES", bg: "#FFD9D9", textColor: "#000000", pos: "right-[4%] top-[18%]", rot: "rotate-[5deg]", anim: "animate-float-2" },
-						{ text: "BACKED BY DATA", bg: "#F8EFE2", textColor: "#EE2C2C", pos: "left-[36%] top-[38%]", rot: "rotate-[-3deg]", anim: "animate-float-3" },
-						{ text: "VERIFIED USERS", bg: "#FFCE29", textColor: "#000000", pos: "left-[6%] top-[48%]", rot: "rotate-[8deg]", anim: "animate-float-4" },
-						{ text: "ENGAGE GEN Z AUDIENCE", bg: "#FFD9D9", textColor: "#000000", pos: "right-[6%] top-[54%]", rot: "rotate-[-8deg]", anim: "animate-float-1" },
-						{ text: "OPTIMIZE BUDGETS", bg: "#F8EFE2", textColor: "#EE2C2C", pos: "left-[36%] top-[70%]", rot: "rotate-[-5deg]", anim: "animate-float-4" },
-						{ text: "TRUSTED PAYMENTS", bg: "#FFD9D9", textColor: "#000000", pos: "left-[4%] top-[72%]", rot: "rotate-[4deg]", anim: "animate-float-3" },
-						{ text: "GROW COMMUNITY", bg: "#FFCE29", textColor: "#000000", pos: "right-[4%] top-[80%]", rot: "rotate-[6deg]", anim: "animate-float-2" }
-					].map((b, idx) => (
-						<div 
-							key={idx}
-							className={`absolute ${b.pos} ${b.rot} ${b.anim} transition-transform duration-300`}
-						>
+				{/* Mobile Pills/Badges list (Visible only on mobile, arranged in straight lines by color, floating gently) */}
+				<div className="md:hidden w-full flex flex-col gap-3.5 items-center mb-24 z-20 px-4">
+					{/* Top row: 3 Pink badges */}
+					<div className="flex flex-wrap justify-center gap-2 w-full">
+						{[
+							{ text: "CREATE EXPERIENCES", bg: "#FFD9D9", textColor: "#000000", anim: "animate-float-1" },
+							{ text: "ENGAGE GEN Z AUDIENCE", bg: "#FFD9D9", textColor: "#000000", anim: "animate-float-2" },
+							{ text: "TRUSTED PAYMENTS", bg: "#FFD9D9", textColor: "#000000", anim: "animate-float-3" }
+						].map((b, idx) => (
 							<span 
-								className="px-3 py-1.5 border-[2px] border-black rounded-full font-bold text-[9px] tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase whitespace-nowrap block"
+								key={idx}
+								className={`px-3 py-1.5 border-[2px] border-black rounded-full font-bold text-[9px] tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase whitespace-nowrap block ${b.anim}`}
 								style={{ backgroundColor: b.bg, color: b.textColor }}
 							>
 								{b.text}
 							</span>
-						</div>
-					))}
+						))}
+					</div>
+
+					{/* Middle row: 2 Yellow badges */}
+					<div className="flex flex-wrap justify-center gap-2 w-full">
+						{[
+							{ text: "VERIFIED USERS", bg: "#FFCE29", textColor: "#000000", anim: "animate-float-4" },
+							{ text: "GROW COMMUNITY", bg: "#FFCE29", textColor: "#000000", anim: "animate-float-1" }
+						].map((b, idx) => (
+							<span 
+								key={idx}
+								className={`px-3 py-1.5 border-[2px] border-black rounded-full font-bold text-[9px] tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase whitespace-nowrap block ${b.anim}`}
+								style={{ backgroundColor: b.bg, color: b.textColor }}
+							>
+								{b.text}
+							</span>
+						))}
+					</div>
+
+					{/* Bottom row: 3 Beige badges */}
+					<div className="flex flex-wrap justify-center gap-2 w-full">
+						{[
+							{ text: "RAISE SPONSORSHIP", bg: "#F8EFE2", textColor: "#EE2C2C", anim: "animate-float-2" },
+							{ text: "BACKED BY DATA", bg: "#F8EFE2", textColor: "#EE2C2C", anim: "animate-float-3" },
+							{ text: "OPTIMIZE BUDGETS", bg: "#F8EFE2", textColor: "#EE2C2C", anim: "animate-float-4" }
+						].map((b, idx) => (
+							<span 
+								key={idx}
+								className={`px-3 py-1.5 border-[2px] border-black rounded-full font-bold text-[9px] tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase whitespace-nowrap block ${b.anim}`}
+								style={{ backgroundColor: b.bg, color: b.textColor }}
+							>
+								{b.text}
+							</span>
+						))}
+					</div>
 				</div>
 
 				{/* Custom Bottom Wave red background wrapper */}
