@@ -246,7 +246,7 @@ export default function EditProfilePage() {
 		setYoutube(profile.socialLinks?.youtube ?? "")
 		setInstagram(profile.socialLinks?.instagram ?? "")
 		setLinkedin(profile.socialLinks?.linkedin ?? "")
-		setPortfolioLink(profile.socialLinks?.portfolio ?? "")
+		setPortfolioLink(profile.socialLinks?.website ?? "")
 		setAddressLine1(profile.address?.addressLine1 ?? "")
 		setAddressLine2(profile.address?.addressLine2 ?? "")
 		setCity(profile.address?.city ?? "")
@@ -312,7 +312,7 @@ export default function EditProfilePage() {
 					youtube: youtube.trim() || undefined,
 					instagram: instagram.trim() || undefined,
 					linkedin: linkedin.trim() || undefined,
-					portfolio: portfolioLink.trim() || undefined,
+					website: portfolioLink.trim() || undefined,
 				},
 				address: addressLine1.trim() ? {
 					addressLine1: addressLine1.trim(),

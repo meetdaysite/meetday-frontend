@@ -196,7 +196,7 @@ export function ActivateCommunityModal({
 						instagram: instagram.trim() || undefined,
 						linkedin: linkedin.trim() || undefined,
 						youtube: youtube.trim() || undefined,
-						portfolio: portfolio.trim() || undefined,
+						website: portfolio.trim() || undefined,
 					},
 					operatingCities,
 				})

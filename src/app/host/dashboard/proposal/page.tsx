@@ -918,7 +918,7 @@ export default function ProposalPage() {
             setInstagram(profile?.socialLinks?.instagram || "")
             setLinkedin(profile?.socialLinks?.linkedin || "")
             setYoutube(profile?.socialLinks?.youtube || "")
-            setPortfolio(profile?.socialLinks?.portfolio || "")
+            setPortfolio(profile?.socialLinks?.website || "")
             setLogoFile(null)
             setLogoPreviewUrl(community.logoUrl || communityLogoUrl)
         } else {
@@ -931,7 +931,7 @@ export default function ProposalPage() {
             setInstagram(profile?.socialLinks?.instagram || "")
             setLinkedin(profile?.socialLinks?.linkedin || "")
             setYoutube(profile?.socialLinks?.youtube || "")
-            setPortfolio(profile?.socialLinks?.portfolio || "")
+            setPortfolio(profile?.socialLinks?.website || "")
             setLogoFile(null)
             setLogoPreviewUrl(null)
         }
@@ -1029,7 +1029,7 @@ export default function ProposalPage() {
                         instagram: instagram.trim() || undefined,
                         linkedin: linkedin.trim() || undefined,
                         youtube: youtube.trim() || undefined,
-                        portfolio: portfolio.trim() || undefined,
+                        website: portfolio.trim() || undefined,
                     }
                 })
                 setProfile(updated)
@@ -1976,7 +1976,7 @@ export default function ProposalPage() {
                                          profileInstagram={profile?.socialLinks?.instagram || ""}
                                          profileLinkedin={profile?.socialLinks?.linkedin || ""}
                                          profileYoutube={profile?.socialLinks?.youtube || ""}
-                                         profilePortfolio={profile?.socialLinks?.portfolio || ""}
+                                         profilePortfolio={profile?.socialLinks?.website || ""}
                                          profileOperatingCities={profile?.operatingCities || []}
                                          onClose={() => setShowActivateModal(false)}
                                          onSuccess={(saved) => {

@@ -288,7 +288,7 @@ export default function ProfilePage() {
 										profileInstagram={profile.socialLinks?.instagram || ""}
 										profileLinkedin={profile.socialLinks?.linkedin || ""}
 										profileYoutube={profile.socialLinks?.youtube || ""}
-										profilePortfolio={profile.socialLinks?.portfolio || ""}
+										profilePortfolio={profile.socialLinks?.website || ""}
 										profileOperatingCities={profile.operatingCities || []}
 										onClose={() => {
 											if (!community) {

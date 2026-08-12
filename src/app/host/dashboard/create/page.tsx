@@ -2300,7 +2300,7 @@ function SocialLinksPrompt({
 	const [instagram, setInstagram] = useState(profile?.socialLinks?.instagram ?? "")
 	const [linkedin, setLinkedin] = useState(profile?.socialLinks?.linkedin ?? "")
 	const [youtube, setYoutube] = useState(profile?.socialLinks?.youtube ?? "")
-	const [portfolio, setPortfolio] = useState(profile?.socialLinks?.portfolio ?? "")
+	const [portfolio, setPortfolio] = useState(profile?.socialLinks?.website ?? "")
 	const [saving, setSaving] = useState(false)
 
 	const handleSubmit = async () => {
@@ -2316,7 +2316,7 @@ function SocialLinksPrompt({
 					instagram: instagram.trim() || undefined,
 					linkedin: linkedin.trim() || undefined,
 					youtube: youtube.trim() || undefined,
-					portfolio: portfolio.trim() || undefined,
+					website: portfolio.trim() || undefined,
 				}
 			})
 			setProfile(updated)

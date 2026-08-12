@@ -313,8 +313,8 @@ export default function ProfilePage() {
 									{profile?.socialLinks?.linkedin && (
 										<InfoRow label="LinkedIn" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile.socialLinks.linkedin}</p>} />
 									)}
-									{profile?.socialLinks?.portfolio && (
-										<InfoRow label="Portfolio" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile.socialLinks.portfolio}</p>} />
+									{profile?.socialLinks?.website && (
+										<InfoRow label="Portfolio" value={<p className="text-label-sm text-text-brand truncate max-w-50">{profile.socialLinks.website}</p>} />
 									)}
 									{profile?.languages && profile.languages.length > 0 && (
 										<InfoRow

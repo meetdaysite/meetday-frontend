@@ -90,7 +90,7 @@ export type HostProfile = {
 		youtube?: string
 		instagram?: string
 		linkedin?: string
-		portfolio?: string
+		website?: string
 	}
 	portfolioLinks?: string[]
 	pan?: string
@@ -156,7 +156,7 @@ export type UpdateHostProfilePayload = {
 		youtube?: string
 		instagram?: string
 		linkedin?: string
-		portfolio?: string
+		website?: string
 	}
 	address?: {
 		addressLine1: string

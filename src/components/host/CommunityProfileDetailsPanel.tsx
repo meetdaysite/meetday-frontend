@@ -12,7 +12,7 @@ interface CommunityProfileDetailsPanelProps {
 		instagram?: string
 		linkedin?: string
 		youtube?: string
-		portfolio?: string
+		website?: string
 	}
 	onEdit: () => void
 	onClose?: () => void
@@ -161,11 +161,11 @@ export function CommunityProfileDetailsPanel({
 								</a>
 							</div>
 						)}
-						{socialLinks?.portfolio && (
+						{socialLinks?.website && (
 							<div className="flex justify-between items-center text-sm font-semibold">
 								<span className="text-black/40">Website</span>
-								<a href={`https://${socialLinks.portfolio}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline truncate max-w-[200px]">
-									{socialLinks.portfolio}
+								<a href={`https://${socialLinks.website}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline truncate max-w-[200px]">
+									{socialLinks.website}
 								</a>
 							</div>
 						)}
