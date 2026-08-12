@@ -25,6 +25,14 @@ const STATUS_CONFIG: Record<HostCommunityProfile["approvalStatus"], { label: str
 	SUSPENDED: { label: "Suspended", className: "bg-black/5 border-black/30 text-black/60" },
 }
 
+const formatHref = (url: string) => {
+	const trimmed = url.trim()
+	if (/^https?:\/\//i.test(trimmed)) {
+		return trimmed
+	}
+	return `https://${trimmed}`
+}
+
 export function CommunityProfileDetailsPanel({
 	community,
 	operatingCities,
@@ -140,32 +148,32 @@ export function CommunityProfileDetailsPanel({
 						{socialLinks?.instagram && (
 							<div className="flex justify-between items-center text-sm font-semibold">
 								<span className="text-black/40">Instagram</span>
-								<a href={`https://${socialLinks.instagram}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline">
-									{socialLinks.instagram.replace("instagram.com/", "@")}
+								<a href={formatHref(socialLinks.instagram)} target="_blank" rel="noreferrer" className="text-green-600 hover:text-green-700 hover:underline">
+									View
 								</a>
 							</div>
 						)}
 						{socialLinks?.linkedin && (
 							<div className="flex justify-between items-center text-sm font-semibold">
 								<span className="text-black/40">LinkedIn</span>
-								<a href={`https://${socialLinks.linkedin}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline truncate max-w-[200px]">
-									{socialLinks.linkedin}
+								<a href={formatHref(socialLinks.linkedin)} target="_blank" rel="noreferrer" className="text-green-600 hover:text-green-700 hover:underline">
+									View
 								</a>
 							</div>
 						)}
 						{socialLinks?.youtube && (
 							<div className="flex justify-between items-center text-sm font-semibold">
 								<span className="text-black/40">YouTube</span>
-								<a href={`https://${socialLinks.youtube}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline truncate max-w-[200px]">
-									{socialLinks.youtube}
+								<a href={formatHref(socialLinks.youtube)} target="_blank" rel="noreferrer" className="text-green-600 hover:text-green-700 hover:underline">
+									View
 								</a>
 							</div>
 						)}
 						{socialLinks?.website && (
 							<div className="flex justify-between items-center text-sm font-semibold">
 								<span className="text-black/40">Website</span>
-								<a href={`https://${socialLinks.website}`} target="_blank" rel="noreferrer" className="text-[#6C32D1] hover:underline truncate max-w-[200px]">
-									{socialLinks.website}
+								<a href={formatHref(socialLinks.website)} target="_blank" rel="noreferrer" className="text-green-600 hover:text-green-700 hover:underline">
+									View
 								</a>
 							</div>
 						)}
