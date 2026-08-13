@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/context/AuthContext"
 import { useAuthSessionStore } from "@/store/authSessionStore"
 import { useHostStore } from "@/store/hostStore"
+import { useBrandStore } from "@/store/brandStore"
 import { getAuthMe, getHostProfile, getBrandProfile } from "@/lib/api"
 import { ApiError, getApiErrorMessage } from "@/lib/errors"
 
@@ -18,7 +19,8 @@ export function useGoogleSignIn(intent: "login" | "signup", app: AppKind) {
 	const [loading, setLoading] = useState(false)
 	const { signInWithGoogle, signOut } = useAuth()
 	const setSession = useAuthSessionStore((s) => s.setSession)
-	const { setProfile } = useHostStore()
+	const setHostProfile = useHostStore((s) => s.setProfile)
+	const setBrandProfile = useBrandStore((s) => s.setProfile)
 	const router = useRouter()
 	const base = `/${app}`
 
@@ -60,7 +62,8 @@ export function useGoogleSignIn(intent: "login" | "signup", app: AppKind) {
 					return
 				}
 				const profile = app === "host" ? await getHostProfile() : await getBrandProfile()
-				setProfile(profile)
+				if (app === "host") setHostProfile(profile as Awaited<ReturnType<typeof getHostProfile>>)
+				else setBrandProfile(profile as Awaited<ReturnType<typeof getBrandProfile>>)
 				router.push(`${base}/dashboard`)
 				return
 			}

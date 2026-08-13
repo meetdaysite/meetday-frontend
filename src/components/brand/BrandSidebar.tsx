@@ -12,13 +12,24 @@ import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import WidgetFillSvg from "@/icons/filled/widget.svg"
 import TicketOutSvg from "@/icons/outlined/ticket.svg"
 import TicketFillSvg from "@/icons/filled/ticket.svg"
+import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
+import DocumentTextSvg from "@/icons/outlined/document-text.svg"
+import BellSvg from "@/icons/outlined/bell.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
-const NAV_ITEMS: { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; exact?: boolean }[] = [
-	{ label: "Dataroom", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
-	{ label: "Profile", href: "/brand/dashboard/profile", outlined: UserSvg, filled: UserSvg },
+type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; exact?: boolean }
+
+const PRIMARY_NAV: NavItem[] = [
+	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
+	{ label: "Proposals", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
+]
+
+const SECONDARY_NAV: NavItem[] = [
+	{ label: "Notifications", href: "/brand/dashboard/notifications", outlined: BellSvg, filled: BellSvg },
 	{ label: "Support", href: "/brand/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
+	{ label: "Profile", href: "/brand/dashboard/profile", outlined: UserSvg, filled: UserSvg },
 ]
 
 function LogoutSvg(props: SVGProps<SVGSVGElement>) {
@@ -57,7 +68,33 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 			</div>
 
 			<nav className="flex-1 px-3 flex flex-col gap-0.5">
-				{NAV_ITEMS.map(({ label, href, outlined: Outlined, filled: Filled, exact }) => {
+				{PRIMARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled, exact }) => {
+					const isActive = exact ? pathname === href : pathname.startsWith(href)
+					return (
+						<Link
+							key={href}
+							href={href}
+							onClick={onClose}
+							className={clsx(
+								"flex items-center gap-3 px-3 py-2.5 rounded-action transition-colors",
+								isActive
+									? "bg-surface-brand-soft text-text-brand"
+									: "text-text-secondary hover:bg-surface-card-muted hover:text-text-primary",
+							)}
+						>
+							<Icon
+								as={isActive ? Filled : Outlined}
+								size="md"
+								color={isActive ? "brand" : "secondary"}
+							/>
+							<span className="text-label-md flex-1">{label}</span>
+						</Link>
+					)
+				})}
+
+				<div className="my-2 border-t border-border-default" />
+
+				{SECONDARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled, exact }) => {
 					const isActive = exact ? pathname === href : pathname.startsWith(href)
 					return (
 						<Link

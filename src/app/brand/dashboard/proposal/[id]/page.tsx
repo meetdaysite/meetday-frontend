@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
@@ -13,7 +14,7 @@ import {
 	markSponsorshipInterest,
 	type PublishedSponsorshipDetail,
 } from "@/lib/api"
-import { getApiErrorMessage } from "@/lib/errors"
+import { ApiError, getApiErrorMessage } from "@/lib/errors"
 import AltArrowRightSvg from "@/icons/outlined/alt-arrow-right.svg"
 
 function formatDate(value: string | null): string {
@@ -39,6 +40,7 @@ export default function ProposalDetailPage() {
 	const [error, setError] = useState<string | null>(null)
 	const [isInterested, setIsInterested] = useState(false)
 	const [isSubmittingInterest, setIsSubmittingInterest] = useState(false)
+	const [showIncompleteProfileModal, setShowIncompleteProfileModal] = useState(false)
 
 	useEffect(() => {
 		let cancelled = false
@@ -65,7 +67,11 @@ export default function ProposalDetailPage() {
 			setIsInterested(true)
 			toast.success(res.alreadyInterested ? "You've already expressed interest" : "Interest sent to the host and admin team!")
 		} catch (e) {
-			toast.error(getApiErrorMessage(e))
+			if (e instanceof ApiError && e.statusCode === 400) {
+				setShowIncompleteProfileModal(true)
+			} else {
+				toast.error(getApiErrorMessage(e))
+			}
 		} finally {
 			setIsSubmittingInterest(false)
 		}
@@ -84,11 +90,11 @@ export default function ProposalDetailPage() {
 			<div className="px-6 lg:px-8 pt-6 pb-8 max-w-4xl mx-auto w-full">
 				<button
 					type="button"
-					onClick={() => router.push("/brand/dashboard")}
+					onClick={() => router.push("/brand/dashboard/proposals")}
 					className="flex items-center gap-1 text-label-sm text-text-secondary hover:text-text-primary mb-6"
 				>
 					<Icon as={AltArrowRightSvg} size="sm" className="rotate-180" />
-					Back to dashboard
+					Back to proposals
 				</button>
 
 				{isLoading ? (
@@ -208,6 +214,25 @@ export default function ProposalDetailPage() {
 					</div>
 				)}
 			</div>
+
+			{showIncompleteProfileModal && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+					<div className="w-full max-w-sm bg-surface-card rounded-action border border-border-default p-6 flex flex-col gap-4">
+						<h2 className="text-label-lg font-semibold text-text-primary">Please complete your profile</h2>
+						<p className="text-body-sm text-text-secondary">
+							Add your brand name, categories, and social links before expressing interest in a proposal.
+						</p>
+						<div className="flex items-center gap-3 justify-end">
+							<Button variant="secondary" size="sm" onClick={() => setShowIncompleteProfileModal(false)}>
+								Cancel
+							</Button>
+							<Link href="/brand/dashboard/profile/edit">
+								<Button size="sm">Complete Profile</Button>
+							</Link>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }

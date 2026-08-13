@@ -178,40 +178,76 @@ export async function updateHostProfile(payload: UpdateHostProfilePayload): Prom
 	return data.data
 }
 
-export type BrandProfile = HostProfile
-export type UpdateBrandProfilePayload = UpdateHostProfilePayload
+export type CompanyType = "BRAND" | "AGENCY"
 
-type RawBrandProfile = {
+export type BrandProfile = {
 	id: string
+	userId: string
 	brandName: string
-	email: string | null
-	phone: string | null
-	firstName: string
-	lastName: string
-	createdAt: string
+	socialLinks?: {
+		instagram?: string
+		linkedin?: string
+		youtube?: string
+		website?: string
+	}
+	workEmail?: string | null
+	contactPhone?: string | null
+	logoKey?: string | null
+	logoUrl?: string | null
+	companyType?: CompanyType | null
+	aboutCompany?: string | null
+	industry?: string | null
+	categories: Category[]
+	isProfileComplete: boolean
+	phone?: string | null
+	email?: string | null
+	firstName?: string
+	lastName?: string
+	createdAt?: string
+	updatedAt?: string
 }
 
-// Brands are a lean, separate account type on the backend (BrandProfile, not HostProfile).
-// Mapped into the HostProfile shape so the existing brand dashboard UI (built against HostProfile)
-// keeps working without changes — approvalStatus/kycStatus are hardcoded since brands have no
-// KYC/approval gate.
-export async function getBrandProfile(): Promise<BrandProfile> {
-	const { data } = await apiClient.get<{ success: boolean; data: RawBrandProfile }>("/brands/me")
-	const brand = data.data
-	return {
-		id: brand.id,
-		userId: brand.id,
-		hostType: "BUSINESS",
-		displayName: brand.brandName,
-		kycStatus: "VERIFIED",
-		panVerificationStatus: "VERIFIED",
-		bankVerificationStatus: "VERIFIED",
-		approvalStatus: "APPROVED",
+export type UpdateBrandProfilePayload = {
+	brandName?: string
+	categoryIds?: string[]
+	socialLinks?: {
+		instagram?: string
+		linkedin?: string
+		youtube?: string
+		website?: string
 	}
+	workEmail?: string
+	contactPhone?: string
+	logoKey?: string
+	companyType?: CompanyType
+	aboutCompany?: string
+	industry?: string
+}
+
+export async function getBrandProfile(): Promise<BrandProfile> {
+	const { data } = await apiClient.get<{ success: boolean; data: BrandProfile }>("/brands/me")
+	return data.data
 }
 
 export async function updateBrandProfile(payload: UpdateBrandProfilePayload): Promise<BrandProfile> {
-	const { data } = await apiClient.patch<{ success: boolean; data: BrandProfile }>("/hosts/profile", payload)
+	const { data } = await apiClient.patch<{ success: boolean; data: BrandProfile }>("/brands/me", payload)
+	return data.data
+}
+
+export type BrandCommunity = {
+	id: string
+	name: string
+	logoUrl: string | null
+	size: string
+	avgGuestCount: string
+	experiencesPerYear: string
+	categories: Category[]
+}
+
+export async function getBrandCommunities(): Promise<{ communities: BrandCommunity[]; total: number }> {
+	const { data } = await apiClient.get<{ success: boolean; data: { communities: BrandCommunity[]; total: number } }>(
+		"/sponsorships/communities",
+	)
 	return data.data
 }
 

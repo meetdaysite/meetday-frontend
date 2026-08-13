@@ -3,23 +3,16 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import { ApiError, getApiErrorMessage } from "@/lib/errors"
-import clsx from "clsx"
+import { ApiError } from "@/lib/errors"
 import { LogoutConfirmDialog } from "@/components/ui/LogoutConfirmDialog"
 import { useAuthStore } from "@/store/authStore"
-import { useHostStore } from "@/store/hostStore"
+import { useBrandStore } from "@/store/brandStore"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useAttendeeProfileStore } from "@/store/attendeeProfileStore"
-import { getBrandProfile, reapplyAsHost, type BrandProfile } from "@/lib/api"
+import { getBrandProfile, type BrandProfile } from "@/lib/api"
 import { Button } from "@/components/ui/Button"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { BrandSidebar } from "@/components/brand/BrandSidebar"
-import { CompleteKycScreen } from "@/components/brand/CompleteKycScreen"
-import { Icon } from "@/components/ui/Icon"
-import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
-import CloseCircleSvg from "@/icons/outlined/close-circle.svg"
-import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
 
 function HamburgerIcon() {
 	return (
@@ -27,11 +20,6 @@ function HamburgerIcon() {
 			<path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
 		</svg>
 	)
-}
-
-function CheckIcon({ done }: { done: boolean }) {
-	if (done) return <Icon as={CheckCircleSvg} size="sm" color="success" className="shrink-0" />
-	return <Icon as={ClockCircleSvg} size="sm" color="muted" className="shrink-0" />
 }
 
 // A burst of profile fetches right after registration can trip the backend's rate limiter
@@ -48,119 +36,6 @@ async function getBrandProfileWithRetry(): Promise<BrandProfile> {
 		}
 	}
 	return getBrandProfile()
-}
-
-function UnderReviewScreen({
-	status,
-	profile,
-	onSignOut,
-}: {
-	status: "pending" | "rejected"
-	profile: BrandProfile
-	onSignOut: () => void
-}) {
-	const isPending = status === "pending"
-	const setProfile = useHostStore((s) => s.setProfile)
-	const [reapplying, setReapplying] = useState(false)
-
-	async function handleReapply() {
-		setReapplying(true)
-		try {
-			await reapplyAsHost()
-			const fresh = await getBrandProfile()
-			setProfile(fresh)
-			toast.success("You can now resubmit your verification details.")
-		} catch (e) {
-			toast.error(getApiErrorMessage(e))
-		} finally {
-			setReapplying(false)
-		}
-	}
-
-	return (
-		<div className="min-h-screen flex items-center justify-center bg-surface-page px-4">
-			<div className="w-full max-w-md flex flex-col items-center gap-6 py-12">
-				{/* Icon */}
-				<div
-					className={clsx(
-						"size-20 rounded-full flex items-center justify-center",
-						isPending ? "bg-surface-warning-soft" : "bg-status-error-bg",
-					)}
-				>
-					{isPending ? (
-						<Icon as={ClockCircleSvg} size="2xl" color="warning" />
-					) : (
-						<Icon as={CloseCircleSvg} size="2xl" color="inherit" className="text-status-error-text" />
-					)}
-				</div>
-
-				<div className="text-center">
-					<h1 className="text-heading-sm text-text-primary font-bold">
-						{isPending ? "Account Under Review" : "Application Not Approved"}
-					</h1>
-					<p className="text-body-sm text-text-secondary mt-2 max-w-md mx-auto">
-						{isPending
-							? "Your profile has been submitted. Our team will review your application within 2–3 business days."
-							: "Your application was not approved. You can review the reason below and reapply."}
-					</p>
-					{!isPending && profile.rejectionReason && (
-						<p className="text-body-sm text-status-error-text bg-status-error-bg border border-status-error-text/20 rounded-action px-4 py-3 mt-4 max-w-md mx-auto text-left">
-							{profile.rejectionReason}
-						</p>
-					)}
-				</div>
-
-				{!isPending && (
-					<Button variant="primary" size="sm" onClick={handleReapply} disabled={reapplying}>
-						{reapplying ? "Submitting…" : "Reapply"}
-					</Button>
-				)}
-
-				{isPending && (
-					<div className="w-full rounded-action border border-border-default overflow-hidden">
-						{[
-							{ label: "Profile submitted", done: true },
-							{ label: "PAN verification", done: profile.panVerificationStatus === "VERIFIED" },
-							{ label: "Bank account verification", done: profile.bankVerificationStatus === "VERIFIED" },
-							{ label: "Admin approval", done: profile.approvalStatus === "APPROVED" },
-						].map((item, i, arr) => (
-							<div
-								key={item.label}
-								className={clsx(
-									"flex items-center gap-3 px-4 py-3",
-									i < arr.length - 1 && "border-b border-border-default",
-									!item.done && "opacity-50",
-								)}
-							>
-								<CheckIcon done={item.done} />
-								<span className="text-body-sm text-text-primary font-semibold flex-1">
-									{item.label}
-								</span>
-								{!item.done && (
-									<span className="text-caption font-medium text-text-warning bg-surface-warning-soft border border-yellow-200 px-2.5 py-0.5 rounded-avatar">
-										Pending
-									</span>
-								)}
-							</div>
-						))}
-					</div>
-				)}
-
-				{isPending && (
-					<p className="text-body-sm text-text-secondary text-center">
-						You&apos;ll receive an email once your account is approved.
-					</p>
-				)}
-
-				<button
-					onClick={onSignOut}
-					className="text-label-sm font-medium text-text-secondary hover:text-text-primary transition-colors underline underline-offset-2"
-				>
-					Sign out
-				</button>
-			</div>
-		</div>
-	)
 }
 
 function LoadingScreen() {
@@ -202,7 +77,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 	const [profileError, setProfileError] = useState(false)
 	const [needsSignup, setNeedsSignup] = useState(false)
 	const { user, authLoading, signOut } = useAuthStore()
-	const { profile, setProfile, clearProfile } = useHostStore()
+	const { profile, setProfile, clearProfile } = useBrandStore()
 	const initNotifications = useNotificationStore(s => s.init)
 	const router = useRouter()
 
@@ -263,13 +138,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user, authLoading])
 
-	// Init notifications once the brand profile is confirmed APPROVED
+	// Brands have no KYC/approval gate — init notifications as soon as the profile loads.
 	useEffect(() => {
-		if (profile?.approvalStatus === "APPROVED") {
+		if (profile) {
 			initNotifications()
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [profile?.approvalStatus])
+	}, [profile])
 
 	// Show loading while Firebase resolves auth or while profile is being fetched
 	if (authLoading || (!profile && !!user && !profileError && !needsSignup)) return <LoadingScreen />
@@ -364,43 +239,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 			</div>
 		)
 	}
-
-	const approvalStatus = profile?.approvalStatus
-
-	// KYC must be complete before an application can be sent for admin approval —
-	// a PENDING profile with unverified PAN/bank means the applicant dropped off
-	// mid-onboarding and needs to finish that step first.
-	/*
-	if (profile && approvalStatus === "PENDING" && profile.kycStatus !== "VERIFIED") {
-		return (
-			<>
-				<CompleteKycScreen profile={profile} onSignOut={() => setShowLogoutConfirm(true)} />
-				<LogoutConfirmDialog
-					open={showLogoutConfirm}
-					onClose={() => setShowLogoutConfirm(false)}
-					onConfirm={handleSignOut}
-				/>
-			</>
-		)
-	}
-
-	if (profile && (approvalStatus === "PENDING" || approvalStatus === "REJECTED")) {
-		return (
-			<>
-				<UnderReviewScreen
-					status={approvalStatus === "PENDING" ? "pending" : "rejected"}
-					profile={profile}
-					onSignOut={() => setShowLogoutConfirm(true)}
-				/>
-				<LogoutConfirmDialog
-					open={showLogoutConfirm}
-					onClose={() => setShowLogoutConfirm(false)}
-					onConfirm={handleSignOut}
-				/>
-			</>
-		)
-	}
-	*/
 
 	return (
 		<div className="min-h-screen flex bg-surface-page">

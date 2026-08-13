@@ -15,7 +15,7 @@ import LockKeyholeSvg from "@/icons/outlined/lock-keyhole.svg"
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
 import { useAuth } from "@/context/AuthContext"
 import { useAuthSessionStore } from "@/store/authSessionStore"
-import { useHostStore } from "@/store/hostStore"
+import { useBrandStore } from "@/store/brandStore"
 import { checkPhone, getAuthMe, getBrandProfile } from "@/lib/api"
 import { CountrySelect } from "@/components/auth/PhoneField"
 import { COUNTRIES, DEFAULT_COUNTRY } from "@/lib/countries"
@@ -38,7 +38,7 @@ export default function VerifyPage() {
 	const [loading, setLoading] = useState(false)
 	const { confirmOtp, sendOtp, signOut, hasPendingOtp } = useAuth()
 	const { intent, phone, clearSession } = useAuthSessionStore()
-	const { setProfile } = useHostStore()
+	const { setProfile } = useBrandStore()
 	const router = useRouter()
 	const canResend = secondsLeft === 0
 

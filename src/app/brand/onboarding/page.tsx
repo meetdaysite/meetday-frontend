@@ -8,7 +8,7 @@ import { z } from "zod"
 import { toast } from "sonner"
 import { ApiError, getApiErrorMessage } from "@/lib/errors"
 import { registerBrand, getBrandProfile, type BrandRegisterPayload } from "@/lib/api"
-import { useHostStore } from "@/store/hostStore"
+import { useBrandStore } from "@/store/brandStore"
 import { useAuthSessionStore, useAuthSessionHydrated } from "@/store/authSessionStore"
 import { useAuth } from "@/context/AuthContext"
 import { Button } from "@/components/ui/Button"
@@ -63,7 +63,7 @@ export default function OnboardingPage() {
 	const { phone, email: sessionEmail, clearSession } = useAuthSessionStore()
 	const sessionHydrated = useAuthSessionHydrated()
 	const { signOut } = useAuth()
-	const { setProfile } = useHostStore()
+	const { setProfile } = useBrandStore()
 	const router = useRouter()
 
 	// Guard: only reachable from signup flow — wait for the persisted session to hydrate

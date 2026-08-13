@@ -15,6 +15,7 @@ import { useAttendeeProfileStore } from "./attendeeProfileStore"
 import { useAttendeeSessionStore } from "./attendeeSessionStore"
 import { useAuthSessionStore } from "./authSessionStore"
 import { useHostStore } from "./hostStore"
+import { useBrandStore } from "./brandStore"
 import { useDashboardStore } from "./dashboardStore"
 import { useNotificationStore } from "./notificationStore"
 
@@ -149,6 +150,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 		useAttendeeSessionStore.getState().clearSession()
 		useAuthSessionStore.getState().clearSession()
 		useHostStore.getState().clearProfile()
+		useBrandStore.getState().clearProfile()
 		useDashboardStore.getState().reset()
 		useNotificationStore.getState().reset()
 		try {
