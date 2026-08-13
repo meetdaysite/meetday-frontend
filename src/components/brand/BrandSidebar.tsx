@@ -22,7 +22,7 @@ type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon
 
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
-	{ label: "Proposals", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Active Sponsorship", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
 ]
 
