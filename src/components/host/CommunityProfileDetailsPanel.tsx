@@ -14,7 +14,7 @@ interface CommunityProfileDetailsPanelProps {
 		youtube?: string
 		website?: string
 	}
-	onEdit: () => void
+	onEdit?: () => void
 	onClose?: () => void
 }
 
@@ -181,15 +181,17 @@ export function CommunityProfileDetailsPanel({
 				</div>
 
 				{/* Edit details button */}
-				<div className="mt-6 pt-6 border-t border-black/10 shrink-0">
-					<button
-						type="button"
-						onClick={onEdit}
-						className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all flex items-center justify-center gap-2 select-none"
-					>
-						EDIT COMMUNITY DETAILS
-					</button>
-				</div>
+				{onEdit && (
+					<div className="mt-6 pt-6 border-t border-black/10 shrink-0">
+						<button
+							type="button"
+							onClick={onEdit}
+							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all flex items-center justify-center gap-2 select-none"
+						>
+							EDIT COMMUNITY DETAILS
+						</button>
+					</div>
+				)}
 			</div>
 		</div>
 	)

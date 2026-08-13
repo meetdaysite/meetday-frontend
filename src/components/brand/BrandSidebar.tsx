@@ -5,6 +5,7 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
+import { useBrandStore } from "@/store/brandStore"
 import type { ComponentType, SVGProps } from "react"
 
 import UserSvg from "@/icons/outlined/user.svg"
@@ -22,14 +23,13 @@ type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon
 
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
-	{ label: "Active Sponsorship", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Active Sponsorships", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
 ]
 
 const SECONDARY_NAV: NavItem[] = [
 	{ label: "Notifications", href: "/brand/dashboard/notifications", outlined: BellSvg, filled: BellSvg },
 	{ label: "Support", href: "/brand/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
-	{ label: "Profile", href: "/brand/dashboard/profile", outlined: UserSvg, filled: UserSvg },
 ]
 
 function LogoutSvg(props: SVGProps<SVGSVGElement>) {
@@ -54,20 +54,28 @@ interface BrandSidebarProps {
 
 function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSignOut: () => void }) {
 	const pathname = usePathname()
+	const { profile } = useBrandStore()
+	const brandName = profile?.brandName || "Brand"
+	const avatarUrl = profile?.logoUrl
 
 	return (
-		<div className="flex flex-col h-full">
-			<div className="px-5 pt-6 pb-5">
-				<Image
-					src="/assets/brand_logo.svg"
-					alt="Meetday"
-					width={120}
-					height={32}
-					className="h-8 w-auto"
-				/>
+		<div className="flex flex-col h-full bg-[#EE2C2C] text-white">
+			{/* Brand Logo */}
+			<div className="px-6 pt-5 pb-3 flex items-center justify-center">
+				<Link href="/brand/dashboard">
+					<Image
+						src="/assets/brand_logo.svg"
+						alt="Meetday"
+						width={130}
+						height={36}
+						style={{ filter: "brightness(0) invert(1)" }}
+						className="h-8 w-auto cursor-pointer"
+					/>
+				</Link>
 			</div>
 
-			<nav className="flex-1 px-3 flex flex-col gap-0.5">
+			{/* Navigation Top Items */}
+			<nav className="flex-1 px-4 flex flex-col gap-1 mt-1">
 				{PRIMARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled, exact }) => {
 					const isActive = exact ? pathname === href : pathname.startsWith(href)
 					return (
@@ -76,62 +84,80 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 							href={href}
 							onClick={onClose}
 							className={clsx(
-								"flex items-center gap-3 px-3 py-2.5 rounded-action transition-colors",
+								"flex items-center gap-2.5 px-4 py-2 rounded-2xl transition-all text-sm font-normal",
 								isActive
-									? "bg-surface-brand-soft text-text-brand"
-									: "text-text-secondary hover:bg-surface-card-muted hover:text-text-primary",
+									? "bg-[#D12525] text-white"
+									: "text-white/90 hover:bg-[#D12525]/50 hover:text-white"
 							)}
 						>
 							<Icon
 								as={isActive ? Filled : Outlined}
 								size="md"
-								color={isActive ? "brand" : "secondary"}
+								className="text-white shrink-0"
 							/>
-							<span className="text-label-md flex-1">{label}</span>
+							<span className="flex-1 whitespace-nowrap">{label}</span>
 						</Link>
 					)
 				})}
 
-				<div className="my-2 border-t border-border-default" />
+				{/* Navigation Bottom Items */}
+				<div className="mt-auto flex flex-col gap-1 pb-2">
+					{SECONDARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled }) => {
+						const isActive = pathname.startsWith(href)
+						return (
+							<Link
+								key={href}
+								href={href}
+								onClick={onClose}
+								className={clsx(
+									"flex items-center gap-2.5 px-4 py-2 rounded-2xl transition-all text-sm font-normal",
+									isActive
+										? "bg-[#D12525] text-white"
+										: "text-white/90 hover:bg-[#D12525]/50 hover:text-white"
+								)}
+							>
+								<Icon
+									as={isActive ? Filled : Outlined}
+									size="md"
+									className="text-white shrink-0"
+								/>
+								<span className="flex-1">{label}</span>
+							</Link>
+						)
+					})}
 
-				{SECONDARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled, exact }) => {
-					const isActive = exact ? pathname === href : pathname.startsWith(href)
-					return (
-						<Link
-							key={href}
-							href={href}
-							onClick={onClose}
-							className={clsx(
-								"flex items-center gap-3 px-3 py-2.5 rounded-action transition-colors",
-								isActive
-									? "bg-surface-brand-soft text-text-brand"
-									: "text-text-secondary hover:bg-surface-card-muted hover:text-text-primary",
-							)}
-						>
-							<Icon
-								as={isActive ? Filled : Outlined}
-								size="md"
-								color={isActive ? "brand" : "secondary"}
-							/>
-							<span className="text-label-md flex-1">{label}</span>
-						</Link>
-					)
-				})}
+
+
+					{/* Bottom Brand Button / Pill */}
+					<Link
+						href="/brand/dashboard/profile"
+						onClick={onClose}
+						className="mt-2 flex items-center gap-2.5 px-4 py-2.5 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-semibold text-sm tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all select-none relative overflow-hidden"
+					>
+						{/* Avatar circle */}
+						{avatarUrl ? (
+							<div className="relative size-7 rounded-full overflow-hidden border-2 border-black bg-white shrink-0">
+								<Image
+									src={avatarUrl}
+									alt={brandName}
+									fill
+									sizes="28px"
+									className="object-cover"
+								/>
+							</div>
+						) : (
+							<div className="size-7 rounded-full bg-white border-2 border-black flex items-center justify-center shrink-0">
+								<svg className="size-4 text-black" viewBox="0 0 24 24" fill="currentColor">
+									<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+								</svg>
+							</div>
+						)}
+						<span className="flex-1 truncate">{brandName}</span>
+						{/* Golden accent overlay styling */}
+						<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-r from-transparent to-white/20 skew-x-[25deg] pointer-events-none" />
+					</Link>
+				</div>
 			</nav>
-
-			<div className="px-3 pb-5 pt-2 border-t border-border-default">
-				<button
-					type="button"
-					onClick={() => {
-						onClose()
-						onSignOut()
-					}}
-					className="w-full flex items-center gap-3 px-3 py-2.5 rounded-action text-text-secondary hover:bg-surface-card-muted hover:text-text-primary transition-colors"
-				>
-					<LogoutSvg className="size-5 shrink-0" />
-					<span className="text-label-md flex-1 text-left">Sign out</span>
-				</button>
-			</div>
 		</div>
 	)
 }
@@ -139,7 +165,7 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 export function BrandSidebar({ isOpen, onClose, onSignOut }: BrandSidebarProps) {
 	return (
 		<>
-			<aside className="hidden lg:flex flex-col w-60 shrink-0 h-screen sticky top-0 bg-surface-card border-r border-border-default overflow-y-auto">
+			<aside className="hidden lg:flex flex-col w-60 shrink-0 h-[calc(100vh-2rem)] bg-[#EE2C2C] overflow-y-auto">
 				<BrandSidebarContent onClose={onClose} onSignOut={onSignOut} />
 			</aside>
 
@@ -150,7 +176,7 @@ export function BrandSidebar({ isOpen, onClose, onSignOut }: BrandSidebarProps) 
 						onClick={onClose}
 						aria-hidden
 					/>
-					<aside className="fixed inset-y-0 left-0 w-72 bg-surface-card z-50 lg:hidden overflow-y-auto shadow-panel">
+					<aside className="fixed inset-y-0 left-0 w-72 bg-[#EE2C2C] z-50 lg:hidden overflow-y-auto shadow-panel">
 						<BrandSidebarContent onClose={onClose} onSignOut={onSignOut} />
 					</aside>
 				</>

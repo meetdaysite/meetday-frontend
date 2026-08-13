@@ -7,7 +7,7 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { BrandAuthShell } from "@/components/brand/BrandAuthShell"
+import { AuthShell } from "@/components/auth/AuthShell"
 import { OtpInput } from "@/components/auth/OtpInput"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
@@ -30,8 +30,16 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>
 
-const RESEND_SECONDS = 60
+function MiniSpinner() {
+	return (
+		<svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden className="animate-spin shrink-0">
+			<circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
+			<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+		</svg>
+	)
+}
 
+const RESEND_SECONDS = 60
 
 export default function VerifyPage() {
 	const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS)
@@ -169,41 +177,56 @@ export default function VerifyPage() {
 		: ""
 
 	return (
-		<BrandAuthShell variant="verify">
+		<AuthShell
+			size="small"
+			phoneImage="/assets/phone_image_otp_verify.svg"
+			pointsImage="/assets/points_otp_verify.svg"
+		>
 			<div id="recaptcha-container-verify" />
 
 			<Link
 				href={backHref}
-				className="inline-flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors mb-8"
+				className="inline-flex items-center gap-1.5 text-xs font-bold text-black/50 hover:text-black transition-colors mb-4"
 			>
-				<Icon as={ArrowLeftSvg} size="sm" />
-				{intent === "login" ? "Back to Log in" : "Back to Sign up"}
+				<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+				</svg>
+				Back
 			</Link>
 
 			<div className="mb-6">
-				<h1 className="text-heading-sm text-text-primary mb-1">
-					Verify your account and <span className="text-text-brand">unlock your vibe.</span>
+				<h1 className="font-heading text-3xl font-black text-black mb-1">
+					{intent === "login" ? "Log In" : "Create Account"}
 				</h1>
 				<p className="text-body-sm text-text-secondary mt-2">
-					We&apos;ve sent a 6-digit OTP to your phone number. Enter the code below to verify your
-					account.
+					{intent === "login" 
+						? "Welcome back! Enter your phone number to sign in."
+						: "First time here? Set up your account and start onboarding!"
+					}
 				</p>
 			</div>
 
-			<form className="flex flex-col gap-5" onSubmit={handleSubmit(onSubmit)}>
-				<div>
-					<p className="text-label-md text-text-primary mb-1.5">Phone number</p>
-					<div className="flex items-center rounded-input border border-border-default bg-surface-canvas h-(--size-input-md)">
+			<form className="flex flex-col gap-4 mt-2" onSubmit={handleSubmit(onSubmit)}>
+				
+				{/* Read-only Phone Number block */}
+				<div className="flex items-center justify-between border-[3px] border-black rounded-2xl px-2 py-1.5 bg-white">
+					<div className="flex items-center flex-1">
 						<CountrySelect value={inferredCountry} onChange={() => {}} disabled />
-						<span className="flex-1 px-3 text-body-sm text-text-primary">{localPhone}</span>
-						<Link href={backHref} className="text-label-md text-text-link hover:underline pr-4">
-							Edit
-						</Link>
+						<span className="text-black/25 font-light mx-1">|</span>
+						<span className="flex-1 px-2 text-base font-semibold text-black">{localPhone}</span>
 					</div>
+					<Link href={backHref} className="text-sm font-extrabold text-[#7C3AED] hover:underline pr-4">
+						Edit
+					</Link>
 				</div>
 
+				{/* Instruction Text */}
+				<p className="text-sm font-semibold text-black/60 leading-relaxed">
+					We&apos;ve sent an SMS with an activation code to your phone. Enter the 6-digit code below.
+				</p>
+
+				{/* OTP Input Fields */}
 				<div>
-					<p className="text-label-md text-text-primary mb-3">Enter 6-digit OTP</p>
 					<Controller
 						control={control}
 						name="otp"
@@ -216,38 +239,54 @@ export default function VerifyPage() {
 					)}
 				</div>
 
-				<p className="text-body-sm text-text-secondary">
-					Didn&apos;t receive the code?{" "}
+				{/* Code Resend Timer */}
+				{!canResend && (
+					<p className="text-sm font-bold text-black/50 mt-1">
+						Send code again <span className="text-black">{formatTime(secondsLeft)}</span>
+					</p>
+				)}
+
+				{/* Submit Button */}
+				<Button
+					type="submit"
+					variant="primary"
+					size="md"
+					radius="pill"
+					className="w-full py-4 mt-2 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-extrabold text-center shadow-[4px_4px_0px_0px_#FFC940] hover:shadow-[1px_1px_0px_0px_#FFC940] hover:translate-x-[3px] hover:translate-y-[3px] transition-all text-base tracking-wider"
+					disabled={loading}
+					leftIcon={loading ? <MiniSpinner /> : undefined}
+				>
+					{loading 
+						? "Verifying OTP…" 
+						: (intent === "login" ? "Log In" : "Create Account")
+					}
+				</Button>
+
+				{/* Footer text resend code */}
+				<p className="text-center text-body-sm text-text-secondary mt-1">
+					I didn&apos;t receive a code{" "}
 					<button
 						type="button"
 						onClick={handleResend}
 						disabled={!canResend}
 						className={
 							canResend
-								? "font-medium text-text-link hover:underline"
-								: "font-medium text-text-muted cursor-default"
+								? "font-bold text-[#7C3AED] hover:underline"
+								: "font-semibold text-text-muted cursor-not-allowed"
 						}
 					>
-						{canResend ? "Resend" : `Resend in ${formatTime(secondsLeft)}`}
+						Resend
 					</button>
 				</p>
-
-				<Button
-					type="submit"
-					variant="primary"
-					size="md"
-					radius="pill"
-					className="w-full"
-					leftIcon={<Icon as={LockKeyholeSvg} />}
-					disabled={loading}
-				>
-					{loading ? "Verifying…" : "Verify OTP"}
-				</Button>
-
-				<p className="text-caption text-text-muted text-center leading-relaxed">
-					Your information is secure and encrypted. We never share your details with anyone.
-				</p>
 			</form>
-		</BrandAuthShell>
+
+			{/* Bottom Section: Indicator Dots */}
+			<div className="flex gap-2 justify-center items-center mt-8 mb-2">
+				<span className="w-2 h-2 bg-black/15 rounded-full" />
+				<span className="w-2 h-2 bg-black/15 rounded-full" />
+				<span className="w-5 h-2 bg-[#EE2C2C] rounded-full transition-all" />
+				<span className="w-2 h-2 bg-black/15 rounded-full" />
+			</div>
+		</AuthShell>
 	)
 }

@@ -7,8 +7,7 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { toast } from "sonner"
-import { BrandAuthShell } from "@/components/brand/BrandAuthShell"
-import { BrandAuthTabs } from "@/components/brand/BrandAuthTabs"
+import { AuthShell } from "@/components/auth/AuthShell"
 import { Button } from "@/components/ui/Button"
 import { PhoneField } from "@/components/auth/PhoneField"
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton"
@@ -60,28 +59,27 @@ export default function LoginPage() {
 	}
 
 	return (
-		<BrandAuthShell variant="login">
+		<AuthShell size="small" phoneImage="/assets/phone_image_login.svg" pointsImage="/assets/points_login.svg">
 			<div id="recaptcha-container" />
-			<BrandAuthTabs />
-
+			
 			<div className="mb-6">
-				<h1 className="text-heading-sm text-text-primary mb-1">
-					Start as brand on <span className="text-text-brand">meetday</span>
+				<h1 className="font-heading text-3xl font-black text-black mb-1">
+					Log In
 				</h1>
-				<p className="text-body-sm text-text-secondary">
-					Create experiences, grow your community, and build a brand presence people trust
+				<p className="text-body-sm text-text-secondary mt-2">
+					Welcome back! Sign in with Google to continue.
 				</p>
 			</div>
 
 			{/* Phone OTP sign-in paused until Fast2SMS DLT registration is approved — Google
 			    Sign-In is the sole login method in the meantime. Uncomment to re-enable.
-			<form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+			<form className="flex flex-col gap-5 mt-2" onSubmit={handleSubmit(onSubmit)}>
 				<Controller
 					control={control}
 					name="phone"
 					render={({ field }) => (
 						<PhoneField
-							label="Phone number"
+							label="Enter your Mobile Number"
 							value={field.value}
 							onChange={field.onChange}
 							country={country}
@@ -97,15 +95,15 @@ export default function LoginPage() {
 					variant="primary"
 					size="md"
 					radius="pill"
-					className="w-full mt-1"
+					className="w-full py-4 mt-2 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-extrabold text-center shadow-[4px_4px_0px_0px_#FFC940] hover:shadow-[1px_1px_0px_0px_#FFC940] hover:translate-x-[3px] hover:translate-y-[3px] transition-all text-base tracking-wider"
 					disabled={loading}
 				>
-					Send OTP
+					{loading ? "Generating OTP…" : "Send OTP"}
 				</Button>
 
 				<p className="text-center text-body-sm text-text-secondary mt-1">
-					New to meetday?{" "}
-					<Link href="/brand/signup" className="font-medium text-text-link hover:underline">
+					New to Meetday?{" "}
+					<Link href="/brand/signup" className="font-semibold text-text-link hover:underline">
 						Create an account
 					</Link>
 				</p>
@@ -122,11 +120,19 @@ export default function LoginPage() {
 			</div>
 
 			<p className="text-center text-body-sm text-text-secondary mt-4">
-				New to meetday?{" "}
-				<Link href="/brand/signup" className="font-medium text-text-link hover:underline">
+				New to Meetday?{" "}
+				<Link href="/brand/signup" className="font-semibold text-text-link hover:underline">
 					Create an account
 				</Link>
 			</p>
-		</BrandAuthShell>
+
+			{/* Bottom Section: Indicator Dots */}
+			<div className="flex gap-2 justify-center items-center mt-8 mb-2">
+				<span className="w-2 h-2 bg-black/15 rounded-full" />
+				<span className="w-5 h-2 bg-[#EE2C2C] rounded-full transition-all" />
+				<span className="w-2 h-2 bg-black/15 rounded-full" />
+				<span className="w-2 h-2 bg-black/15 rounded-full" />
+			</div>
+		</AuthShell>
 	)
 }

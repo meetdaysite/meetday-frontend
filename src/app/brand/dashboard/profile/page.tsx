@@ -1,157 +1,135 @@
 "use client"
 
 import Link from "next/link"
-import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
-import { Button } from "@/components/ui/Button"
-import { Icon } from "@/components/ui/Icon"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { useBrandStore } from "@/store/brandStore"
+import { useAuthStore } from "@/store/authStore"
+import { Icon } from "@/components/ui/Icon"
+import { Button } from "@/components/ui/Button"
+import clsx from "clsx"
 
 import UserSvg from "@/icons/outlined/user.svg"
-import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
-import ClockCircleSvg from "@/icons/outlined/clock-circle.svg"
-import Chart2OutSvg from "@/icons/outlined/chart-2.svg"
+import GlobeSvg from "@/icons/outlined/globe.svg"
 
-function SectionCard({ icon, title, children, action }: {
-	icon: React.ReactNode
-	title: string
-	children: React.ReactNode
-	action?: React.ReactNode
-}) {
-	return (
-		<div className="bg-surface-card border border-border-default rounded-action px-5 py-5">
-			<div className="flex items-center justify-between gap-3 mb-5">
-				<div className="flex items-center gap-3">
-					<div className="size-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
-						{icon}
-					</div>
-					<h2 className="text-label-lg font-semibold text-text-primary">{title}</h2>
-				</div>
-				{action}
-			</div>
-			{children}
-		</div>
-	)
-}
-
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-	return (
-		<div className="flex items-center justify-between gap-4 py-3 border-b border-border-default last:border-b-0">
-			<p className="text-label-sm text-text-tertiary shrink-0">{label}</p>
-			<div className="text-right">{value}</div>
-		</div>
-	)
-}
-
-export default function ProfilePage() {
-	const { profile } = useBrandStore()
+export default function BrandProfilePage() {
+	const { profile, clearProfile } = useBrandStore()
+	const { signOut } = useAuthStore()
+	const router = useRouter()
 
 	const displayName = profile?.brandName || "Brand"
-	const initials = displayName.split(" ").filter(Boolean).map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "B"
-	const socialLinks = profile?.socialLinks ?? {}
-	const hasSocialLinks = Object.values(socialLinks).some(Boolean)
+	const avatarUrl = profile?.logoUrl
+	const email = profile?.email || ""
+	const phone = profile?.phone || ""
+
+	const handleSignOut = async () => {
+		clearProfile()
+		router.replace("/")
+		await signOut()
+	}
 
 	return (
-		<div className="flex flex-col min-h-screen">
-			<DashboardTopBar />
+		<div className="flex flex-col min-h-full bg-white">
+			{/* Top Nav / Subheader */}
+			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
+				<p className="text-sm font-semibold text-black/50 mx-auto">
+					Welcome to <span className="text-[#EE2C2C] font-bold">Meetday</span>
+				</p>
+			</div>
 
-			<div className="flex-1 px-4 sm:px-6 lg:px-8 py-6 lg:py-8 bg-surface-page">
-				<div className="mb-6 flex items-center justify-between gap-4">
+			<div className="px-4 lg:px-6 py-8 max-w-3xl w-full mx-auto flex flex-col gap-6">
+				{/* Header */}
+				<div className="flex justify-between items-start">
 					<div>
-						<h1 className="text-heading-sm font-semibold text-text-primary">My Profile</h1>
-						<p className="text-body-sm text-text-secondary mt-0.5">Your brand identity and account details</p>
+						<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
+							My Profile
+						</h1>
+						<p className="text-sm font-semibold text-black/50 mt-1.5">
+							Your brand identity and account details
+						</p>
 					</div>
-					{profile && !profile.isProfileComplete && (
-						<span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-badge text-caption font-medium bg-surface-warning-soft text-text-warning border border-yellow-200 shrink-0">
-							<Icon as={ClockCircleSvg} size="xs" color="inherit" />
-							Incomplete profile
-						</span>
-					)}
 				</div>
 
-				<div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-4 items-start">
-					<div className="flex flex-col gap-4">
-						<SectionCard
-							icon={<Icon as={UserSvg} size="md" color="brand" />}
-							title="Brand Identity"
-							action={
-								<Link href="/brand/dashboard/profile/edit">
-									<Button variant="secondary" size="sm" radius="pill">
-										Edit Profile
-									</Button>
-								</Link>
-							}
-						>
-							<div className="flex items-center gap-4 mb-6 pb-6 border-b border-border-default">
-								<div className="size-20 rounded-full shrink-0 overflow-hidden bg-red-100 flex items-center justify-center text-red-700 text-heading-sm font-bold select-none">
-									{profile?.logoUrl
-										// eslint-disable-next-line @next/next/no-img-element
-										? <img src={profile.logoUrl} alt={displayName} className="size-full object-cover" />
-										: initials
-									}
-								</div>
-								<div>
-									<p className="text-title-sm font-semibold text-text-primary">{displayName}</p>
-									{profile?.email && <p className="text-caption text-text-muted mt-0.5">{profile.email}</p>}
-									{profile?.companyType && (
-										<span className="mt-2 inline-flex items-center px-2 py-0.5 rounded-badge text-caption font-medium bg-surface-card-muted text-text-secondary">
-											{profile.companyType === "AGENCY" ? "Agency" : "Brand"}
-										</span>
-									)}
-								</div>
-							</div>
-
-							<div className="-my-3">
-								{profile?.industry && (
-									<InfoRow label="Industry" value={<p className="text-label-sm text-text-primary">{profile.industry}</p>} />
-								)}
-								{profile?.workEmail && (
-									<InfoRow label="Work email" value={<p className="text-label-sm text-text-primary">{profile.workEmail}</p>} />
-								)}
-								{profile?.contactPhone && (
-									<InfoRow label="Phone" value={<p className="text-label-sm text-text-primary">{profile.contactPhone}</p>} />
-								)}
-								{profile?.aboutCompany && (
-									<InfoRow label="About" value={<p className="text-label-sm text-text-primary max-w-60 text-right leading-snug">{profile.aboutCompany}</p>} />
+				{/* Yellow Card Container */}
+				<div className="w-full bg-[#FFC940] border-[3px] border-black rounded-[28px] p-3.5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+					{/* Inner Dashed Card */}
+					<div className="w-full bg-white border-2 border-dashed border-black/40 rounded-[20px] p-6 flex flex-col gap-5">
+						
+						{/* Avatar Row */}
+						<div className="flex items-center gap-4">
+							<div className="relative size-16 rounded-2xl border-[3px] border-black overflow-hidden bg-slate-50 flex items-center justify-center shrink-0">
+								{avatarUrl ? (
+									// eslint-disable-next-line @next/next/no-img-element
+									<img src={avatarUrl} alt={displayName} className="size-full object-cover" />
+								) : (
+									<Icon as={UserSvg} size="lg" className="text-black size-8" />
 								)}
 							</div>
+							
+							<div className="flex flex-col gap-1.5">
+								<p className="text-xl font-heading font-black text-black leading-none">{displayName}</p>
+								<span className="inline-block bg-[#1E1B4B] text-white text-[8px] font-black px-2.5 py-0.5 rounded-lg uppercase tracking-wider w-max">
+									{profile?.companyType === "AGENCY" ? "Agency" : "Brand"}
+								</span>
+							</div>
+						</div>
 
-							{profile?.isProfileComplete && (
-								<div className="-my-3">
-									<InfoRow
-										label="Profile status"
-										value={
-											<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-badge text-caption font-medium bg-status-success-bg text-status-success-text">
-												<Icon as={CheckCircleSvg} size="xs" color="inherit" />
-												Complete
-											</span>
-										}
-									/>
-								</div>
-							)}
-						</SectionCard>
+						{/* Divider */}
+						<hr className="border-dashed border-black/10 my-1" />
 
-						{profile?.categories && profile.categories.length > 0 && (
-							<SectionCard icon={<Icon as={Chart2OutSvg} size="md" color="brand" />} title="Categories">
-								<div className="flex flex-wrap gap-2">
-									{profile.categories.map((category) => (
-										<span key={category.id} className="inline-flex items-center px-3 py-1 rounded-badge text-label-sm font-medium bg-surface-brand-soft text-text-brand border border-border-brand">
-											{category.name}
-										</span>
-									))}
-								</div>
-							</SectionCard>
-						)}
+						{/* Info Rows */}
+						<div className="flex flex-col gap-3">
+							<div className="flex gap-2 text-sm font-semibold">
+								<span className="text-black/50 w-24">Email ID :</span>
+								<span className="text-[#6C32D1] font-bold truncate max-w-[280px]">
+									{email || "Not specified"}
+								</span>
+							</div>
+							<div className="flex gap-2 text-sm font-semibold">
+								<span className="text-black/50 w-24">Phone No :</span>
+								<span className="text-[#6C32D1] font-bold">
+									{phone || "Not specified"}
+								</span>
+							</div>
+							<div className="flex gap-2 text-sm font-semibold">
+								<span className="text-black/50 w-24">About :</span>
+								<span className="text-[#6C32D1] font-bold truncate max-w-[280px]">
+									{profile?.aboutCompany || "Not specified"}
+								</span>
+							</div>
+						</div>
 
-						{hasSocialLinks && (
-							<SectionCard icon={<Icon as={UserSvg} size="md" color="brand" />} title="Social & Links">
-								<div className="-my-3">
-									{socialLinks.website && <InfoRow label="Website" value={<p className="text-label-sm text-text-brand truncate max-w-60">{socialLinks.website}</p>} />}
-									{socialLinks.instagram && <InfoRow label="Instagram" value={<p className="text-label-sm text-text-brand truncate max-w-60">{socialLinks.instagram}</p>} />}
-									{socialLinks.linkedin && <InfoRow label="LinkedIn" value={<p className="text-label-sm text-text-brand truncate max-w-60">{socialLinks.linkedin}</p>} />}
-									{socialLinks.youtube && <InfoRow label="YouTube" value={<p className="text-label-sm text-text-brand truncate max-w-60">{socialLinks.youtube}</p>} />}
-								</div>
-							</SectionCard>
-						)}
+					</div>
+				</div>
+
+				{/* Options Menu List */}
+				<div className="flex flex-col mt-4">
+					{/* Edit Profile */}
+					<div className="flex items-center justify-between py-4 border-b border-black/10 hover:bg-black/[0.01]">
+						<span className="font-heading font-black text-base text-black">Edit Brand Profile</span>
+						<div className="flex items-center gap-3">
+							<Link 
+								href="/brand/dashboard/profile/edit"
+								className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+							>
+								EDIT DETAILS
+							</Link>
+							<span className="text-black/50 font-black text-lg">&gt;</span>
+						</div>
+					</div>
+
+					{/* Sign Out */}
+					<div className="flex items-center justify-between py-4">
+						<span className="font-heading font-black text-base text-black">Profile Actions</span>
+						<div className="flex items-center gap-3">
+							<button 
+								onClick={handleSignOut}
+								className="bg-black text-white hover:bg-black/90 text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+							>
+								LOGOUT
+							</button>
+							<span className="text-black/50 font-black text-lg">&gt;</span>
+						</div>
 					</div>
 				</div>
 			</div>

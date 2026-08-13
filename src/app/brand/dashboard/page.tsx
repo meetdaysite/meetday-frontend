@@ -1,74 +1,298 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
-import { Button } from "@/components/ui/Button"
+import Image from "next/image"
+import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { useBrandStore } from "@/store/brandStore"
+import { Skeleton } from "@/components/ui/Skeleton"
+import {
+	getAllPublishedSponsorships,
+	getBrandCommunities,
+	type PublishedSponsorshipProposal,
+	type BrandCommunity,
+} from "@/lib/api"
 
-import WidgetsSvg from "@/icons/outlined/widgets.svg"
+import CalendarOutSvg from "@/icons/outlined/calendar.svg"
+import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 
-export default function DashboardPage() {
+export default function BrandDashboardWelcomePage() {
 	const { profile } = useBrandStore()
 	const displayName = profile?.brandName || "Brand"
 
-	return (
-		<div className="flex flex-col">
-			<DashboardTopBar />
+	const [proposals, setProposals] = useState<PublishedSponsorshipProposal[]>([])
+	const [communities, setCommunities] = useState<BrandCommunity[]>([])
+	const [loadingProposals, setLoadingProposals] = useState(true)
+	const [loadingCommunities, setLoadingCommunities] = useState(true)
 
-			<div className="px-6 lg:px-8 pt-8 pb-6">
-				<h1 className="text-heading-sm lg:text-heading-md font-semibold text-text-primary leading-tight">
-					Welcome back, <span className="text-text-brand">{displayName}.</span>
-				</h1>
-				<p className="text-body-sm text-text-secondary mt-2">
-					Browse sponsorship proposals, discover communities, or create a new campaign.
+	useEffect(() => {
+		setLoadingProposals(true)
+		getAllPublishedSponsorships()
+			.then((res) => {
+				setProposals(res.proposals || [])
+			})
+			.catch((err) => {
+				console.error("Failed to fetch proposals for dashboard", err)
+			})
+			.finally(() => {
+				setLoadingProposals(false)
+			})
+
+		setLoadingCommunities(true)
+		getBrandCommunities()
+			.then((res) => {
+				setCommunities(res.communities || [])
+			})
+			.catch((err) => {
+				console.error("Failed to fetch communities for dashboard", err)
+			})
+			.finally(() => {
+				setLoadingCommunities(false)
+			})
+	}, [])
+
+	return (
+		<div className="flex flex-col min-h-full bg-white">
+			{/* Top Nav / Subheader */}
+			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
+				<p className="text-sm font-semibold text-black/50 mx-auto">
+					Welcome to <span className="text-[#EE2C2C] font-bold">Meetday</span>
 				</p>
 			</div>
 
-			<div className="px-6 lg:px-8 pb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-				<Link
-					href="/brand/dashboard/proposals"
-					className="rounded-action border border-border-default bg-surface-card p-5 flex flex-col gap-3 hover:border-border-strong transition-colors"
-				>
-					<div className="size-10 rounded-xl bg-surface-brand-soft flex items-center justify-center">
-						<Icon as={WidgetsSvg} size="md" color="brand" />
-					</div>
-					<div>
-						<p className="text-label-md font-semibold text-text-primary">View Proposals</p>
-						<p className="text-caption text-text-muted mt-0.5">Browse active sponsorship opportunities</p>
-					</div>
-				</Link>
+			<div className="px-4 lg:px-6 py-4 max-w-6xl mx-auto w-full flex-1 flex flex-col gap-6">
+				{/* Welcome Header */}
+				<div className="text-center mt-2">
+					<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
+						Hey {displayName}, <span className="text-[#EE2C2C]">what are we sponsoring today?</span>
+					</h1>
+					<p className="text-sm font-semibold text-black/50 mt-2 max-w-2xl mx-auto">
+						Browse sponsorship opportunities or check out communities!
+					</p>
+				</div>
 
-				<Link
-					href="/brand/dashboard/communities"
-					className="rounded-action border border-border-default bg-surface-card p-5 flex flex-col gap-3 hover:border-border-strong transition-colors"
-				>
-					<div className="size-10 rounded-xl bg-surface-brand-soft flex items-center justify-center">
-						<Icon as={UsersGroupSvg} size="md" color="brand" />
-					</div>
-					<div>
-						<p className="text-label-md font-semibold text-text-primary">Communities</p>
-						<p className="text-caption text-text-muted mt-0.5">See onboarded communities on Meetday</p>
-					</div>
-				</Link>
-
-				<div className="rounded-action border border-border-default bg-surface-card p-5 flex flex-col gap-3 opacity-70">
-					<div className="flex items-center justify-between">
-						<div className="size-10 rounded-xl bg-surface-card-muted flex items-center justify-center">
-							<Icon as={WidgetsSvg} size="md" color="muted" />
+				{/* Two CTAs grid */}
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+					{/* CTA 1: Browse Proposals */}
+					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
+						<div className="flex items-center justify-between w-full mb-4">
+							<h2 className="text-lg font-heading font-black text-black">
+								Browse Proposals
+							</h2>
+							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
+								LIVE
+							</span>
 						</div>
-						<span className="px-2 py-0.5 rounded-full bg-surface-card-muted text-text-muted text-caption font-medium">
-							Coming Soon
-						</span>
+						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
+							Browse active sponsorship proposals from top communities and secure offline marketing opportunities.
+						</p>
+						<Link
+							href="/brand/dashboard/proposals"
+							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
+						>
+							BROWSE PROPOSALS
+							<span className="text-base font-bold">➔</span>
+						</Link>
 					</div>
-					<div>
-						<p className="text-label-md font-semibold text-text-primary">Create a Campaign</p>
-						<p className="text-caption text-text-muted mt-0.5">Post a sponsorship brief for communities to apply to</p>
+
+					{/* CTA 2: Create Campaign */}
+					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
+						<div className="flex items-center justify-between w-full mb-4">
+							<h2 className="text-lg font-heading font-black text-black">
+								Create a Campaign
+							</h2>
+							<span className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
+								COMING SOON
+							</span>
+						</div>
+						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
+							Post a sponsorship brief detailing your requirements for offline marketing and invite communities to apply.
+						</p>
+						<button
+							type="button"
+							onClick={() => toast.info("Creating campaigns is coming soon — stay tuned!")}
+							className="w-full py-3 bg-black/10 text-black/40 border-[3px] border-black/20 rounded-2xl font-black text-center text-xs tracking-wider cursor-not-allowed flex items-center justify-center gap-2 select-none"
+						>
+							CREATE BRIEF
+							<span className="text-base font-bold">➔</span>
+						</button>
 					</div>
-					<Button variant="secondary" size="sm" disabled className="w-full cursor-not-allowed">
-						Coming Soon
-					</Button>
+				</div>
+
+				<style>{`
+					@keyframes zoom-pulse {
+						0%, 100% {
+							transform: scale(1);
+						}
+						50% {
+							transform: scale(1.15);
+						}
+					}
+					.badge-zoom-pulse {
+						animation: zoom-pulse 2s infinite ease-in-out;
+						display: inline-block;
+					}
+				`}</style>
+
+				<hr className="border-black/10 my-2" />
+
+				{/* Overview Section */}
+				<div className="flex flex-col gap-10 pb-8">
+					{/* Row 1: Active Sponsorships */}
+					<div className="flex flex-col w-full">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
+							<div>
+								<h2 className="text-xl font-heading font-black text-black">Active Sponsorships</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Browse active sponsorship proposals.</p>
+							</div>
+							<Link href="/brand/dashboard/proposals" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+								View All Proposals &gt;
+							</Link>
+						</div>
+
+						{loadingProposals ? (
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+								{Array.from({ length: 2 }).map((_, i) => (
+									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
+										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
+										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
+											<div className="h-4 bg-black/5 rounded w-32" />
+											<div className="h-3 bg-black/5 rounded w-20" />
+										</div>
+									</div>
+								))}
+							</div>
+						) : proposals.length === 0 ? (
+							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
+								<p className="text-sm font-black text-black/80">No active sponsorships yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Check back later for new sponsorship opportunities.</p>
+							</div>
+						) : (
+							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
+								{proposals.map((prop) => {
+									const imgUrl = prop.imageUrl || null
+									const displayDate = prop.eventDate ? new Date(prop.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""
+
+									return (
+										<Link
+											key={prop.id}
+											href={`/brand/dashboard/proposals?proposalId=${prop.id}`}
+											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-[380px] shrink-0"
+										>
+											{/* Image / Logo */}
+											<div className="relative w-[120px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
+												{imgUrl ? (
+													// eslint-disable-next-line @next/next/no-img-element
+													<img
+														src={imgUrl}
+														alt={prop.name || "Proposal"}
+														className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
+													/>
+												) : (
+													<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
+														{prop.name ? prop.name.substring(0, 2).toUpperCase() : "MD"}
+													</div>
+												)}
+
+												{/* Status Badge */}
+												<span className="absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-green-400 text-black">
+													Published
+												</span>
+											</div>
+
+											{/* Content & Footer info */}
+											<div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+												<div className="flex flex-col gap-1">
+													<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">
+														{prop.name}
+													</h3>
+													<p className="text-[11px] font-bold text-black/50 truncate">
+														{prop.city} • {prop.venue}
+													</p>
+													<p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">
+														{prop.about}
+													</p>
+												</div>
+
+												<div className="flex flex-wrap gap-1.5 mt-2">
+													{displayDate && (
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+															{displayDate}
+														</span>
+													)}
+													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+														{prop.guestCount} Guests
+													</span>
+												</div>
+											</div>
+										</Link>
+									)
+								})}
+							</div>
+						)}
+					</div>
+
+					{/* Row 2: Communities */}
+					<div className="flex flex-col w-full">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
+							<div>
+								<h2 className="text-xl font-heading font-black text-black">Active Communities</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Discover communities on Meetday.</p>
+							</div>
+							<Link href="/brand/dashboard/communities" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+								View All Communities &gt;
+							</Link>
+						</div>
+
+						{loadingCommunities ? (
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+								{Array.from({ length: 2 }).map((_, i) => (
+									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
+										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
+										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
+											<div className="h-4 bg-black/5 rounded w-32" />
+											<div className="h-3 bg-black/5 rounded w-20" />
+										</div>
+									</div>
+								))}
+							</div>
+						) : communities.length === 0 ? (
+							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
+								<p className="text-sm font-black text-black/80">No communities active yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Check back later for newly onboarded communities.</p>
+							</div>
+						) : (
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+								{communities.map((comm) => {
+									return (
+										<div
+											key={comm.id}
+											className="group/item flex items-center justify-between px-5 h-20 bg-white hover:bg-black/[0.02] hover:pl-7 transition-all duration-300 ease-out"
+										>
+											<div className="flex items-center gap-3 min-w-0">
+												{comm.logoUrl ? (
+													<div className="size-12 rounded-full overflow-hidden shrink-0 border border-black/10">
+														{/* eslint-disable-next-line @next/next/no-img-element */}
+														<img src={comm.logoUrl} alt="" className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-300" />
+													</div>
+												) : (
+													<div className="size-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 group-hover/item:scale-115 group-hover/item:rotate-3 transition-transform duration-300">
+														<Icon as={UsersGroupSvg} size="md" color="inherit" />
+													</div>
+												)}
+												<div className="min-w-0">
+													<p className="text-label-md font-semibold text-text-primary truncate group-hover/item:text-red-600 transition-colors duration-300">{comm.name || "Untitled Community"}</p>
+													<p className="text-caption text-text-tertiary mt-0.5">{comm.size} members • {comm.experiencesPerYear} experiences/year</p>
+												</div>
+											</div>
+										</div>
+									)
+								})}
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>

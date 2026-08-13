@@ -11,6 +11,7 @@ import { registerBrand, getBrandProfile, type BrandRegisterPayload } from "@/lib
 import { useBrandStore } from "@/store/brandStore"
 import { useAuthSessionStore, useAuthSessionHydrated } from "@/store/authSessionStore"
 import { useAuth } from "@/context/AuthContext"
+import { AuthShell } from "@/components/auth/AuthShell"
 import { Button } from "@/components/ui/Button"
 import { TextField } from "@/components/ui/TextField"
 import { Icon } from "@/components/ui/Icon"
@@ -40,22 +41,6 @@ function buildBrandRegisterPayload(values: FormValues, sessionPhone?: string): B
 		accountType: "BRAND",
 		brandName: values.brandName,
 	}
-}
-
-const PANEL_CONFIG = {
-	headingPlain: "Set up your",
-	headingHighlight: "brand profile",
-	description: "Add your email and brand name to start browsing sponsorship opportunities from event hosts.",
-	personImage: "/onboarding/person-3.png",
-	cards: [
-		{
-			icon: "/icons/onboarding/users-group-two.svg",
-			iconBg: "#FEF2F2",
-			title: "Grow your presence",
-			body: "Scale your offline marketing campaigns.",
-			position: { top: "38%", right: "6%" } as React.CSSProperties,
-		},
-	],
 }
 
 export default function OnboardingPage() {
@@ -123,7 +108,7 @@ export default function OnboardingPage() {
 	}
 
 	return (
-		<div className="flex h-screen overflow-hidden bg-surface-page">
+		<AuthShell>
 			{/* Loading overlay */}
 			{loadingMessage && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -136,80 +121,87 @@ export default function OnboardingPage() {
 				</div>
 			)}
 
-			{/* Left panel */}
-			<div className="hidden lg:block w-[44%] max-w-200 shrink-0 relative">
-				<OnboardingLeftPanel config={PANEL_CONFIG} />
-			</div>
+			<button
+				type="button"
+				onClick={async () => {
+					// Sign out first — otherwise the login page's own "already authenticated"
+					// guard immediately bounces back to a dashboard with no profile yet.
+					clearSession()
+					await signOut()
+					router.replace("/brand/login")
+				}}
+				className="inline-flex items-center gap-1.5 text-xs font-bold text-black/50 hover:text-black transition-colors mb-4"
+			>
+				<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+					<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+				</svg>
+				Back to login
+			</button>
 
-			{/* Right panel */}
-			<div className="flex-1 overflow-y-auto bg-surface-card flex flex-col">
-				<div className="flex-1 w-full max-w-175 mx-auto px-8 py-8">
-					<button
-						type="button"
-						onClick={async () => {
-							// Sign out first — otherwise the login page's own "already authenticated"
-							// guard immediately bounces back to a dashboard with no profile yet.
-							clearSession()
-							await signOut()
-							router.replace("/brand/login")
-						}}
-						className="inline-flex items-center gap-1.5 text-xs font-bold text-text-tertiary hover:text-text-primary transition-colors mb-4"
+			<div className="flex flex-col flex-grow justify-between min-h-[380px] h-full">
+				{/* Top Section: Title & Subtitle */}
+				<div className="text-center pt-4">
+					<h2 className="font-heading text-3xl sm:text-4xl font-black text-black tracking-tight mb-3">
+						Set up your Brand profile
+					</h2>
+					<p className="text-sm font-semibold text-black/60 max-w-xs mx-auto leading-relaxed">
+						Just your email and brand name — that&apos;s all we need to get you started.
+					</p>
+				</div>
+
+				<form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 mt-6">
+					<TextField
+						label="Email address"
+						placeholder="Enter your email address"
+						type="email"
+						{...register("email")}
+						error={!!errors.email}
+						helperText={errors.email?.message}
+						size="md"
+						disabled={isEmailReadOnly}
+						hint={isEmailReadOnly ? "From your account session" : undefined}
+					/>
+
+					<TextField
+						label="Brand name"
+						placeholder="Enter your brand or agency name"
+						{...register("brandName")}
+						error={!!errors.brandName}
+						helperText={errors.brandName?.message}
+						size="md"
+					/>
+
+					<TextField
+						label="Phone number"
+						placeholder="98765 43210"
+						hint="We use this to reach you about your brand account"
+						{...register("phone")}
+						error={!!errors.phone}
+						helperText={errors.phone?.message}
+						size="md"
+					/>
+
+					<Button
+						type="submit"
+						variant="primary"
+						size="md"
+						radius="pill"
+						className="w-full py-4 mt-4 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-extrabold text-center shadow-[4px_4px_0px_0px_#FFC940] hover:shadow-[1px_1px_0px_0px_#FFC940] hover:translate-x-[3px] hover:translate-y-[3px] transition-all text-base tracking-wider"
+						disabled={!!loadingMessage}
 					>
-						<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-						</svg>
-						Back to login
-					</button>
-					<div className="mb-6">
-						<h1 className="text-heading-md text-text-primary leading-tight">
-							Set up your <span className="text-text-brand">brand profile</span>
-						</h1>
-						<p className="text-body-sm text-text-secondary mt-2">
-							Just your email and brand name — that&apos;s all we need to get you started.
-						</p>
-					</div>
+						{loadingMessage ? "Please wait…" : "Submit"}
+					</Button>
+				</form>
 
-					<form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-						<TextField
-							label="Email address"
-							placeholder="Enter your email address"
-							type="email"
-							{...register("email")}
-							error={!!errors.email}
-							helperText={errors.email?.message}
-							size="md"
-							disabled={isEmailReadOnly}
-							hint={isEmailReadOnly ? "From your account session" : undefined}
-						/>
-
-						<TextField
-							label="Brand name"
-							placeholder="Enter your brand or agency name"
-							{...register("brandName")}
-							error={!!errors.brandName}
-							helperText={errors.brandName?.message}
-							size="md"
-						/>
-
-						<TextField
-							label="Phone number"
-							placeholder="98765 43210"
-							hint="We use this to reach you about your brand account"
-							{...register("phone")}
-							error={!!errors.phone}
-							helperText={errors.phone?.message}
-							size="md"
-						/>
-
-						<div className="flex justify-end gap-3 pt-4 border-t border-border-default">
-							<Button type="submit" variant="primary" size="md">
-								Submit
-							</Button>
-						</div>
-					</form>
+				{/* Bottom Section: Indicator Dots */}
+				<div className="flex gap-2 justify-center items-center mt-6 mb-2">
+					<span className="w-2 h-2 bg-black/15 rounded-full" />
+					<span className="w-2 h-2 bg-black/15 rounded-full" />
+					<span className="w-2 h-2 bg-black/15 rounded-full" />
+					<span className="w-5 h-2 bg-[#EE2C2C] rounded-full transition-all" />
 				</div>
 			</div>
-		</div>
+		</AuthShell>
 	)
 }
 
