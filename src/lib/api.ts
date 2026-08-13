@@ -309,7 +309,14 @@ export type BrandRegisterPayload = {
 	email: string
 	phone?: string
 	accountType: "BRAND"
-	brandName: string
+	brandName?: string
+	categoryIds?: string[]
+	socialLinks?: {
+		instagram?: string
+		linkedin?: string
+		youtube?: string
+		website?: string
+	}
 }
 
 export async function registerBrand(payload: BrandRegisterPayload): Promise<void> {
