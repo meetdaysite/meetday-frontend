@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/Button"
 import { useBrandStore } from "@/store/brandStore"
 import { Skeleton } from "@/components/ui/Skeleton"
 import {
@@ -212,6 +214,15 @@ export default function ProposalsPage() {
 	const [proposals, setProposals] = useState<PublishedSponsorshipProposal[]>([])
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
+	const [showIncompleteProfileModal, setShowIncompleteProfileModal] = useState(false)
+
+	function handleProposalClick(proposalId: string) {
+		if (profile && !profile.isProfileComplete) {
+			setShowIncompleteProfileModal(true)
+			return
+		}
+		router.push(`/brand/dashboard/proposal/${proposalId}`)
+	}
 
 	useEffect(() => {
 		getCategories()
@@ -291,13 +302,32 @@ export default function ProposalsPage() {
 								<ProposalCard
 									key={proposal.id}
 									proposal={proposal}
-									onClick={() => router.push(`/brand/dashboard/proposal/${proposal.id}`)}
+									onClick={() => handleProposalClick(proposal.id)}
 								/>
 							))}
 						</div>
 					)}
 				</div>
 			</div>
+
+			{showIncompleteProfileModal && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+					<div className="w-full max-w-sm bg-surface-card rounded-action border border-border-default p-6 flex flex-col gap-4">
+						<h2 className="text-label-lg font-semibold text-text-primary">Please complete your profile first</h2>
+						<p className="text-body-sm text-text-secondary">
+							Add your brand name, categories, and social links before viewing proposal details.
+						</p>
+						<div className="flex items-center gap-3 justify-end">
+							<Button variant="secondary" size="sm" onClick={() => setShowIncompleteProfileModal(false)}>
+								Cancel
+							</Button>
+							<Link href="/brand/dashboard/profile/edit">
+								<Button size="sm">Complete Profile</Button>
+							</Link>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }
