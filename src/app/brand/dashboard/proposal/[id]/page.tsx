@@ -91,7 +91,7 @@ export default function ProposalDetailPage() {
 						onClick={() => router.push("/brand/dashboard/proposals")}
 						className="flex items-center gap-1.5 text-xs font-bold text-black/50 hover:text-black transition-colors mb-2 self-start"
 					>
-						<svg className="w-3.5 h-3.5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+						<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
 							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
 						</svg>
 						Back to Active Sponsorships
@@ -303,6 +303,7 @@ export default function ProposalDetailPage() {
 											community={{ ...proposal.community, approvalStatus: "APPROVED" } as any}
 											operatingCities={undefined}
 											socialLinks={undefined}
+											hideStatus={true}
 										/>
 									</div>
 								)}
@@ -318,6 +319,7 @@ export default function ProposalDetailPage() {
 							community={{ ...proposal.community, approvalStatus: "APPROVED" } as any}
 							operatingCities={undefined}
 							socialLinks={undefined}
+							hideStatus={true}
 						/>
 					</div>
 				)}

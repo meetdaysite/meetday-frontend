@@ -23,7 +23,7 @@ type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon
 
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
-	{ label: "Active Sponsorships", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Proposals", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
 ]
 
@@ -77,7 +77,10 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 			{/* Navigation Top Items */}
 			<nav className="flex-1 px-4 flex flex-col gap-1 mt-1">
 				{PRIMARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled, exact }) => {
-					const isActive = exact ? pathname === href : pathname.startsWith(href)
+					let isActive = exact ? pathname === href : pathname.startsWith(href)
+					if (label === "Proposals" && pathname.startsWith("/brand/dashboard/proposal")) {
+						isActive = true
+					}
 					return (
 						<Link
 							key={href}

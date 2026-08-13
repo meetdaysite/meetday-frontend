@@ -236,11 +236,20 @@ export async function updateBrandProfile(payload: UpdateBrandProfilePayload): Pr
 
 export type BrandCommunity = {
 	id: string
+	hostProfileId: string
 	name: string
+	about: string
 	logoUrl: string | null
 	size: string
 	avgGuestCount: string
 	experiencesPerYear: string
+	operatingCities: string[]
+	socialLinks?: {
+		instagram?: string
+		linkedin?: string
+		youtube?: string
+		website?: string
+	} | null
 	categories: Category[]
 }
 

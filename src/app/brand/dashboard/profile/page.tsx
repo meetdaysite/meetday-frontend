@@ -11,11 +11,13 @@ import clsx from "clsx"
 
 import UserSvg from "@/icons/outlined/user.svg"
 import GlobeSvg from "@/icons/outlined/globe.svg"
+import { EditBrandProfilePanel } from "@/components/brand/EditBrandProfilePanel"
 
 export default function BrandProfilePage() {
 	const { profile, clearProfile } = useBrandStore()
 	const { signOut } = useAuthStore()
 	const router = useRouter()
+	const [showEditPanel, setShowEditPanel] = useState(false)
 
 	const displayName = profile?.brandName || "Brand"
 	const avatarUrl = profile?.logoUrl
@@ -37,9 +39,17 @@ export default function BrandProfilePage() {
 				</p>
 			</div>
 
-			<div className="px-4 lg:px-6 py-8 max-w-3xl w-full mx-auto flex flex-col gap-6">
-				{/* Header */}
-				<div className="flex justify-between items-start">
+			<div className={clsx(
+				"flex-1 min-h-0 w-full overflow-hidden relative",
+				showEditPanel ? "md:grid md:grid-cols-[65%_35%]" : "flex"
+			)}>
+				
+				{/* Left Column: Profile details */}
+				<div className={clsx(
+					"px-4 lg:px-6 py-8 flex-1 flex flex-col gap-8 overflow-y-auto h-full w-full",
+					showEditPanel ? "max-w-none" : "max-w-3xl mx-auto"
+				)}>
+					{/* Header */}
 					<div>
 						<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
 							My Profile
@@ -48,7 +58,6 @@ export default function BrandProfilePage() {
 							Your brand identity and account details
 						</p>
 					</div>
-				</div>
 
 				{/* Yellow Card Container */}
 				<div className="w-full bg-[#FFC940] border-[3px] border-black rounded-[28px] p-3.5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
@@ -108,12 +117,12 @@ export default function BrandProfilePage() {
 					<div className="flex items-center justify-between py-4 border-b border-black/10 hover:bg-black/[0.01]">
 						<span className="font-heading font-black text-base text-black">Edit Brand Profile</span>
 						<div className="flex items-center gap-3">
-							<Link 
-								href="/brand/dashboard/profile/edit"
+							<button 
+								onClick={() => setShowEditPanel(true)}
 								className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
 							>
 								EDIT DETAILS
-							</Link>
+							</button>
 							<span className="text-black/50 font-black text-lg">&gt;</span>
 						</div>
 					</div>
@@ -131,7 +140,32 @@ export default function BrandProfilePage() {
 							<span className="text-black/50 font-black text-lg">&gt;</span>
 						</div>
 					</div>
+					</div>
 				</div>
+
+				{/* Right Column: Edit Profile drawer */}
+				{showEditPanel && (
+					<>
+						{/* Mobile/Tablet Backdrop */}
+						<div 
+							onClick={() => setShowEditPanel(false)}
+							className="lg:hidden fixed inset-0 bg-black/45 z-40 backdrop-blur-xs"
+						/>
+						
+						{/* Responsive drawer container */}
+						<div className={clsx(
+							"bg-white h-full flex flex-col z-50 transition-all duration-300 animate-in slide-in-from-right",
+							"fixed inset-y-0 right-0 w-full sm:w-[420px] border-l-4 border-black shadow-modal",
+							"lg:static lg:border-l-0 lg:border-l lg:border-black/10 lg:shadow-none lg:w-full"
+						)}>
+							<EditBrandProfilePanel
+								onClose={() => setShowEditPanel(false)}
+								onSuccess={() => {}}
+							/>
+						</div>
+					</>
+				)}
+
 			</div>
 		</div>
 	)

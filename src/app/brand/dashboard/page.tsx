@@ -17,6 +17,8 @@ import {
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
+import { CommunityCard } from "./communities/page"
+
 
 export default function BrandDashboardWelcomePage() {
 	const { profile } = useBrandStore()
@@ -140,11 +142,11 @@ export default function BrandDashboardWelcomePage() {
 
 				{/* Overview Section */}
 				<div className="flex flex-col gap-10 pb-8">
-					{/* Row 1: Active Sponsorships */}
+					{/* Row 1: Proposals */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
 							<div>
-								<h2 className="text-xl font-heading font-black text-black">Active Sponsorships</h2>
+								<h2 className="text-xl font-heading font-black text-black">Proposals</h2>
 								<p className="text-xs font-semibold text-black/50 mt-1">Browse active sponsorship proposals.</p>
 							</div>
 							<Link href="/brand/dashboard/proposals" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
@@ -264,32 +266,12 @@ export default function BrandDashboardWelcomePage() {
 								<p className="text-[11px] font-semibold text-black/40">Check back later for newly onboarded communities.</p>
 							</div>
 						) : (
-							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-								{communities.map((comm) => {
-									return (
-										<div
-											key={comm.id}
-											className="group/item flex items-center justify-between px-5 h-20 bg-white hover:bg-black/[0.02] hover:pl-7 transition-all duration-300 ease-out"
-										>
-											<div className="flex items-center gap-3 min-w-0">
-												{comm.logoUrl ? (
-													<div className="size-12 rounded-full overflow-hidden shrink-0 border border-black/10">
-														{/* eslint-disable-next-line @next/next/no-img-element */}
-														<img src={comm.logoUrl} alt="" className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-300" />
-													</div>
-												) : (
-													<div className="size-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 group-hover/item:scale-115 group-hover/item:rotate-3 transition-transform duration-300">
-														<Icon as={UsersGroupSvg} size="md" color="inherit" />
-													</div>
-												)}
-												<div className="min-w-0">
-													<p className="text-label-md font-semibold text-text-primary truncate group-hover/item:text-red-600 transition-colors duration-300">{comm.name || "Untitled Community"}</p>
-													<p className="text-caption text-text-tertiary mt-0.5">{comm.size} members • {comm.experiencesPerYear} experiences/year</p>
-												</div>
-											</div>
-										</div>
-									)
-								})}
+							<div className="flex flex-row overflow-x-auto gap-6 pb-6 pt-2 px-2 w-full custom-scrollbar">
+								{communities.map((comm) => (
+									<Link key={comm.id} href={`/brand/dashboard/communities?communityId=${comm.id}`} className="block shrink-0 w-[180px]">
+										<CommunityCard community={comm} />
+									</Link>
+								))}
 							</div>
 						)}
 					</div>

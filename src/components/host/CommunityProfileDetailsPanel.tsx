@@ -16,6 +16,7 @@ interface CommunityProfileDetailsPanelProps {
 	}
 	onEdit?: () => void
 	onClose?: () => void
+	hideStatus?: boolean
 }
 
 const STATUS_CONFIG: Record<HostCommunityProfile["approvalStatus"], { label: string; className: string }> = {
@@ -39,6 +40,7 @@ export function CommunityProfileDetailsPanel({
 	socialLinks,
 	onEdit,
 	onClose,
+	hideStatus = false,
 }: CommunityProfileDetailsPanelProps) {
 	const statusConfig = STATUS_CONFIG[community.approvalStatus]
 
@@ -63,12 +65,14 @@ export function CommunityProfileDetailsPanel({
 			{/* Panel Content */}
 			<div className="flex flex-col gap-6">
 				{/* Approval status banner */}
-				<div className={clsx("rounded-xl px-3.5 py-2.5 text-xs font-semibold border-2", statusConfig.className)}>
-					{statusConfig.label}
-					{community.approvalStatus === "REJECTED" && community.adminRejectionRemark && (
-						<>: {community.adminRejectionRemark}</>
-					)}
-				</div>
+				{!hideStatus && (
+					<div className={clsx("rounded-xl px-3.5 py-2.5 text-xs font-semibold border-2", statusConfig.className)}>
+						{statusConfig.label}
+						{community.approvalStatus === "REJECTED" && community.adminRejectionRemark && (
+							<>: {community.adminRejectionRemark}</>
+						)}
+					</div>
+				)}
 
 				{/* Top Card Header */}
 				<div className="flex items-center gap-4">
