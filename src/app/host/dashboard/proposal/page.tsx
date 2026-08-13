@@ -372,7 +372,7 @@ export default function ProposalPage() {
         const interval = setInterval(() => {
             getHostCommunityProfile()
                 .then((c) => setCommunity(c))
-                .catch(() => {})
+                .catch(() => { })
         }, 15000)
         return () => clearInterval(interval)
     }, [hostId, community])
@@ -522,8 +522,8 @@ export default function ProposalPage() {
             return
         }
         if (p) {
-            const data = ((activeTab === "UNDER_REVIEW" || p.status === "UNDER_REVIEW") && p.pendingRevision) 
-                ? p.pendingRevision 
+            const data = ((activeTab === "UNDER_REVIEW" || p.status === "UNDER_REVIEW") && p.pendingRevision)
+                ? p.pendingRevision
                 : p;
             setProjName(data.name)
             setProjAbout(data.about)
@@ -596,6 +596,7 @@ export default function ProposalPage() {
             setProjDoc(file)
         }
     }
+
 
     const handleProposalSubmit = async (e: React.FormEvent, forceStatus?: "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED") => {
         e.preventDefault()
@@ -1239,104 +1240,104 @@ export default function ProposalPage() {
                                         // eslint-disable-next-line @next/next/no-img-element
                                         <img src={projectImageUrl} alt={displayDetails?.name} className="size-36 object-cover rounded-xl border border-border-default shadow-sm shrink-0" />
                                     )}
-                                     <div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-4 w-full flex flex-col justify-between gap-4">
-                                         {/* Row 1: Date, Venue & City */}
-                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                             <div>
-                                                 <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Date</p>
-                                                 <div className="flex flex-col gap-2 mt-1">
-                                                     {(() => {
-                                                         const startParts = displayDetails?.date ? displayDetails.date.split("-") : [];
-                                                         const startDisplay = startParts.length === 3 ? `${startParts[2]}/${startParts[1]}/${startParts[0]}` : displayDetails?.date;
-                                                         const endParts = displayDetails?.endDate ? displayDetails.endDate.split("-") : [];
-                                                         const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : displayDetails?.endDate;
-                                                         return (
-                                                             <>
-                                                                 {startDisplay && (
-                                                                     <div className="flex items-center gap-2 text-xs font-semibold text-text-secondary">
-                                                                         <span className="w-10 shrink-0">Start:</span>
-                                                                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-                                                                             {startDisplay}
-                                                                         </span>
-                                                                     </div>
-                                                                 )}
-                                                                 {endDisplay && endDisplay !== startDisplay && (
-                                                                     <div className="flex items-center gap-2 text-xs font-semibold text-text-secondary">
-                                                                         <span className="w-10 shrink-0">End:</span>
-                                                                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-                                                                             {endDisplay}
-                                                                         </span>
-                                                                     </div>
-                                                                 )}
-                                                             </>
-                                                         );
-                                                     })()}
-                                                 </div>
-                                             </div>
-                                             <div>
-                                                 <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue & City</p>
-                                                 <div className="flex flex-col gap-2 mt-1">
-                                                     {(displayDetails?.venues && displayDetails.venues.length > 0 ? displayDetails.venues : [displayDetails?.venue || ""])
-                                                         .map((v, idx) => {
-                                                             const c = displayDetails?.venueCities?.[idx] || (idx === 0 ? displayDetails?.city : undefined)
-                                                             if (!v.trim()) return null
-                                                             return (
-                                                                 <div key={idx} className="flex flex-col items-start gap-1">
-                                                                     {c && (
-                                                                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-                                                                             {c}
-                                                                         </span>
-                                                                     )}
-                                                                     <span className="text-xs font-semibold text-text-secondary">{v}</span>
-                                                                 </div>
-                                                             )
-                                                         })}
-                                                 </div>
-                                             </div>
-                                         </div>
-                                         {/* Divider */}
-                                         <hr className="border-border-default/15" />
-                                         {/* Row 2: Guests, Age Group */}
-                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                             <div>
-                                                 <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Guests</p>
-                                                 <div className="flex mt-1">
-                                                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-                                                         {displayDetails?.guestCount} Guests
-                                                     </span>
-                                                 </div>
-                                             </div>
-                                             <div>
-                                                 <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Age Group</p>
-                                                 <div className="flex mt-1">
-                                                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-                                                         {displayDetails?.ageGroup} Years
-                                                     </span>
-                                                 </div>
-                                             </div>
-                                         </div>
-                                         {/* Divider */}
-                                         <hr className="border-border-default/15" />
-                                         {/* Row 3: Audience */}
-                                         <div>
-                                             <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Audience</p>
-                                             <div className="flex flex-wrap gap-1.5 mt-1">
-                                                 {(() => {
-                                                     const rawAud = displayDetails?.audienceProfile;
-                                                     const list = Array.isArray(rawAud) ? rawAud : (typeof rawAud === "string" ? rawAud.split(",").map(s => s.trim()) : []);
-                                                     return list.map((aud, i) => {
-                                                         if (!aud) return null;
-                                                         return (
-                                                             <span key={i} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#F5C343] text-black border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] uppercase tracking-wider">
-                                                                 {aud}
-                                                             </span>
-                                                         )
-                                                     }).filter(Boolean);
-                                                 })()}
-                                             </div>
-                                         </div>
-                                     </div>
-                                 </div>
+                                    <div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-4 w-full flex flex-col justify-between gap-4">
+                                        {/* Row 1: Date, Venue & City */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Date</p>
+                                                <div className="flex flex-col gap-2 mt-1">
+                                                    {(() => {
+                                                        const startParts = displayDetails?.date ? displayDetails.date.split("-") : [];
+                                                        const startDisplay = startParts.length === 3 ? `${startParts[2]}/${startParts[1]}/${startParts[0]}` : displayDetails?.date;
+                                                        const endParts = displayDetails?.endDate ? displayDetails.endDate.split("-") : [];
+                                                        const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : displayDetails?.endDate;
+                                                        return (
+                                                            <>
+                                                                {startDisplay && (
+                                                                    <div className="flex items-center gap-2 text-xs font-semibold text-text-secondary">
+                                                                        <span className="w-10 shrink-0">Start:</span>
+                                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                                            {startDisplay}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                {endDisplay && endDisplay !== startDisplay && (
+                                                                    <div className="flex items-center gap-2 text-xs font-semibold text-text-secondary">
+                                                                        <span className="w-10 shrink-0">End:</span>
+                                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                                            {endDisplay}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue & City</p>
+                                                <div className="flex flex-col gap-2 mt-1">
+                                                    {(displayDetails?.venues && displayDetails.venues.length > 0 ? displayDetails.venues : [displayDetails?.venue || ""])
+                                                        .map((v, idx) => {
+                                                            const c = displayDetails?.venueCities?.[idx] || (idx === 0 ? displayDetails?.city : undefined)
+                                                            if (!v.trim()) return null
+                                                            return (
+                                                                <div key={idx} className="flex flex-col items-start gap-1">
+                                                                    {c && (
+                                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                                            {c}
+                                                                        </span>
+                                                                    )}
+                                                                    <span className="text-xs font-semibold text-text-secondary">{v}</span>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* Divider */}
+                                        <hr className="border-border-default/15" />
+                                        {/* Row 2: Guests, Age Group */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Guests</p>
+                                                <div className="flex mt-1">
+                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                        {displayDetails?.guestCount} Guests
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Age Group</p>
+                                                <div className="flex mt-1">
+                                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                        {displayDetails?.ageGroup} Years
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* Divider */}
+                                        <hr className="border-border-default/15" />
+                                        {/* Row 3: Audience */}
+                                        <div>
+                                            <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Audience</p>
+                                            <div className="flex flex-wrap gap-1.5 mt-1">
+                                                {(() => {
+                                                    const rawAud = displayDetails?.audienceProfile;
+                                                    const list = Array.isArray(rawAud) ? rawAud : (typeof rawAud === "string" ? rawAud.split(",").map(s => s.trim()) : []);
+                                                    return list.map((aud, i) => {
+                                                        if (!aud) return null;
+                                                        return (
+                                                            <span key={i} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#F5C343] text-black border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] uppercase tracking-wider">
+                                                                {aud}
+                                                            </span>
+                                                        )
+                                                    }).filter(Boolean);
+                                                })()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 {/* Below Top Row: About Project */}
                                 <div className="bg-surface-card border border-border-default rounded-action p-5">
@@ -1794,290 +1795,290 @@ export default function ProposalPage() {
 
                                     {/* Proposal upload/display section */}
                                     <div className="flex flex-col gap-4 w-full">
-                                {isUploading ? (
-                                    <div className="bg-surface-card border border-border-default rounded-action p-8 text-center flex flex-col items-center w-full max-w-2xl mx-auto">
-                                        <div className="w-16 h-16 rounded-full bg-surface-brand-soft flex items-center justify-center mb-4 animate-bounce">
-                                            <Icon as={UploadSvg} size="lg" color="brand" />
-                                        </div>
-                                        <h3 className="text-label-lg font-semibold text-text-primary mb-2">Saving Proposal</h3>
-                                        <p className="text-caption text-text-secondary mb-6">Processing details and document file, please wait...</p>
-                                        <div className="w-full max-w-xs bg-surface-card-muted rounded-full h-2 overflow-hidden mb-2">
-                                            <div
-                                                className="bg-action-primary h-full transition-all duration-150"
-                                                style={{ width: `${uploadProgress}%` }}
-                                            />
-                                        </div>
-                                        <span className="text-label-sm font-semibold text-text-brand">{uploadProgress}%</span>
-                                    </div>
-                                ) : proposals.length > 0 ? (
-                                    /* State 3: Show list/grid of proposals overview cards styled like My Events */
-                                    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-150">
-
-                                        {/* Mobile Community Header */}
-                                        {community && (
-                                            <div 
-                                                onClick={() => setShowCommunityMobilePanel(true)}
-                                                className="sm:hidden flex items-center gap-3 p-3 bg-slate-50 border-[2px] border-black rounded-xl cursor-pointer hover:bg-slate-100 transition-all"
-                                            >
-                                                {communityLogoUrl ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img 
-                                                        src={communityLogoUrl} 
-                                                        alt={community.name} 
-                                                        className="size-8 rounded-lg object-cover border border-black/20 shrink-0" 
+                                        {isUploading ? (
+                                            <div className="bg-surface-card border border-border-default rounded-action p-8 text-center flex flex-col items-center w-full max-w-2xl mx-auto">
+                                                <div className="w-16 h-16 rounded-full bg-surface-brand-soft flex items-center justify-center mb-4 animate-bounce">
+                                                    <Icon as={UploadSvg} size="lg" color="brand" />
+                                                </div>
+                                                <h3 className="text-label-lg font-semibold text-text-primary mb-2">Saving Proposal</h3>
+                                                <p className="text-caption text-text-secondary mb-6">Processing details and document file, please wait...</p>
+                                                <div className="w-full max-w-xs bg-surface-card-muted rounded-full h-2 overflow-hidden mb-2">
+                                                    <div
+                                                        className="bg-action-primary h-full transition-all duration-150"
+                                                        style={{ width: `${uploadProgress}%` }}
                                                     />
-                                                ) : (
-                                                    <div className="size-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center font-bold text-sm border border-black/20 shrink-0">
-                                                        {community.name.substring(0, 2).toUpperCase()}
+                                                </div>
+                                                <span className="text-label-sm font-semibold text-text-brand">{uploadProgress}%</span>
+                                            </div>
+                                        ) : proposals.length > 0 ? (
+                                            /* State 3: Show list/grid of proposals overview cards styled like My Events */
+                                            <div className="flex flex-col gap-6 w-full animate-in fade-in duration-150">
+
+                                                {/* Mobile Community Header */}
+                                                {community && (
+                                                    <div
+                                                        onClick={() => setShowCommunityMobilePanel(true)}
+                                                        className="sm:hidden flex items-center gap-3 p-3 bg-slate-50 border-[2px] border-black rounded-xl cursor-pointer hover:bg-slate-100 transition-all"
+                                                    >
+                                                        {communityLogoUrl ? (
+                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                            <img
+                                                                src={communityLogoUrl}
+                                                                alt={community.name}
+                                                                className="size-8 rounded-lg object-cover border border-black/20 shrink-0"
+                                                            />
+                                                        ) : (
+                                                            <div className="size-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center font-bold text-sm border border-black/20 shrink-0">
+                                                                {community.name.substring(0, 2).toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-[9px] font-bold text-black/50 leading-none">COMMUNITY PROFILE</p>
+                                                            <p className="text-xs font-black text-black truncate mt-1">{community.name}</p>
+                                                        </div>
+                                                        <span className="text-black/40 text-xs font-bold">➔</span>
                                                     </div>
                                                 )}
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-[9px] font-bold text-black/50 leading-none">COMMUNITY PROFILE</p>
-                                                    <p className="text-xs font-black text-black truncate mt-1">{community.name}</p>
-                                                </div>
-                                                <span className="text-black/40 text-xs font-bold">➔</span>
-                                            </div>
-                                        )}
 
-                                        {/* Status tabs */}
-                                        <div className="flex flex-row overflow-x-auto whitespace-nowrap scrollbar-none gap-3 sm:gap-5 border-b border-black/10 pb-2 mb-4 w-full">
-                                            {[
-                                                { value: "ALL", label: `ALL (${allCount})` },
-                                                { value: "DRAFT", label: `DRAFT (${draftCount})` },
-                                                { value: "UNDER_REVIEW", label: `UNDER REVIEW (${underReviewCount})` },
-                                                { value: "PUBLISHED", label: `PUBLISHED (${publishedCount})` },
-                                                { value: "REJECTED", label: `REJECTED (${rejectedCount})` }
-                                            ].map((tab) => {
-                                                const isActive = activeTab === tab.value
-                                                return (
-                                                    <button
-                                                        key={tab.value}
-                                                        onClick={() => setActiveTab(tab.value as any)}
-                                                        className={clsx(
-                                                            "text-[8px] sm:text-[10px] font-black uppercase tracking-wider pb-2 relative transition-colors shrink-0",
-                                                            isActive ? "text-[#EE2C2C]" : "text-black/40 hover:text-black"
-                                                        )}
-                                                    >
-                                                        {tab.label}
-                                                        {isActive && (
-                                                            <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#EE2C2C]" />
-                                                        )}
-                                                    </button>
-                                                )
-                                            })}
-                                        </div>
-                                        {filteredProposals.length === 0 ? (
-                                            <div className="flex flex-col items-center justify-center py-20 text-center gap-3 border-[3px] border-dashed border-black/30 rounded-[20px]">
-                                                <p className="text-label-md font-semibold text-black/50">No proposals found</p>
-                                                <p className="text-body-sm text-black/30 max-w-xs">
-                                                    No proposals in this category yet.
-                                                </p>
+                                                {/* Status tabs */}
+                                                <div className="flex flex-row overflow-x-auto whitespace-nowrap scrollbar-none gap-3 sm:gap-5 border-b border-black/10 pb-2 mb-4 w-full">
+                                                    {[
+                                                        { value: "ALL", label: `ALL (${allCount})` },
+                                                        { value: "DRAFT", label: `DRAFT (${draftCount})` },
+                                                        { value: "UNDER_REVIEW", label: `UNDER REVIEW (${underReviewCount})` },
+                                                        { value: "PUBLISHED", label: `PUBLISHED (${publishedCount})` },
+                                                        { value: "REJECTED", label: `REJECTED (${rejectedCount})` }
+                                                    ].map((tab) => {
+                                                        const isActive = activeTab === tab.value
+                                                        return (
+                                                            <button
+                                                                key={tab.value}
+                                                                onClick={() => setActiveTab(tab.value as any)}
+                                                                className={clsx(
+                                                                    "text-[8px] sm:text-[10px] font-black uppercase tracking-wider pb-2 relative transition-colors shrink-0",
+                                                                    isActive ? "text-[#EE2C2C]" : "text-black/40 hover:text-black"
+                                                                )}
+                                                            >
+                                                                {tab.label}
+                                                                {isActive && (
+                                                                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#EE2C2C]" />
+                                                                )}
+                                                            </button>
+                                                        )
+                                                    })}
+                                                </div>
+                                                {filteredProposals.length === 0 ? (
+                                                    <div className="flex flex-col items-center justify-center py-20 text-center gap-3 border-[3px] border-dashed border-black/30 rounded-[20px]">
+                                                        <p className="text-label-md font-semibold text-black/50">No proposals found</p>
+                                                        <p className="text-body-sm text-black/30 max-w-xs">
+                                                            No proposals in this category yet.
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-row overflow-x-auto sm:flex-wrap sm:overflow-x-visible gap-4 pb-4 sm:pb-0 w-full">
+                                                        {filteredProposals.map((p) => {
+                                                            const isViewingRevision = activeTab === "UNDER_REVIEW" && p.pendingRevision != null;
+                                                            const cardData = isViewingRevision ? p.pendingRevision! : p;
+                                                            const imgUrl = typeof cardData.image === "string" ? cardData.image : cardData.image ? URL.createObjectURL(cardData.image) : null;
+                                                            // Format date from YYYY-MM-DD to DD/MM/YYYY
+                                                            const parts = cardData.date ? cardData.date.split("-") : [];
+                                                            const startDisplay = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : cardData.date;
+                                                            const endParts = cardData.endDate ? cardData.endDate.split("-") : [];
+                                                            const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : cardData.endDate;
+                                                            const displayDate = endDisplay && endDisplay !== startDisplay ? `${startDisplay} - ${endDisplay}` : startDisplay;
+                                                            return (
+                                                                <div
+                                                                    key={p.id}
+                                                                    onClick={() => setSelectedProposal(p)}
+                                                                    className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-[380px] shrink-0"
+                                                                >
+                                                                    {/* Image / Logo */}
+                                                                    <div className="relative w-[120px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
+                                                                        {imgUrl ? (
+                                                                            // eslint-disable-next-line @next/next/no-img-element
+                                                                            <img
+                                                                                src={imgUrl}
+                                                                                alt={cardData.name}
+                                                                                className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
+                                                                                onLoad={() => imgUrl && imgUrl.startsWith("blob:") && URL.revokeObjectURL(imgUrl)}
+                                                                            />
+                                                                        ) : (
+                                                                            <div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
+                                                                                {cardData.name.substring(0, 2).toUpperCase()}
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Status Badge */}
+                                                                        <span
+                                                                            className={clsx(
+                                                                                "absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+                                                                                p.status === "DRAFT" && "bg-slate-100 text-black",
+                                                                                isViewingRevision && "bg-[#F5C343] text-black",
+                                                                                (!isViewingRevision && p.status === "UNDER_REVIEW") && "bg-[#F5C343] text-black",
+                                                                                p.status === "REJECTED" && "bg-[#EE2C2C] text-white",
+                                                                                (!isViewingRevision && (p.status === "PUBLISHED" || !p.status)) && "bg-green-400 text-black"
+                                                                            )}
+                                                                        >
+                                                                            {p.status === "DRAFT" && "Draft"}
+                                                                            {isViewingRevision && "Revision Under Review"}
+                                                                            {!isViewingRevision && p.status === "UNDER_REVIEW" && "Under Review"}
+                                                                            {p.status === "REJECTED" && "Rejected"}
+                                                                            {!isViewingRevision && (p.status === "PUBLISHED" || !p.status) && "Published"}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    {/* Kebab button */}
+                                                                    <div className="absolute top-2 right-2 z-30" onClick={(e) => e.stopPropagation()}>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => setOpenKebabId(openKebabId === p.id ? null : p.id)}
+                                                                            className="flex items-center justify-center size-5 rounded-full bg-white border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-50 text-black transition-colors"
+                                                                        >
+                                                                            <Icon as={DotsSvg} size="xs" />
+                                                                        </button>
+                                                                        {openKebabId === p.id && (
+                                                                            <div className="absolute right-0 top-7 z-40 w-36 bg-white border-[2px] border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] py-1 flex flex-col">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        setSelectedProposal(p)
+                                                                                        setOpenKebabId(null)
+                                                                                    }}
+                                                                                    className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
+                                                                                >
+                                                                                    View details
+                                                                                </button>
+                                                                                {(p.status === "DRAFT" || p.status === "REJECTED") && (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => {
+                                                                                            submitProposalForApproval(p)
+                                                                                            setOpenKebabId(null)
+                                                                                        }}
+                                                                                        className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
+                                                                                    >
+                                                                                        Submit for Approval
+                                                                                    </button>
+                                                                                )}
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        handleDelete(p.id)
+                                                                                        setOpenKebabId(null)
+                                                                                    }}
+                                                                                    className="px-3 py-1.5 text-left text-xs text-[#EE2C2C] hover:bg-red-50 transition-colors font-black"
+                                                                                >
+                                                                                    Delete
+                                                                                </button>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Content & Footer info */}
+                                                                    <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+                                                                        <div className="flex flex-col gap-1 pr-6">
+                                                                            <h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">{cardData.name}</h3>
+                                                                            <p className="text-[11px] font-bold text-black/50 truncate">
+                                                                                {(cardData.venues && cardData.venues.length > 0 ? cardData.venues : [cardData.venue])
+                                                                                    .map((v, idx) => {
+                                                                                        const c = cardData.venueCities?.[idx] || (idx === 0 ? cardData.city : undefined)
+                                                                                        return c ? `${v} (${c})` : v
+                                                                                    })
+                                                                                    .filter(Boolean)
+                                                                                    .join(", ")}
+                                                                            </p>
+                                                                            <p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">{cardData.about}</p>
+                                                                        </div>
+
+                                                                        <div className="flex flex-wrap gap-1.5 mt-2">
+                                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                                                                                {displayDate}
+                                                                            </span>
+                                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                                                                                {cardData.guestCount} Guests
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                )}
                                             </div>
                                         ) : (
-                                            <div className="flex flex-row overflow-x-auto sm:flex-wrap sm:overflow-x-visible gap-4 pb-4 sm:pb-0 w-full">
-                                                {filteredProposals.map((p) => {
-                                                    const isViewingRevision = activeTab === "UNDER_REVIEW" && p.pendingRevision != null;
-                                                    const cardData = isViewingRevision ? p.pendingRevision! : p;
-                                                    const imgUrl = typeof cardData.image === "string" ? cardData.image : cardData.image ? URL.createObjectURL(cardData.image) : null;
-                                                    // Format date from YYYY-MM-DD to DD/MM/YYYY
-                                                    const parts = cardData.date ? cardData.date.split("-") : [];
-                                                    const startDisplay = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : cardData.date;
-                                                    const endParts = cardData.endDate ? cardData.endDate.split("-") : [];
-                                                    const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : cardData.endDate;
-                                                    const displayDate = endDisplay && endDisplay !== startDisplay ? `${startDisplay} - ${endDisplay}` : startDisplay;
-                                                    return (
-                                                        <div
-                                                            key={p.id}
-                                                            onClick={() => setSelectedProposal(p)}
-                                                            className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-[380px] shrink-0"
-                                                        >
-                                                            {/* Image / Logo */}
-                                                            <div className="relative w-[120px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
-                                                                {imgUrl ? (
-                                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                                    <img
-                                                                        src={imgUrl}
-                                                                        alt={cardData.name}
-                                                                        className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
-                                                                        onLoad={() => imgUrl && imgUrl.startsWith("blob:") && URL.revokeObjectURL(imgUrl)}
-                                                                    />
-                                                                ) : (
-                                                                    <div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
-                                                                        {cardData.name.substring(0, 2).toUpperCase()}
-                                                                    </div>
-                                                                )}
-                                                                
-                                                                {/* Status Badge */}
-                                                                <span
-                                                                    className={clsx(
-                                                                        "absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
-                                                                        p.status === "DRAFT" && "bg-slate-100 text-black",
-                                                                        isViewingRevision && "bg-[#F5C343] text-black",
-                                                                        (!isViewingRevision && p.status === "UNDER_REVIEW") && "bg-[#F5C343] text-black",
-                                                                        p.status === "REJECTED" && "bg-[#EE2C2C] text-white",
-                                                                        (!isViewingRevision && (p.status === "PUBLISHED" || !p.status)) && "bg-green-400 text-black"
-                                                                    )}
-                                                                >
-                                                                    {p.status === "DRAFT" && "Draft"}
-                                                                    {isViewingRevision && "Revision Under Review"}
-                                                                    {!isViewingRevision && p.status === "UNDER_REVIEW" && "Under Review"}
-                                                                    {p.status === "REJECTED" && "Rejected"}
-                                                                    {!isViewingRevision && (p.status === "PUBLISHED" || !p.status) && "Published"}
-                                                                </span>
-                                                            </div>
-
-                                                            {/* Kebab button */}
-                                                            <div className="absolute top-2 right-2 z-30" onClick={(e) => e.stopPropagation()}>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setOpenKebabId(openKebabId === p.id ? null : p.id)}
-                                                                    className="flex items-center justify-center size-5 rounded-full bg-white border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-50 text-black transition-colors"
-                                                                >
-                                                                    <Icon as={DotsSvg} size="xs" />
-                                                                </button>
-                                                                {openKebabId === p.id && (
-                                                                    <div className="absolute right-0 top-7 z-40 w-36 bg-white border-[2px] border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] py-1 flex flex-col">
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                setSelectedProposal(p)
-                                                                                setOpenKebabId(null)
-                                                                            }}
-                                                                            className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
-                                                                        >
-                                                                            View details
-                                                                        </button>
-                                                                        {(p.status === "DRAFT" || p.status === "REJECTED") && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    submitProposalForApproval(p)
-                                                                                    setOpenKebabId(null)
-                                                                                }}
-                                                                                className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
-                                                                            >
-                                                                                Submit for Approval
-                                                                            </button>
-                                                                        )}
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                handleDelete(p.id)
-                                                                                setOpenKebabId(null)
-                                                                            }}
-                                                                            className="px-3 py-1.5 text-left text-xs text-[#EE2C2C] hover:bg-red-50 transition-colors font-black"
-                                                                        >
-                                                                            Delete
-                                                                        </button>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-
-                                                            {/* Content & Footer info */}
-                                                            <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
-                                                                <div className="flex flex-col gap-1 pr-6">
-                                                                    <h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">{cardData.name}</h3>
-                                                                    <p className="text-[11px] font-bold text-black/50 truncate">
-                                                                        {(cardData.venues && cardData.venues.length > 0 ? cardData.venues : [cardData.venue])
-                                                                            .map((v, idx) => {
-                                                                                const c = cardData.venueCities?.[idx] || (idx === 0 ? cardData.city : undefined)
-                                                                                return c ? `${v} (${c})` : v
-                                                                            })
-                                                                            .filter(Boolean)
-                                                                            .join(", ")}
-                                                                    </p>
-                                                                    <p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">{cardData.about}</p>
-                                                                </div>
-
-                                                                <div className="flex flex-wrap gap-1.5 mt-2">
-                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                                                                        {displayDate}
-                                                                    </span>
-                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                                                                        {cardData.guestCount} Guests
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                })}
+                                            /* State 2b: CTA to open details form */
+                                            <div className="border-[3px] border-dashed border-black/30 rounded-[20px] p-12 text-center w-full flex flex-col items-center justify-center gap-2">
+                                                <h2 className="font-heading font-black text-black text-lg">No active proposals</h2>
+                                                <p className="text-xs font-semibold text-black/50 mb-3">
+                                                    Create a comprehensive proposal detailing your project features.
+                                                </p>
+                                                <button
+                                                    onClick={() => openProposalForm()}
+                                                    title={!isCommunityApproved ? "Your community profile must be admin-approved first" : undefined}
+                                                    className={clsx(
+                                                        "text-white text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer",
+                                                        isCommunityApproved ? "bg-[#EE2C2C]" : "bg-black/30",
+                                                    )}
+                                                >
+                                                    {isCommunityApproved ? "GET STARTED" : "PENDING ADMIN APPROVAL"}
+                                                </button>
                                             </div>
                                         )}
                                     </div>
-                                ) : (
-                                    /* State 2b: CTA to open details form */
-                                    <div className="border-[3px] border-dashed border-black/30 rounded-[20px] p-12 text-center w-full flex flex-col items-center justify-center gap-2">
-                                        <h2 className="font-heading font-black text-black text-lg">No active proposals</h2>
-                                        <p className="text-xs font-semibold text-black/50 mb-3">
-                                            Create a comprehensive proposal detailing your project features.
-                                        </p>
-                                        <button
-                                            onClick={() => openProposalForm()}
-                                            title={!isCommunityApproved ? "Your community profile must be admin-approved first" : undefined}
-                                            className={clsx(
-                                                "text-white text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer",
-                                                isCommunityApproved ? "bg-[#EE2C2C]" : "bg-black/30",
-                                            )}
-                                        >
-                                            {isCommunityApproved ? "GET STARTED" : "PENDING ADMIN APPROVAL"}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </>
+                                </>
+                            )}
+                        </div>
                     )}
                 </div>
-            )}
-        </div>
 
                 {/* Right Column Drawer / Mobile drawer */}
                 {isSplitLayout && (
                     <>
                         {showActivateModal ? (
-                             <>
-                                 {/* Mobile/Tablet Backdrop Blur */}
-                                 <div 
-                                     onClick={() => setShowActivateModal(false)}
-                                     className="md:hidden fixed inset-0 bg-black/45 z-40 backdrop-blur-xs"
-                                 />
-                                 
-                                 {/* Responsive drawer container */}
-                                 <div className={clsx(
-                                     "bg-white h-full flex flex-col z-50 transition-all duration-300 animate-in slide-in-from-right shrink-0",
-                                     "fixed inset-y-0 right-0 w-full sm:w-[420px] border-l-4 border-black shadow-modal",
-                                     "md:static md:border-l-0 md:border-l md:border-black/10 md:shadow-none md:w-full overflow-y-auto p-6"
-                                 )}>
-                                     <ActivateCommunityModal
-                                         hostId={hostId}
-                                         profileInstagram={profile?.socialLinks?.instagram || ""}
-                                         profileLinkedin={profile?.socialLinks?.linkedin || ""}
-                                         profileYoutube={profile?.socialLinks?.youtube || ""}
-                                         profilePortfolio={profile?.socialLinks?.website || ""}
-                                         profileOperatingCities={profile?.operatingCities || []}
-                                         onClose={() => setShowActivateModal(false)}
-                                         onSuccess={(saved) => {
-                                             setCommunity(saved as any)
-                                             setShowActivateModal(false)
-                                         }}
-                                         inline={true}
-                                     />
-                                 </div>
-                             </>
-                         ) : (
-                             /* Render the Community details card exactly like the user's mockup! */
-                             <div className="hidden md:flex flex-col p-6 overflow-y-auto h-full w-full bg-white animate-in fade-in duration-150 shrink-0">
-                                 {renderCommunityCard()}
-                             </div>
-                         )}
-                     </>
-                 )}
+                            <>
+                                {/* Mobile/Tablet Backdrop Blur */}
+                                <div
+                                    onClick={() => setShowActivateModal(false)}
+                                    className="md:hidden fixed inset-0 bg-black/45 z-40 backdrop-blur-xs"
+                                />
+
+                                {/* Responsive drawer container */}
+                                <div className={clsx(
+                                    "bg-white h-full flex flex-col z-50 transition-all duration-300 animate-in slide-in-from-right shrink-0",
+                                    "fixed inset-y-0 right-0 w-full sm:w-[420px] border-l-4 border-black shadow-modal",
+                                    "md:static md:border-l-0 md:border-l md:border-black/10 md:shadow-none md:w-full overflow-y-auto p-6"
+                                )}>
+                                    <ActivateCommunityModal
+                                        hostId={hostId}
+                                        profileInstagram={profile?.socialLinks?.instagram || ""}
+                                        profileLinkedin={profile?.socialLinks?.linkedin || ""}
+                                        profileYoutube={profile?.socialLinks?.youtube || ""}
+                                        profilePortfolio={profile?.socialLinks?.website || ""}
+                                        profileOperatingCities={profile?.operatingCities || []}
+                                        onClose={() => setShowActivateModal(false)}
+                                        onSuccess={(saved) => {
+                                            setCommunity(saved as any)
+                                            setShowActivateModal(false)
+                                        }}
+                                        inline={true}
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            /* Render the Community details card exactly like the user's mockup! */
+                            <div className="hidden md:flex flex-col p-6 overflow-y-auto h-full w-full bg-white animate-in fade-in duration-150 shrink-0">
+                                {renderCommunityCard()}
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
 
             {/* Mobile-only Community Profile Drawer */}
             {showCommunityMobilePanel && community && (
                 <>
                     {/* Backdrop */}
-                    <div 
+                    <div
                         onClick={() => setShowCommunityMobilePanel(false)}
                         className="sm:hidden fixed inset-0 bg-black/40 z-40 backdrop-blur-xs"
                     />
@@ -2085,7 +2086,7 @@ export default function ProposalPage() {
                     <div className="sm:hidden fixed inset-y-0 right-0 w-full max-w-[380px] bg-white border-l-4 border-black z-50 overflow-y-auto shadow-modal flex flex-col animate-in slide-in-from-right duration-300">
                         <div className="flex justify-between items-center p-4 border-b border-black/10 shrink-0">
                             <h3 className="font-heading font-black text-black text-base">Community Profile</h3>
-                            <button 
+                            <button
                                 onClick={() => setShowCommunityMobilePanel(false)}
                                 className="text-black font-extrabold text-sm p-2"
                             >
