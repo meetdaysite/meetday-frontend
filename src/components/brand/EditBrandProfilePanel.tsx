@@ -98,7 +98,7 @@ export function EditBrandProfilePanel({ onClose, onSuccess }: EditBrandProfilePa
 		setWebsite(profile.socialLinks?.website ?? "")
 		setInstagram(profile.socialLinks?.instagram ?? "")
 		setLinkedin(profile.socialLinks?.linkedin ?? "")
-		setWorkEmail(profile.workEmail ?? "")
+		setWorkEmail(profile.workEmail ?? profile.email ?? "")
 		setContactPhone(profile.contactPhone ?? "")
 		setCompanyType(profile.companyType ?? "")
 		setAboutCompany(profile.aboutCompany ?? "")

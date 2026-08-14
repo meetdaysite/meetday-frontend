@@ -208,22 +208,36 @@ export default function OnboardingPage() {
 				</div>
 			)}
 
-			<button
-				type="button"
-				onClick={async () => {
-					// Sign out first — otherwise the login page's own "already authenticated"
-					// guard immediately bounces back to a dashboard with no profile yet.
-					clearSession()
-					await signOut()
-					router.replace("/brand/login")
-				}}
-				className="inline-flex items-center gap-1.5 text-xs font-bold text-black/50 hover:text-black transition-colors mb-4"
-			>
-				<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-					<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-				</svg>
-				Back to login
-			</button>
+			<div className="flex items-center justify-between mb-4">
+				<button
+					type="button"
+					onClick={async () => {
+						// Sign out first — otherwise the login page's own "already authenticated"
+						// guard immediately bounces back to a dashboard with no profile yet.
+						clearSession()
+						await signOut()
+						router.replace("/brand/login")
+					}}
+					className="inline-flex items-center gap-1.5 text-xs font-bold text-black/50 hover:text-black transition-colors"
+				>
+					<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+					</svg>
+					Back to login
+				</button>
+
+				<button
+					type="button"
+					disabled={!!loadingMessage}
+					onClick={() => finishSignup(true)}
+					className="inline-flex items-center gap-1 text-xs font-bold text-black/50 hover:text-black transition-colors disabled:opacity-40"
+				>
+					Skip for now
+					<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+					</svg>
+				</button>
+			</div>
 
 			<div className="flex flex-col flex-grow justify-between h-full">
 				{/* Top Section: Title & Subtitle */}
@@ -370,15 +384,7 @@ export default function OnboardingPage() {
 					</SectionCard>
 
 					<div className="flex justify-end gap-3 pt-4 pb-2 border-t border-border-default">
-						<Button
-							type="button"
-							variant="secondary"
-							size="md"
-							disabled={!!loadingMessage}
-							onClick={() => finishSignup(true)}
-						>
-							Skip for now
-						</Button>
+
 						<Button
 							type="button"
 							variant="primary"

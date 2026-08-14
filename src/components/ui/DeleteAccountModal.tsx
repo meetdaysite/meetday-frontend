@@ -9,7 +9,7 @@ import DangerTriangleSvg from "@/icons/outlined/danger-triangle.svg"
 import { deleteAccount } from "@/lib/api"
 import { ApiError, getApiErrorMessage } from "@/lib/errors"
 
-type AccountDeletionRole = "attendee" | "host"
+type AccountDeletionRole = "attendee" | "host" | "brand"
 
 const ROLE_CONTENT: Record<AccountDeletionRole, {
 	heading: string
@@ -37,6 +37,16 @@ const ROLE_CONTENT: Record<AccountDeletionRole, {
 		],
 		warning: "Cancel all upcoming events and wait for all pending payouts to settle.",
 		closing: "The experiences you created, and the people you brought together — those remain. Thank you for being a host on Meetday.",
+	},
+	brand: {
+		heading: "Sorry to see your brand go.",
+		bullets: [
+			"Your brand profile, logo, and metadata are permanently erased",
+			"Your login is disabled immediately — rejoining requires a new account",
+			"All active proposal interests are cancelled",
+			"Your past sponsorships records are kept for up to 8 years as required by RBI and GST regulations.",
+		],
+		closing: "Thank you for partnering with communities on Meetday. You're always welcome back.",
 	},
 }
 

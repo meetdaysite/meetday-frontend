@@ -289,60 +289,75 @@ export default function BrandCommunitiesPage() {
 										</div>
 									)}
 
-									{/* Operating Cities Section */}
-									{selectedCommunity.operatingCities && selectedCommunity.operatingCities.length > 0 && (
-										<div className="flex flex-col gap-2 w-full">
+									{/* Cities and Social Links Row (50:50) */}
+									<div className="grid grid-cols-2 gap-6 w-full border-t border-black/10 pt-4">
+										{/* Operating Cities Section */}
+										<div className="flex flex-col gap-2">
 											<span className="text-xs font-bold text-black/50">Operating Cities</span>
-											<div className="flex flex-wrap gap-1.5">
-												{selectedCommunity.operatingCities.map((city) => (
-													<span key={city} className="px-3 py-1 bg-slate-50 text-black/70 border border-black/10 rounded-lg text-xs font-bold uppercase tracking-wider">
-														{city}
-													</span>
-												))}
-											</div>
+											{selectedCommunity.operatingCities && selectedCommunity.operatingCities.length > 0 ? (
+												<div className="flex flex-wrap gap-1.5">
+													{selectedCommunity.operatingCities.map((city) => (
+														<span key={city} className="px-3 py-1 bg-slate-50 text-black/70 border border-black/10 rounded-lg text-xs font-bold uppercase tracking-wider">
+															{city}
+														</span>
+													))}
+												</div>
+											) : (
+												<span className="text-xs font-semibold text-black/40">Not specified</span>
+											)}
 										</div>
-									)}
 
-									{/* Social Links */}
-									{selectedCommunity.socialLinks && Object.keys(selectedCommunity.socialLinks).length > 0 && Object.values(selectedCommunity.socialLinks).some(Boolean) && (
-										<div className="flex flex-col gap-2.5 border-t border-black/10 pt-4 w-full">
+										{/* Social Links Section */}
+										<div className="flex flex-col gap-2">
 											<span className="text-xs font-bold text-black/50">Digital Presence</span>
-											<div className="flex flex-col gap-2">
-												{selectedCommunity.socialLinks.instagram && (
-													<div className="flex justify-between items-center text-sm font-semibold">
-														<span className="text-black/40">Instagram</span>
-														<a href={selectedCommunity.socialLinks.instagram.startsWith('http') ? selectedCommunity.socialLinks.instagram : `https://${selectedCommunity.socialLinks.instagram}`} target="_blank" rel="noreferrer" className="text-green-600 hover:text-green-700 hover:underline font-bold">
-															View
+											{selectedCommunity.socialLinks && Object.keys(selectedCommunity.socialLinks).length > 0 && Object.values(selectedCommunity.socialLinks).some(Boolean) ? (
+												<div className="flex flex-wrap gap-1.5">
+													{selectedCommunity.socialLinks.instagram && (
+														<a
+															href={selectedCommunity.socialLinks.instagram.startsWith('http') ? selectedCommunity.socialLinks.instagram : `https://${selectedCommunity.socialLinks.instagram}`}
+															target="_blank"
+															rel="noreferrer"
+															className="px-3 py-1 bg-slate-50 text-[#EE2C2C] border border-black/10 hover:border-black/30 hover:bg-black/5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors inline-block"
+														>
+															Instagram
 														</a>
-													</div>
-												)}
-												{selectedCommunity.socialLinks.linkedin && (
-													<div className="flex justify-between items-center text-sm font-semibold">
-														<span className="text-black/40">LinkedIn</span>
-														<a href={selectedCommunity.socialLinks.linkedin.startsWith('http') ? selectedCommunity.socialLinks.linkedin : `https://${selectedCommunity.socialLinks.linkedin}`} target="_blank" rel="noreferrer" className="text-green-600 hover:text-green-700 hover:underline font-bold">
-															View
+													)}
+													{selectedCommunity.socialLinks.linkedin && (
+														<a
+															href={selectedCommunity.socialLinks.linkedin.startsWith('http') ? selectedCommunity.socialLinks.linkedin : `https://${selectedCommunity.socialLinks.linkedin}`}
+															target="_blank"
+															rel="noreferrer"
+															className="px-3 py-1 bg-slate-50 text-[#EE2C2C] border border-black/10 hover:border-black/30 hover:bg-black/5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors inline-block"
+														>
+															LinkedIn
 														</a>
-													</div>
-												)}
-												{selectedCommunity.socialLinks.youtube && (
-													<div className="flex justify-between items-center text-sm font-semibold">
-														<span className="text-black/40">YouTube</span>
-														<a href={selectedCommunity.socialLinks.youtube.startsWith('http') ? selectedCommunity.socialLinks.youtube : `https://${selectedCommunity.socialLinks.youtube}`} target="_blank" rel="noreferrer" className="text-green-600 hover:text-green-700 hover:underline font-bold">
-															View
+													)}
+													{selectedCommunity.socialLinks.youtube && (
+														<a
+															href={selectedCommunity.socialLinks.youtube.startsWith('http') ? selectedCommunity.socialLinks.youtube : `https://${selectedCommunity.socialLinks.youtube}`}
+															target="_blank"
+															rel="noreferrer"
+															className="px-3 py-1 bg-slate-50 text-[#EE2C2C] border border-black/10 hover:border-black/30 hover:bg-black/5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors inline-block"
+														>
+															YouTube
 														</a>
-													</div>
-												)}
-												{selectedCommunity.socialLinks.website && (
-													<div className="flex justify-between items-center text-sm font-semibold">
-														<span className="text-black/40">Website</span>
-														<a href={selectedCommunity.socialLinks.website.startsWith('http') ? selectedCommunity.socialLinks.website : `https://${selectedCommunity.socialLinks.website}`} target="_blank" rel="noreferrer" className="text-green-600 hover:text-green-700 hover:underline font-bold">
-															View
+													)}
+													{selectedCommunity.socialLinks.website && (
+														<a
+															href={selectedCommunity.socialLinks.website.startsWith('http') ? selectedCommunity.socialLinks.website : `https://${selectedCommunity.socialLinks.website}`}
+															target="_blank"
+															rel="noreferrer"
+															className="px-3 py-1 bg-slate-50 text-[#EE2C2C] border border-black/10 hover:border-black/30 hover:bg-black/5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors inline-block"
+														>
+															Website
 														</a>
-													</div>
-												)}
-											</div>
+													)}
+												</div>
+											) : (
+												<span className="text-xs font-semibold text-black/40">Not specified</span>
+											)}
 										</div>
-									)}
+									</div>
 
 								</div>
 							</div>

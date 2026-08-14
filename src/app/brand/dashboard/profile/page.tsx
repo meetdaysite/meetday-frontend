@@ -12,12 +12,14 @@ import clsx from "clsx"
 import UserSvg from "@/icons/outlined/user.svg"
 import GlobeSvg from "@/icons/outlined/globe.svg"
 import { EditBrandProfilePanel } from "@/components/brand/EditBrandProfilePanel"
+import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
 
 export default function BrandProfilePage() {
 	const { profile, clearProfile } = useBrandStore()
 	const { signOut } = useAuthStore()
 	const router = useRouter()
 	const [showEditPanel, setShowEditPanel] = useState(false)
+	const [showDeleteModal, setShowDeleteModal] = useState(false)
 
 	const displayName = profile?.brandName || "Brand"
 	const avatarUrl = profile?.logoUrl
@@ -133,11 +135,16 @@ export default function BrandProfilePage() {
 						<div className="flex items-center gap-3">
 							<button 
 								onClick={handleSignOut}
-								className="bg-black text-white hover:bg-black/90 text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+								className="bg-white border-[3px] border-black text-black rounded-2xl px-4 py-2 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
 							>
-								LOGOUT
+								LOG OUT
 							</button>
-							<span className="text-black/50 font-black text-lg">&gt;</span>
+							<button 
+								onClick={() => setShowDeleteModal(true)} 
+								className="bg-[#EE2C2C] border-[3px] border-black text-white rounded-2xl px-4 py-2 font-black text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+							>
+								DELETE
+							</button>
 						</div>
 					</div>
 					</div>
@@ -167,6 +174,18 @@ export default function BrandProfilePage() {
 				)}
 
 			</div>
+
+			<DeleteAccountModal
+				open={showDeleteModal}
+				role="brand"
+				onClose={() => setShowDeleteModal(false)}
+				onDeleted={async () => {
+					setShowDeleteModal(false)
+					clearProfile()
+					router.replace("/")
+					await signOut()
+				}}
+			/>
 		</div>
 	)
 }

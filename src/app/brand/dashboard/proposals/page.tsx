@@ -44,8 +44,8 @@ function CategorySearchDropdown({
 	const [search, setSearch] = useState("")
 
 	const selectedName = selectedId
-		? categories.find(c => c.id === selectedId)?.name || "All Categories"
-		: "All Categories"
+		? categories.find(c => c.id === selectedId)?.name || "IRL Categories"
+		: "IRL Categories"
 
 	const filtered = useMemo(() => {
 		const lower = search.toLowerCase()
@@ -102,7 +102,7 @@ function CategorySearchDropdown({
 								selectedId === null ? "bg-[#FFC940] text-black" : "text-black"
 							)}
 						>
-							ALL CATEGORIES
+							IRL CATEGORIES
 						</button>
 						{filtered.map(c => (
 							<button
@@ -267,10 +267,10 @@ export default function ProposalsPage() {
 				<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 					<div>
 						<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
-							Active Sponsorships
+							Active Proposals
 						</h1>
 						<p className="text-sm font-semibold text-black/50 mt-2">
-							Browse sponsorship opportunities published by hosts across Meetday.
+							Browse through all partnership proposals published across Meetday.
 						</p>
 					</div>
 
