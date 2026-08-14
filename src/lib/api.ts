@@ -696,6 +696,13 @@ export type PublishedSponsorshipDetail = SponsorshipProposal & {
 	hostProfile: {
 		id: string
 		displayName?: string
+		operatingCities?: string[]
+		socialLinks?: {
+			instagram?: string
+			linkedin?: string
+			youtube?: string
+			website?: string
+		} | null
 		user: { firstName: string; lastName: string }
 	}
 	community: SponsorshipCommunityProfile | null

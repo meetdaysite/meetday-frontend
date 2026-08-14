@@ -141,7 +141,7 @@ export default function OnboardingPage() {
 			try {
 				await registerBrand({
 					firstName: "Brand",
-					lastName: skip ? "" : brandName,
+					lastName: skip ? "User" : brandName,
 					email: sessionEmail || "",
 					phone: phone || undefined,
 					accountType: "BRAND",

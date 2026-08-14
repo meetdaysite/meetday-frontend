@@ -301,8 +301,8 @@ export default function ProposalDetailPage() {
 									<div className="md:hidden mt-4">
 										<CommunityProfileDetailsPanel
 											community={{ ...proposal.community, approvalStatus: "APPROVED" } as any}
-											operatingCities={undefined}
-											socialLinks={undefined}
+											operatingCities={proposal.hostProfile?.operatingCities}
+											socialLinks={proposal.hostProfile?.socialLinks ?? undefined}
 											hideStatus={true}
 										/>
 									</div>
@@ -317,8 +317,8 @@ export default function ProposalDetailPage() {
 					<div className="hidden md:flex flex-col border-l border-black/10 overflow-y-auto h-[calc(100vh-6rem)] shrink-0 w-full bg-white">
 						<CommunityProfileDetailsPanel
 							community={{ ...proposal.community, approvalStatus: "APPROVED" } as any}
-							operatingCities={undefined}
-							socialLinks={undefined}
+							operatingCities={proposal.hostProfile?.operatingCities}
+							socialLinks={proposal.hostProfile?.socialLinks ?? undefined}
 							hideStatus={true}
 						/>
 					</div>

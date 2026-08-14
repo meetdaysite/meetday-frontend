@@ -146,7 +146,7 @@ export function EditBrandProfilePanel({ onClose, onSuccess }: EditBrandProfilePa
 				industry: resolvedIndustry || undefined,
 			})
 			setProfile(updated)
-			toast.success("Profile updated successfully!")
+			toast.success("Profile submitted for admin approval!")
 			onSuccess()
 			onClose()
 		} catch (err) {
@@ -347,7 +347,7 @@ export function EditBrandProfilePanel({ onClose, onSuccess }: EditBrandProfilePa
 						disabled={saving}
 						className="bg-[#FFC940] border-[3px] border-black text-black rounded-2xl px-4 py-2 font-bold text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
 					>
-						{saving ? "Saving…" : "Save Changes"}
+						{saving ? "Submitting…" : "Submit"}
 					</button>
 				</div>
 			</div>
