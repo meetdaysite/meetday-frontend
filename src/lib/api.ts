@@ -1,7 +1,7 @@
-import apiClient from "./axios"
+﻿import apiClient from "./axios"
 import type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus, EventRevision, UpdatePublishedEventPayload } from "@/types/event"
 
-// ─── Errors ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Errors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export class UserNotFoundError extends Error {
 	constructor() {
@@ -10,7 +10,7 @@ export class UserNotFoundError extends Error {
 	}
 }
 
-// ─── Shared types ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Shared types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type UserDetails = {
 	id: string
@@ -20,7 +20,7 @@ export type UserDetails = {
 	lastName?: string
 }
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type AuthMeData = {
 	id: string
@@ -31,7 +31,7 @@ export type AuthMeData = {
 	avatarUrl: string | null
 	isActive: boolean
 	role: { name: string }
-	// One login can hold host, brand, and admin access at once — these report what this
+	// One login can hold host, brand, and admin access at once â€” these report what this
 	// identity actually has, independent of the single primary `role` above.
 	hasHostAccess: boolean
 	hasBrandAccess: boolean
@@ -71,7 +71,7 @@ export async function deleteAccount(reason?: string): Promise<{ message: string 
 	return data
 }
 
-// ─── Host profile ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Host profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type HostProfile = {
 	id: string
@@ -199,6 +199,7 @@ export type BrandProfile = {
 	industry?: string | null
 	categories: Category[]
 	isProfileComplete: boolean
+	approvalStatus?: "PENDING" | "APPROVED" | "REJECTED"
 	phone?: string | null
 	email?: string | null
 	firstName?: string
@@ -260,7 +261,7 @@ export async function getBrandCommunities(): Promise<{ communities: BrandCommuni
 	return data.data
 }
 
-// ─── Registration ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Registration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type RegisterPayload = {
 	firstName: string
@@ -323,7 +324,7 @@ export async function registerBrand(payload: BrandRegisterPayload): Promise<void
 	await apiClient.post("/auth/register", payload)
 }
 
-// ─── Attendee registration ────────────────────────────────────────────────────
+// â”€â”€â”€ Attendee registration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type AttendeeInterest = {
 	interestId: string
@@ -347,7 +348,7 @@ export async function registerAttendee(payload: AttendeeRegisterPayload): Promis
 	await apiClient.post("/auth/register", { ...payload, accountType: "USER" })
 }
 
-// ─── KYC ──────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ KYC â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type PanVerifyResult = {
 	referenceId: string
@@ -388,7 +389,7 @@ export async function verifyBankAccount(payload: BankVerifyPayload): Promise<Ban
 	return data.data
 }
 
-// ─── Reapply ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Reapply â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type ReapplyResult = {
 	id: string
@@ -400,14 +401,14 @@ export type ReapplyResult = {
 	rejectionReason: string | null
 }
 
-// Allowed only when kycStatus is FAILED or approvalStatus is REJECTED — resets
+// Allowed only when kycStatus is FAILED or approvalStatus is REJECTED â€” resets
 // KYC/approval state so the host can resubmit via the KYC verify endpoints.
 export async function reapplyAsHost(): Promise<ReapplyResult> {
 	const { data } = await apiClient.post<{ success: boolean; data: ReapplyResult }>("/hosts/reapply")
 	return data.data
 }
 
-// ─── Categories ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Categories â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type Category = {
 	id: string
@@ -420,7 +421,7 @@ export async function getCategories(): Promise<Category[]> {
 	return data.data
 }
 
-// ─── Subscription plans ───────────────────────────────────────────────────────
+// â”€â”€â”€ Subscription plans â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type SubscriptionPlan = {
 	id: string
@@ -438,7 +439,7 @@ export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
 	return data.data
 }
 
-// ─── Events ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus, EventRevision, UpdatePublishedEventPayload }
 
@@ -538,7 +539,7 @@ export async function cancelEvent(id: string, cancellationReason: string): Promi
 	return data.data
 }
 
-// ─── Sponsorship proposals ────────────────────────────────────────────────────
+// â”€â”€â”€ Sponsorship proposals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type SponsorshipStatus = "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED"
 
@@ -561,6 +562,7 @@ export type SponsorshipProposalPayload = {
 	ageGroup?: string
 	guestCount?: string
 	docKey?: string
+	videoUrl?: string
 	docName?: string
 	docType?: string
 	docSize?: number
@@ -588,6 +590,7 @@ export type SponsorshipProposal = {
 	docName: string | null
 	docType: string | null
 	docSize: number | null
+	videoUrl: string | null
 	sponsorTiers: SponsorTier[]
 	status: SponsorshipStatus
 	pendingRevision: (SponsorshipProposalPayload & { imageUrl?: string | null; docUrl?: string | null }) | null
@@ -655,7 +658,7 @@ export async function deleteSponsorshipProposal(id: string): Promise<void> {
 	await apiClient.delete(`/sponsorships/${id}`)
 }
 
-// ─── Brand: browse published sponsorship proposals ────────────────────────────
+// â”€â”€â”€ Brand: browse published sponsorship proposals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type PublishedSponsorshipProposal = SponsorshipProposal & {
 	hostProfile: {
@@ -725,7 +728,7 @@ export async function markSponsorshipInterest(
 	return data.data
 }
 
-// ─── Host community profile (shown to sponsors) ───────────────────────────────
+// â”€â”€â”€ Host community profile (shown to sponsors) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type HostCommunityProfilePayload = {
 	name: string
@@ -735,6 +738,7 @@ export type HostCommunityProfilePayload = {
 	avgGuestCount: string
 	experiencesPerYear: string
 	categoryIds: string[]
+	secondaryImageKey?: string
 }
 
 export type HostCommunityProfile = {
@@ -744,6 +748,8 @@ export type HostCommunityProfile = {
 	about: string
 	logoKey: string
 	logoUrl: string
+	secondaryImageKey?: string | null
+	secondaryImageUrl?: string | null
 	size: string
 	avgGuestCount: string
 	experiencesPerYear: string
@@ -776,7 +782,7 @@ export async function deactivateHostCommunityProfile(): Promise<void> {
 	await apiClient.delete("/hosts/community")
 }
 
-// ─── Scanner sessions ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Scanner sessions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type CreateScannerSessionPayload = {
 	name: string
@@ -864,7 +870,7 @@ export async function getEventAttendees(
 	return data.data
 }
 
-// ─── Public events ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Public events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 import type { ExploreEventsResponse, PublicEventDetails, SavedEventsResponse } from "@/types/attendee"
 
@@ -930,7 +936,7 @@ export async function getEventCrowdPulse(eventId: string): Promise<CrowdPulseRes
 	return data.data
 }
 
-// ─── Attendee profile ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Attendee profile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 import type { AttendeeProfile } from "@/types/attendee"
 
@@ -940,7 +946,7 @@ export async function getAttendeeProfile(): Promise<AttendeeProfile> {
 }
 
 // Fields mirror the POST/PATCH /attendee/profile request body. Response shapes for
-// these two endpoints aren't strictly typed yet — kept generic (AttendeeProfile) pending
+// these two endpoints aren't strictly typed yet â€” kept generic (AttendeeProfile) pending
 // backend confirmation of the full enum lists for ageRange/gender/privacy.
 export type UpdateAttendeeProfilePayload = {
 	username?: string
@@ -963,7 +969,7 @@ export async function updateAttendeeProfile(payload: UpdateAttendeeProfilePayloa
 	return data.data
 }
 
-// ─── Interests ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Interests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type Interest = {
 	id: string
@@ -1001,7 +1007,7 @@ export async function updateAttendeeInterests(interests: AttendeeInterest[]): Pr
 	return data.data.interests
 }
 
-// ─── Host dashboard ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Host dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 import type { DashboardData, DashboardPeriod } from "@/types/dashboard"
 
@@ -1013,7 +1019,7 @@ export async function getHostDashboard(period?: DashboardPeriod): Promise<Dashbo
 	return data.data
 }
 
-// ─── Notifications ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Notifications â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 import type { Notification, NotificationsResponse, NotificationsParams } from "@/types/notification"
 
@@ -1042,7 +1048,7 @@ export async function markAllNotificationsRead(): Promise<void> {
 
 export type { Notification, NotificationsResponse }
 
-// ─── Public communities ───────────────────────────────────────────────────────
+// â”€â”€â”€ Public communities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type PublicCommunity = {
 	id: string
@@ -1502,7 +1508,7 @@ export async function getCommunityAnnouncements(
 	return data.data
 }
 
-// ─── Storage ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Storage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type UploadUrlPayload = {
 	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT"
@@ -1524,7 +1530,7 @@ export async function getUploadUrl(payload: UploadUrlPayload): Promise<UploadUrl
 	return { url: data.data.uploadUrl, key: data.data.key }
 }
 
-// ─── Community Feed ───────────────────────────────────────────────────────────
+// â”€â”€â”€ Community Feed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type FeedPostType = "TEXT" | "PHOTO" | "POLL"
 export type FeedPostCategory = "GENERAL" | "MEMORIES" | "RECOMMENDATION" | "QUESTION" | "POLL"
@@ -1676,7 +1682,7 @@ export async function viewFeedPost(communityId: string, postId: string): Promise
 	await apiClient.post(`/communities/${communityId}/feed/posts/${postId}/view`)
 }
 
-// ─── Feed Comments ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Feed Comments â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type FeedComment = {
 	id: string
@@ -1758,7 +1764,7 @@ export async function getCommunityBookmarkedPosts(communityId: string): Promise<
 	return data.data
 }
 
-// ─── AI Copilot ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ AI Copilot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type CopilotTicketTier = {
 	name: string
@@ -1801,7 +1807,7 @@ export async function generateEventDraft(prompt: string): Promise<CopilotDraft> 
 	return data.data
 }
 
-// ─── Host communities – overview ─────────────────────────────────────────────
+// â”€â”€â”€ Host communities â€“ overview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type HostCommunityOverviewCommunity = {
 	id: string
@@ -1884,7 +1890,7 @@ export async function getHostCommunityOverview(communityId: string): Promise<Hos
 	return data.data
 }
 
-// ─── Host communities – feed ─────────────────────────────────────────────────
+// â”€â”€â”€ Host communities â€“ feed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getHostCommunityFeedPosts(
 	communityId: string,
@@ -1897,7 +1903,7 @@ export async function getHostCommunityFeedPosts(
 	return data.data
 }
 
-// ─── Host communities – event attachment ─────────────────────────────────────
+// â”€â”€â”€ Host communities â€“ event attachment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type AddHostCommunityEventResponse = {
 	success: boolean
@@ -1916,7 +1922,7 @@ export async function addHostCommunityEvent(
 	return data.data
 }
 
-// ─── Host communities – feed sidebar ─────────────────────────────────────────
+// â”€â”€â”€ Host communities â€“ feed sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type HostCommunityFeedSidebarResponse = {
 	about: {
@@ -1947,7 +1953,7 @@ export async function getHostCommunityFeedSidebar(communityId: string): Promise<
 	return data.data
 }
 
-// ─── Host communities – eligible events ──────────────────────────────────────
+// â”€â”€â”€ Host communities â€“ eligible events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type HostCommunityEligibleEvent = {
 	id: string
@@ -1982,7 +1988,7 @@ export async function getHostCommunityEligibleEvents(
 	return data.data
 }
 
-// ─── Host communities – experiences ──────────────────────────────────────────
+// â”€â”€â”€ Host communities â€“ experiences â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type HostCommunityExperienceSource = "MANUAL" | "AUTO"
 
@@ -2027,7 +2033,7 @@ export async function getHostCommunityExperiences(
 	return data.data
 }
 
-// ─── Host communities – announcements ────────────────────────────────────────
+// â”€â”€â”€ Host communities â€“ announcements â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type HostAnnouncementStatus = "DRAFT" | "SCHEDULED" | "PUBLISHED"
 
@@ -2171,7 +2177,7 @@ export async function getHostCommunityAnnouncements(
 	return data.data
 }
 
-// ─── Host communities – audience ─────────────────────────────────────────────
+// â”€â”€â”€ Host communities â€“ audience â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type AudienceAgeRange = "UNDER_18" | "AGE_18_24" | "AGE_25_34" | "AGE_35_44" | "AGE_45_54" | "AGE_55_PLUS"
 
@@ -2223,7 +2229,7 @@ export async function getHostCommunityAudience(communityId: string): Promise<Hos
 	return data.data
 }
 
-// ─── Host communities – activity ─────────────────────────────────────────────
+// â”€â”€â”€ Host communities â€“ activity â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type HostCommunityActivity = {
 	communitiesJoined: number
@@ -2240,7 +2246,7 @@ export async function getHostCommunityActivity(): Promise<HostCommunityActivity>
 	return data.data
 }
 
-// ─── Host communities – browse ────────────────────────────────────────────────
+// â”€â”€â”€ Host communities â€“ browse â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type HostCommunityAudienceSize = "SMALL" | "MEDIUM" | "LARGE" | "VERY_LARGE"
 export type HostCommunityAccess = "PUBLIC" | "APPROVAL_REQUIRED" | "INVITE_ONLY"
@@ -2297,3 +2303,5 @@ export async function getHostBrowseCommunities(
 	)
 	return data.data
 }
+
+

@@ -61,6 +61,20 @@ export default function BrandProfilePage() {
 						</p>
 					</div>
 
+
+				{/* Profile Review Status Banner */}
+				{profile && (profile.approvalStatus === "PENDING" || profile.approvalStatus === "APPROVED" || profile.approvalStatus === "REJECTED") && (
+					<div className={clsx(
+						"rounded-xl px-4 py-3 text-sm font-semibold border-2 w-full",
+						profile.approvalStatus === "APPROVED" && "bg-green-50 border-green-600 text-green-800",
+						profile.approvalStatus === "PENDING" && "bg-amber-50 border-amber-500 text-amber-800",
+						profile.approvalStatus === "REJECTED" && "bg-red-50 border-red-500 text-red-700",
+					)}>
+						{profile.approvalStatus === "APPROVED" && "Approved - Your brand profile is live and active."}
+						{profile.approvalStatus === "PENDING" && "Awaiting admin approval - your profile is currently under review."}
+						{profile.approvalStatus === "REJECTED" && "Rejected - Please update your profile details and submit again."}
+					</div>
+				)}
 				{/* Yellow Card Container */}
 				<div className="w-full bg-[#FFC940] border-[3px] border-black rounded-[28px] p-3.5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
 					{/* Inner Dashed Card */}

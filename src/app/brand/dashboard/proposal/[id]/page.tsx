@@ -12,20 +12,29 @@ import { CommunityProfileDetailsPanel } from "@/components/host/CommunityProfile
 import {
 	getPublishedSponsorshipDetail,
 	markSponsorshipInterest,
+	getBrandProfile,
 	type PublishedSponsorshipDetail,
 } from "@/lib/api"
 import { ApiError, getApiErrorMessage } from "@/lib/errors"
+import { useBrandStore } from "@/store/brandStore"
 import clsx from "clsx"
 
 export default function ProposalDetailPage() {
 	const params = useParams<{ id: string }>()
 	const router = useRouter()
+	const { profile: brandProfile, setProfile } = useBrandStore()
 	const [proposal, setProposal] = useState<PublishedSponsorshipDetail | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [isInterested, setIsInterested] = useState(false)
 	const [isSubmittingInterest, setIsSubmittingInterest] = useState(false)
 	const [showIncompleteProfileModal, setShowIncompleteProfileModal] = useState(false)
+
+	useEffect(() => {
+		getBrandProfile()
+			.then(setProfile)
+			.catch(() => {})
+	}, [setProfile])
 
 	useEffect(() => {
 		let cancelled = false
@@ -121,15 +130,20 @@ export default function ProposalDetailPage() {
 									`}</style>
 									<button
 										type="button"
-										disabled={isInterested || isSubmittingInterest}
+										disabled={isInterested || isSubmittingInterest || brandProfile?.approvalStatus !== "APPROVED"}
 										onClick={handleInterested}
 										className={clsx(
 											"btn-pop py-3 px-6 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] hover:bg-[#EE2C2C] transition-all select-none whitespace-nowrap",
-											(isInterested || isSubmittingInterest) && "opacity-50 pointer-events-none"
+											(isInterested || isSubmittingInterest || brandProfile?.approvalStatus !== "APPROVED") && "opacity-50 pointer-events-none"
 										)}
 									>
 										{isInterested ? "You're Interested ✓" : isSubmittingInterest ? "Sending…" : "I am Interested"}
 									</button>
+									{brandProfile && brandProfile.approvalStatus !== "APPROVED" && (
+										<span className="block mt-2 text-[11px] font-black text-[#EE2C2C] uppercase tracking-wider text-right">
+											Waiting for profile approval
+										</span>
+									)}
 								</div>
 							</div>
 

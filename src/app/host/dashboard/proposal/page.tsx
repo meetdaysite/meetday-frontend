@@ -59,6 +59,7 @@ export interface StoredProposal {
     audienceProfile: string | string[]
     ageGroup: string
     guestCount: string
+    videoUrl?: string
     docFile: File | Blob | string
     docName: string
     docType: string
@@ -81,6 +82,7 @@ export interface StoredProposal {
         audienceProfile: string | string[]
         ageGroup: string
         guestCount: string
+        videoUrl?: string
         docFile: File | Blob | string
         docName: string
         docType: string
@@ -106,6 +108,7 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
         audienceProfile: p.audienceProfile || [],
         ageGroup: p.ageGroup || "",
         guestCount: p.guestCount || "",
+        videoUrl: p.videoUrl || "",
         docFile: p.docUrl || "",
         docName: p.docName || "",
         docType: p.docType || "",
@@ -129,6 +132,7 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
                 audienceProfile: (p.pendingRevision.audienceProfile as string[]) || p.audienceProfile || [],
                 ageGroup: (p.pendingRevision.ageGroup as string) || p.ageGroup || "",
                 guestCount: (p.pendingRevision.guestCount as string) || p.guestCount || "",
+                videoUrl: (p.pendingRevision.videoUrl as string) || p.videoUrl || "",
                 docFile: (p.pendingRevision.docUrl as string) || p.docUrl || "",
                 docName: (p.pendingRevision.docName as string) || p.docName || "",
                 docType: (p.pendingRevision.docType as string) || p.docType || "",
@@ -201,6 +205,7 @@ export default function ProposalPage() {
     const [previewSlide, setPreviewSlide] = useState(0)
     const [projAgeGroup, setProjAgeGroup] = useState("")
     const [projGuestCount, setProjGuestCount] = useState("")
+    const [projVideoUrl, setProjVideoUrl] = useState("")
     const [projDoc, setProjDoc] = useState<File | null>(null)
     const [sponsorPrices, setSponsorPrices] = useState<SponsorPrice[]>([{ name: "", price: "" }])
     const projImageInputRef = useRef<HTMLInputElement>(null)
@@ -289,6 +294,7 @@ export default function ProposalPage() {
                 audienceProfile: selectedProposal.pendingRevision.audienceProfile,
                 ageGroup: selectedProposal.pendingRevision.ageGroup,
                 guestCount: selectedProposal.pendingRevision.guestCount,
+                videoUrl: selectedProposal.pendingRevision.videoUrl || selectedProposal.videoUrl,
                 docFile: selectedProposal.pendingRevision.docFile || selectedProposal.docFile,
                 docName: selectedProposal.pendingRevision.docName || selectedProposal.docName,
                 docType: selectedProposal.pendingRevision.docType || selectedProposal.docType,
@@ -312,6 +318,7 @@ export default function ProposalPage() {
             audienceProfile: selectedProposal.audienceProfile,
             ageGroup: selectedProposal.ageGroup,
             guestCount: selectedProposal.guestCount,
+            videoUrl: selectedProposal.videoUrl,
             docFile: selectedProposal.docFile,
             docName: selectedProposal.docName,
             docType: selectedProposal.docType,
@@ -535,6 +542,7 @@ export default function ProposalPage() {
             setProjAudience(Array.isArray(data.audienceProfile) ? data.audienceProfile : data.audienceProfile ? data.audienceProfile.split(",").map(x => x.trim()).filter(Boolean) : [])
             setProjAgeGroup(data.ageGroup)
             setProjGuestCount(data.guestCount)
+            setProjVideoUrl(data.videoUrl || "")
             setProjDoc(null)
             setSponsorPrices(data.sponsorPrices && data.sponsorPrices.length > 0 ? data.sponsorPrices : [{ name: "", price: "" }])
             setSelectedProposal(p)
@@ -675,9 +683,9 @@ export default function ProposalPage() {
                 venues: filledVenueIdx.map((idx) => projVenues[idx].trim()),
                 venueCities: filledVenueIdx.map((idx) => projVenueCities[idx]?.trim() || ""),
                 audienceProfile: projAudience,
-                ageGroup: projAgeGroup,
-                guestCount: projGuestCount,
+                ageGroup: projAgeGroup,                guestCount: projGuestCount,
                 sponsorTiers: sponsorPrices,
+                ...(projVideoUrl.trim() && { videoUrl: projVideoUrl.trim() }),
             }
 
             if (projImage) {
@@ -879,9 +887,9 @@ export default function ProposalPage() {
                 venues: projVenues.map(v => v.trim()).filter(Boolean),
                 venueCities: projVenueCities.map(v => v.trim()).filter(Boolean),
                 audienceProfile: projAudience,
-                ageGroup: projAgeGroup,
-                guestCount: projGuestCount,
+                ageGroup: projAgeGroup,                guestCount: projGuestCount,
                 sponsorTiers: sponsorPrices,
+                ...(projVideoUrl.trim() && { videoUrl: projVideoUrl.trim() }),
             }
             if (projImage) {
                 payload.imageKey = await uploadFileAndGetKey(projImage, "SPONSORSHIP_MEDIA")
@@ -1316,6 +1324,16 @@ export default function ProposalPage() {
                                                 </div>
                                             </div>
                                         </div>
+                                            {displayDetails?.videoUrl && (
+                                                <div className="col-span-1 md:col-span-2">
+                                                    <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Proposal Video</p>
+                                                    <div className="mt-1">
+                                                        <a href={displayDetails.videoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#6C32D1] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] hover:bg-[#5922b8] transition-colors">
+                                                            Watch Video ↗
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            )}
                                         {/* Divider */}
                                         <hr className="border-border-default/15" />
                                         {/* Row 3: Audience */}
@@ -1678,6 +1696,19 @@ export default function ProposalPage() {
                                                     className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
                                                 />
                                             </div>
+                                        </div>
+
+                                        {/* Video URL (Optional) */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <label className="text-xs font-bold text-black">Proposal Video Link <span className="text-black/40 font-medium">(optional)</span></label>
+                                            <input
+                                                type="url"
+                                                value={projVideoUrl}
+                                                onChange={(e) => setProjVideoUrl(e.target.value)}
+                                                placeholder="e.g. https://youtube.com/watch?v=..."
+                                                className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                            />
+                                            <span className="text-[10px] text-black/40">Paste a YouTube, Vimeo, or any public video link for your proposal</span>
                                         </div>
 
                                         {/* Document Upload */}

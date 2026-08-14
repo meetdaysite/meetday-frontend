@@ -174,6 +174,20 @@ export function EditBrandProfilePanel({ onClose, onSuccess }: EditBrandProfilePa
 
 			{/* Panel Body */}
 			<div className="flex-1 flex flex-col gap-6">
+
+				{/* Approval status banner */}
+				{profile?.approvalStatus && (
+					<div className={clsx(
+						"rounded-xl px-3.5 py-2.5 text-xs font-semibold border-2",
+						profile.approvalStatus === "APPROVED" && "bg-green-50 border-green-600 text-green-800",
+						profile.approvalStatus === "PENDING" && "bg-amber-50 border-amber-500 text-amber-800",
+						profile.approvalStatus === "REJECTED" && "bg-red-50 border-red-500 text-red-700",
+					)}>
+						{profile.approvalStatus === "APPROVED" && "Approved — Your brand profile is live and active."}
+						{profile.approvalStatus === "PENDING" && "Awaiting admin approval — your profile is currently under review."}
+						{profile.approvalStatus === "REJECTED" && "Rejected — Please update your profile details and submit again."}
+					</div>
+				)}
 				
 				{/* Logo Upload */}
 				<div className="flex flex-col gap-3">

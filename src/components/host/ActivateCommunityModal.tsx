@@ -68,6 +68,9 @@ export function ActivateCommunityModal({
 	const [portfolio, setPortfolio] = useState("")
 	const [operatingCities, setOperatingCities] = useState<string[]>([])
 	const [cityInput, setCityInput] = useState("")
+	const [secondaryImageFile, setSecondaryImageFile] = useState<File | null>(null)
+	const [secondaryImagePreviewUrl, setSecondaryImagePreviewUrl] = useState<string | null>(null)
+	const secondaryImageInputRef = useRef<HTMLInputElement>(null)
 	const [submitting, setSubmitting] = useState(false)
 
 	const logoInputRef = useRef<HTMLInputElement>(null)
@@ -93,6 +96,7 @@ export function ActivateCommunityModal({
 					setExperiencesPerYear(existing.experiencesPerYear)
 					setCategoryIds(existing.categories.map((c) => c.id))
 					setLogoPreviewUrl(existing.logoUrl)
+					setSecondaryImagePreviewUrl(existing.secondaryImageUrl || null)
 					setInstagram(profileInstagram)
 					setLinkedin(profileLinkedin)
 					setYoutube(profileYoutube)
@@ -112,6 +116,30 @@ export function ActivateCommunityModal({
 	}, [hostId])
 
 	// Handle Logo change
+		const handleSecondaryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		if (e.target.files && e.target.files[0]) {
+			const file = e.target.files[0]
+			const allowedExtensions = [".jpg", ".jpeg", ".png"]
+			const allowedTypes = ["image/jpeg", "image/jpg", "image/png"]
+			const fileExtension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase()
+			const isValidType = allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension)
+
+			if (!isValidType) {
+				toast.error("Only JPG, JPEG or PNG images are accepted for the secondary image.")
+				return
+			}
+
+			const maxSecondaryImageSize = 5 * 1024 * 1024 // 5MB
+			if (file.size > maxSecondaryImageSize) {
+				toast.error("Image file size cannot exceed 5MB.")
+				return
+			}
+
+			setSecondaryImageFile(file)
+			setSecondaryImagePreviewUrl(URL.createObjectURL(file))
+		}
+	}
+
 	const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (e.target.files && e.target.files[0]) {
 			const file = e.target.files[0]
@@ -179,6 +207,7 @@ export function ActivateCommunityModal({
 		setSubmitting(true)
 		try {
 			const logoKey = logoFile ? await uploadLogoAndGetKey(logoFile) : community!.logoKey
+			const secondaryImageKey = secondaryImageFile ? await uploadLogoAndGetKey(secondaryImageFile) : (community?.secondaryImageKey || undefined)
 
 			const saved = await activateHostCommunityProfile({
 				name: communityName.trim(),
@@ -327,6 +356,51 @@ export function ActivateCommunityModal({
 							{logoFile && (
 								<span className="text-[10px] text-black/60 truncate max-w-xs font-semibold">
 									{logoFile.name}
+								</span>
+							)}
+						</div>
+					</div>
+				</div>
+
+				{/* Secondary Image Upload */}
+				<div className="flex flex-col gap-1.5">
+					<label className="text-xs font-bold text-black">Secondary Image (4:5, Optional)</label>
+					<div className="flex items-center gap-4">
+						<div className={clsx(
+							"w-16 h-20 rounded-xl bg-white flex items-center justify-center overflow-hidden shrink-0",
+							inline ? "border border-dashed border-black/20" : "border-2 border-dashed border-black/30"
+						)}>
+							{secondaryImagePreviewUrl ? (
+								// eslint-disable-next-line @next/next/no-img-element
+								<img src={secondaryImagePreviewUrl} alt="Secondary preview" className="size-full object-cover" />
+							) : (
+								<Icon as={UploadSvg} size="md" color="muted" />
+							)}
+						</div>
+						<div className="flex flex-col gap-1">
+							<input
+								ref={secondaryImageInputRef}
+								type="file"
+								accept=".jpeg,.jpg,.png,image/jpeg,image/png"
+								className="hidden"
+								onChange={handleSecondaryImageChange}
+							/>
+							<Button
+								type="button"
+								variant="secondary"
+								size="xs"
+								radius="md"
+								onClick={() => secondaryImageInputRef.current?.click()}
+								className="bg-white border-2 border-black text-black text-[10px] py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all"
+							>
+								Choose Image
+							</Button>
+							<span className="text-[10px] text-black/40 mt-1">
+								JPEG, JPG, PNG accepted (4:5 ratio, max 5MB).
+							</span>
+							{secondaryImageFile && (
+								<span className="text-[10px] text-black/60 truncate max-w-xs font-semibold">
+									{secondaryImageFile.name}
 								</span>
 							)}
 						</div>
