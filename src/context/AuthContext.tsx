@@ -9,6 +9,32 @@ import { useBookingStore } from "@/store/bookingStore"
 import { useHostStore } from "@/store/hostStore"
 import { useDashboardStore } from "@/store/dashboardStore"
 import { useNotificationStore } from "@/store/notificationStore"
+import { toast as sonnerToast } from "sonner"
+import { useToastStore } from "@/store/toastStore"
+
+if (typeof window !== "undefined") {
+	const originalSuccess = sonnerToast.success
+	const originalError = sonnerToast.error
+	const originalInfo = sonnerToast.info
+
+	sonnerToast.success = (message: any, data: any) => {
+		const msg = typeof message === "string" ? message : message?.toString() || ""
+		useToastStore.getState().addToast(msg, undefined, "success")
+		return originalSuccess(message, data)
+	}
+
+	sonnerToast.error = (message: any, data: any) => {
+		const msg = typeof message === "string" ? message : message?.toString() || ""
+		useToastStore.getState().addToast(msg, undefined, "error")
+		return originalError(message, data)
+	}
+
+	sonnerToast.info = (message: any, data: any) => {
+		const msg = typeof message === "string" ? message : message?.toString() || ""
+		useToastStore.getState().addToast(msg, undefined, "info")
+		return originalInfo(message, data)
+	}
+}
 
 export { useAuthStore as useAuth } from "@/store/authStore"
 

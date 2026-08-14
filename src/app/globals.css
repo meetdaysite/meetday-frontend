@@ -205,3 +205,8 @@ body {
 	animation: float-4 5.0s ease-in-out infinite;
 	will-change: transform;
 }
+
+/* Hide top-right sonner toasters on dashboard layouts that feature a sidebar */
+body:has(aside) [data-sonner-toaster] {
+	display: none !important;
+}
