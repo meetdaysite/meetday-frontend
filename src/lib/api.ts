@@ -756,6 +756,7 @@ export type HostCommunityProfile = {
 	categories: Category[]
 	approvalStatus: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED"
 	adminRejectionRemark: string | null
+	pendingRevision?: Record<string, unknown> | null
 	activatedAt: string
 	createdAt: string
 	updatedAt: string

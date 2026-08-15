@@ -234,9 +234,11 @@ export function ActivateCommunityModal({
 
 			onSuccess(saved)
 			toast.success(
-				community
-					? "Community details updated — pending admin re-approval."
-					: "Community submitted for admin approval!",
+				community?.approvalStatus === "APPROVED"
+					? "Changes submitted — your current profile stays live to brands until an admin approves this edit."
+					: community
+						? "Community details updated — pending admin approval."
+						: "Community submitted for admin approval!",
 			)
 			onClose()
 		} catch {

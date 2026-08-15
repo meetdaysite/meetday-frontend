@@ -74,6 +74,12 @@ export function CommunityProfileDetailsPanel({
 					</div>
 				)}
 
+				{!hideStatus && community.approvalStatus === "APPROVED" && community.pendingRevision && (
+					<div className="rounded-xl px-3.5 py-2.5 text-xs font-semibold border-2 bg-blue-50 border-blue-500 text-blue-800">
+						Your recent edit is pending admin review — brands still see the current live version above until it's approved.
+					</div>
+				)}
+
 				{/* Top Card Header */}
 				<div className="flex items-center gap-4">
 					<div className="size-16 rounded-xl border-2 border-black overflow-hidden bg-slate-50 flex items-center justify-center shrink-0">
