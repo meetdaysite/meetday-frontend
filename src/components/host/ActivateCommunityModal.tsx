@@ -213,6 +213,7 @@ export function ActivateCommunityModal({
 				name: communityName.trim(),
 				about: aboutCommunity.trim(),
 				logoKey,
+				secondaryImageKey,
 				size: communitySize.trim(),
 				avgGuestCount: avgGuestCount.trim(),
 				experiencesPerYear: experiencesPerYear.trim(),
