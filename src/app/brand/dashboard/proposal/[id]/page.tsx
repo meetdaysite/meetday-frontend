@@ -92,9 +92,40 @@ export default function ProposalDetailPage() {
 			)}>
 				{/* Left Column: Proposal Details */}
 				<div className={clsx(
-					"px-4 lg:px-6 py-6 lg:py-8 flex-1 flex flex-col gap-6 overflow-y-auto h-[calc(100vh-6rem)] transition-all duration-300 relative",
+					"px-4 lg:px-6 py-6 lg:py-8 flex-1 flex flex-col gap-6 overflow-y-auto h-full min-h-0 transition-all duration-300 relative",
 					proposal?.community ? "max-w-3xl w-full mx-auto" : "max-w-2xl mx-auto w-full"
 				)}>
+					{!isLoading && !error && proposal && (
+						<div className="fixed bottom-6 right-6 z-40 sm:sticky sm:top-0 sm:self-end sm:z-30 sm:h-0 sm:w-0 sm:relative">
+							<div className="sm:absolute sm:top-0 sm:right-0">
+								<style>{`
+									@keyframes pop-animation {
+										0%, 100% { transform: scale(1); }
+										50% { transform: scale(1.04); }
+									}
+									.btn-pop {
+										animation: pop-animation 2s infinite ease-in-out;
+									}
+								`}</style>
+								<button
+									type="button"
+									disabled={isInterested || isSubmittingInterest || brandProfile?.approvalStatus !== "APPROVED"}
+									onClick={handleInterested}
+									className={clsx(
+										"btn-pop py-3 px-6 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] hover:bg-[#EE2C2C] transition-all select-none whitespace-nowrap",
+										(isInterested || isSubmittingInterest || brandProfile?.approvalStatus !== "APPROVED") && "opacity-50 pointer-events-none"
+									)}
+								>
+									{isInterested ? "You're Interested ✓" : isSubmittingInterest ? "Sending…" : "I am Interested"}
+								</button>
+								{brandProfile && brandProfile.approvalStatus !== "APPROVED" && (
+									<span className="block mt-2 text-[11px] font-black text-[#EE2C2C] uppercase tracking-wider text-right">
+										Waiting for profile approval
+									</span>
+								)}
+							</div>
+						</div>
+					)}
 					<button
 						type="button"
 						onClick={() => router.push("/brand/dashboard/proposals")}
@@ -116,116 +147,89 @@ export default function ProposalDetailPage() {
 						<p className="text-sm font-bold text-red-600">{error ?? "Proposal not found."}</p>
 					) : (
 						<>
-							{/* Sticky Action Button container floating in the top right */}
-							<div className="sticky top-0 self-end z-30 h-0 w-0 relative">
-								<div className="absolute top-0 right-0">
-									<style>{`
-										@keyframes pop-animation {
-											0%, 100% { transform: scale(1); }
-											50% { transform: scale(1.04); }
-										}
-										.btn-pop {
-											animation: pop-animation 2s infinite ease-in-out;
-										}
-									`}</style>
-									<button
-										type="button"
-										disabled={isInterested || isSubmittingInterest || brandProfile?.approvalStatus !== "APPROVED"}
-										onClick={handleInterested}
-										className={clsx(
-											"btn-pop py-3 px-6 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] hover:bg-[#EE2C2C] transition-all select-none whitespace-nowrap",
-											(isInterested || isSubmittingInterest || brandProfile?.approvalStatus !== "APPROVED") && "opacity-50 pointer-events-none"
-										)}
-									>
-										{isInterested ? "You're Interested ✓" : isSubmittingInterest ? "Sending…" : "I am Interested"}
-									</button>
-									{brandProfile && brandProfile.approvalStatus !== "APPROVED" && (
-										<span className="block mt-2 text-[11px] font-black text-[#EE2C2C] uppercase tracking-wider text-right">
-											Waiting for profile approval
-										</span>
-									)}
+
+							{/* Title Section — side by side on mobile: logo left, name right */}
+							<div className="flex flex-row items-start gap-4 pb-4 border-b border-black/10">
+								{proposal.imageUrl && (
+									<div className="relative size-16 sm:size-36 shrink-0 rounded-xl overflow-hidden border border-border-default shadow-sm bg-slate-50">
+										{/* eslint-disable-next-line @next/next/no-img-element */}
+										<img src={proposal.imageUrl} alt={proposal.name || "Proposal"} className="size-full object-cover" />
+									</div>
+								)}
+								<div className="flex-1 min-w-0">
+									<h1 className="text-xl sm:text-3xl font-heading font-black text-black leading-tight">
+										{proposal.name || "Untitled Proposal"}
+									</h1>
+									<p className="text-sm font-semibold text-black/50 mt-1">Hosted by {hostName}</p>
 								</div>
 							</div>
 
-							{/* Title Section (with padding right to clear the sticky button) */}
-							<div className="flex flex-col pb-4 border-b border-black/10 pr-44">
-								<h1 className="text-3xl font-heading font-black text-black leading-tight">
-									{proposal.name || "Untitled Proposal"}
-								</h1>
-								<p className="text-sm font-semibold text-black/50 mt-1">Hosted by {hostName}</p>
-							</div>
-
-							{/* Rest of Left Column content */}
-							<div className="flex flex-col gap-6">
-								{/* Top Row: Cover Image & Metadata */}
-								<div className="flex flex-col md:flex-row gap-6 items-stretch">
-									{proposal.imageUrl && (
-										<div className="relative size-36 shrink-0 rounded-xl overflow-hidden border border-border-default shadow-sm bg-slate-50">
-											{/* eslint-disable-next-line @next/next/no-img-element */}
-											<img src={proposal.imageUrl} alt={proposal.name || "Proposal"} className="size-full object-cover" />
-										</div>
-									)}
+								{/* Rest of Left Column content */}
+								<div className="flex flex-col gap-6">
+									{/* Top Row: Metadata */}
+									<div className="flex flex-col gap-6 items-stretch">
 
 									<div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-4 w-full flex flex-col justify-between gap-4">
-										{/* Row 1: Date, Venue & City */}
-										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div className="grid grid-cols-2 gap-4">
+									{/* Start Date */}
+									{(() => {
+										const startDisplay = proposal.eventDate ? new Date(proposal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+										return startDisplay ? (
 											<div>
-												<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Date</p>
-												<div className="flex flex-col gap-2 mt-1">
-													{(() => {
-														const startDisplay = proposal.eventDate ? new Date(proposal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
-														const endDisplay = proposal.eventEndDate ? new Date(proposal.eventEndDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
-														return (
-															<>
-																{startDisplay && (
-																	<div className="flex items-center gap-2 text-xs font-semibold text-text-secondary">
-																		<span className="w-10 shrink-0">Start:</span>
-																		<span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-																			{startDisplay}
-																		</span>
-																	</div>
-																)}
-																{endDisplay && endDisplay !== startDisplay && (
-																	<div className="flex items-center gap-2 text-xs font-semibold text-text-secondary">
-																		<span className="w-10 shrink-0">End:</span>
-																		<span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-																			{endDisplay}
-																		</span>
-																	</div>
-																)}
-															</>
-														);
-													})()}
+												<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Start</p>
+												<div className="mt-1">
+													<span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+														{startDisplay}
+													</span>
 												</div>
 											</div>
+										) : null;
+									})()}
 
+									{/* End Date */}
+									{(() => {
+										const startDisplay = proposal.eventDate ? new Date(proposal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+										const endDisplay = proposal.eventEndDate ? new Date(proposal.eventEndDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+										return endDisplay && endDisplay !== startDisplay ? (
 											<div>
-												<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue & City</p>
-												<div className="flex flex-col gap-2 mt-1">
-													{(proposal.venues && proposal.venues.length > 0 ? proposal.venues : [proposal.venue || ""])
-														.map((v, idx) => {
-															const c = proposal.venueCities?.[idx] || (idx === 0 ? proposal.city : undefined)
-															if (!v || !v.trim()) return null
-															return (
-																<div key={idx} className="flex flex-col items-start gap-1">
-																	{c && (
-																		<span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-																			{c}
-																		</span>
-																	)}
-																	<span className="text-xs font-semibold text-text-secondary">{v}</span>
-																</div>
-															)
-														})}
+												<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">End</p>
+												<div className="mt-1">
+													<span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+														{endDisplay}
+													</span>
 												</div>
 											</div>
+										) : null;
+									})()}
+
+									{/* Venue & City — full width second row */}
+									<div className="col-span-2">
+										<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue &amp; City</p>
+										<div className="flex flex-col gap-2 mt-1">
+											{(proposal.venues && proposal.venues.length > 0 ? proposal.venues : [proposal.venue || ""])
+												.map((v, idx) => {
+													const c = proposal.venueCities?.[idx] || (idx === 0 ? proposal.city : undefined)
+													if (!v || !v.trim()) return null
+													return (
+														<div key={idx} className="flex flex-row flex-wrap items-center gap-2">
+															{c && (
+																<span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
+																	{c}
+																</span>
+															)}
+															<span className="text-xs font-semibold text-text-secondary">{v}</span>
+														</div>
+													)
+												})}
 										</div>
+									</div>
+								</div>
 
 										{/* Divider */}
 										<hr className="border-border-default/15" />
 
-										{/* Row 2: Guests, Age Group */}
-										<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+										{/* Row 2: Guests, Age Group — 2 cols on all screens */}
+										<div className="grid grid-cols-2 gap-4">
 											{proposal.guestCount && (
 												<div>
 													<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Guests</p>
@@ -343,7 +347,7 @@ export default function ProposalDetailPage() {
 
 				{/* Right Column: Community Profile details */}
 				{!isLoading && proposal?.community && (
-					<div className="hidden md:flex flex-col border-l border-black/10 overflow-y-auto h-[calc(100vh-6rem)] shrink-0 w-full bg-white">
+					<div className="hidden md:flex flex-col border-l border-black/10 overflow-y-auto h-full min-h-0 shrink-0 w-full bg-white">
 						<CommunityProfileDetailsPanel
 							community={{ ...proposal.community, approvalStatus: "APPROVED" } as any}
 							operatingCities={proposal.hostProfile?.operatingCities}

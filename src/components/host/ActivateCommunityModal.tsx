@@ -166,6 +166,7 @@ export function ActivateCommunityModal({
 
 	const handleActivationSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
+		if (submitting) return
 
 		if (!communityName.trim()) {
 			toast.error("Community Name is required.")

@@ -101,8 +101,14 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 		try {
 			const nextPage = page + 1
 			const res = await getNotifications({ page: nextPage, limit: PAGE_LIMIT })
+			
+			// Filter out any incoming notifications that are already in our local state to avoid duplicates
+			const newNotifs = res.notifications.filter(
+				(newN) => !notifications.some((existingN) => existingN.id === newN.id)
+			)
+
 			set({
-				notifications: [...notifications, ...res.notifications],
+				notifications: [...notifications, ...newNotifs],
 				total: res.total,
 				page: nextPage,
 				hasMore: notifications.length + res.notifications.length < res.total,
@@ -152,6 +158,10 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 	},
 
 	_prepend: (notif) => {
+		// Check if notification already exists by id to prevent duplicates (e.g. socket emitting twice, or concurrent loads)
+		const exists = get().notifications.some((n) => n.id === notif.id)
+		if (exists) return
+
 		set((s) => ({
 			notifications: [notif, ...s.notifications],
 			unreadCount: s.unreadCount + 1,

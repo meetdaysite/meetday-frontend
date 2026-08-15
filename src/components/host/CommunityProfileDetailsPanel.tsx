@@ -103,16 +103,6 @@ export function CommunityProfileDetailsPanel({
 					</div>
 				</div>
 
-				{/* Poster / Banner Image */}
-				{community.secondaryImageUrl && (
-					<div className="flex flex-col gap-1.5">
-						<span className="text-xs font-bold text-black/50">Poster / Banner</span>
-						<div className="w-full rounded-2xl border-2 border-black overflow-hidden bg-slate-50">
-							{/* eslint-disable-next-line @next/next/no-img-element */}
-							<img src={community.secondaryImageUrl} alt={`${community.name} poster`} className="w-full h-auto object-cover" />
-						</div>
-					</div>
-				)}
 
 				{/* About description */}
 				<div className="flex flex-col gap-1.5">
@@ -121,6 +111,17 @@ export function CommunityProfileDetailsPanel({
 						{community.about}
 					</p>
 				</div>
+
+				{/* Poster (Secondary Image) */}
+				{community.secondaryImageUrl && (
+					<div className="flex flex-col gap-1.5">
+						<span className="text-xs font-bold text-black/50">Community Poster</span>
+						<div className="relative w-full aspect-[4/5] rounded-2xl border-2 border-black overflow-hidden bg-slate-50 max-w-sm">
+							{/* eslint-disable-next-line @next/next/no-img-element */}
+							<img src={community.secondaryImageUrl} alt="Community Poster" className="size-full object-cover" />
+						</div>
+					</div>
+				)}
 
 				{/* Statistics / Numbers Grid */}
 				<div className="grid grid-cols-2 gap-4">

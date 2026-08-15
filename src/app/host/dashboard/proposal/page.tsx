@@ -1242,57 +1242,61 @@ export default function ProposalPage() {
 
                             {/* Body */}
                             <div className="flex flex-col gap-6">
-                                {/* Top Row: Logo & Metadata */}
-                                <div className="flex flex-col md:flex-row gap-6 items-stretch">
+                                {/* Top Row: Logo left, Metadata right — always side by side */}
+                                <div className="flex flex-row gap-4 items-start">
                                     {projectImageUrl && (
                                         // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={projectImageUrl} alt={displayDetails?.name} className="size-36 object-cover rounded-xl border border-border-default shadow-sm shrink-0" />
+                                        <img src={projectImageUrl} alt={displayDetails?.name} className="size-16 sm:size-36 object-cover rounded-xl border border-border-default shadow-sm shrink-0" />
                                     )}
-                                    <div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-4 w-full flex flex-col justify-between gap-4">
-                                        {/* Row 1: Date, Venue & City */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Date</p>
-                                                <div className="flex flex-col gap-2 mt-1">
-                                                    {(() => {
-                                                        const startParts = displayDetails?.date ? displayDetails.date.split("-") : [];
-                                                        const startDisplay = startParts.length === 3 ? `${startParts[2]}/${startParts[1]}/${startParts[0]}` : displayDetails?.date;
-                                                        const endParts = displayDetails?.endDate ? displayDetails.endDate.split("-") : [];
-                                                        const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : displayDetails?.endDate;
-                                                        return (
-                                                            <>
-                                                                {startDisplay && (
-                                                                    <div className="flex items-center gap-2 text-xs font-semibold text-text-secondary">
-                                                                        <span className="w-10 shrink-0">Start:</span>
-                                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-                                                                            {startDisplay}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                                {endDisplay && endDisplay !== startDisplay && (
-                                                                    <div className="flex items-center gap-2 text-xs font-semibold text-text-secondary">
-                                                                        <span className="w-10 shrink-0">End:</span>
-                                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-                                                                            {endDisplay}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                            </>
-                                                        );
-                                                    })()}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue & City</p>
+                                    <div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-4 w-full flex flex-col justify-between gap-4 min-w-0">
+                                        {/* Row 1: Start date | End date, Row 2: Venue & City */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {/* Start Date */}
+                                            {(() => {
+                                                const startParts = displayDetails?.date ? displayDetails.date.split("-") : [];
+                                                const startDisplay = startParts.length === 3 ? `${startParts[2]}/${startParts[1]}/${startParts[0]}` : displayDetails?.date;
+                                                return startDisplay ? (
+                                                    <div>
+                                                        <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Start</p>
+                                                        <div className="mt-1">
+                                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                                {startDisplay}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ) : null;
+                                            })()}
+
+                                            {/* End Date */}
+                                            {(() => {
+                                                const startParts = displayDetails?.date ? displayDetails.date.split("-") : [];
+                                                const startDisplay = startParts.length === 3 ? `${startParts[2]}/${startParts[1]}/${startParts[0]}` : displayDetails?.date;
+                                                const endParts = displayDetails?.endDate ? displayDetails.endDate.split("-") : [];
+                                                const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : displayDetails?.endDate;
+                                                return endDisplay && endDisplay !== startDisplay ? (
+                                                    <div>
+                                                        <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">End</p>
+                                                        <div className="mt-1">
+                                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                                {endDisplay}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ) : null;
+                                            })()}
+
+                                            {/* Venue & City — full width second row */}
+                                            <div className="col-span-2">
+                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue &amp; City</p>
                                                 <div className="flex flex-col gap-2 mt-1">
                                                     {(displayDetails?.venues && displayDetails.venues.length > 0 ? displayDetails.venues : [displayDetails?.venue || ""])
                                                         .map((v, idx) => {
                                                             const c = displayDetails?.venueCities?.[idx] || (idx === 0 ? displayDetails?.city : undefined)
                                                             if (!v.trim()) return null
                                                             return (
-                                                                <div key={idx} className="flex flex-col items-start gap-1">
+                                                                <div key={idx} className="flex flex-row flex-wrap items-center gap-2">
                                                                     {c && (
-                                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
                                                                             {c}
                                                                         </span>
                                                                     )}
@@ -1305,8 +1309,8 @@ export default function ProposalPage() {
                                         </div>
                                         {/* Divider */}
                                         <hr className="border-border-default/15" />
-                                        {/* Row 2: Guests, Age Group */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Row 2: Guests, Age Group — 2 cols on all screens */}
+                                        <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Guests</p>
                                                 <div className="flex mt-1">

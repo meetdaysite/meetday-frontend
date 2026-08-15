@@ -197,7 +197,7 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 export function BrandSidebar({ isOpen, onClose, onSignOut }: BrandSidebarProps) {
 	return (
 		<>
-			<aside className="hidden lg:flex flex-col w-60 shrink-0 h-[calc(100vh-2rem)] bg-[#EE2C2C] overflow-hidden">
+			<aside className="hidden lg:flex flex-col w-64 shrink-0 h-[calc(100vh-2rem)] bg-[#EE2C2C] overflow-hidden">
 				<BrandSidebarContent onClose={onClose} onSignOut={onSignOut} />
 			</aside>
 

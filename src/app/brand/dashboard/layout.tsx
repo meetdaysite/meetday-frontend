@@ -91,7 +91,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		if (authLoading) return
 
 		if (!user) {
-			router.replace("/brand/login")
+			router.replace("/")
 			return
 		}
 

@@ -1,4 +1,4 @@
-﻿import apiClient from "./axios"
+import apiClient from "./axios"
 import type { Event, EventDraftPayload, EventsListResponse, ApiEventStatus, EventRevision, UpdatePublishedEventPayload } from "@/types/event"
 
 // ─── Errors ───────────────────────────────────────────────────────────────────
@@ -252,6 +252,8 @@ export type BrandCommunity = {
 		website?: string
 	} | null
 	categories: Category[]
+	secondaryImageKey?: string | null
+	secondaryImageUrl?: string | null
 }
 
 export async function getBrandCommunities(): Promise<{ communities: BrandCommunity[]; total: number }> {

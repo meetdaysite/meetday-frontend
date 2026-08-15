@@ -135,6 +135,7 @@ export function EditBrandProfilePanel({ onClose, onSuccess }: EditBrandProfilePa
 	}
 
 	async function handleSave() {
+		if (saving) return
 		setSaving(true)
 		try {
 			const resolvedIndustry = industry === "Custom" ? customIndustry : industry

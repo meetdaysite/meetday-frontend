@@ -11,6 +11,7 @@ import {
 	type PublishedSponsorshipProposal,
 } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
+import clsx from "clsx"
 
 export function CommunityCard({ community, onClick }: { community: BrandCommunity; onClick?: () => void }) {
 	return (
@@ -123,6 +124,7 @@ export default function BrandCommunitiesPage() {
 	const [selectedCommunity, setSelectedCommunity] = useState<BrandCommunity | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
+	const [isPosterEnlarged, setIsPosterEnlarged] = useState(false)
 
 	useEffect(() => {
 		let cancelled = false
@@ -208,16 +210,23 @@ export default function BrandCommunitiesPage() {
 							</button>
 						</div>
 
-						<div className="flex flex-col gap-6 overflow-y-auto h-[calc(100vh-14rem)] pb-6 px-1">
+						<div className="flex flex-col gap-6 overflow-y-auto flex-1 min-h-0 w-full pb-6 px-1">
 							
 							<div>
 								<h2 className="text-xl font-heading font-black text-black mb-3">Community Profile Details</h2>
 								
-								{/* Horizontally Spread Community Profile Card */}
-								<div className="border-[3px] border-black p-6 rounded-[28px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white flex flex-col gap-6 items-start">
+								{/* Grid to place details card and poster side-by-side (collapses to full width if no poster) */}
+								<div className={clsx(
+									"grid gap-6 items-start",
+									(selectedCommunity.secondaryImageUrl || (activeProposals.length > 0 && activeProposals[0].community?.secondaryImageUrl))
+										? "grid-cols-1 lg:grid-cols-[1fr_320px]"
+										: "grid-cols-1"
+								)}>
+									{/* Horizontally Spread Community Profile Card */}
+									<div className="border-[3px] border-black p-4 sm:p-6 rounded-[28px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white flex flex-col gap-6 items-start w-full max-w-full min-w-0">
 									
-									{/* Top Row: Logo & Name/Members (occupy the same height) */}
-									<div className="flex items-center gap-6 w-full">
+									{/* Top Row: Logo on the left, Name & stacked stats on the right (left-aligned) */}
+									<div className="flex flex-row items-start gap-4 sm:gap-6 w-full text-left">
 										{/* Community Logo */}
 										<div className="relative size-24 rounded-2xl overflow-hidden border-2 border-black bg-slate-50 shrink-0">
 											{selectedCommunity.logoUrl ? (
@@ -229,34 +238,34 @@ export default function BrandCommunitiesPage() {
 											)}
 										</div>
 
-										{/* Name & Members badge (occupying same height as logo) */}
-										<div className="flex flex-col justify-center h-24 min-w-0">
-											<h3 className="text-2xl font-heading font-black text-black leading-tight truncate">
+										{/* Name & stacked stats, occupying same height space as Logo */}
+										<div className="flex flex-col justify-between sm:justify-start min-h-[96px] sm:min-h-0 min-w-0 flex-1">
+											<h3 className="text-xl sm:text-2xl font-heading font-black text-black leading-tight">
 												{selectedCommunity.name}
 											</h3>
 											
-											<div className="flex flex-wrap items-center gap-x-5 gap-y-3 mt-3">
+											<div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-x-5 mt-2 sm:mt-3">
 												<div className="flex items-center gap-2">
-													<span className="inline-block bg-[#F5C343] text-black border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] text-xs font-black px-3 py-1 rounded-md uppercase tracking-wider">
+													<span className="inline-block bg-[#F5C343] text-black border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] text-[10px] sm:text-xs font-black px-2 py-0.5 sm:px-3 sm:py-1 rounded-md uppercase tracking-wider">
 														{selectedCommunity.size}
 													</span>
-													<span className="text-xs font-black text-black/60 uppercase tracking-wider">
+													<span className="text-[10px] sm:text-xs font-black text-black/60 uppercase tracking-wider">
 														Members
 													</span>
 												</div>
 												<div className="flex items-center gap-2">
-													<span className="inline-block bg-[#F5C343] text-black border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] text-xs font-black px-3 py-1 rounded-md uppercase tracking-wider">
+													<span className="inline-block bg-[#F5C343] text-black border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] text-[10px] sm:text-xs font-black px-2 py-0.5 sm:px-3 sm:py-1 rounded-md uppercase tracking-wider">
 														{selectedCommunity.avgGuestCount}
 													</span>
-													<span className="text-xs font-black text-black/60 uppercase tracking-wider">
+													<span className="text-[10px] sm:text-xs font-black text-black/60 uppercase tracking-wider">
 														Avg Guests
 													</span>
 												</div>
 												<div className="flex items-center gap-2">
-													<span className="inline-block bg-[#F5C343] text-black border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] text-xs font-black px-3 py-1 rounded-md uppercase tracking-wider">
+													<span className="inline-block bg-[#F5C343] text-black border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] text-[10px] sm:text-xs font-black px-2 py-0.5 sm:px-3 sm:py-1 rounded-md uppercase tracking-wider">
 														{selectedCommunity.experiencesPerYear}
 													</span>
-													<span className="text-xs font-black text-black/60 uppercase tracking-wider">
+													<span className="text-[10px] sm:text-xs font-black text-black/60 uppercase tracking-wider">
 														Events / Yr
 													</span>
 												</div>
@@ -275,6 +284,8 @@ export default function BrandCommunitiesPage() {
 									)}
 
 
+
+
 									{/* Experience Categories */}
 									{selectedCommunity.categories.length > 0 && (
 										<div className="flex flex-col gap-2 w-full">
@@ -289,8 +300,8 @@ export default function BrandCommunitiesPage() {
 										</div>
 									)}
 
-									{/* Cities and Social Links Row (50:50) */}
-									<div className="grid grid-cols-2 gap-6 w-full border-t border-black/10 pt-4">
+									{/* Cities and Social Links Row (Responsive) */}
+									<div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full border-t border-black/10 pt-4">
 										{/* Operating Cities Section */}
 										<div className="flex flex-col gap-2">
 											<span className="text-xs font-bold text-black/50">Operating Cities</span>
@@ -360,6 +371,31 @@ export default function BrandCommunitiesPage() {
 									</div>
 
 								</div>
+
+								{/* Poster (Secondary Image) beside the details card */}
+								{(selectedCommunity.secondaryImageUrl || (activeProposals.length > 0 && activeProposals[0].community?.secondaryImageUrl)) && (
+									<div className="border-[3px] border-black p-5 rounded-[28px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white flex flex-col gap-3 items-start shrink-0 w-full lg:w-[320px]">
+										<span className="text-xs font-bold text-black/50 uppercase tracking-wider">Community Poster</span>
+										<div 
+											onClick={() => setIsPosterEnlarged(true)}
+											className="relative w-full aspect-[4/5] rounded-[20px] border-2 border-black overflow-hidden bg-slate-50 cursor-pointer group"
+										>
+											<Image 
+												src={selectedCommunity.secondaryImageUrl || activeProposals[0].community?.secondaryImageUrl} 
+												alt="Community Poster" 
+												fill 
+												className="object-cover transition-transform duration-300 group-hover:scale-105" 
+												unoptimized 
+											/>
+											<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+												<span className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 text-black border-2 border-black px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+													Zoom Poster 🔍
+												</span>
+											</div>
+										</div>
+									</div>
+								)}
+							</div>
 							</div>
 
 							{/* Active Proposals Section below */}
@@ -436,6 +472,37 @@ export default function BrandCommunitiesPage() {
 					</>
 				)}
 			</div>
+
+			{/* Zoomed Poster Modal */}
+			{isPosterEnlarged && (selectedCommunity?.secondaryImageUrl || (activeProposals.length > 0 && activeProposals[0].community?.secondaryImageUrl)) && (
+				<div 
+					onClick={() => setIsPosterEnlarged(false)}
+					className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/55 backdrop-blur-sm animate-in fade-in duration-150 cursor-zoom-out"
+				>
+					<div 
+						onClick={(e) => e.stopPropagation()}
+						className="relative max-w-lg w-full bg-white border-[3px] border-black rounded-[28px] p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-3 items-start animate-in zoom-in-95 duration-150 cursor-default"
+					>
+						<button
+							onClick={() => setIsPosterEnlarged(false)}
+							className="absolute top-4 right-4 z-10 size-8 bg-white hover:bg-black/5 border-2 border-black rounded-full flex items-center justify-center text-black font-extrabold text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all active:translate-y-[1px]"
+							aria-label="Close enlarged poster"
+						>
+							✕
+						</button>
+						<span className="text-xs font-bold text-black/50 uppercase tracking-wider">Community Poster</span>
+						<div className="relative w-full aspect-[4/5] rounded-[20px] border-2 border-black overflow-hidden bg-slate-50">
+							<Image
+								src={selectedCommunity?.secondaryImageUrl || activeProposals[0].community?.secondaryImageUrl}
+								alt="Enlarged Community Poster"
+								fill
+								className="object-cover"
+								unoptimized
+							/>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }
