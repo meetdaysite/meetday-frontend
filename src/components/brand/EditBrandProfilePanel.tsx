@@ -92,6 +92,10 @@ export function EditBrandProfilePanel({ onClose, onSuccess }: EditBrandProfilePa
 	}, [])
 
 	useEffect(() => {
+		getBrandProfile().then(setProfile).catch(() => {})
+	}, [setProfile])
+
+	useEffect(() => {
 		if (!profile) return
 		setBrandName(profile.brandName ?? "")
 		setCategoryIds(profile.categories?.map((c) => c.id) ?? [])

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useBrandStore } from "@/store/brandStore"
 import { useAuthStore } from "@/store/authStore"
 import { Icon } from "@/components/ui/Icon"
@@ -13,13 +13,20 @@ import UserSvg from "@/icons/outlined/user.svg"
 import GlobeSvg from "@/icons/outlined/globe.svg"
 import { EditBrandProfilePanel } from "@/components/brand/EditBrandProfilePanel"
 import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
+import { getBrandProfile } from "@/lib/api"
 
 export default function BrandProfilePage() {
-	const { profile, clearProfile } = useBrandStore()
+	const { profile, clearProfile, setProfile } = useBrandStore()
 	const { signOut } = useAuthStore()
 	const router = useRouter()
 	const [showEditPanel, setShowEditPanel] = useState(false)
 	const [showDeleteModal, setShowDeleteModal] = useState(false)
+
+	useEffect(() => {
+		getBrandProfile()
+			.then(setProfile)
+			.catch(() => {})
+	}, [setProfile])
 
 	const displayName = profile?.brandName || "Brand"
 	const avatarUrl = profile?.logoUrl

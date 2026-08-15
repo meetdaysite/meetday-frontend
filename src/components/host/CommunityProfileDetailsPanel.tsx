@@ -97,6 +97,17 @@ export function CommunityProfileDetailsPanel({
 					</div>
 				</div>
 
+				{/* Poster / Banner Image */}
+				{community.secondaryImageUrl && (
+					<div className="flex flex-col gap-1.5">
+						<span className="text-xs font-bold text-black/50">Poster / Banner</span>
+						<div className="w-full rounded-2xl border-2 border-black overflow-hidden bg-slate-50">
+							{/* eslint-disable-next-line @next/next/no-img-element */}
+							<img src={community.secondaryImageUrl} alt={`${community.name} poster`} className="w-full h-auto object-cover" />
+						</div>
+					</div>
+				)}
+
 				{/* About description */}
 				<div className="flex flex-col gap-1.5">
 					<span className="text-xs font-bold text-black/50">About the community</span>

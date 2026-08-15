@@ -310,6 +310,21 @@ export default function ProposalDetailPage() {
 									</div>
 								)}
 
+								{/* Video Link */}
+								{proposal.videoUrl && (
+									<div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-2">
+										<h4 className="text-sm font-bold text-text-primary">Proposal Video</h4>
+										<a
+											href={proposal.videoUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-sm font-bold text-[#EE2C2C] hover:underline break-all"
+										>
+											Watch Video ↗
+										</a>
+									</div>
+								)}
+
 								{/* Mobile-only Community Profile Panel */}
 								{proposal.community && (
 									<div className="md:hidden mt-4">

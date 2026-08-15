@@ -10,10 +10,12 @@ import { Skeleton } from "@/components/ui/Skeleton"
 import {
 	getAllPublishedSponsorships,
 	getCategories,
+	getBrandProfile,
 	type Category,
 	type PublishedSponsorshipProposal,
 } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
+import { useBrandStore } from "@/store/brandStore"
 import clsx from "clsx"
 
 function formatDate(value: string | null): string {
@@ -208,6 +210,7 @@ function ProposalCard({
 
 export default function ProposalsPage() {
 	const router = useRouter()
+	const { setProfile } = useBrandStore()
 
 	const [categories, setCategories] = useState<Category[]>([])
 	const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
@@ -219,6 +222,12 @@ export default function ProposalsPage() {
 	function handleProposalClick(proposalId: string) {
 		router.push(`/brand/dashboard/proposal/${proposalId}`)
 	}
+
+	useEffect(() => {
+		getBrandProfile()
+			.then(setProfile)
+			.catch(() => {})
+	}, [setProfile])
 
 	useEffect(() => {
 		getCategories()
