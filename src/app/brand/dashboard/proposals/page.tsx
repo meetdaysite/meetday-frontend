@@ -46,8 +46,8 @@ function CategorySearchDropdown({
 	const [search, setSearch] = useState("")
 
 	const selectedName = selectedId
-		? categories.find(c => c.id === selectedId)?.name || "IRL Categories"
-		: "IRL Categories"
+		? categories.find(c => c.id === selectedId)?.name || "All Categories"
+		: "All Categories"
 
 	const filtered = useMemo(() => {
 		const lower = search.toLowerCase()
@@ -104,7 +104,7 @@ function CategorySearchDropdown({
 								selectedId === null ? "bg-[#FFC940] text-black" : "text-black"
 							)}
 						>
-							IRL CATEGORIES
+							ALL CATEGORIES
 						</button>
 						{filtered.map(c => (
 							<button
@@ -284,7 +284,7 @@ export default function ProposalsPage() {
 					</div>
 
 					<CategorySearchDropdown
-						categories={categories}
+						categories={categoriesWithProposals}
 						selectedId={selectedCategoryId}
 						onChange={setSelectedCategoryId}
 					/>
