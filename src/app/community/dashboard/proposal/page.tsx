@@ -279,11 +279,11 @@ export default function ProposalPage() {
 
     const displayDetails = useMemo(() => {
         if (!selectedProposal) return null
-        if ((activeTab === "UNDER_REVIEW" || selectedProposal.status === "UNDER_REVIEW") && selectedProposal.pendingRevision) {
+        if (selectedProposal.pendingRevision) {
             return {
                 name: selectedProposal.pendingRevision.name,
                 about: selectedProposal.pendingRevision.about,
-                image: selectedProposal.pendingRevision.image,
+            
                 imageName: selectedProposal.pendingRevision.imageName,
                 date: selectedProposal.pendingRevision.date,
                 endDate: selectedProposal.pendingRevision.endDate,
@@ -529,9 +529,7 @@ export default function ProposalPage() {
             return
         }
         if (p) {
-            const data = ((activeTab === "UNDER_REVIEW" || p.status === "UNDER_REVIEW") && p.pendingRevision)
-                ? p.pendingRevision
-                : p;
+            const data = p.pendingRevision ? p.pendingRevision : p;
             setProjName(data.name)
             setProjAbout(data.about)
             setProjImage(null)
@@ -1912,7 +1910,7 @@ export default function ProposalPage() {
                                                 ) : (
                                                     <div className="flex flex-row overflow-x-auto sm:flex-wrap sm:overflow-x-visible gap-4 pb-4 sm:pb-0 w-full">
                                                         {filteredProposals.map((p) => {
-                                                            const isViewingRevision = activeTab === "UNDER_REVIEW" && p.pendingRevision != null;
+                                                            const isViewingRevision = p.pendingRevision != null;
                                                             const cardData = isViewingRevision ? p.pendingRevision! : p;
                                                             const imgUrl = typeof cardData.image === "string" ? cardData.image : cardData.image ? URL.createObjectURL(cardData.image) : null;
                                                             // Format date from YYYY-MM-DD to DD/MM/YYYY
@@ -1998,7 +1996,7 @@ export default function ProposalPage() {
                                                                                 <button
                                                                                     type="button"
                                                                                     onClick={() => {
-                                                                                        handleDelete(p.id)
+                                                                                      
                                                                                         setOpenKebabId(null)
                                                                                     }}
                                                                                     className="px-3 py-1.5 text-left text-xs text-[#EE2C2C] hover:bg-red-50 transition-colors font-black"
