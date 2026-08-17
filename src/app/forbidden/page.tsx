@@ -43,12 +43,6 @@ export default function ForbiddenPage() {
 							>
 								Community dashboard
 							</Link>
-							<Link
-								href="/attendee"
-								className="inline-flex items-center gap-2 h-(--size-action-md) px-4 text-label-sm font-medium rounded-action bg-action-secondary text-action-secondary-text border border-action-secondary-border hover:bg-action-secondary-hover transition-colors duration-(--duration-120)"
-							>
-								Attendee portal
-							</Link>
 						</div>
 					</div>
 

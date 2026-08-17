@@ -248,7 +248,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 					if (cancelled) return
 					const meProfile = useAttendeeProfileStore.getState().profile
 					if (meProfile?.attendeeProfile != null) {
-						router.replace("/attendee")
+						// Attendee portal is blocked — send them home instead.
+						router.replace("/")
 					} else {
 						setNeedsSignup(true)
 					}
