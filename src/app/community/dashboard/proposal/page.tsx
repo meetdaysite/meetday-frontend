@@ -1497,7 +1497,7 @@ export default function ProposalPage() {
                                                     <button
                                                         type="button"
                                                         onClick={() => setProposalCopilotOpen(true)}
-                                                        className="flex items-center gap-2 text-xs font-bold text-black hover:underline"
+                                                        className="flex w-full items-center gap-2 text-xs font-bold text-black hover:underline text-left cursor-pointer"
                                                     >
                                                         ✨ Start with Meetday AI
                                                     </button>
