@@ -7,6 +7,9 @@ type AuthSession = {
 	phone?: string
 	email?: string
 	displayName?: string
+	// Where to send the user after they finish signup/onboarding — used by flows that start
+	// from a deep link (e.g. a shared proposal) so they land back where they came from.
+	redirectTo?: string
 }
 
 type AuthSessionStore = AuthSession & {
@@ -21,8 +24,9 @@ export const useAuthSessionStore = create<AuthSessionStore>()(
 			phone: undefined,
 			email: undefined,
 			displayName: undefined,
+			redirectTo: undefined,
 			setSession: (session) => set(session),
-			clearSession: () => set({ intent: null, phone: undefined, email: undefined, displayName: undefined }),
+			clearSession: () => set({ intent: null, phone: undefined, email: undefined, displayName: undefined, redirectTo: undefined }),
 		}),
 		{
 			name: "auth-session",

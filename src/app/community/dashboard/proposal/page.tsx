@@ -36,7 +36,6 @@ import PdfViewer from "@/components/pdf/PdfViewer"
 import UploadSvg from "@/icons/outlined/upload.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
-import DotsSvg from "@/icons/outlined/dots.svg"
 import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
 
 export interface SponsorPrice {
@@ -217,7 +216,6 @@ export default function ProposalPage() {
     const [pptxViewerClass, setPptxViewerClass] = useState<any>(null)
 
     const [activeTab, setActiveTab] = useState<"ALL" | "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED">("ALL")
-    const [openKebabId, setOpenKebabId] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
     const [isUploading, setIsUploading] = useState(false)
     const [uploadProgress, setUploadProgress] = useState(0)
@@ -457,13 +455,6 @@ export default function ProposalPage() {
             setProjImagePreview(null)
         }
     }, [projImage])
-
-    useEffect(() => {
-        if (!openKebabId) return
-        const handler = () => setOpenKebabId(null)
-        window.addEventListener("click", handler)
-        return () => window.removeEventListener("click", handler)
-    }, [openKebabId])
 
     useEffect(() => {
         import("docx-preview").then((mod) => {
@@ -1177,6 +1168,24 @@ export default function ProposalPage() {
                                         className="hidden"
                                         onChange={handleUpdateFile}
                                     />
+                                    {selectedProposal.status === "PUBLISHED" && (
+                                        <button
+                                            type="button"
+                                            title="Share with brands"
+                                            className="bg-white text-black border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider select-none flex items-center gap-1.5"
+                                            onClick={() => {
+                                                const link = `${window.location.origin}/brand/proposal/${selectedProposal.id}`
+                                                navigator.clipboard.writeText(link)
+                                                    .then(() => toast.success("Link copied! Share it with brands."))
+                                                    .catch(() => toast.error("Failed to copy link."))
+                                            }}
+                                        >
+                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 14l5-5-5-5M20 9H9a4 4 0 00-4 4v6" />
+                                            </svg>
+                                            Share
+                                        </button>
+                                    )}
                                     <button
                                         type="button"
                                         className="bg-[#EE2C2C] text-white border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider select-none"
@@ -1960,67 +1969,26 @@ export default function ProposalPage() {
                                                                         </span>
                                                                     </div>
 
-                                                                    {/* Kebab button */}
-                                                                    <div className="absolute top-2 right-2 z-30" onClick={(e) => e.stopPropagation()}>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => setOpenKebabId(openKebabId === p.id ? null : p.id)}
-                                                                            className="flex items-center justify-center size-5 rounded-full bg-white border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-50 text-black transition-colors"
-                                                                        >
-                                                                            <Icon as={DotsSvg} size="xs" />
-                                                                        </button>
-                                                                        {openKebabId === p.id && (
-                                                                            <div className="absolute right-0 top-7 z-40 w-36 bg-white border-[2px] border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] py-1 flex flex-col">
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => {
-                                                                                        setSelectedProposal(p)
-                                                                                        setOpenKebabId(null)
-                                                                                    }}
-                                                                                    className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
-                                                                                >
-                                                                                    View details
-                                                                                </button>
-                                                                                {p.status === "PUBLISHED" && (
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        onClick={() => {
-                                                                                            const link = `${window.location.origin}/brand/proposal/${p.id}`
-                                                                                            navigator.clipboard.writeText(link)
-                                                                                                .then(() => toast.success("Link copied! Share it with brands."))
-                                                                                                .catch(() => toast.error("Failed to copy link."))
-                                                                                            setOpenKebabId(null)
-                                                                                        }}
-                                                                                        className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
-                                                                                    >
-                                                                                        Share
-                                                                                    </button>
-                                                                                )}
-                                                                                {(p.status === "DRAFT" || p.status === "REJECTED") && (
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        onClick={() => {
-                                                                                            submitProposalForApproval(p)
-                                                                                            setOpenKebabId(null)
-                                                                                        }}
-                                                                                        className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
-                                                                                    >
-                                                                                        Submit for Approval
-                                                                                    </button>
-                                                                                )}
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => {
-                                                                                        handleDelete(p.id)
-                                                                                        setOpenKebabId(null)
-                                                                                    }}
-                                                                                    className="px-3 py-1.5 text-left text-xs text-[#EE2C2C] hover:bg-red-50 transition-colors font-black"
-                                                                                >
-                                                                                    Delete
-                                                                                </button>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
+                                                                    {/* Share button */}
+                                                                    {p.status === "PUBLISHED" && (
+                                                                        <div className="absolute top-2 right-2 z-30" onClick={(e) => e.stopPropagation()}>
+                                                                            <button
+                                                                                type="button"
+                                                                                title="Share with brands"
+                                                                                onClick={() => {
+                                                                                    const link = `${window.location.origin}/brand/proposal/${p.id}`
+                                                                                    navigator.clipboard.writeText(link)
+                                                                                        .then(() => toast.success("Link copied! Share it with brands."))
+                                                                                        .catch(() => toast.error("Failed to copy link."))
+                                                                                }}
+                                                                                className="flex items-center justify-center size-6 rounded-full bg-white border-[2px] border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-50 text-black transition-colors"
+                                                                            >
+                                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 14l5-5-5-5M20 9H9a4 4 0 00-4 4v6" />
+                                                                                </svg>
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
 
                                                                     {/* Content & Footer info */}
                                                                     <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
