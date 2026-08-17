@@ -22,6 +22,7 @@ import {
     getHostCommunityProfile,
     activateHostCommunityProfile,
     deactivateHostCommunityProfile,
+    generateProposalDraft,
     type SponsorshipProposal as ApiSponsorshipProposal,
     type SponsorshipProposalPayload,
     type HostCommunityProfile,
@@ -208,6 +209,9 @@ export default function ProposalPage() {
     const [projVideoUrl, setProjVideoUrl] = useState("")
     const [projDoc, setProjDoc] = useState<File | null>(null)
     const [sponsorPrices, setSponsorPrices] = useState<SponsorPrice[]>([{ name: "", price: "" }])
+    const [proposalCopilotOpen, setProposalCopilotOpen] = useState(false)
+    const [proposalCopilotPrompt, setProposalCopilotPrompt] = useState("")
+    const [proposalCopilotLoading, setProposalCopilotLoading] = useState(false)
     const projImageInputRef = useRef<HTMLInputElement>(null)
     const projDocInputRef = useRef<HTMLInputElement>(null)
     const updateDocInputRef = useRef<HTMLInputElement>(null)
@@ -602,6 +606,29 @@ export default function ProposalPage() {
                 return
             }
             setProjDoc(file)
+        }
+    }
+
+    async function handleGenerateProposalDraft() {
+        const trimmed = proposalCopilotPrompt.trim()
+        if (!trimmed || proposalCopilotLoading) return
+        setProposalCopilotLoading(true)
+        try {
+            const draft = await generateProposalDraft(trimmed)
+            setProjName(draft.name)
+            setProjAbout(draft.about)
+            setProjAudience(draft.audience_profile)
+            setProjAgeGroup(draft.age_group)
+            setProjGuestCount(draft.guest_count)
+            setSponsorPrices(draft.sponsor_tiers.length > 0 ? draft.sponsor_tiers : [{ name: "", price: "" }])
+            setProposalCopilotOpen(false)
+            toast.success("AI Copilot filled in the proposal — review and adjust as needed.")
+        } catch (err: unknown) {
+            const status = (err as { response?: { status?: number } })?.response?.status
+            if (status === 403) toast.error("Host role required to use AI Copilot.")
+            else toast.error("Couldn't generate a draft right now. Please try again.")
+        } finally {
+            setProposalCopilotLoading(false)
         }
     }
 
@@ -1463,6 +1490,53 @@ export default function ProposalPage() {
 
                                     {/* Enclose the form in a neobrutalist dashed border box */}
                                     <form onSubmit={handleProposalSubmit} className="border-[3px] border-dashed border-black/30 rounded-[28px] p-6 bg-white flex flex-col gap-6 w-full">
+                                        {/* AI Copilot */}
+                                        {!selectedProposal && (
+                                            <div className="rounded-2xl border-[3px] border-dashed border-black/20 p-4 bg-slate-50/60">
+                                                {!proposalCopilotOpen ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setProposalCopilotOpen(true)}
+                                                        className="flex items-center gap-2 text-xs font-bold text-black hover:underline"
+                                                    >
+                                                        ✨ Start with Meetday AI Copilot
+                                                    </button>
+                                                ) : (
+                                                    <div className="flex flex-col gap-2">
+                                                        <label className="text-xs font-bold text-black">
+                                                            Describe your sponsorship opportunity
+                                                        </label>
+                                                        <textarea
+                                                            value={proposalCopilotPrompt}
+                                                            onChange={(e) => setProposalCopilotPrompt(e.target.value)}
+                                                            placeholder="e.g. We run a monthly rooftop networking meetup for startup founders in Bangalore, around 200 people attend each time."
+                                                            rows={3}
+                                                            disabled={proposalCopilotLoading}
+                                                            className="px-4 py-2.5 rounded-xl border border-black/10 bg-white text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none disabled:opacity-50"
+                                                        />
+                                                        <div className="flex items-center gap-2 justify-end">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setProposalCopilotOpen(false)}
+                                                                disabled={proposalCopilotLoading}
+                                                                className="px-3 py-2 text-xs font-bold text-black/60 hover:text-black transition-colors disabled:opacity-50"
+                                                            >
+                                                                Skip
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleGenerateProposalDraft}
+                                                                disabled={proposalCopilotLoading || proposalCopilotPrompt.trim().length < 10}
+                                                                className="bg-[#EE2C2C] text-white text-xs font-bold px-4 py-2 rounded-lg disabled:opacity-50 transition-all"
+                                                            >
+                                                                {proposalCopilotLoading ? "Generating…" : "Generate"}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
                                         {/* Name */}
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-xs font-bold text-black">Project Name *</label>

@@ -1810,6 +1810,33 @@ export async function generateEventDraft(prompt: string): Promise<CopilotDraft> 
 	return data.data
 }
 
+// ─── AI Copilot — sponsorship proposals ────────────────────────────────────────
+
+export type ProposalCopilotSponsorTier = {
+	name: string
+	price: string
+}
+
+export type ProposalCopilotDraft = {
+	name: string
+	about: string
+	audience_profile: string[]
+	age_group: string
+	guest_count: string
+	sponsor_tiers: ProposalCopilotSponsorTier[]
+	tier_reasoning: string | null
+	confidence_score: number
+	ai_suggestions_used: string[]
+}
+
+export async function generateProposalDraft(prompt: string): Promise<ProposalCopilotDraft> {
+	const { data } = await apiClient.post<{ success: boolean; data: ProposalCopilotDraft }>(
+		"/sponsorships/copilot/generate-draft",
+		{ prompt },
+	)
+	return data.data
+}
+
 // ─── Host communities â€“ overview ─────────────────────────────────────────────
 
 export type HostCommunityOverviewCommunity = {
