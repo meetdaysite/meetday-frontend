@@ -196,10 +196,6 @@ export function ActivateCommunityModal({
 			toast.error("At least one category must be selected.")
 			return
 		}
-		if (!instagram.trim()) {
-			toast.error("Instagram profile link is required.")
-			return
-		}
 		if (operatingCities.length === 0) {
 			toast.error("Add at least one operating city.")
 			return
@@ -557,7 +553,7 @@ export function ActivateCommunityModal({
 					<label className="text-xs font-bold text-black">Social media links</label>
 					<div className="flex flex-col gap-2.5">
 						<div className="flex items-center gap-2">
-							<span className="text-xs text-black/50 w-20">Instagram *</span>
+							<span className="text-xs text-black/50 w-20">Instagram</span>
 							<input
 								type="text"
 								value={instagram}
