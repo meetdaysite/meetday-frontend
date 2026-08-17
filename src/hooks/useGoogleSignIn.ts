@@ -66,7 +66,11 @@ export function useGoogleSignIn(intent: "login" | "signup", app: AppKind, redire
 				const profile = app === "host" ? await getHostProfile() : await getBrandProfile()
 				if (app === "host") setHostProfile(profile as Awaited<ReturnType<typeof getHostProfile>>)
 				else setBrandProfile(profile as Awaited<ReturnType<typeof getBrandProfile>>)
-				router.push(redirectTo || `${base}/dashboard`)
+				// A custom redirectTo (e.g. back to a shared link) does a hard navigation — a client-side
+				// router.push to a route the caller may already be sitting on can silently no-op, leaving
+				// the pre-login UI (blur/gate) stuck until the user manually reloads.
+				if (redirectTo) window.location.href = redirectTo
+				else router.push(`${base}/dashboard`)
 				return
 			}
 
