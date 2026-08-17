@@ -22,7 +22,7 @@ export function useGoogleSignIn(intent: "login" | "signup", app: AppKind) {
 	const setHostProfile = useHostStore((s) => s.setProfile)
 	const setBrandProfile = useBrandStore((s) => s.setProfile)
 	const router = useRouter()
-	const base = `/${app}`
+	const base = app === "host" ? "/community" : `/${app}`
 
 	async function handleGoogleSignIn() {
 		setLoading(true)
@@ -37,6 +37,8 @@ export function useGoogleSignIn(intent: "login" | "signup", app: AppKind) {
 				if (!(err instanceof ApiError && err.statusCode === 404)) throw err
 			}
 
+			const displayApp = app === "host" ? "community" : app
+
 			if (me) {
 				// One login can hold host, brand, and admin access at once — a different primary
 				// `role` no longer means "wrong account", only the absence of this app's profile does.
@@ -45,7 +47,7 @@ export function useGoogleSignIn(intent: "login" | "signup", app: AppKind) {
 				if (!hasAccess) {
 					if (intent === "login") {
 						await signOut()
-						toast.error(`No ${app} account found for this Google account yet. Please sign up.`)
+						toast.error(`No ${displayApp} account found for this Google account yet. Please sign up.`)
 						router.replace(`${base}/signup`)
 						return
 					}
@@ -57,7 +59,7 @@ export function useGoogleSignIn(intent: "login" | "signup", app: AppKind) {
 
 				if (intent === "signup") {
 					await signOut()
-					toast.error("An account already exists for this Google account. Please log in.")
+					toast.error(`A ${displayApp} account already exists for this Google account. Please log in.`)
 					router.replace(`${base}/login`)
 					return
 				}
@@ -70,7 +72,7 @@ export function useGoogleSignIn(intent: "login" | "signup", app: AppKind) {
 
 			if (intent === "login") {
 				await signOut()
-				toast.error("No account found for this Google account. Please sign up.")
+				toast.error(`No ${displayApp} account found for this Google account. Please sign up.`)
 				router.replace(`${base}/signup`)
 				return
 			}
