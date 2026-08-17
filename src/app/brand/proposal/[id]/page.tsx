@@ -25,7 +25,10 @@ export default function SharedProposalPage() {
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [showAuthGate, setShowAuthGate] = useState(false)
-	const { loading: googleLoading, handleGoogleSignIn } = useGoogleSignIn("login", "brand", `/brand/proposal/${params.id}`)
+	const [signInAs, setSignInAs] = useState<"host" | "brand">("brand")
+	const brandSignIn = useGoogleSignIn("login", "brand", `/brand/proposal/${params.id}`)
+	const hostSignIn = useGoogleSignIn("login", "host")
+	const { loading: googleLoading, handleGoogleSignIn } = signInAs === "brand" ? brandSignIn : hostSignIn
 
 	// Already signed in — skip the preview/gate entirely and go straight to the real dashboard view.
 	useEffect(() => {
@@ -218,9 +221,24 @@ export default function SharedProposalPage() {
 					<div className="w-full max-w-sm bg-white border-[3px] border-black rounded-[28px] p-6 flex flex-col gap-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
 						<h2 className="text-lg font-heading font-black text-black leading-tight">Sign in to keep viewing</h2>
 						<p className="text-xs font-semibold text-black/60 leading-relaxed">
-							This sponsorship proposal was shared with you on Meetday. Sign in with your brand account to see the
-							full details and express interest.
+							This sponsorship proposal was shared with you on Meetday. Sign in to see the full details and
+							express interest.
 						</p>
+						<div className="flex gap-1 p-1 bg-black/5 border-[2px] border-black rounded-xl">
+							{(["host", "brand"] as const).map((option) => (
+								<button
+									key={option}
+									type="button"
+									onClick={() => setSignInAs(option)}
+									className={clsx(
+										"flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-colors",
+										signInAs === option ? "bg-black text-white" : "text-black/50 hover:text-black",
+									)}
+								>
+									{option === "host" ? "Host" : "Brand"}
+								</button>
+							))}
+						</div>
 						<GoogleSignInButton onClick={handleGoogleSignIn} loading={googleLoading} />
 					</div>
 				</div>
