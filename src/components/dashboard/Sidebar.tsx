@@ -27,14 +27,14 @@ import CalendarFillSvg from "@/icons/filled/calendar.svg"
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
 const NAV_ITEMS_TOP = [
-	{ label: "Dashboard", href: "/host/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
-	{ label: "My Sponsorships", href: "/host/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
-	{ label: "My Experiences", href: "/host/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg, disabled: true },
+	{ label: "Dashboard", href: "/community/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
+	{ label: "My Sponsorships", href: "/community/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "My Experiences", href: "/community/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg, disabled: true },
 ]
 
 const NAV_ITEMS_BOTTOM = [
-	{ label: "Support", href: "/host/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
-	{ label: "Notifications", href: "/host/dashboard/messages", outlined: BellSvg, filled: BellFillSvg },
+	{ label: "Support", href: "/community/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
+	{ label: "Notifications", href: "/community/dashboard/messages", outlined: BellSvg, filled: BellFillSvg },
 ]
 
 interface SidebarProps {
@@ -84,28 +84,28 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const completedCount = steps.filter(s => s.done).length
 	const stepsRemaining = steps.length - completedCount
 
-	const hostName = profile?.displayName || "Host"
+	const communityName = profile?.displayName || "Community"
 	const avatarUrl = profile?.avatarUrl
 
 	// Construct sidebar notifications
 	const sidebarNotifs = []
 
-	// 1. Host profile verification status
+	// 1. Community profile verification status
 	if (profile?.approvalStatus === "REJECTED") {
 		sidebarNotifs.push({
-			id: 'host-profile-rejected-' + profile.id,
+			id: 'community-profile-rejected-' + profile.id,
 			type: "error",
 			title: "Verification Rejected",
-			desc: profile.rejectionReason || "Your host verification application was not approved.",
+			desc: profile.rejectionReason || "Your community verification application was not approved.",
 			action: "REAPPLY",
-			link: "/host/dashboard/profile"
+			link: "/community/dashboard/profile"
 		})
 	} else if (profile?.approvalStatus === "PENDING" && profile?.kycStatus === "VERIFIED") {
 		sidebarNotifs.push({
-			id: 'host-profile-pending-' + profile.id,
+			id: 'community-profile-pending-' + profile.id,
 			type: "warning",
 			title: "Verification Pending",
-			desc: "Your host verification is under review. This usually takes 2-3 business days.",
+			desc: "Your community verification is under review. This usually takes 2-3 business days.",
 		})
 	}
 
@@ -118,7 +118,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 				title: "Community Rejected",
 				desc: community.adminRejectionRemark || "Your community profile details were rejected.",
 				action: "EDIT DETAILS",
-				link: "/host/dashboard/profile"
+				link: "/community/dashboard/profile"
 			})
 		} else if (community.approvalStatus === "PENDING") {
 			sidebarNotifs.push({
@@ -139,7 +139,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 				title: "Proposal Rejected",
 				desc: '"' + p.name + '" was rejected. ' + (p.adminRejectionRemark || ""),
 				action: "VIEW PROPOSAL",
-				link: '/host/dashboard/proposal?proposalId=' + p.id
+				link: '/community/dashboard/proposal?proposalId=' + p.id
 			})
 		} else if (p.status === "UNDER_REVIEW") {
 			sidebarNotifs.push({
@@ -148,7 +148,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 				title: "Proposal Under Review",
 				desc: '"' + p.name + '" is currently under review.',
 				action: "VIEW",
-				link: '/host/dashboard/proposal?proposalId=' + p.id
+				link: '/community/dashboard/proposal?proposalId=' + p.id
 			})
 		}
 	})
@@ -161,7 +161,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 			
 			{/* Brand Logo */}
 			<div className="px-6 pt-5 pb-3 flex items-center justify-center shrink-0">
-				<Link href="/host/dashboard">
+				<Link href="/community/dashboard">
 					<Image
 						src="/assets/brand_logo.svg"
 						alt="Meetday"
@@ -176,7 +176,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 			{/* Navigation Top Items */}
 			<div className="px-4 flex flex-col gap-1 mt-1 shrink-0">
 				{NAV_ITEMS_TOP.map(({ label, href, outlined: Outlined, filled: Filled, disabled }) => {
-					const isActive = href === "/host/dashboard" ? pathname === href : pathname.startsWith(href)
+					const isActive = href === "/community/dashboard" ? pathname === href : pathname.startsWith(href)
 					if (disabled) {
 						return (
 							<button
@@ -291,7 +291,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 						</div>
 
 						<Link
-							href="/host/dashboard/profile?open=community"
+							href="/community/dashboard/profile?open=community"
 							onClick={onClose}
 							className="w-full py-2 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-bold text-center text-xs tracking-wider shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all block"
 						>
@@ -317,7 +317,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 						</div>
 
 						<Link
-							href="/host/dashboard/profile?open=kyc"
+							href="/community/dashboard/profile?open=kyc"
 							onClick={onClose}
 							className="w-full py-2 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-bold text-center text-xs tracking-wider shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all block"
 						>
@@ -361,7 +361,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 
 				{/* Bottom Host Button / Pill */}
 				<Link
-					href="/host/dashboard/profile"
+					href="/community/dashboard/profile"
 					onClick={onClose}
 					className="mt-2 flex items-center gap-2.5 px-4 py-2.5 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-semibold text-sm tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all select-none relative overflow-hidden"
 				>
@@ -370,7 +370,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 						<div className="relative size-7 rounded-full overflow-hidden border-2 border-black bg-white shrink-0">
 							<Image
 								src={avatarUrl}
-								alt={hostName}
+								alt={communityName}
 								fill
 								sizes="28px"
 								className="object-cover"
@@ -383,7 +383,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 							</svg>
 						</div>
 					)}
-					<span className="flex-1 truncate">{hostName}</span>
+					<span className="flex-1 truncate">{communityName}</span>
 					{/* Golden accent overlay styling */}
 					<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-r from-transparent to-white/20 skew-x-[25deg] pointer-events-none" />
 				</Link>

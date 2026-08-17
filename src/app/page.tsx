@@ -23,7 +23,7 @@ interface BubbleProps {
 
 function SpeechBubble({ text, bg, textColor, rotation, positionClass, tailOffset = "left-4", animationClass = "animate-float-1" }: BubbleProps) {
 	return (
-		<div className={`absolute z-20 ${positionClass} ${rotation} hidden md:block pointer-events-none transition-transform duration-300 hover:scale-105`}>
+		<div className={`absolute z-20 ${positionClass} ${rotation} desktop-bubbles pointer-events-none transition-transform duration-300 hover:scale-105`}>
 			<div className={animationClass}>
 				<div 
 					className="relative px-5 py-2.5 rounded-full font-bold text-xs tracking-wider"
@@ -229,8 +229,8 @@ export default function RootPage() {
 						{/* Image */}
 						<div className="relative w-full aspect-[4/3] border-[2px] md:border-[3px] border-black rounded-lg md:rounded-2xl overflow-hidden bg-slate-100 group">
 							<Image
-								src="/images/host.png"
-								alt="Hosts"
+								src="/images/community.png"
+								alt="Community"
 								fill
 								sizes="(max-width: 768px) 100vw, 350px"
 								className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
@@ -243,7 +243,7 @@ export default function RootPage() {
 						</p>
 						
 						<Link 
-							href="/host"
+							href="/community"
 							className="w-full mt-3 md:mt-5 py-2 md:py-3.5 bg-[#EE2C2C] text-white border-[2px] md:border-[3px] border-black rounded-xl md:rounded-2xl font-bold text-center text-xs md:text-base shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
 						>
 							Community
@@ -278,56 +278,77 @@ export default function RootPage() {
 					</div>
 				</div>
 
-				{/* Mobile Pills/Badges list (Visible only on mobile, arranged in straight lines by color, floating gently) */}
-				<div className="md:hidden w-full flex flex-col gap-3.5 items-center mb-24 z-20 px-4">
-					{/* Top row: 3 Pink badges */}
-					<div className="flex flex-wrap justify-center gap-2 w-full">
-						{[
-							{ text: "CREATE EXPERIENCES", bg: "#FFD9D9", textColor: "#000000", anim: "animate-float-1" },
-							{ text: "ENGAGE GEN Z AUDIENCE", bg: "#FFD9D9", textColor: "#000000", anim: "animate-float-2" },
-							{ text: "TRUSTED PAYMENTS", bg: "#FFD9D9", textColor: "#000000", anim: "animate-float-3" }
-						].map((b, idx) => (
-							<span 
-								key={idx}
-								className={`px-3 py-1.5 border-[2px] border-black rounded-full font-bold text-[9px] tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase whitespace-nowrap block ${b.anim}`}
-								style={{ backgroundColor: b.bg, color: b.textColor }}
-							>
-								{b.text}
-							</span>
-						))}
-					</div>
-
-					{/* Middle row: 2 Yellow badges */}
-					<div className="flex flex-wrap justify-center gap-2 w-full">
-						{[
-							{ text: "VERIFIED USERS", bg: "#FFCE29", textColor: "#000000", anim: "animate-float-4" },
-							{ text: "GROW COMMUNITY", bg: "#FFCE29", textColor: "#000000", anim: "animate-float-1" }
-						].map((b, idx) => (
-							<span 
-								key={idx}
-								className={`px-3 py-1.5 border-[2px] border-black rounded-full font-bold text-[9px] tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase whitespace-nowrap block ${b.anim}`}
-								style={{ backgroundColor: b.bg, color: b.textColor }}
-							>
-								{b.text}
-							</span>
-						))}
-					</div>
-
-					{/* Bottom row: 3 Beige badges */}
-					<div className="flex flex-wrap justify-center gap-2 w-full">
-						{[
-							{ text: "RAISE SPONSORSHIP", bg: "#F8EFE2", textColor: "#EE2C2C", anim: "animate-float-2" },
-							{ text: "BACKED BY DATA", bg: "#F8EFE2", textColor: "#EE2C2C", anim: "animate-float-3" },
-							{ text: "OPTIMIZE BUDGETS", bg: "#F8EFE2", textColor: "#EE2C2C", anim: "animate-float-4" }
-						].map((b, idx) => (
-							<span 
-								key={idx}
-								className={`px-3 py-1.5 border-[2px] border-black rounded-full font-bold text-[9px] tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase whitespace-nowrap block ${b.anim}`}
-								style={{ backgroundColor: b.bg, color: b.textColor }}
-							>
-								{b.text}
-							</span>
-						))}
+				{/* Scrolling Marquee of Badges (Visible on mobile, positioned above the bottom red wave section) */}
+				<div className="mobile-marquee w-full relative z-20 overflow-hidden py-1 mb-28">
+					<style>{`
+						@keyframes marqueeRTL {
+							from { transform: translateX(0%); }
+							to   { transform: translateX(-50%); }
+						}
+						.animate-marquee-rtl {
+							animation: marqueeRTL 14s linear infinite;
+							will-change: transform;
+						}
+						@media (max-width: 1300px) {
+							.desktop-bubbles {
+								display: none !important;
+							}
+							.mobile-marquee {
+								display: block !important;
+							}
+						}
+						@media (min-width: 1301px) {
+							.desktop-bubbles {
+								display: block !important;
+							}
+							.mobile-marquee {
+								display: none !important;
+							}
+						}
+					`}</style>
+					<div className="flex animate-marquee-rtl">
+						{/* Group A */}
+						<div className="flex gap-3 shrink-0 pr-3">
+							{[
+								{ text: "RAISE SPONSORSHIP", bg: "#F8EFE2", textColor: "#EE2C2C" },
+								{ text: "ENGAGE GEN Z AUDIENCE", bg: "#FFD9D9", textColor: "#000000" },
+								{ text: "VERIFIED USERS", bg: "#FFCE29", textColor: "#000000" },
+								{ text: "OPTIMIZE BUDGETS", bg: "#F8EFE2", textColor: "#EE2C2C" },
+								{ text: "CREATE EXPERIENCES", bg: "#FFD9D9", textColor: "#000000" },
+								{ text: "GROW COMMUNITY", bg: "#FFCE29", textColor: "#000000" },
+								{ text: "BACKED BY DATA", bg: "#F8EFE2", textColor: "#EE2C2C" },
+								{ text: "TRUSTED PAYMENTS", bg: "#FFD9D9", textColor: "#000000" },
+							].map((b, idx) => (
+								<div 
+									key={idx}
+									className="px-4 py-2 border-[2px] border-black rounded-xl font-heading font-black text-[10px] tracking-wider uppercase whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+									style={{ backgroundColor: b.bg, color: b.textColor }}
+								>
+									{b.text}
+								</div>
+							))}
+						</div>
+						{/* Group B (seamless duplicate) */}
+						<div className="flex gap-3 shrink-0 pr-3" aria-hidden="true">
+							{[
+								{ text: "RAISE SPONSORSHIP", bg: "#F8EFE2", textColor: "#EE2C2C" },
+								{ text: "ENGAGE GEN Z AUDIENCE", bg: "#FFD9D9", textColor: "#000000" },
+								{ text: "VERIFIED USERS", bg: "#FFCE29", textColor: "#000000" },
+								{ text: "OPTIMIZE BUDGETS", bg: "#F8EFE2", textColor: "#EE2C2C" },
+								{ text: "CREATE EXPERIENCES", bg: "#FFD9D9", textColor: "#000000" },
+								{ text: "GROW COMMUNITY", bg: "#FFCE29", textColor: "#000000" },
+								{ text: "BACKED BY DATA", bg: "#F8EFE2", textColor: "#EE2C2C" },
+								{ text: "TRUSTED PAYMENTS", bg: "#FFD9D9", textColor: "#000000" },
+							].map((b, idx) => (
+								<div 
+									key={idx}
+									className="px-4 py-2 border-[2px] border-black rounded-xl font-heading font-black text-[10px] tracking-wider uppercase whitespace-nowrap shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+									style={{ backgroundColor: b.bg, color: b.textColor }}
+								>
+									{b.text}
+								</div>
+							))}
+						</div>
 					</div>
 				</div>
 

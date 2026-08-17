@@ -1,6 +1,6 @@
 import Image from "next/image"
 import { OnboardingCalloutCard } from "./OnboardingCalloutCard"
-import type { StepPanelConfig } from "@/app/host/onboarding/config"
+import type { StepPanelConfig } from "@/app/community/onboarding/config"
 
 type Props = {
 	config: StepPanelConfig

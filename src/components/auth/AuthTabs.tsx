@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation"
 import clsx from "clsx"
 
 const tabs = [
-	{ label: "Log in", href: "/host/login" },
-	{ label: "Sign up", href: "/host/signup" },
+	{ label: "Log in", href: "/community/login" },
+	{ label: "Sign up", href: "/community/signup" },
 ]
 
 export function AuthTabs() {

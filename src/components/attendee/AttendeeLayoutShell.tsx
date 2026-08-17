@@ -10,7 +10,7 @@ export function AttendeeLayoutShell({ children }: { children: React.ReactNode })
 	const router = useRouter()
 
 	useEffect(() => {
-		if (isHostAccount) router.replace("/host/dashboard")
+		if (isHostAccount) router.replace("/community/dashboard")
 	}, [isHostAccount, router])
 
 	// Don't flash attendee content for an account we already know is host-typed

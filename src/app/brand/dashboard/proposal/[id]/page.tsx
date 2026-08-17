@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Skeleton } from "@/components/ui/Skeleton"
 import PdfViewer from "@/components/pdf/PdfViewer"
-import { CommunityProfileDetailsPanel } from "@/components/host/CommunityProfileDetailsPanel"
+import { CommunityProfileDetailsPanel } from "@/components/community/CommunityProfileDetailsPanel"
 import {
 	getPublishedSponsorshipDetail,
 	markSponsorshipInterest,
