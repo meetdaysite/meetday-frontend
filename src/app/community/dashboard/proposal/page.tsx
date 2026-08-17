@@ -622,10 +622,10 @@ export default function ProposalPage() {
             setProjGuestCount(draft.guest_count)
             setSponsorPrices(draft.sponsor_tiers.length > 0 ? draft.sponsor_tiers : [{ name: "", price: "" }])
             setProposalCopilotOpen(false)
-            toast.success("AI Copilot filled in the proposal — review and adjust as needed.")
+            toast.success("Meetday filled in the proposal — review and adjust as needed.")
         } catch (err: unknown) {
             const status = (err as { response?: { status?: number } })?.response?.status
-            if (status === 403) toast.error("Host role required to use AI Copilot.")
+            if (status === 403) toast.error("Host role required to use Meetday AI.")
             else toast.error("Couldn't generate a draft right now. Please try again.")
         } finally {
             setProposalCopilotLoading(false)
@@ -1490,7 +1490,7 @@ export default function ProposalPage() {
 
                                     {/* Enclose the form in a neobrutalist dashed border box */}
                                     <form onSubmit={handleProposalSubmit} className="border-[3px] border-dashed border-black/30 rounded-[28px] p-6 bg-white flex flex-col gap-6 w-full">
-                                        {/* AI Copilot */}
+                                        {/* AI assist */}
                                         {!selectedProposal && (
                                             <div className="rounded-2xl border-[3px] border-dashed border-black/20 p-4 bg-slate-50/60">
                                                 {!proposalCopilotOpen ? (
@@ -1499,7 +1499,7 @@ export default function ProposalPage() {
                                                         onClick={() => setProposalCopilotOpen(true)}
                                                         className="flex items-center gap-2 text-xs font-bold text-black hover:underline"
                                                     >
-                                                        ✨ Start with Meetday AI Copilot
+                                                        ✨ Start with Meetday AI
                                                     </button>
                                                 ) : (
                                                     <div className="flex flex-col gap-2">
@@ -1514,23 +1514,35 @@ export default function ProposalPage() {
                                                             disabled={proposalCopilotLoading}
                                                             className="px-4 py-2.5 rounded-xl border border-black/10 bg-white text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none disabled:opacity-50"
                                                         />
-                                                        <div className="flex items-center gap-2 justify-end">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setProposalCopilotOpen(false)}
-                                                                disabled={proposalCopilotLoading}
-                                                                className="px-3 py-2 text-xs font-bold text-black/60 hover:text-black transition-colors disabled:opacity-50"
-                                                            >
-                                                                Skip
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                onClick={handleGenerateProposalDraft}
-                                                                disabled={proposalCopilotLoading || proposalCopilotPrompt.trim().length < 10}
-                                                                className="bg-[#EE2C2C] text-white text-xs font-bold px-4 py-2 rounded-lg disabled:opacity-50 transition-all"
-                                                            >
-                                                                {proposalCopilotLoading ? "Generating…" : "Generate"}
-                                                            </button>
+                                                        <div className="flex items-center gap-2 justify-between">
+                                                            <p className="text-[11px] text-black/50">
+                                                                {proposalCopilotPrompt.trim().length < 10
+                                                                    ? "Write a few more words, then let Meetday think it through."
+                                                                    : proposalCopilotLoading
+                                                                        ? "Meetday is thinking…"
+                                                                        : "Ready — click below when you're done writing."}
+                                                            </p>
+                                                            <div className="flex items-center gap-2 shrink-0">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setProposalCopilotOpen(false)}
+                                                                    disabled={proposalCopilotLoading}
+                                                                    className="px-3 py-2 text-xs font-bold text-black/60 hover:text-black transition-colors disabled:opacity-50"
+                                                                >
+                                                                    Skip
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={handleGenerateProposalDraft}
+                                                                    disabled={proposalCopilotLoading || proposalCopilotPrompt.trim().length < 10}
+                                                                    className="flex items-center gap-2 bg-[#EE2C2C] text-white text-xs font-bold px-4 py-2 rounded-lg disabled:opacity-50 transition-all"
+                                                                >
+                                                                    {proposalCopilotLoading && (
+                                                                        <span className="h-3 w-3 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                                                                    )}
+                                                                    {proposalCopilotLoading ? "Meetday is thinking…" : "🤔 Let Meetday Think"}
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )}
