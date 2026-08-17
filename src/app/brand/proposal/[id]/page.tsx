@@ -26,7 +26,7 @@ export default function SharedProposalPage() {
 	const [error, setError] = useState<string | null>(null)
 	const [showAuthGate, setShowAuthGate] = useState(false)
 	const [signInAs, setSignInAs] = useState<"host" | "brand">("brand")
-	const brandSignIn = useGoogleSignIn("login", "brand", `/brand/proposal/${params.id}`)
+	const brandSignIn = useGoogleSignIn("login", "brand", `/brand/dashboard/proposal/${params.id}`)
 	const hostSignIn = useGoogleSignIn("login", "host")
 	const { loading: googleLoading, handleGoogleSignIn } = signInAs === "brand" ? brandSignIn : hostSignIn
 
