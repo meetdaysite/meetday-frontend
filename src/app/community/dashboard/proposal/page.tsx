@@ -2067,6 +2067,21 @@ export default function ProposalPage() {
                                                                                 >
                                                                                     View details
                                                                                 </button>
+                                                                                {p.status === "PUBLISHED" && (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => {
+                                                                                            const link = `${window.location.origin}/brand/proposal/${p.id}`
+                                                                                            navigator.clipboard.writeText(link)
+                                                                                                .then(() => toast.success("Link copied! Share it with brands."))
+                                                                                                .catch(() => toast.error("Failed to copy link."))
+                                                                                            setOpenKebabId(null)
+                                                                                        }}
+                                                                                        className="px-3 py-1.5 text-left text-xs text-black hover:bg-slate-50 transition-colors font-bold"
+                                                                                    >
+                                                                                        Share
+                                                                                    </button>
+                                                                                )}
                                                                                 {(p.status === "DRAFT" || p.status === "REJECTED") && (
                                                                                     <button
                                                                                         type="button"
