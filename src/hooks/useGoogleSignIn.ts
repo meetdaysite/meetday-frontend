@@ -15,7 +15,7 @@ type AppKind = "host" | "brand"
 // Interim login path while real SMS OTP delivery isn't wired up for production — reuses the
 // exact same post-auth resolution logic as the phone-OTP verify pages (checkPhone → getAuthMe →
 // role check → fetch profile), just keyed off a Google identity instead of a phone number.
-export function useGoogleSignIn(intent: "login" | "signup", app: AppKind) {
+export function useGoogleSignIn(intent: "login" | "signup", app: AppKind, redirectTo?: string) {
 	const [loading, setLoading] = useState(false)
 	const { signInWithGoogle, signOut } = useAuth()
 	const setSession = useAuthSessionStore((s) => s.setSession)
@@ -66,7 +66,7 @@ export function useGoogleSignIn(intent: "login" | "signup", app: AppKind) {
 				const profile = app === "host" ? await getHostProfile() : await getBrandProfile()
 				if (app === "host") setHostProfile(profile as Awaited<ReturnType<typeof getHostProfile>>)
 				else setBrandProfile(profile as Awaited<ReturnType<typeof getBrandProfile>>)
-				router.push(`${base}/dashboard`)
+				router.push(redirectTo || `${base}/dashboard`)
 				return
 			}
 
