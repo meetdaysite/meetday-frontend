@@ -38,10 +38,10 @@ export default function ForbiddenPage() {
 
 						<div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mt-2">
 							<Link
-								href="/host/dashboard"
+								href="/community/dashboard"
 								className="inline-flex items-center gap-2 h-(--size-action-md) px-4 text-label-sm font-semibold rounded-action bg-action-primary text-action-primary-text hover:bg-action-primary-hover transition-colors duration-(--duration-120)"
 							>
-								Host dashboard
+								Community dashboard
 							</Link>
 							<Link
 								href="/attendee"

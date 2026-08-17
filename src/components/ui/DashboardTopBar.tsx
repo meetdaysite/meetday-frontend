@@ -34,10 +34,10 @@ export function DashboardTopBar() {
 	const router = useRouter()
 	const pathname = usePathname()
 	const isBrand = pathname?.startsWith("/brand")
-	const profilePath = isBrand ? "/brand/dashboard/profile" : "/host/dashboard/profile"
+	const profilePath = isBrand ? "/brand/dashboard/profile" : "/community/dashboard/profile"
 
-	const displayName = profile?.displayName || "Host"
-	const initials = displayName.split(" ").filter(Boolean).map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "H"
+	const displayName = profile?.displayName || "Community"
+	const initials = displayName.split(" ").filter(Boolean).map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "C"
 
 	const userRef = useRef<HTMLDivElement>(null)
 
