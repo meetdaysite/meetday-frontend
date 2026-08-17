@@ -25,10 +25,9 @@ export default function SharedProposalPage() {
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [showAuthGate, setShowAuthGate] = useState(false)
-	const [signInAs, setSignInAs] = useState<"host" | "brand">("brand")
-	const brandSignIn = useGoogleSignIn("login", "brand", `/brand/dashboard/proposal/${params.id}`)
-	const hostSignIn = useGoogleSignIn("login", "host")
-	const { loading: googleLoading, handleGoogleSignIn } = signInAs === "brand" ? brandSignIn : hostSignIn
+	const [authMode, setAuthMode] = useState<"signup" | "login">("signup")
+	const redirectPath = `/brand/dashboard/proposal/${params.id}`
+	const { loading: googleLoading, handleGoogleSignIn } = useGoogleSignIn(authMode, "brand", redirectPath, { seamless: true })
 
 	// Already signed in — skip the preview/gate entirely and go straight to the real dashboard view.
 	useEffect(() => {
@@ -225,17 +224,17 @@ export default function SharedProposalPage() {
 							express interest.
 						</p>
 						<div className="flex gap-1 p-1 bg-black/5 border-[2px] border-black rounded-xl">
-							{(["host", "brand"] as const).map((option) => (
+							{(["signup", "login"] as const).map((option) => (
 								<button
 									key={option}
 									type="button"
-									onClick={() => setSignInAs(option)}
+									onClick={() => setAuthMode(option)}
 									className={clsx(
 										"flex-1 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-colors",
-										signInAs === option ? "bg-black text-white" : "text-black/50 hover:text-black",
+										authMode === option ? "bg-black text-white" : "text-black/50 hover:text-black",
 									)}
 								>
-									{option === "host" ? "Host" : "Brand"}
+									{option === "signup" ? "Sign Up" : "Login"}
 								</button>
 							))}
 						</div>

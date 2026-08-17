@@ -83,7 +83,7 @@ function CategoryPicker({ selected, onChange, categories }: {
 
 export default function OnboardingPage() {
 	const [loadingMessage, setLoadingMessage] = useState<string | null>(null)
-	const { phone, email: sessionEmail, clearSession } = useAuthSessionStore()
+	const { phone, email: sessionEmail, redirectTo, clearSession } = useAuthSessionStore()
 	const sessionHydrated = useAuthSessionHydrated()
 	const { signOut } = useAuth()
 	const { setProfile } = useBrandStore()
@@ -181,7 +181,7 @@ export default function OnboardingPage() {
 				const profile = await getBrandProfile()
 				setProfile(profile)
 				clearSession()
-				router.push("/brand/dashboard")
+				router.push(redirectTo || "/brand/dashboard")
 			} catch {
 				toast.error(
 					"This email is already linked to a different account. Please use a different one, or log in instead.",
