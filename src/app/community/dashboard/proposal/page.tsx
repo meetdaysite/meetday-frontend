@@ -309,7 +309,7 @@ export default function ProposalPage() {
             return {
                 name: selectedProposal.pendingRevision.name,
                 about: selectedProposal.pendingRevision.about,
-                image: selectedProposal.pendingRevision.image,
+            
                 imageName: selectedProposal.pendingRevision.imageName,
                 date: selectedProposal.pendingRevision.date,
                 endDate: selectedProposal.pendingRevision.endDate,
