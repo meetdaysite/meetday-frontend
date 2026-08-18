@@ -730,6 +730,70 @@ export async function markSponsorshipInterest(
 	return data.data
 }
 
+// ─── TriChat: Host \u2194 Brand (+ Admin) chat tied to a sponsorship interest ────────
+
+export type SponsorshipChatStatus = "REQUESTED" | "ACCEPTED"
+export type ChatSenderType = "HOST" | "BRAND" | "ADMIN"
+
+export type SponsorshipChatThread = {
+	id: string
+	proposalId: string
+	proposalName: string
+	chatStatus: SponsorshipChatStatus
+	createdAt: string
+	chatAcceptedAt: string | null
+	lastMessageAt: string | null
+	lastMessagePreview: string | null
+	counterpartName: string
+}
+
+export type SponsorshipChatMessage = {
+	id: string
+	senderType: ChatSenderType
+	senderId: string
+	content: string
+	createdAt: string
+}
+
+export async function getMySponsorshipChats(status?: SponsorshipChatStatus): Promise<SponsorshipChatThread[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipChatThread[] }>(
+		"/sponsorships/chats",
+		{ params: status ? { status } : undefined },
+	)
+	return data.data
+}
+
+export async function getSponsorshipChatMessages(
+	interestId: string,
+): Promise<{ messages: SponsorshipChatMessage[]; chatStatus: SponsorshipChatStatus }> {
+	const { data } = await apiClient.get<{
+		success: boolean
+		data: { messages: SponsorshipChatMessage[]; chatStatus: SponsorshipChatStatus }
+	}>(`/sponsorships/chats/${interestId}/messages`)
+	return data.data
+}
+
+export async function sendSponsorshipChatMessage(
+	interestId: string,
+	content: string,
+): Promise<SponsorshipChatMessage> {
+	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipChatMessage }>(
+		`/sponsorships/chats/${interestId}/messages`,
+		{ content },
+	)
+	return data.data
+}
+
+export async function acceptSponsorshipChatRequest(
+	interestId: string,
+): Promise<{ message: string; chatStatus: SponsorshipChatStatus }> {
+	const { data } = await apiClient.post<{
+		success: boolean
+		data: { message: string; chatStatus: SponsorshipChatStatus }
+	}>(`/sponsorships/chats/${interestId}/accept`)
+	return data.data
+}
+
 // ─── Host community profile (shown to sponsors) ───────────────────────────────
 
 export type HostCommunityProfilePayload = {

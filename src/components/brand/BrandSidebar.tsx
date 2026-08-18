@@ -17,6 +17,8 @@ import TicketFillSvg from "@/icons/filled/ticket.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import BellSvg from "@/icons/outlined/bell.svg"
+import ChatOutSvg from "@/icons/outlined/chat.svg"
+import ChatFillSvg from "@/icons/filled/chat.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -26,6 +28,7 @@ const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
 	{ label: "Proposals", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
+	{ label: "Chats", href: "/brand/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
 ]
 
 const SECONDARY_NAV: NavItem[] = [
