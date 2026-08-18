@@ -270,71 +270,7 @@ export default function DashboardWelcomePage() {
 						)}
 					</div>
 
-					{/* Row 2: Upcoming Events / Curated Experiences */}
-					<div className="flex flex-col w-full">
-						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
-							<div>
-								<h2 className="text-xl font-heading font-black text-black">Curated Experiences</h2>
-								<p className="text-xs font-semibold text-black/50 mt-1">Your published or live experiences.</p>
-							</div>
-							<Link href="/community/dashboard/events" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
-								View All Events &gt;
-							</Link>
-						</div>
 
-						{isLoading && !data ? (
-							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-								{Array.from({ length: 2 }).map((_, i) => (
-									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
-										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
-										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
-											<div className="h-4 bg-black/5 rounded w-32" />
-											<div className="h-3 bg-black/5 rounded w-20" />
-										</div>
-									</div>
-								))}
-							</div>
-						) : upcomingEvents.length === 0 ? (
-							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
-								<p className="text-sm font-black text-black/80">No upcoming events yet</p>
-								<p className="text-[11px] font-semibold text-black/40">Create and publish an event to see it here.</p>
-							</div>
-						) : (
-							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-								{upcomingEvents.map((event) => {
-									const statusCfg = STATUS_CONFIG[event.status] ?? STATUS_CONFIG.DRAFT
-									const dateStr = formatEventDateRange(event.eventDate ?? undefined, event.endDate)
-									return (
-										<Link
-											key={event.id}
-											href={`/community/dashboard/events/${event.id}`}
-											className="group/item flex items-center justify-between px-5 h-20 bg-white hover:bg-black/[0.02] hover:pl-7 transition-all duration-300 ease-out"
-										>
-											<div className="flex items-center gap-3 min-w-0">
-												{event.coverImageUrl ? (
-													<div className="size-12 rounded-xl overflow-hidden shrink-0 border border-black/10">
-														{/* eslint-disable-next-line @next/next/no-img-element */}
-														<img src={event.coverImageUrl} alt="" className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-300" />
-													</div>
-												) : (
-													<div className="size-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0 group-hover/item:scale-115 group-hover/item:rotate-3 transition-transform duration-300">
-														<Icon as={CalendarOutSvg} size="md" color="inherit" />
-													</div>
-												)}
-												<div className="min-w-0">
-													<p className="text-label-md font-semibold text-text-primary truncate group-hover/item:text-red-600 transition-colors duration-300">{event.title || "Untitled Event"}</p>
-													<p className="text-caption text-text-tertiary mt-0.5">{dateStr} • {event.city || "Online"}</p>
-												</div>
-											</div>
-											<span className={`inline-flex items-center px-2.5 py-0.5 rounded-badge text-[10px] font-bold shrink-0 ${statusCfg.className}`}>
-												{statusCfg.label}
-											</span>
-										</Link>
-									)
-								})}
-							</div>
-						)}
-					</div>
 				</div>
 			</div>
 		</div>

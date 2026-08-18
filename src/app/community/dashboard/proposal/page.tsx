@@ -723,7 +723,7 @@ export default function ProposalPage() {
                 venues: filledVenueIdx.map((idx) => projVenues[idx].trim()),
                 venueCities: filledVenueIdx.map((idx) => projVenueCities[idx]?.trim() || ""),
                 audienceProfile: projAudience,
-                ageGroup: projAgeGroup,                guestCount: projGuestCount,
+                ageGroup: projAgeGroup, guestCount: projGuestCount,
                 sponsorTiers: sponsorPrices,
                 ...(projVideoUrl.trim() && { videoUrl: projVideoUrl.trim() }),
             }
@@ -927,7 +927,7 @@ export default function ProposalPage() {
                 venues: projVenues.map(v => v.trim()).filter(Boolean),
                 venueCities: projVenueCities.map(v => v.trim()).filter(Boolean),
                 audienceProfile: projAudience,
-                ageGroup: projAgeGroup,                guestCount: projGuestCount,
+                ageGroup: projAgeGroup, guestCount: projGuestCount,
                 sponsorTiers: sponsorPrices,
                 ...(projVideoUrl.trim() && { videoUrl: projVideoUrl.trim() }),
             }
@@ -1386,16 +1386,16 @@ export default function ProposalPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                            {displayDetails?.videoUrl && (
-                                                <div className="col-span-1 md:col-span-2">
-                                                    <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Proposal Video</p>
-                                                    <div className="mt-1">
-                                                        <a href={displayDetails.videoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#6C32D1] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] hover:bg-[#5922b8] transition-colors">
-                                                            Watch Video ↗
-                                                        </a>
-                                                    </div>
+                                        {displayDetails?.videoUrl && (
+                                            <div className="col-span-1 md:col-span-2">
+                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Proposal Video</p>
+                                                <div className="mt-1">
+                                                    <a href={displayDetails.videoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-[#6C32D1] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] hover:bg-[#5922b8] transition-colors">
+                                                        Watch Video ↗
+                                                    </a>
                                                 </div>
-                                            )}
+                                            </div>
+                                        )}
                                         {/* Divider */}
                                         <hr className="border-border-default/15" />
                                         {/* Row 3: Audience */}
@@ -1535,7 +1535,7 @@ export default function ProposalPage() {
                                                             </div>
                                                             <div>
                                                                 <h3 className="font-heading text-sm sm:text-base font-extrabold text-black uppercase tracking-wider">
-                                                                    Start with <span className="text-[#EE2C2C]">Meetday AI</span>
+                                                                    Start with our <span className="text-[#EE2C2C]">AI Companion</span>
                                                                 </h3>
                                                                 <p className="text-[11px] sm:text-xs font-semibold text-black/65 mt-0.5">
                                                                     Describe your event in a few words — Copilot fills in the rest.
@@ -1572,7 +1572,7 @@ export default function ProposalPage() {
                                                             </div>
                                                             <div>
                                                                 <h3 className="font-heading text-sm font-extrabold text-black uppercase tracking-wider">
-                                                                    Meetday AI Copilot
+                                                                    Meetday AI Companion
                                                                 </h3>
                                                                 <p className="text-xs font-bold text-purple-700">
                                                                     Generate structure and fields from your description
