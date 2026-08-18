@@ -270,7 +270,6 @@ export default function DashboardWelcomePage() {
 						)}
 					</div>
 
-
 				</div>
 			</div>
 		</div>

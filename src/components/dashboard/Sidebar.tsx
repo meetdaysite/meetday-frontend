@@ -20,6 +20,8 @@ import TicketFillSvg from "@/icons/filled/ticket.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import BellSvg from "@/icons/outlined/bell.svg"
 import BellFillSvg from "@/icons/filled/bell.svg"
+import ChatOutSvg from "@/icons/outlined/chat.svg"
+import ChatFillSvg from "@/icons/filled/chat.svg"
 
 import WidgetSvg from "@/icons/filled/widget.svg"
 import CalendarFillSvg from "@/icons/filled/calendar.svg"
@@ -29,6 +31,7 @@ type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 const NAV_ITEMS_TOP = [
 	{ label: "Dashboard", href: "/community/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "My Sponsorships", href: "/community/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Chats", href: "/community/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "My Experiences", href: "/community/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg, disabled: true },
 ]
 
