@@ -93,12 +93,12 @@ export default function RootPage() {
 				</Link>
 				<nav className="flex items-center gap-3 sm:gap-6 md:gap-8">
 					<a 
-						href="https://meetday.ai" 
+						href="https://meetday.ai/website" 
 						target="_blank" 
 						rel="noopener noreferrer" 
 						className="text-black font-semibold text-xs sm:text-sm hover:text-[#EE2C2C] transition-colors"
 					>
-						Our Story
+						Meetday's Story
 					</a>
 					<a 
 						href="mailto:info@meetday.ai"
