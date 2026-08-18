@@ -11,6 +11,7 @@ import type { DisplayEventStatus } from "@/types/event"
 import { formatEventDateRange } from "@/lib/eventForm"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { getProposals, type StoredProposal } from "./proposal/page"
+import { getHostCommunityProfile } from "@/lib/api"
 
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
@@ -33,6 +34,24 @@ export default function DashboardWelcomePage() {
 
 	const [proposals, setProposals] = useState<StoredProposal[]>([])
 	const [loadingProposals, setLoadingProposals] = useState(true)
+	const [hasCommunityProfile, setHasCommunityProfile] = useState<boolean>(false)
+	const [loadingCommunity, setLoadingCommunity] = useState(true)
+
+	useEffect(() => {
+		if (profile?.id) {
+			setLoadingCommunity(true)
+			getHostCommunityProfile()
+				.then((res) => {
+					setHasCommunityProfile(!!res)
+				})
+				.catch(() => {
+					setHasCommunityProfile(false)
+				})
+				.finally(() => {
+					setLoadingCommunity(false)
+				})
+		}
+	}, [profile?.id])
 
 	useEffect(() => {
 		fetchDashboard()
@@ -103,27 +122,36 @@ export default function DashboardWelcomePage() {
 						</Link>
 					</div>
 
-					{/* CTA 2: Host an Experience */}
+					{/* CTA 2: Community Profile */}
 					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
 						<div className="flex items-center justify-between w-full mb-4">
 							<h2 className="text-lg font-heading font-black text-black">
-								Host an experience
+								{loadingCommunity ? "Community Profile" : hasCommunityProfile ? "View Community Profile" : "Create Community Profile"}
 							</h2>
-							<span className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
-								COMING SOON
+							<span className={`text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse ${
+								loadingCommunity 
+									? "bg-[#6C32D1] text-white" 
+									: hasCommunityProfile 
+										? "bg-green-500 text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" 
+										: "bg-[#EE2C2C] text-white border border-black"
+							}`}>
+								{loadingCommunity ? "LOADING" : hasCommunityProfile ? "ACTIVE" : "INCOMPLETE"}
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
-							Set up ticket types, dates, venue details, and invite your community to a brand new unforgettable experience.
+							{loadingCommunity 
+								? "Checking your community profile status..." 
+								: hasCommunityProfile 
+									? "Manage and update your community profile, showcase your achievements, and let sponsors know about your reach." 
+									: "Set up your community profile, describe your focus, location, members and start onboarding sponsors to your community."}
 						</p>
-						<button
-							type="button"
-							onClick={() => toast.info("Hosting experiences is coming soon — stay tuned!")}
-							className="w-full py-3 bg-black/10 text-black/40 border-[3px] border-black/20 rounded-2xl font-black text-center text-xs tracking-wider cursor-not-allowed flex items-center justify-center gap-2 select-none"
+						<Link
+							href="/community/dashboard/profile?open=community"
+							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
 						>
-							LIST EXPERIENCE
+							{hasCommunityProfile ? "VIEW COMMUNITY PROFILE" : "CREATE COMMUNITY PROFILE"}
 							<span className="text-base font-bold">➔</span>
-						</button>
+						</Link>
 					</div>
 				</div>
 

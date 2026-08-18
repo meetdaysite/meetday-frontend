@@ -210,3 +210,9 @@ body {
 body:has(aside) [data-sonner-toaster] {
 	display: none !important;
 }
+
+/* AI icon pulse — zoom in/out to grab attention */
+@keyframes aiIconPulse {
+	0%, 100% { transform: scale(1); }
+	50% { transform: scale(1.15); }
+}

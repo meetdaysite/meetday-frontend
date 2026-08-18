@@ -38,6 +38,8 @@ import UploadSvg from "@/icons/outlined/upload.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
 import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
+import AiAvatarSvg from "@/assets/ai-avatar.svg"
+import MagicStickSvg from "@/icons/duotone/magic-stick-3.svg"
 
 export interface SponsorPrice {
     name: string
@@ -211,6 +213,28 @@ export default function ProposalPage() {
     const [proposalCopilotOpen, setProposalCopilotOpen] = useState(false)
     const [proposalCopilotPrompt, setProposalCopilotPrompt] = useState("")
     const [proposalCopilotLoading, setProposalCopilotLoading] = useState(false)
+    const [loadingMessageIndex, setLoadingMessageIndex] = useState(0)
+
+    const loadingMessages = useMemo(() => [
+        "Meetday is cooking... 🍳",
+        "Spicing up the proposal details... 🌶️",
+        "Whipping up the target audience profile... 📊",
+        "Simmering the numbers and sponsor tiers... 💰",
+        "Adding the secret sauce to the pitch... 🍯",
+        "Plating the perfect proposal... 🍽️",
+        "Garnishing with final touches... ✨"
+    ], [])
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout
+        if (proposalCopilotLoading) {
+            setLoadingMessageIndex(0)
+            interval = setInterval(() => {
+                setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length)
+            }, 2000)
+        }
+        return () => clearInterval(interval)
+    }, [proposalCopilotLoading, loadingMessages])
     const projImageInputRef = useRef<HTMLInputElement>(null)
     const projDocInputRef = useRef<HTMLInputElement>(null)
     const updateDocInputRef = useRef<HTMLInputElement>(null)
@@ -1499,56 +1523,99 @@ export default function ProposalPage() {
                                     <form onSubmit={handleProposalSubmit} className="border-[3px] border-dashed border-black/30 rounded-[28px] p-6 bg-white flex flex-col gap-6 w-full">
                                         {/* AI assist */}
                                         {!selectedProposal && (
-                                            <div className="rounded-2xl border-[3px] border-dashed border-black/20 p-4 bg-slate-50/60">
+                                            <div className="w-full">
                                                 {!proposalCopilotOpen ? (
-                                                    <button
-                                                        type="button"
+                                                    <div
                                                         onClick={() => setProposalCopilotOpen(true)}
-                                                        className="flex w-full items-center gap-2 text-xs font-bold text-black hover:underline text-left cursor-pointer"
+                                                        className="group border-[3px] border-black bg-purple-100 hover:bg-purple-200 p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer flex flex-col md:flex-row items-center justify-between gap-4 select-none"
                                                     >
-                                                        ✨ Start with Meetday AI
-                                                    </button>
-                                                ) : (
-                                                    <div className="flex flex-col gap-2">
-                                                        <label className="text-xs font-bold text-black">
-                                                            Describe your sponsorship opportunity
-                                                        </label>
-                                                        <textarea
-                                                            value={proposalCopilotPrompt}
-                                                            onChange={(e) => setProposalCopilotPrompt(e.target.value)}
-                                                            placeholder="e.g. We run a monthly rooftop networking meetup for startup founders in Bangalore, around 200 people attend each time."
-                                                            rows={3}
-                                                            disabled={proposalCopilotLoading}
-                                                            className="px-4 py-2.5 rounded-xl border border-black/10 bg-white text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none disabled:opacity-50"
-                                                        />
-                                                        <div className="flex items-center gap-2 justify-between">
-                                                            <p className="text-[11px] text-black/50">
-                                                                {proposalCopilotPrompt.trim().length < 10
-                                                                    ? "Write a few more words, then let Meetday think it through."
-                                                                    : proposalCopilotLoading
-                                                                        ? "Meetday is thinking…"
-                                                                        : "Ready — click below when you're done writing."}
+                                                        <div className="flex items-center gap-4 text-left">
+                                                            <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-[#EE2C2C] text-white shrink-0 transition-transform duration-300 p-2" style={{ animation: 'aiIconPulse 2s ease-in-out infinite' }}>
+                                                                <Icon as={AiAvatarSvg} size="2xl" color="inherit" className="w-full h-full" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="font-heading text-sm sm:text-base font-extrabold text-black uppercase tracking-wider">
+                                                                    Start with <span className="text-[#EE2C2C]">Meetday AI</span>
+                                                                </h3>
+                                                                <p className="text-[11px] sm:text-xs font-semibold text-black/65 mt-0.5">
+                                                                    Describe your event in a few words — Copilot fills in the rest.
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 bg-black text-white text-sm font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black group-hover:bg-[#EE2C2C] transition-colors duration-200 shrink-0">
+                                                            <Icon as={MagicStickSvg} size="sm" color="inherit" />
+                                                            Draft with AI
+                                                        </div>
+                                                    </div>
+                                                ) : proposalCopilotLoading ? (
+                                                    <div className="border-[3px] border-black bg-purple-100 p-8 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center justify-center gap-5 text-center min-h-[180px]">
+                                                        <div className="relative flex items-center justify-center h-16 w-16">
+                                                            <div className="absolute inset-0 rounded-full border-4 border-dashed border-[#EE2C2C]/40 animate-spin" style={{ animationDuration: '4s' }} />
+                                                            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-[#EE2C2C] text-white p-2">
+                                                                <Icon as={AiAvatarSvg} size="xl" color="inherit" className="w-full h-full" />
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex flex-col gap-1.5">
+                                                            <h4 className="font-heading text-lg font-black text-black tracking-wide">
+                                                                {loadingMessages[loadingMessageIndex]}
+                                                            </h4>
+                                                            <p className="text-sm text-purple-700 font-bold tracking-tight">
+                                                                Whipping up pricing tiers, target audiences, and descriptions...
                                                             </p>
-                                                            <div className="flex items-center gap-2 shrink-0">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setProposalCopilotOpen(false)}
-                                                                    disabled={proposalCopilotLoading}
-                                                                    className="px-3 py-2 text-xs font-bold text-black/60 hover:text-black transition-colors disabled:opacity-50"
-                                                                >
-                                                                    Skip
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={handleGenerateProposalDraft}
-                                                                    disabled={proposalCopilotLoading || proposalCopilotPrompt.trim().length < 10}
-                                                                    className="flex items-center gap-2 bg-[#EE2C2C] text-white text-xs font-bold px-4 py-2 rounded-lg disabled:opacity-50 transition-all"
-                                                                >
-                                                                    {proposalCopilotLoading && (
-                                                                        <span className="h-3 w-3 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                                                                    )}
-                                                                    {proposalCopilotLoading ? "Meetday is thinking…" : "🤔 Let Meetday Think"}
-                                                                </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="border-[3px] border-black bg-purple-100 p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[#EE2C2C] text-white shrink-0 p-1.5">
+                                                                <Icon as={AiAvatarSvg} size="xl" color="inherit" className="w-full h-full" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="font-heading text-sm font-extrabold text-black uppercase tracking-wider">
+                                                                    Meetday AI Copilot
+                                                                </h3>
+                                                                <p className="text-xs font-bold text-purple-700">
+                                                                    Generate structure and fields from your description
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex flex-col gap-2">
+                                                            <label className="text-sm font-bold text-black">
+                                                                Describe your sponsorship opportunity
+                                                            </label>
+                                                            <textarea
+                                                                value={proposalCopilotPrompt}
+                                                                onChange={(e) => setProposalCopilotPrompt(e.target.value)}
+                                                                placeholder="e.g. We run a monthly rooftop networking meetup for startup founders in Bangalore, around 200 people attend each time."
+                                                                rows={3}
+                                                                disabled={proposalCopilotLoading}
+                                                                className="px-4 py-2.5 rounded-xl border-2 border-black/30 bg-white/80 text-black outline-none focus:border-black text-sm transition-colors resize-none disabled:opacity-50"
+                                                            />
+                                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between mt-1">
+                                                                <p className="text-xs font-bold text-black/60">
+                                                                    {proposalCopilotPrompt.trim().length < 20
+                                                                        ? "Write a bit more — at least 20 characters to continue."
+                                                                        : <span className="text-purple-700">Ready — click below when you&apos;re done writing.</span>}
+                                                                </p>
+                                                                <div className="flex items-center gap-2 self-end shrink-0">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setProposalCopilotOpen(false)}
+                                                                        disabled={proposalCopilotLoading}
+                                                                        className="px-3 py-2 text-sm font-black text-black/60 hover:text-black transition-colors disabled:opacity-50"
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={handleGenerateProposalDraft}
+                                                                        disabled={proposalCopilotLoading || proposalCopilotPrompt.trim().length < 20}
+                                                                        className="flex items-center gap-2 bg-black text-white text-sm font-black px-4 py-2.5 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#EE2C2C] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50 transition-all select-none"
+                                                                    >
+                                                                        <Icon as={MagicStickSvg} size="sm" color="inherit" />
+                                                                        Start Cooking
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
