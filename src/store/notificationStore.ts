@@ -2,6 +2,7 @@ import { create } from "zustand"
 import { auth } from "@/lib/firebase"
 import { showNotificationToast } from "@/components/ui/NotificationToast"
 import { notificationSocket } from "@/lib/notificationSocket"
+import { playMessageChime } from "@/lib/notificationSound"
 import {
 	getNotifications,
 	getUnreadCount,
@@ -11,6 +12,8 @@ import {
 import type { Notification } from "@/types/notification"
 
 const PAGE_LIMIT = 20
+// Notification types that represent an incoming chat message — these get a sound, not every notification.
+const CHAT_MESSAGE_NOTIFICATION_TYPES = new Set(["sponsorship_chat_message", "meetday_chat_message"])
 
 type NotificationStore = {
 	notifications: Notification[]
@@ -193,6 +196,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 			total: s.total + 1,
 		}))
 		showNotificationToast(notif)
+		if (CHAT_MESSAGE_NOTIFICATION_TYPES.has(notif.type)) playMessageChime()
 	},
 
 	reset: () => {
