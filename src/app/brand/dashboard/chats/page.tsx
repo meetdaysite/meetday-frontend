@@ -4,7 +4,9 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import clsx from "clsx"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
+import { Icon } from "@/components/ui/Icon"
 import { useBrandStore } from "@/store/brandStore"
+import { uploadSponsorshipChatImage } from "@/lib/uploadMedia"
 import {
 	getMySponsorshipChats,
 	getSponsorshipChatMessages,
@@ -12,6 +14,7 @@ import {
 	type SponsorshipChatThread,
 	type SponsorshipChatMessage,
 } from "@/lib/api"
+import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 
 const POLL_MS = 4000
 
@@ -113,7 +116,14 @@ export default function BrandChatsPage() {
 											<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
 											<span className="text-[10px] font-semibold text-black/30 shrink-0">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
 										</div>
-										<p className="text-[11px] font-semibold text-black/50 truncate mt-0.5">{t.proposalName}</p>
+										<div className="flex items-center justify-between gap-2 mt-0.5">
+											<p className="text-[11px] font-semibold text-black/50 truncate">{t.proposalName}</p>
+											{t.unreadCount > 0 && (
+												<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#EE2C2C] text-white text-[10px] font-black flex items-center justify-center">
+													{t.unreadCount > 9 ? "9+" : t.unreadCount}
+												</span>
+											)}
+										</div>
 										<p className={clsx("text-[11px] font-bold mt-1", t.chatStatus === "REQUESTED" ? "text-black/40" : "text-black/40")}>
 											{t.chatStatus === "REQUESTED" ? "Waiting for acceptance…" : (t.lastMessagePreview ?? "Chat open")}
 										</p>
@@ -146,7 +156,9 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	const [loading, setLoading] = useState(true)
 	const [input, setInput] = useState("")
 	const [sending, setSending] = useState(false)
+	const [uploadingImage, setUploadingImage] = useState(false)
 	const bottomRef = useRef<HTMLDivElement>(null)
+	const fileInputRef = useRef<HTMLInputElement>(null)
 
 	const load = useCallback(async () => {
 		try {
@@ -175,7 +187,7 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 		if (!input.trim()) return
 		setSending(true)
 		try {
-			const msg = await sendSponsorshipChatMessage(thread.id, input.trim())
+			const msg = await sendSponsorshipChatMessage(thread.id, { content: input.trim() })
 			setMessages(prev => [...prev, msg])
 			setInput("")
 			if (msg.wasRedacted) {
@@ -185,6 +197,26 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 			toast.error("Failed to send message.")
 		} finally {
 			setSending(false)
+		}
+	}
+
+	async function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0]
+		e.target.value = ""
+		if (!file) return
+		if (!file.type.startsWith("image/")) {
+			toast.error("Only image files can be sent.")
+			return
+		}
+		setUploadingImage(true)
+		try {
+			const mediaKey = await uploadSponsorshipChatImage(file, thread.id)
+			const msg = await sendSponsorshipChatMessage(thread.id, { mediaKey })
+			setMessages(prev => [...prev, msg])
+		} catch {
+			toast.error("Failed to send image.")
+		} finally {
+			setUploadingImage(false)
 		}
 	}
 
@@ -221,14 +253,25 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 								<span className="text-[10px] font-black uppercase tracking-wide text-black/30 mb-0.5 px-1">
 									{labelFor(m.senderType)}
 								</span>
-								<div
-									className={clsx(
-										"px-3.5 py-2 rounded-2xl text-sm font-semibold break-words",
-										isMine ? "bg-[#EE2C2C] text-white rounded-br-sm" : "bg-neutral-100 text-black rounded-bl-sm",
-									)}
-								>
-									{m.content}
-								</div>
+								{m.mediaUrl && (
+									/* eslint-disable-next-line @next/next/no-img-element */
+									<img
+										src={m.mediaUrl}
+										alt="Shared image"
+										onClick={() => window.open(m.mediaUrl!, "_blank")}
+										className="max-w-[220px] max-h-[220px] rounded-2xl border-[3px] border-black object-cover cursor-pointer mb-1"
+									/>
+								)}
+								{m.content && (
+									<div
+										className={clsx(
+											"px-3.5 py-2 rounded-2xl text-sm font-semibold break-words",
+											isMine ? "bg-[#EE2C2C] text-white rounded-br-sm" : "bg-neutral-100 text-black rounded-bl-sm",
+										)}
+									>
+										{m.content}
+									</div>
+								)}
 							</div>
 						)
 					})
@@ -238,6 +281,16 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 
 			{thread.chatStatus === "ACCEPTED" && (
 				<div className="p-3 border-t-[3px] border-black flex items-center gap-2 shrink-0">
+					<input type="file" accept="image/*" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
+					<button
+						type="button"
+						onClick={() => fileInputRef.current?.click()}
+						disabled={uploadingImage}
+						className="shrink-0 size-9 rounded-xl border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50"
+						aria-label="Attach image"
+					>
+						<Icon as={GallerySvg} size="sm" />
+					</button>
 					<input
 						value={input}
 						onChange={e => setInput(e.target.value)}
