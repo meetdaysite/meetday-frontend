@@ -25,6 +25,43 @@ if (typeof window !== "undefined") {
 	)
 }
 
+let meetdayVoice: SpeechSynthesisVoice | null = null
+
+function loadPreferredVoice() {
+	if (typeof window === "undefined" || !window.speechSynthesis) return
+	const voices = window.speechSynthesis.getVoices()
+	if (!voices.length) return
+	// Prefer a natural-sounding English voice — these tend to sound least robotic across browsers.
+	meetdayVoice =
+		voices.find(v => /Google US English|Google UK English Female|Samantha|Microsoft Zira|Microsoft David/i.test(v.name)) ??
+		voices.find(v => v.lang.startsWith("en")) ??
+		voices[0]
+}
+
+if (typeof window !== "undefined" && window.speechSynthesis) {
+	loadPreferredVoice()
+	// Voice list loads asynchronously in some browsers (esp. Chrome) — refresh once it's ready.
+	window.speechSynthesis.onvoiceschanged = loadPreferredVoice
+}
+
+/** Speaks "Meetday" aloud via the browser's built-in text-to-speech — no audio asset needed. */
+function speakMeetday() {
+	if (typeof window === "undefined" || !window.speechSynthesis) return
+	try {
+		if (!meetdayVoice) loadPreferredVoice()
+		// Cancel any queued utterance so rapid-fire messages don't stack up a backlog of "Meetday"s.
+		window.speechSynthesis.cancel()
+		const utterance = new SpeechSynthesisUtterance("Meetday")
+		if (meetdayVoice) utterance.voice = meetdayVoice
+		utterance.rate = 1
+		utterance.pitch = 1.05
+		utterance.volume = 0.85
+		window.speechSynthesis.speak(utterance)
+	} catch {
+		// speechSynthesis unsupported/blocked — silently skip, the tone chime still played.
+	}
+}
+
 function playTone(ctx: AudioContext, startTime: number, freq: number, duration: number) {
 	const oscillator = ctx.createOscillator()
 	const gain = ctx.createGain()
@@ -39,20 +76,23 @@ function playTone(ctx: AudioContext, startTime: number, freq: number, duration: 
 	oscillator.stop(startTime + duration)
 }
 
-/** Plays a short two-tone "new message" chime. Silently no-ops if audio isn't available/allowed yet. */
+/** Plays a short two-tone "new message" chime, then speaks "Meetday" — silently no-ops if audio isn't available/allowed yet. */
 export function playMessageChime() {
 	const ctx = getAudioContext()
-	if (!ctx) return
-	try {
-		if (ctx.state === "suspended") {
-			// Attempt resume then play regardless — most browsers allow this once any earlier
-			// interaction occurred on the page, even if it wasn't captured by our own listeners.
-			void ctx.resume()
+	if (ctx) {
+		try {
+			if (ctx.state === "suspended") {
+				// Attempt resume then play regardless — most browsers allow this once any earlier
+				// interaction occurred on the page, even if it wasn't captured by our own listeners.
+				void ctx.resume()
+			}
+			const now = ctx.currentTime
+			playTone(ctx, now, 880, 0.12)
+			playTone(ctx, now + 0.1, 1318.5, 0.16)
+		} catch {
+			// Autoplay blocked (no interaction yet this session) — silently skip the tone.
 		}
-		const now = ctx.currentTime
-		playTone(ctx, now, 880, 0.12)
-		playTone(ctx, now + 0.1, 1318.5, 0.16)
-	} catch {
-		// Autoplay blocked (no interaction yet this session) — silently skip.
 	}
+	// Slight delay so the spoken word starts right as the tones fade out, not overlapping them.
+	setTimeout(speakMeetday, 180)
 }
