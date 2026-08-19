@@ -269,6 +269,7 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	const [deal, setDeal] = useState<SponsorshipDeal | null>(null)
 	const [showDealModal, setShowDealModal] = useState(false)
 	const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
+	const [replyingTo, setReplyingTo] = useState<SponsorshipChatMessage | null>(null)
 	const [unreadDivider, setUnreadDivider] = useState<{ messageId: string; count: number } | null>(null)
 	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const dividerCapturedRef = useRef(false)
@@ -333,9 +334,10 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 		}
 		setSending(true)
 		try {
-			const msg = await sendSponsorshipChatMessage(thread.id, { content: input.trim() })
+			const msg = await sendSponsorshipChatMessage(thread.id, { content: input.trim(), replyToId: replyingTo?.id })
 			setMessages(prev => [...prev, msg])
 			setInput("")
+			setReplyingTo(null)
 			if (msg.wasRedacted) {
 				toast.warning("Phone numbers, emails, and IDs aren't allowed here — we've masked them in your message to keep things safe.")
 			}
@@ -347,6 +349,7 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	}
 
 	function handleEditStart(m: SponsorshipChatMessage) {
+		setReplyingTo(null)
 		setEditingMessageId(m.id)
 		setInput(m.content)
 	}
@@ -354,6 +357,15 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	function handleEditCancel() {
 		setEditingMessageId(null)
 		setInput("")
+	}
+
+	function handleReplyStart(m: SponsorshipChatMessage) {
+		handleEditCancel()
+		setReplyingTo(m)
+	}
+
+	function handleReplyCancel() {
+		setReplyingTo(null)
 	}
 
 	async function handleDelete(m: SponsorshipChatMessage) {
@@ -378,8 +390,9 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 		setUploadingImage(true)
 		try {
 			const mediaKey = await uploadSponsorshipChatImage(file, thread.id)
-			const msg = await sendSponsorshipChatMessage(thread.id, { mediaKey })
+			const msg = await sendSponsorshipChatMessage(thread.id, { mediaKey, replyToId: replyingTo?.id })
 			setMessages(prev => [...prev, msg])
+			setReplyingTo(null)
 		} catch {
 			toast.error("Failed to send image.")
 		} finally {
@@ -391,6 +404,17 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 		if (senderType === "BRAND") return `${ownName} • Brand`
 		if (senderType === "HOST") return `${thread.counterpartName} • Community`
 		return "Meetday • Admin"
+	}
+
+	function replySnippet(replyTo: SponsorshipChatMessage["replyTo"]) {
+		if (!replyTo) return ""
+		return replyTo.content?.trim() ? replyTo.content : replyTo.hasMedia ? "\ud83d\udcf7 Photo" : ""
+	}
+
+	function replyLabel(senderType: SponsorshipChatMessage["senderType"]) {
+		if (senderType === "BRAND") return ownName
+		if (senderType === "HOST") return thread.counterpartName
+		return "Meetday"
 	}
 
 	return (
@@ -456,6 +480,11 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 								<div className={clsx("flex flex-col max-w-[75%]", isMine ? "self-end items-end" : "self-start items-start")}>
 									<div className="flex items-center gap-2 mb-0.5 px-1">
 										<span className="text-[10px] font-black uppercase tracking-wide text-black/30">{labelFor(m.senderType)}</span>
+										{!isDeleted && (
+											<button type="button" onClick={() => handleReplyStart(m)} className="text-[10px] font-bold text-black/30 hover:text-black">
+												Reply
+											</button>
+										)}
 										{isMine && !isDeleted && (
 											<>
 												<button type="button" onClick={() => handleEditStart(m)} className="text-[10px] font-bold text-black/30 hover:text-black">
@@ -473,6 +502,12 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 										</div>
 									) : (
 										<>
+											{m.replyTo && (
+												<div className="mb-1 pl-2 border-l-2 border-black/20 max-w-[220px]">
+													<p className="text-[9px] font-black uppercase text-black/40">{replyLabel(m.replyTo.senderType)}</p>
+													<p className="text-[11px] font-semibold text-black/50 truncate">{replySnippet(m.replyTo)}</p>
+												</div>
+											)}
 											{m.mediaUrl && (
 												/* eslint-disable-next-line @next/next/no-img-element */
 												<img
@@ -530,6 +565,15 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 						<div className="px-3 pt-2 flex items-center justify-between">
 							<span className="text-[10px] font-black uppercase text-black/40">Editing message</span>
 							<button type="button" onClick={handleEditCancel} className="text-[10px] font-bold text-[#EE2C2C]">Cancel</button>
+						</div>
+					)}
+					{replyingTo && !editingMessageId && (
+						<div className="px-3 pt-2 flex items-center justify-between gap-2">
+							<div className="min-w-0 pl-2 border-l-2 border-[#EE2C2C]">
+								<p className="text-[10px] font-black uppercase text-black/40">Replying to {replyLabel(replyingTo.senderType)}</p>
+								<p className="text-[11px] font-semibold text-black/50 truncate">{replyingTo.content?.trim() ? replyingTo.content : (replyingTo.mediaUrl ? "Photo" : "")}</p>
+							</div>
+							<button type="button" onClick={handleReplyCancel} className="text-[10px] font-bold text-[#EE2C2C] shrink-0">Cancel</button>
 						</div>
 					)}
 					<div className="p-3 flex items-center gap-2">
