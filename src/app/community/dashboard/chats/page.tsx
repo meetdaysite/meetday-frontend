@@ -197,6 +197,9 @@ function ChatThreadPanel({
 			const msg = await sendSponsorshipChatMessage(thread.id, input.trim())
 			setMessages(prev => [...prev, msg])
 			setInput("")
+			if (msg.wasRedacted) {
+				toast.warning("Phone numbers and emails aren't allowed here — we removed it from your message to keep things professional.")
+			}
 		} catch {
 			toast.error("Failed to send message.")
 		} finally {

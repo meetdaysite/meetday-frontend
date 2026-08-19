@@ -753,6 +753,7 @@ export type SponsorshipChatMessage = {
 	senderId: string
 	content: string
 	createdAt: string
+	wasRedacted?: boolean
 }
 
 export async function getMySponsorshipChats(status?: SponsorshipChatStatus): Promise<SponsorshipChatThread[]> {
