@@ -239,14 +239,14 @@ export default function RootPage() {
 						</div>
 						
 						<p className="mt-2 md:mt-4 text-black font-semibold text-center text-[9px] sm:text-sm md:text-base leading-relaxed flex-grow max-w-sm">
-							Create experiences, pitch sponsorship proposals, and turn your community into a sustainable business.
+							Publish proposals, get discovered by top brands, and lock sponsorship deals instantly.
 						</p>
 						
 						<Link 
 							href="/community"
 							className="w-full mt-3 md:mt-5 py-2 md:py-3.5 bg-[#EE2C2C] text-white border-[2px] md:border-[3px] border-black rounded-xl md:rounded-2xl font-bold text-center text-xs md:text-base shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
 						>
-							Community | Host
+							Community
 						</Link>
 					</div>
 
@@ -266,14 +266,14 @@ export default function RootPage() {
 						</div>
 						
 						<p className="mt-2 md:mt-4 text-black font-semibold text-center text-[9px] sm:text-sm md:text-base leading-relaxed flex-grow max-w-sm">
-							Launch campaigns and tap into active IRL communities to market and distribute your products.
+							Publish campaigns, discover verified offline communities, and close partnerships in one workspace.
 						</p>
 						
 						<Link
 							href="/brand"
 							className="w-full mt-3 md:mt-5 py-2 md:py-3.5 bg-[#EE2C2C] text-white border-[2px] md:border-[3px] border-black rounded-xl md:rounded-2xl font-bold text-center text-xs md:text-base shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
 						>
-							Brand | Agency
+							Brand
 						</Link>
 					</div>
 				</div>
