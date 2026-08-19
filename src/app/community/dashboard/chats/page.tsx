@@ -22,6 +22,7 @@ import {
 import { DealBanner, DealFormModal, DealDetailsModal } from "@/components/sponsorship/DealPanel"
 import { MeetdayChatPanel } from "@/components/support/MeetdayChatPanel"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
+import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 import { useNotificationStore } from "@/store/notificationStore"
 
@@ -617,6 +618,7 @@ function ChatThreadPanel({
 						>
 							<Icon as={GallerySvg} size="sm" />
 						</button>
+						<EmojiPicker onSelect={emoji => setInput(prev => prev + emoji)} />
 						<input
 							value={input}
 							onChange={e => setInput(e.target.value)}

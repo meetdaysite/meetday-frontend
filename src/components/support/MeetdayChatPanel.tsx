@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/Icon"
 import { uploadMeetdayChatImage } from "@/lib/uploadMedia"
 import { getMyMeetdayChat, sendMeetdayChatMessage, type MeetdayChatMessage } from "@/lib/api"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
+import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 
 const POLL_MS = 4000
@@ -163,6 +164,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 				>
 					<Icon as={GallerySvg} size="sm" />
 				</button>
+				<EmojiPicker onSelect={emoji => setInput(prev => prev + emoji)} />
 				<input
 					value={input}
 					onChange={e => setInput(e.target.value)}
