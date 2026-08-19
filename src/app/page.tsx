@@ -80,7 +80,7 @@ export default function RootPage() {
 		<div className="relative min-h-screen bg-[#FFFDF9] flex flex-col font-sans overflow-x-hidden selection:bg-[#EE2C2C] selection:text-white">
 			
 			{/* Top Header */}
-			<header className="relative z-30 w-full max-w-7xl mx-auto px-6 md:px-12 py-6 flex items-center justify-between">
+			<header className="relative z-30 w-full px-6 md:px-16 lg:px-24 py-3 md:py-4 flex items-center justify-between">
 				<Link href="/" className="flex items-center gap-2">
 					<Image 
 						src="/assets/brand_logo.svg" 
@@ -110,7 +110,7 @@ export default function RootPage() {
 			</header>
 
 			{/* Main Content Area */}
-			<main className="relative flex-1 flex flex-col items-center justify-start pt-4 md:pt-6 pb-0">
+			<main className="relative flex-1 flex flex-col items-center justify-start pt-2 md:pt-3 pb-0">
 				
 				{/* Scattered Speech Bubbles (Visible on desktop/tablet) */}
 				{/* Left Side Bubbles */}
@@ -216,12 +216,12 @@ export default function RootPage() {
 					</h1>
 				</div>
 
-				<p className="mt-4 text-black/80 text-sm sm:text-lg md:text-xl font-medium leading-relaxed max-w-2xl font-sans text-center z-10 px-8 sm:px-0">
+				<p className="mt-2 text-black/80 text-sm sm:text-lg md:text-xl font-medium leading-relaxed max-w-2xl font-sans text-center z-10 px-8 sm:px-0">
 					Whether you’re looking <span className="inline-block hover:scale-125 transition-transform duration-200">👀</span> to <strong>market</strong> your products, <strong>monetize</strong> your IRL community, or explore how we’re building <span className="inline-block hover:scale-125 transition-transform duration-200">💪</span> the real-world social layer, you’re in the right place.
 				</p>
 
 				{/* Cards Container */}
-				<div className="w-full max-w-3xl px-3 sm:px-6 grid grid-cols-2 gap-3 md:gap-8 mt-8 md:mt-10 mb-12 z-20">
+				<div className="w-full max-w-3xl px-3 sm:px-6 grid grid-cols-2 gap-3 md:gap-8 mt-4 md:mt-5 mb-8 z-20">
 					
 					{/* Hosts Card */}
 					<div className="bg-white border-[2px] md:border-[4px] border-black rounded-[20px] md:rounded-[36px] p-2.5 md:p-5 flex flex-col items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
@@ -239,14 +239,14 @@ export default function RootPage() {
 						</div>
 						
 						<p className="mt-2 md:mt-4 text-black font-semibold text-center text-[9px] sm:text-sm md:text-base leading-relaxed flex-grow max-w-sm">
-							Create experiences, pitch sponsorship proposals, and turn your community into a sustainable business.
+							Publish proposals, get discovered by top brands, and lock sponsorship deals instantly.
 						</p>
 						
 						<Link 
 							href="/community"
 							className="w-full mt-3 md:mt-5 py-2 md:py-3.5 bg-[#EE2C2C] text-white border-[2px] md:border-[3px] border-black rounded-xl md:rounded-2xl font-bold text-center text-xs md:text-base shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
 						>
-							Community | Host
+							Community
 						</Link>
 					</div>
 
@@ -266,14 +266,14 @@ export default function RootPage() {
 						</div>
 						
 						<p className="mt-2 md:mt-4 text-black font-semibold text-center text-[9px] sm:text-sm md:text-base leading-relaxed flex-grow max-w-sm">
-							Launch campaigns and tap into active IRL communities to market and distribute your products.
+							Publish campaigns, discover verified offline communities, and close partnerships in one workspace.
 						</p>
 						
 						<Link
 							href="/brand"
 							className="w-full mt-3 md:mt-5 py-2 md:py-3.5 bg-[#EE2C2C] text-white border-[2px] md:border-[3px] border-black rounded-xl md:rounded-2xl font-bold text-center text-xs md:text-base shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
 						>
-							Brand | Agency
+							Brand
 						</Link>
 					</div>
 				</div>
@@ -289,7 +289,7 @@ export default function RootPage() {
 							animation: marqueeRTL 14s linear infinite;
 							will-change: transform;
 						}
-						@media (max-width: 1300px) {
+						@media (max-width: 1024px) {
 							.desktop-bubbles {
 								display: none !important;
 							}
@@ -297,7 +297,7 @@ export default function RootPage() {
 								display: block !important;
 							}
 						}
-						@media (min-width: 1301px) {
+						@media (min-width: 1025px) {
 							.desktop-bubbles {
 								display: block !important;
 							}
@@ -356,25 +356,25 @@ export default function RootPage() {
 				<div className="absolute bottom-0 left-0 right-0 w-full overflow-hidden pointer-events-none z-0">
 					{/* Wavy curve boundary with dashed line stroke */}
 					<svg 
-						className="w-full h-auto min-h-[140px] block -mb-[2px]" 
+						className="w-full h-auto min-h-[90px] block -mb-[2px]" 
 						viewBox="0 0 1440 200" 
 						fill="none" 
 						xmlns="http://www.w3.org/2000/svg"
 						preserveAspectRatio="none"
 					>
 						<path 
-							d="M0,45 Q720,185 1440,45 L1440,200 L0,200 Z" 
+							d="M0,75 Q720,185 1440,75 L1440,200 L0,200 Z" 
 							fill="#EE2C2C" 
 						/>
 						<path 
-							d="M0,45 Q720,185 1440,45" 
+							d="M0,75 Q720,185 1440,75" 
 							stroke="black" 
 							strokeWidth="4" 
 							strokeDasharray="8 8" 
 						/>
 					</svg>
 					{/* Solid color fill for the rest of the bottom */}
-					<div className="bg-[#EE2C2C] h-16 w-full -mt-[2px]" />
+					<div className="bg-[#EE2C2C] h-6 w-full -mt-[2px]" />
 				</div>
 			</main>
 		</div>

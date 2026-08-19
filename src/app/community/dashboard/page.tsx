@@ -111,13 +111,13 @@ export default function DashboardWelcomePage() {
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
-							Create a professional proposal, connect with top brands, and secure funding for your upcoming events.
+							Build custom proposals, pitch relevant brand sponsors, and secure brand backing to scale your upcoming experiences.
 						</p>
 						<Link
 							href="/community/dashboard/proposal"
 							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
 						>
-							RAISE SPONSORSHIP
+							CREATE PROPOSAL
 							<span className="text-base font-bold">➔</span>
 						</Link>
 					</div>
@@ -126,7 +126,7 @@ export default function DashboardWelcomePage() {
 					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
 						<div className="flex items-center justify-between w-full mb-4">
 							<h2 className="text-lg font-heading font-black text-black">
-								{loadingCommunity ? "Community Profile" : hasCommunityProfile ? "View Community Profile" : "Create Community Profile"}
+								Community Profile
 							</h2>
 							<span className={`text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse ${
 								loadingCommunity 
@@ -139,17 +139,13 @@ export default function DashboardWelcomePage() {
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
-							{loadingCommunity 
-								? "Checking your community profile status..." 
-								: hasCommunityProfile 
-									? "Manage and update your community profile, showcase your achievements, and let sponsors know about your reach." 
-									: "Set up your community profile, describe your focus, location, members and start onboarding sponsors to your community."}
+							Update your public profile, past event highlights, and key achievements to stand out to brand partners.
 						</p>
 						<Link
 							href="/community/dashboard/profile?open=community"
 							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
 						>
-							{hasCommunityProfile ? "VIEW COMMUNITY PROFILE" : "CREATE COMMUNITY PROFILE"}
+							MANAGE PROFILE
 							<span className="text-base font-bold">➔</span>
 						</Link>
 					</div>
@@ -269,6 +265,7 @@ export default function DashboardWelcomePage() {
 							</div>
 						)}
 					</div>
+
 
 				</div>
 			</div>

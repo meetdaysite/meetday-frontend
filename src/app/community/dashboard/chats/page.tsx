@@ -26,6 +26,7 @@ import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { useChatTyping } from "@/hooks/useChatTyping"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 import { useNotificationStore } from "@/store/notificationStore"
+import confetti from "canvas-confetti"
 
 const POLL_MS = 4000
 
@@ -166,8 +167,7 @@ export default function CommunityChatsPage() {
 					{/* Thread list */}
 					<div className="w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col">
 						<div className="flex border-b-[3px] border-black">
-							{(["ACCEPTED", "MEETDAY", "REQUESTED"] as Segment[]).map(seg => {
-								const unreadCount = seg === "MEETDAY" ? getMeetdayUnreadCount() : 0;
+							{(["ACCEPTED", "REQUESTED"] as Segment[]).map(seg => {
 								return (
 									<button
 										key={seg}
@@ -177,17 +177,11 @@ export default function CommunityChatsPage() {
 											segment === seg ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
 										)}
 									>
-										{seg === "REQUESTED" ? "Requests" : seg === "ACCEPTED" ? "General" : "Meetday"}
-										{unreadCount > 0 && (
-											<span className="absolute top-1.5 right-1.5 shrink-0 min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[8px] font-black flex items-center justify-center border border-white">
-												{unreadCount > 9 ? "9+" : unreadCount}
-											</span>
-										)}
+										{seg === "REQUESTED" ? "Requests" : "General"}
 									</button>
 								);
 							})}
 						</div>
-						{segment !== "MEETDAY" ? (
 						<div className="flex-1 overflow-y-auto">
 							{loadingThreads ? (
 								<p className="text-xs font-semibold text-black/40 text-center py-8">Loading…</p>
@@ -248,21 +242,11 @@ export default function CommunityChatsPage() {
 							})
 							)}
 						</div>
-						) : (
-							<div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-neutral-50/50">
-								<p className="text-sm font-black text-black leading-snug">Welcome to Meetday Chat!</p>
-								<p className="text-xs font-semibold text-black/50 mt-2 leading-relaxed">
-									We are here to help you. Feel free to ask us anything or share feedback!
-								</p>
-							</div>
-						)}
 					</div>
 
 					{/* Thread detail */}
 					<div className="flex-1 min-h-0 flex flex-col">
-						{segment === "MEETDAY" ? (
-							<MeetdayChatPanel ownName={ownName} role="HOST" />
-						) : !selectedThread ? (
+						{!selectedThread ? (
 							<div className="flex-1 flex items-center justify-center text-sm font-semibold text-black/30">
 								Select a chat to view
 							</div>
@@ -300,6 +284,18 @@ function ChatThreadPanel({
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	const { typingSenderType, notifyTyping, notifyStopTyping } = useChatTyping(thread.id, "HOST")
+	const firedConfettiRef = useRef<string | null>(null)
+
+	useEffect(() => {
+		if (deal?.status === "APPROVED" && firedConfettiRef.current !== `${deal.id}-approved`) {
+			firedConfettiRef.current = `${deal.id}-approved`
+			confetti({
+				particleCount: 150,
+				spread: 80,
+				origin: { y: 0.6 }
+			})
+		}
+	}, [deal])
 
 	const load = useCallback(async () => {
 		try {

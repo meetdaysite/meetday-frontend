@@ -129,6 +129,33 @@ body {
 	-moz-osx-font-smoothing: grayscale;
 }
 
+@media (min-width: 1024px) {
+	html {
+		height: 100vh;
+		overflow: hidden;
+	}
+	body {
+		zoom: 0.8;
+		height: 125vh;
+		min-height: 125vh;
+		overflow: hidden;
+	}
+	.min-h-screen {
+		min-height: 125vh !important;
+		height: 125vh !important;
+	}
+	main .min-h-screen {
+		min-height: 100% !important;
+		height: 100% !important;
+	}
+	.h-\[calc\(100vh-2rem\)\] {
+		height: calc(125vh - 2.5rem) !important;
+	}
+	.h-\[calc\(100vh-240px\)\] {
+		height: calc(125vh - 300px) !important;
+	}
+}
+
 /* Thin scrollbars */
 * {
 	scrollbar-width: thin;

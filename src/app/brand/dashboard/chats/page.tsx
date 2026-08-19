@@ -25,10 +25,11 @@ import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { useChatTyping } from "@/hooks/useChatTyping"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 import { useNotificationStore } from "@/store/notificationStore"
+import confetti from "canvas-confetti"
 
 const POLL_MS = 4000
 
-type Tab = "ALL" | "ACCEPTED" | "MEETDAY"
+type Tab = "ALL" | "ACCEPTED"
 
 function timeAgo(iso: string | null) {
 	if (!iso) return ""
@@ -71,10 +72,6 @@ export default function BrandChatsPage() {
 	}, [notifications])
 
 	const loadThreads = useCallback(async (t: Tab) => {
-		if (t === "MEETDAY") {
-			setLoadingThreads(false)
-			return
-		}
 		try {
 			const data = await getMySponsorshipChats(t === "ACCEPTED" ? "ACCEPTED" : undefined)
 			const sorted = [...data].sort((a, b) => {
@@ -117,20 +114,7 @@ export default function BrandChatsPage() {
 		}
 	}, [selectedId, notifications, markRead])
 
-	useEffect(() => {
-		if (tab === "MEETDAY") {
-			const unreadSupportNotifs = notifications.filter(n => {
-				if (n.isRead) return false
-				if (n.title !== "Meetday") return false
-				const m = n.metadata || {}
-				const hasThread = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
-				return !hasThread
-			})
-			unreadSupportNotifs.forEach(n => {
-				markRead(n.id).catch(() => {})
-			})
-		}
-	}, [tab, notifications, markRead])
+
 
 	function handleTabChange(t: Tab) {
 		setTab(t)
@@ -158,8 +142,7 @@ export default function BrandChatsPage() {
 					{/* Thread list */}
 					<div className="w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col">
 						<div className="flex border-b-[3px] border-black">
-							{(["ALL", "MEETDAY", "ACCEPTED"] as Tab[]).map(t => {
-								const unreadCount = t === "MEETDAY" ? getMeetdayUnreadCount() : 0;
+							{(["ALL", "ACCEPTED"] as Tab[]).map(t => {
 								return (
 									<button
 										key={t}
@@ -169,17 +152,11 @@ export default function BrandChatsPage() {
 											tab === t ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
 										)}
 									>
-										{t === "ALL" ? "General" : t === "ACCEPTED" ? "Accepted" : "Meetday"}
-										{unreadCount > 0 && (
-											<span className="absolute top-1.5 right-1.5 shrink-0 min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[8px] font-black flex items-center justify-center border border-white">
-												{unreadCount > 9 ? "9+" : unreadCount}
-											</span>
-										)}
+										{t === "ALL" ? "General" : "Accepted"}
 									</button>
 								);
 							})}
 						</div>
-						{tab !== "MEETDAY" ? (
 						<div className="flex-1 overflow-y-auto">
 							{loadingThreads ? (
 								<p className="text-xs font-semibold text-black/40 text-center py-8">Loading…</p>
@@ -237,21 +214,11 @@ export default function BrandChatsPage() {
 							})
 							)}
 						</div>
-						) : (
-							<div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-neutral-50/50">
-								<p className="text-sm font-black text-black leading-snug">Welcome to Meetday Chat!</p>
-								<p className="text-xs font-semibold text-black/50 mt-2 leading-relaxed">
-									We are here to help you. Feel free to ask us anything or share feedback!
-								</p>
-							</div>
-						)}
 					</div>
 
 					{/* Thread detail */}
 					<div className="flex-1 min-h-0 flex flex-col">
-						{tab === "MEETDAY" ? (
-							<MeetdayChatPanel ownName={ownName} role="BRAND" />
-						) : !selectedThread ? (
+						{!selectedThread ? (
 							<div className="flex-1 flex items-center justify-center text-sm font-semibold text-black/30">
 								Select a chat to view
 							</div>
@@ -283,6 +250,18 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	const { typingSenderType, notifyTyping, notifyStopTyping } = useChatTyping(thread.id, "BRAND")
+	const firedConfettiRef = useRef<string | null>(null)
+
+	useEffect(() => {
+		if (deal?.status === "APPROVED" && firedConfettiRef.current !== `${deal.id}-approved`) {
+			firedConfettiRef.current = `${deal.id}-approved`
+			confetti({
+				particleCount: 150,
+				spread: 80,
+				origin: { y: 0.6 }
+			})
+		}
+	}, [deal])
 
 	const load = useCallback(async () => {
 		try {

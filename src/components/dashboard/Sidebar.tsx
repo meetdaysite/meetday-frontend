@@ -36,7 +36,7 @@ const NAV_ITEMS_TOP = [
 
 const NAV_ITEMS_BOTTOM = [
 	{ label: "Chats", href: "/community/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
-	{ label: "Support", href: "/community/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
+	{ label: "Support Chat", href: "/community/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
 	{ label: "Notifications", href: "/community/dashboard/messages", outlined: BellSvg, filled: BellFillSvg },
 ]
 

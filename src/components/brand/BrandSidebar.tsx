@@ -34,8 +34,8 @@ const PRIMARY_NAV: NavItem[] = [
 
 const SECONDARY_NAV: NavItem[] = [
 	{ label: "Chats", href: "/brand/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
+	{ label: "Support Chat", href: "/brand/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
 	{ label: "Notifications", href: "/brand/dashboard/notifications", outlined: BellSvg, filled: BellSvg },
-	{ label: "Support", href: "/brand/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
 ]
 
 function LogoutSvg(props: SVGProps<SVGSVGElement>) {
