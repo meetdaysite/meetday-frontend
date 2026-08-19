@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import clsx from "clsx"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
+import { useBrandStore } from "@/store/brandStore"
 import {
 	getMySponsorshipChats,
 	getSponsorshipChatMessages,
@@ -139,6 +140,8 @@ export default function BrandChatsPage() {
 }
 
 function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
+	const { profile } = useBrandStore()
+	const ownName = profile?.brandName || "You"
 	const [messages, setMessages] = useState<SponsorshipChatMessage[]>([])
 	const [loading, setLoading] = useState(true)
 	const [input, setInput] = useState("")
@@ -186,8 +189,8 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	}
 
 	function labelFor(senderType: SponsorshipChatMessage["senderType"]) {
-		if (senderType === "BRAND") return "Brand"
-		if (senderType === "HOST") return "Community"
+		if (senderType === "BRAND") return ownName
+		if (senderType === "HOST") return thread.counterpartName
 		return "Meetday"
 	}
 
