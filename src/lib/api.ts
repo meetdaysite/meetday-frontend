@@ -741,6 +741,20 @@ export type HostCommunityProfilePayload = {
 	experiencesPerYear: string
 	categoryIds: string[]
 	secondaryImageKey?: string
+	pastEvents?: PastEventPayload[]
+}
+
+export type PastEventPayload = {
+	name?: string
+	description?: string
+	imageKeys?: string[]
+}
+
+export type PastEvent = {
+	name: string | null
+	description: string | null
+	imageKeys: string[]
+	imageUrls: string[]
 }
 
 export type HostCommunityProfile = {
@@ -756,6 +770,7 @@ export type HostCommunityProfile = {
 	avgGuestCount: string
 	experiencesPerYear: string
 	categories: Category[]
+	pastEvents?: PastEvent[]
 	approvalStatus: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED"
 	adminRejectionRemark: string | null
 	pendingRevision?: Record<string, unknown> | null
@@ -1514,7 +1529,7 @@ export async function getCommunityAnnouncements(
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
-	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT"
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "COMMUNITY_PAST_EVENT_MEDIA"
 	contentType: string
 	resourceId?: string
 	mediaType?: string
