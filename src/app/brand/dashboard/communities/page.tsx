@@ -125,6 +125,7 @@ export default function BrandCommunitiesPage() {
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [isPosterEnlarged, setIsPosterEnlarged] = useState(false)
+	const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null)
 
 	useEffect(() => {
 		let cancelled = false
@@ -398,8 +399,56 @@ export default function BrandCommunitiesPage() {
 							</div>
 							</div>
 
+							{/* Past Events Section */}
+							{selectedCommunity.pastEvents && selectedCommunity.pastEvents.length > 0 && (
+								<div className="flex flex-col gap-4 mt-8">
+									<div className="flex items-center gap-2">
+										<h2 className="text-xl font-heading font-black text-black">Past Experiences</h2>
+										<span className="px-2 py-0.5 bg-[#FFC940] border-2 border-black text-black text-[10px] font-black uppercase rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+											{selectedCommunity.pastEvents.length} Event{selectedCommunity.pastEvents.length > 1 ? "s" : ""}
+										</span>
+									</div>
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+										{selectedCommunity.pastEvents.map((event, i) => (
+											<div key={i} className="border-[3px] border-black p-5 rounded-[28px] shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] bg-white flex flex-col gap-3 group/card hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
+												<div className="flex items-center justify-between gap-2 border-b-2 border-black border-dashed pb-2.5">
+													{event.name && <h3 className="font-heading font-black text-black text-base truncate">{event.name}</h3>}
+													<span className="text-[10px] font-black text-black/40 uppercase tracking-wider shrink-0 bg-slate-100 border border-black/10 px-2 py-0.5 rounded-md">
+														Event #{i + 1}
+													</span>
+												</div>
+												{event.description && (
+													<p className="text-sm font-semibold text-black/70 whitespace-pre-wrap leading-relaxed">
+														{event.description}
+													</p>
+												)}
+												{event.imageUrls && event.imageUrls.length > 0 && (
+													<div className="flex flex-wrap gap-3 mt-1.5">
+														{event.imageUrls.map((url, j) => (
+															<div 
+																key={j}
+																onClick={() => setEnlargedImageUrl(url)}
+																className="relative w-24 h-24 rounded-[16px] border-[2px] border-black overflow-hidden bg-slate-50 cursor-pointer shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[1px] hover:translate-x-[1px] transition-all duration-150 group/img"
+															>
+																{/* eslint-disable-next-line @next/next/no-img-element */}
+																<img 
+																	src={url} 
+																	alt={event.name || "Past Event Image"} 
+																	className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-200" 
+																/>
+																<div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors" />
+															</div>
+														))}
+													</div>
+												)}
+											</div>
+										))}
+									</div>
+								</div>
+							)}
+
 							{/* Active Proposals Section below */}
-							<div className="flex flex-col gap-4 mt-4">
+							<div className="flex flex-col gap-4 mt-6">
 								<h2 className="text-xl font-heading font-black text-black">Active Proposals</h2>
 								{activeProposals.length === 0 ? (
 									<div className="flex flex-col gap-6">
@@ -495,6 +544,36 @@ export default function BrandCommunitiesPage() {
 							<Image
 								src={selectedCommunity?.secondaryImageUrl || activeProposals[0].community?.secondaryImageUrl}
 								alt="Enlarged Community Poster"
+								fill
+								className="object-cover"
+								unoptimized
+							/>
+						</div>
+					</div>
+				</div>
+			)}
+			{/* Zoomed Event Image Modal */}
+			{enlargedImageUrl && (
+				<div 
+					onClick={() => setEnlargedImageUrl(null)}
+					className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150 cursor-zoom-out"
+				>
+					<div 
+						onClick={(e) => e.stopPropagation()}
+						className="relative max-w-2xl w-full bg-white border-[3px] border-black rounded-[28px] p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-3 items-start animate-in zoom-in-95 duration-150 cursor-default"
+					>
+						<button
+							onClick={() => setEnlargedImageUrl(null)}
+							className="absolute top-4 right-4 z-10 size-8 bg-white hover:bg-black/5 border-2 border-black rounded-full flex items-center justify-center text-black font-extrabold text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all active:translate-y-[1px]"
+							aria-label="Close enlarged image"
+						>
+							✕
+						</button>
+						<span className="text-xs font-bold text-black/50 uppercase tracking-wider">Event Image Preview</span>
+						<div className="relative w-full aspect-[16/10] rounded-[20px] border-2 border-black overflow-hidden bg-slate-50">
+							<Image
+								src={enlargedImageUrl}
+								alt="Enlarged Event Image"
 								fill
 								className="object-cover"
 								unoptimized

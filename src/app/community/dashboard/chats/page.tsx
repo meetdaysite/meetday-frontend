@@ -76,7 +76,12 @@ export default function CommunityChatsPage() {
 		try {
 			const data = await getMySponsorshipChats(seg)
 			console.log("[DEBUG community chats data]:", data)
-			setThreads(data)
+			const sorted = [...data].sort((a, b) => {
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+				return tB - tA
+			})
+			setThreads(sorted)
 		} catch {
 			// silent — polling refresh, don't spam toasts
 		} finally {

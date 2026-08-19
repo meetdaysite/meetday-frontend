@@ -41,7 +41,12 @@ export default function ProposalDetailPage() {
 		setIsLoading(true)
 		getPublishedSponsorshipDetail(params.id)
 			.then((data) => {
-				if (!cancelled) setProposal(data)
+				if (!cancelled) {
+					setProposal(data)
+					if (data.alreadyInterested) {
+						setIsInterested(true)
+					}
+				}
 			})
 			.catch((e) => {
 				if (!cancelled) setError(getApiErrorMessage(e))
@@ -112,11 +117,11 @@ export default function ProposalDetailPage() {
 									disabled={isInterested || isSubmittingInterest || brandProfile?.approvalStatus !== "APPROVED"}
 									onClick={handleInterested}
 									className={clsx(
-										"btn-pop py-3 px-6 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] hover:bg-[#EE2C2C] transition-all select-none whitespace-nowrap",
-										(isInterested || isSubmittingInterest || brandProfile?.approvalStatus !== "APPROVED") && "opacity-50 pointer-events-none"
+										"py-3 px-6 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider transition-all select-none whitespace-nowrap",
+										!isInterested && !isSubmittingInterest && brandProfile?.approvalStatus === "APPROVED" ? "btn-pop shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]" : "opacity-60 cursor-not-allowed"
 									)}
 								>
-									{isInterested ? "You're Interested ✓" : isSubmittingInterest ? "Sending…" : "I am Interested"}
+									{isInterested ? "Community Notified ✓" : isSubmittingInterest ? "Sending…" : "I am Interested"}
 								</button>
 								{brandProfile && brandProfile.approvalStatus !== "APPROVED" && (
 									<span className="block mt-2 text-[11px] font-black text-[#EE2C2C] uppercase tracking-wider text-right">

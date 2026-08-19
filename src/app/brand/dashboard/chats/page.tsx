@@ -74,7 +74,12 @@ export default function BrandChatsPage() {
 		}
 		try {
 			const data = await getMySponsorshipChats(t === "ACCEPTED" ? "ACCEPTED" : undefined)
-			setThreads(data)
+			const sorted = [...data].sort((a, b) => {
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+				return tB - tA
+			})
+			setThreads(sorted)
 		} catch {
 			// silent — polling refresh
 		} finally {

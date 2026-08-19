@@ -1644,7 +1644,7 @@ export default function ProposalPage() {
                                                 value={projAbout}
                                                 onChange={(e) => setProjAbout(e.target.value)}
                                                 placeholder="Describe your project's details, format, and goals..."
-                                                rows={3}
+                                                rows={15}
                                                 className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
                                             />
                                         </div>

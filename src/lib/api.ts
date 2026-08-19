@@ -254,6 +254,7 @@ export type BrandCommunity = {
 	categories: Category[]
 	secondaryImageKey?: string | null
 	secondaryImageUrl?: string | null
+	pastEvents?: PastEvent[]
 }
 
 export async function getBrandCommunities(): Promise<{ communities: BrandCommunity[]; total: number }> {
@@ -711,6 +712,7 @@ export type PublishedSponsorshipDetail = SponsorshipProposal & {
 		user: { firstName: string; lastName: string }
 	}
 	community: SponsorshipCommunityProfile | null
+	alreadyInterested?: boolean
 }
 
 export async function getPublishedSponsorshipDetail(id: string): Promise<PublishedSponsorshipDetail> {
