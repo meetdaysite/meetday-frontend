@@ -94,7 +94,7 @@ export default function BrandDashboardWelcomePage() {
 							href="/brand/dashboard/proposals"
 							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
 						>
-							BROWSE PROPOSALS
+							START EXPLORING
 							<span className="text-base font-bold">➔</span>
 						</Link>
 					</div>
