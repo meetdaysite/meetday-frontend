@@ -21,6 +21,7 @@ import {
 } from "@/lib/api"
 import { DealBanner, DealFormModal, DealDetailsModal } from "@/components/sponsorship/DealPanel"
 import { MeetdayChatPanel } from "@/components/support/MeetdayChatPanel"
+import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 import { useNotificationStore } from "@/store/notificationStore"
 
@@ -286,6 +287,7 @@ function ChatThreadPanel({
 	const [dealModal, setDealModal] = useState<"form" | "details" | null>(null)
 	const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
 	const [unreadDivider, setUnreadDivider] = useState<{ messageId: string; count: number } | null>(null)
+	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const dividerCapturedRef = useRef(false)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
@@ -506,7 +508,7 @@ function ChatThreadPanel({
 												<img
 													src={m.mediaUrl}
 													alt="Shared image"
-													onClick={() => window.open(m.mediaUrl!, "_blank")}
+													onClick={() => setViewingImage(m.mediaUrl!)}
 													className="max-w-[220px] max-h-[220px] rounded-2xl border-[3px] border-black object-cover cursor-pointer mb-1"
 												/>
 											)}
@@ -608,6 +610,7 @@ function ChatThreadPanel({
 					onUpdated={setDeal}
 				/>
 			)}
+			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
 		</div>
 	)
 }
