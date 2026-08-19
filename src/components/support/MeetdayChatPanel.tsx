@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import { uploadMeetdayChatImage } from "@/lib/uploadMedia"
 import { getMyMeetdayChat, sendMeetdayChatMessage, type MeetdayChatMessage } from "@/lib/api"
+import { ImageLightbox } from "@/components/ui/ImageLightbox"
+import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 
 const POLL_MS = 4000
@@ -19,6 +21,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 	const [input, setInput] = useState("")
 	const [sending, setSending] = useState(false)
 	const [uploadingImage, setUploadingImage] = useState(false)
+	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -110,7 +113,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 									<img
 										src={m.mediaUrl}
 										alt="Shared image"
-										onClick={() => window.open(m.mediaUrl!, "_blank")}
+										onClick={() => setViewingImage(m.mediaUrl!)}
 										className="max-w-[220px] max-h-[220px] rounded-2xl border-[3px] border-black object-cover cursor-pointer mb-1"
 									/>
 								)}
@@ -161,6 +164,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 				>
 					<Icon as={GallerySvg} size="sm" />
 				</button>
+				<EmojiPicker onSelect={emoji => setInput(prev => prev + emoji)} />
 				<input
 					value={input}
 					onChange={e => setInput(e.target.value)}
@@ -177,6 +181,8 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 					{sending ? "…" : "Send"}
 				</Button>
 			</div>
+
+			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
 		</div>
 	)
 }

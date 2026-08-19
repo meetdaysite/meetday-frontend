@@ -751,6 +751,13 @@ export type SponsorshipChatThread = {
 	unreadCount: number
 }
 
+export type SponsorshipChatReplyTo = {
+	id: string
+	senderType: ChatSenderType
+	content: string
+	hasMedia: boolean
+}
+
 export type SponsorshipChatMessage = {
 	id: string
 	senderType: ChatSenderType
@@ -765,6 +772,7 @@ export type SponsorshipChatMessage = {
 	wasRedacted?: boolean
 	hostReadAt?: string | null
 	brandReadAt?: string | null
+	replyTo?: SponsorshipChatReplyTo | null
 }
 
 export async function getMySponsorshipChats(status?: SponsorshipChatStatus): Promise<SponsorshipChatThread[]> {
@@ -787,7 +795,7 @@ export async function getSponsorshipChatMessages(
 
 export async function sendSponsorshipChatMessage(
 	interestId: string,
-	payload: { content?: string; mediaKey?: string },
+	payload: { content?: string; mediaKey?: string; replyToId?: string },
 ): Promise<SponsorshipChatMessage> {
 	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipChatMessage }>(
 		`/sponsorships/chats/${interestId}/messages`,
