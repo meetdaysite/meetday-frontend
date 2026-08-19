@@ -305,7 +305,7 @@ export async function registerHost(payload: RegisterPayload): Promise<void> {
 	await apiClient.post("/auth/register", payload)
 }
 
-// Brands are a separate, minimal account type on the backend \u2014 just contact identity + brand name.
+// Brands are a separate, minimal account type on the backend — just contact identity + brand name.
 export type BrandRegisterPayload = {
 	firstName: string
 	lastName: string
@@ -730,7 +730,7 @@ export async function markSponsorshipInterest(
 	return data.data
 }
 
-// ─── TriChat: Host \u2194 Brand (+ Admin) chat tied to a sponsorship interest ────────
+// ─── TriChat: Host ↔ Brand (+ Admin) chat tied to a sponsorship interest ────────
 
 export type SponsorshipChatStatus = "REQUESTED" | "ACCEPTED"
 export type ChatSenderType = "HOST" | "BRAND" | "ADMIN"
