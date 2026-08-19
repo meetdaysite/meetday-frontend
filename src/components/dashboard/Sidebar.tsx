@@ -8,7 +8,7 @@ import clsx from "clsx"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
-import { getHostCommunityProfile, getMySponsorshipProposals } from "@/lib/api"
+import { getHostCommunityProfile, getMySponsorshipProposals, getMySponsorshipChats } from "@/lib/api"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useToastStore } from "@/store/toastStore"
 import type { ComponentType, SVGProps } from "react"
@@ -31,11 +31,11 @@ type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 const NAV_ITEMS_TOP = [
 	{ label: "Dashboard", href: "/community/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "My Sponsorships", href: "/community/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
-	{ label: "Chats", href: "/community/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "My Experiences", href: "/community/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg, disabled: true },
 ]
 
 const NAV_ITEMS_BOTTOM = [
+	{ label: "Chats", href: "/community/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Support", href: "/community/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
 	{ label: "Notifications", href: "/community/dashboard/messages", outlined: BellSvg, filled: BellFillSvg },
 ]
@@ -55,6 +55,9 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const [community, setCommunity] = useState<any>(null)
 	const [proposals, setProposals] = useState<any[]>([])
 	const [dismissedList, setDismissedList] = useState<any[]>([])
+	const [unreadChatsCount, setUnreadChatsCount] = useState(0)
+	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
+	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
 
 	useEffect(() => {
 		if (profile?.id) {
@@ -66,8 +69,28 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 				.catch(() => {})
 		}
 	}, [profile?.id])
-	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
-	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
+
+	useEffect(() => {
+		if (!profile?.id) return
+
+		const updateCount = () => {
+			Promise.all([
+				getMySponsorshipChats("ACCEPTED").catch(err => { console.error("accepted error:", err); return [] }),
+				getMySponsorshipChats("REQUESTED").catch(err => { console.error("requested error:", err); return [] }),
+			]).then(([accepted, requested]) => {
+				const count1 = accepted.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+				const count2 = requested.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+				const supportUnread = notifications.filter(n => !n.isRead && n.title === "Meetday" && !n.metadata?.threadId && !n.metadata?.interestId).length
+				const total = count1 + count2 + supportUnread
+				console.log("[sidebar:chats] accepted unread:", count1, "requested unread:", count2, "support unread:", supportUnread, "total:", total)
+				setUnreadChatsCount(total)
+			}).catch(err => console.error("Promise.all error:", err))
+		}
+
+		updateCount()
+		const interval = setInterval(updateCount, 8000)
+		return () => clearInterval(interval)
+	}, [profile?.id, notifications])
 
 	useEffect(() => {
 		initNotifs()
@@ -358,6 +381,11 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 								)}
 							</div>
 							<span className="flex-1">{label}</span>
+							{label === "Chats" && unreadChatsCount > 0 && (
+								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+									{unreadChatsCount > 9 ? "9+" : unreadChatsCount}
+								</span>
+							)}
 						</Link>
 					)
 				})}

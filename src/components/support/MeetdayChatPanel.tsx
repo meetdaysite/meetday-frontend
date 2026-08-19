@@ -13,7 +13,7 @@ const POLL_MS = 4000
 
 // Single persistent support chat with the Meetday team — one thread per user, no thread list
 // needed (unlike TriChat). Shared by both the host and brand chat pages.
-export function MeetdayChatPanel({ ownName }: { ownName: string }) {
+export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HOST" | "BRAND" }) {
 	const [messages, setMessages] = useState<MeetdayChatMessage[]>([])
 	const [loading, setLoading] = useState(true)
 	const [input, setInput] = useState("")
@@ -97,10 +97,13 @@ export function MeetdayChatPanel({ ownName }: { ownName: string }) {
 				) : (
 					messages.map(m => {
 						const isMine = m.senderType === "USER"
+						const senderLabel = isMine 
+							? (role === "HOST" ? `${ownName} • Community` : `${ownName} • Brand`)
+							: "Meetday • Admin"
 						return (
 							<div key={m.id} className={clsx("flex flex-col max-w-[75%]", isMine ? "self-end items-end" : "self-start items-start")}>
 								<span className="text-[10px] font-black uppercase tracking-wide text-black/30 mb-0.5 px-1">
-									{isMine ? ownName : "Meetday"}
+									{senderLabel}
 								</span>
 								{m.mediaUrl && (
 									/* eslint-disable-next-line @next/next/no-img-element */
@@ -114,11 +117,30 @@ export function MeetdayChatPanel({ ownName }: { ownName: string }) {
 								{m.content && (
 									<div
 										className={clsx(
-											"px-3.5 py-2 rounded-2xl text-sm font-semibold break-words",
-											isMine ? "bg-[#EE2C2C] text-white rounded-br-sm" : "bg-neutral-100 text-black rounded-bl-sm",
+											"px-3.5 py-2 rounded-2xl text-sm font-semibold break-words border border-black/10",
+											isMine ? (role === "BRAND" ? "bg-[#EE2C2C] text-white" : "bg-[#FFC940] text-black") : "bg-neutral-100 text-black",
+											isMine ? "rounded-br-sm" : "rounded-bl-sm",
 										)}
 									>
 										{m.content}
+									</div>
+								)}
+								{(m.content || m.mediaUrl) && (
+									<div className={clsx("flex items-center gap-1 mt-0.5 text-[9px] font-bold text-black/40 px-1", isMine ? "justify-end" : "justify-start")}>
+										<span>
+											{(() => {
+												try {
+													return new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+												} catch {
+													return ""
+												}
+											})()}
+										</span>
+										{m.senderType === "USER" && (
+											<span className="text-[10px] leading-none font-bold text-gray-400">
+												✓✓
+											</span>
+										)}
 									</div>
 								)}
 							</div>

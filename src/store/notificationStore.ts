@@ -31,6 +31,7 @@ type NotificationStore = {
 }
 
 let visibilityHandler: (() => void) | null = null
+let pollInterval: NodeJS.Timeout | null = null
 
 export const useNotificationStore = create<NotificationStore>((set, get) => ({
 	notifications: [],
@@ -91,6 +92,30 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 			if (document.visibilityState === "visible") get().refreshUnreadCount()
 		}
 		document.addEventListener("visibilitychange", visibilityHandler)
+
+		// Set up fallback polling interval for loading notifications automatically
+		if (pollInterval) {
+			clearInterval(pollInterval)
+		}
+		pollInterval = setInterval(async () => {
+			try {
+				const res = await getNotifications({ page: 1, limit: PAGE_LIMIT })
+				// Merge or overwrite page 1
+				set((s) => {
+					// Merge local state with fresh data (preserving any read/unread mutations done in current session)
+					const merged = [...res.notifications]
+					// Filter out elements already handled
+					return {
+						notifications: merged,
+						unreadCount: res.unreadCount,
+						total: res.total,
+						hasMore: merged.length < res.total,
+					}
+				})
+			} catch {
+				// silent fallback
+			}
+		}, 8000)
 	},
 
 	loadMore: async () => {
@@ -175,6 +200,10 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 		if (visibilityHandler) {
 			document.removeEventListener("visibilitychange", visibilityHandler)
 			visibilityHandler = null
+		}
+		if (pollInterval) {
+			clearInterval(pollInterval)
+			pollInterval = null
 		}
 		set({
 			notifications: [],

@@ -7,7 +7,9 @@ import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import { useBrandStore } from "@/store/brandStore"
 import { useToastStore } from "@/store/toastStore"
-import type { ComponentType, SVGProps } from "react"
+import { useState, useEffect, type ComponentType, type SVGProps } from "react"
+import { getMySponsorshipChats } from "@/lib/api"
+import { useNotificationStore } from "@/store/notificationStore"
 
 import UserSvg from "@/icons/outlined/user.svg"
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
@@ -28,10 +30,10 @@ const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
 	{ label: "Proposals", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
-	{ label: "Chats", href: "/brand/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
 ]
 
 const SECONDARY_NAV: NavItem[] = [
+	{ label: "Chats", href: "/brand/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Notifications", href: "/brand/dashboard/notifications", outlined: BellSvg, filled: BellSvg },
 	{ label: "Support", href: "/brand/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
 ]
@@ -62,6 +64,33 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 	const { toasts, removeToast } = useToastStore()
 	const brandName = profile?.brandName || "Brand"
 	const avatarUrl = profile?.logoUrl
+	const [unreadChatsCount, setUnreadChatsCount] = useState(0)
+
+	const { notifications, init: initNotifs } = useNotificationStore()
+
+	useEffect(() => {
+		initNotifs()
+	}, [initNotifs])
+
+	useEffect(() => {
+		if (!profile?.id) return
+
+		const updateCount = () => {
+			getMySponsorshipChats()
+				.then(chats => {
+					if (Array.isArray(chats)) {
+						const count = chats.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+						const supportUnread = notifications.filter(n => !n.isRead && n.title === "Meetday" && !n.metadata?.threadId && !n.metadata?.interestId).length
+						setUnreadChatsCount(count + supportUnread)
+					}
+				})
+				.catch(() => {})
+		}
+
+		updateCount()
+		const interval = setInterval(updateCount, 8000)
+		return () => clearInterval(interval)
+	}, [profile?.id, notifications])
 
 	return (
 		<div className="flex flex-col h-full bg-[#EE2C2C] text-white overflow-hidden">
@@ -160,6 +189,11 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 								className="text-white shrink-0"
 							/>
 							<span className="flex-1">{label}</span>
+							{label === "Chats" && unreadChatsCount > 0 && (
+								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+									{unreadChatsCount > 9 ? "9+" : unreadChatsCount}
+								</span>
+							)}
 						</Link>
 					)
 				})}

@@ -746,6 +746,7 @@ export type SponsorshipChatThread = {
 	lastMessagePreview: string | null
 	counterpartName: string
 	unreadCount: number
+	counterpartAvatarUrl?: string | null
 }
 
 export type SponsorshipChatMessage = {
@@ -757,6 +758,8 @@ export type SponsorshipChatMessage = {
 	mediaUrl?: string | null
 	createdAt: string
 	wasRedacted?: boolean
+	hostReadAt?: string | null
+	brandReadAt?: string | null
 }
 
 export async function getMySponsorshipChats(status?: SponsorshipChatStatus): Promise<SponsorshipChatThread[]> {
@@ -889,6 +892,8 @@ export type MeetdayChatMessage = {
 	mediaUrl?: string | null
 	createdAt: string
 	wasRedacted?: boolean
+	hostReadAt?: string | null
+	brandReadAt?: string | null
 }
 
 export async function getMyMeetdayChat(): Promise<{ messages: MeetdayChatMessage[] }> {

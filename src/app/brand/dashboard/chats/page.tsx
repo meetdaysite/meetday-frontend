@@ -19,6 +19,7 @@ import {
 import { DealBanner, DealDetailsModal } from "@/components/sponsorship/DealPanel"
 import { MeetdayChatPanel } from "@/components/support/MeetdayChatPanel"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
+import { useNotificationStore } from "@/store/notificationStore"
 
 const POLL_MS = 4000
 
@@ -43,6 +44,27 @@ export default function BrandChatsPage() {
 	const [loadingThreads, setLoadingThreads] = useState(true)
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 
+	const { notifications, markRead } = useNotificationStore()
+
+	const getThreadUnreadCount = useCallback((threadId: string) => {
+		return notifications.filter(n => {
+			if (n.isRead) return false
+			const m = n.metadata || {}
+			const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+			return tId === threadId
+		}).length
+	}, [notifications])
+
+	const getMeetdayUnreadCount = useCallback(() => {
+		return notifications.filter(n => {
+			if (n.isRead) return false
+			if (n.title !== "Meetday") return false
+			const m = n.metadata || {}
+			const hasThread = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+			return !hasThread
+		}).length
+	}, [notifications])
+
 	const loadThreads = useCallback(async (t: Tab) => {
 		if (t === "MEETDAY") {
 			setLoadingThreads(false)
@@ -64,7 +86,40 @@ export default function BrandChatsPage() {
 		loadThreads(tab)
 		const interval = setInterval(() => loadThreads(tab), POLL_MS * 2)
 		return () => clearInterval(interval)
-	}, [tab, loadThreads])
+	}, [tab, loadThreads, notifications])
+
+	// Clear unread counts in memory instantly when opened
+	useEffect(() => {
+		if (selectedId) {
+			setThreads(prev =>
+				prev.map(t => (t.id === selectedId ? { ...t, unreadCount: 0 } : t))
+			)
+			const unreadChatNotifs = notifications.filter(n => {
+				if (n.isRead) return false
+				const m = n.metadata || {}
+				const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+				return tId === selectedId
+			})
+			unreadChatNotifs.forEach(n => {
+				markRead(n.id).catch(() => {})
+			})
+		}
+	}, [selectedId, notifications, markRead])
+
+	useEffect(() => {
+		if (tab === "MEETDAY") {
+			const unreadSupportNotifs = notifications.filter(n => {
+				if (n.isRead) return false
+				if (n.title !== "Meetday") return false
+				const m = n.metadata || {}
+				const hasThread = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+				return !hasThread
+			})
+			unreadSupportNotifs.forEach(n => {
+				markRead(n.id).catch(() => {})
+			})
+		}
+	}, [tab, notifications, markRead])
 
 	function handleTabChange(t: Tab) {
 		setTab(t)
@@ -88,24 +143,32 @@ export default function BrandChatsPage() {
 					<p className="text-sm font-semibold text-black/50 mt-1">Talk to communities you&apos;ve expressed interest in.</p>
 				</div>
 
-				<div className="flex-1 min-h-0 border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row bg-white">
+				<div className="h-[calc(100vh-240px)] border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row bg-white">
 					{/* Thread list */}
 					<div className="w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col">
 						<div className="flex border-b-[3px] border-black">
-							{(["ALL", "ACCEPTED", "MEETDAY"] as Tab[]).map(t => (
-								<button
-									key={t}
-									onClick={() => handleTabChange(t)}
-									className={clsx(
-										"flex-1 py-3 text-xs font-black uppercase tracking-wider transition-colors",
-										tab === t ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
-									)}
-								>
-									{t === "ALL" ? "General" : t === "ACCEPTED" ? "Accepted" : "Meetday"}
-								</button>
-							))}
+							{(["ALL", "MEETDAY", "ACCEPTED"] as Tab[]).map(t => {
+								const unreadCount = t === "MEETDAY" ? getMeetdayUnreadCount() : 0;
+								return (
+									<button
+										key={t}
+										onClick={() => handleTabChange(t)}
+										className={clsx(
+											"flex-grow py-3 text-xs font-black uppercase tracking-wider transition-colors relative",
+											tab === t ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
+										)}
+									>
+										{t === "ALL" ? "General" : t === "ACCEPTED" ? "Accepted" : "Meetday"}
+										{unreadCount > 0 && (
+											<span className="absolute top-1.5 right-1.5 shrink-0 min-w-[16px] h-[16px] px-1 rounded-full bg-[#EE2C2C] text-white text-[8px] font-black flex items-center justify-center border border-white">
+												{unreadCount > 9 ? "9+" : unreadCount}
+											</span>
+										)}
+									</button>
+								);
+							})}
 						</div>
-						{tab !== "MEETDAY" && (
+						{tab !== "MEETDAY" ? (
 						<div className="flex-1 overflow-y-auto">
 							{loadingThreads ? (
 								<p className="text-xs font-semibold text-black/40 text-center py-8">Loading…</p>
@@ -114,41 +177,69 @@ export default function BrandChatsPage() {
 									{tab === "ACCEPTED" ? "No accepted chats yet." : "Express interest in a proposal to start a chat."}
 								</p>
 							) : (
-								threads.map(t => (
-									<button
-										key={t.id}
-										onClick={() => setSelectedId(t.id)}
-										className={clsx(
-											"w-full text-left px-4 py-3 border-b border-black/10 transition-colors",
-											selectedId === t.id ? "bg-[#FFC940]/20" : "hover:bg-neutral-50",
-										)}
-									>
-										<div className="flex items-center justify-between gap-2">
-											<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
-											<span className="text-[10px] font-semibold text-black/30 shrink-0">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
-										</div>
-										<div className="flex items-center justify-between gap-2 mt-0.5">
-											<p className="text-[11px] font-semibold text-black/50 truncate">{t.proposalName}</p>
-											{t.unreadCount > 0 && (
-												<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#EE2C2C] text-white text-[10px] font-black flex items-center justify-center">
-													{t.unreadCount > 9 ? "9+" : t.unreadCount}
-												</span>
+								threads.map(t => {
+									const unread = selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id));
+									return (
+										<button
+											key={t.id}
+											onClick={() => setSelectedId(t.id)}
+											className={clsx(
+												"w-full text-left px-4 py-3 border-b border-black/10 transition-colors flex items-center gap-3",
+												selectedId === t.id ? "bg-[#FFC940]/20" : "hover:bg-neutral-50",
 											)}
+										>
+											<div className="relative shrink-0">
+												<div className="w-10 h-10 rounded-full border border-black/15 overflow-hidden bg-neutral-100 flex items-center justify-center">
+													{t.counterpartAvatarUrl ? (
+														<img
+															src={t.counterpartAvatarUrl}
+															alt={t.counterpartName}
+															className="w-full h-full object-cover"
+														/>
+													) : (
+														<span className="font-heading font-black text-sm text-black/60">
+															{t.counterpartName.charAt(0).toUpperCase()}
+														</span>
+													)}
+												</div>
+												{unread > 0 && (
+													<span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border-2 border-white shadow-[2px_2px_4px_rgba(0,0,0,0.15)]">
+														{unread > 9 ? "9+" : unread}
+													</span>
+												)}
+											</div>
+
+										<div className="flex-1 min-w-0">
+											<div className="flex items-center justify-between gap-2">
+												<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
+												<span className="text-[10px] font-semibold text-black/30 shrink-0">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
+											</div>
+											<div className="flex items-center justify-between gap-2 mt-0.5">
+												<p className="text-[11px] font-semibold text-black/50 truncate">{t.proposalName}</p>
+											</div>
+											<p className={clsx("text-[11px] font-bold mt-1", t.chatStatus === "REQUESTED" ? "text-black/40" : "text-black/40")}>
+												{t.chatStatus === "REQUESTED" ? "Waiting for acceptance…" : (t.lastMessagePreview ?? "Chat open")}
+											</p>
 										</div>
-										<p className={clsx("text-[11px] font-bold mt-1", t.chatStatus === "REQUESTED" ? "text-black/40" : "text-black/40")}>
-											{t.chatStatus === "REQUESTED" ? "Waiting for acceptance…" : (t.lastMessagePreview ?? "Chat open")}
-										</p>
 									</button>
-								))
+								);
+							})
 							)}
 						</div>
+						) : (
+							<div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-neutral-50/50">
+								<p className="text-sm font-black text-black leading-snug">Welcome to Meetday Chat!</p>
+								<p className="text-xs font-semibold text-black/50 mt-2 leading-relaxed">
+									We are here to help you. Feel free to ask us anything or share feedback!
+								</p>
+							</div>
 						)}
 					</div>
 
 					{/* Thread detail */}
 					<div className="flex-1 min-h-0 flex flex-col">
 						{tab === "MEETDAY" ? (
-							<MeetdayChatPanel ownName={ownName} />
+							<MeetdayChatPanel ownName={ownName} role="BRAND" />
 						) : !selectedThread ? (
 							<div className="flex-1 flex items-center justify-center text-sm font-semibold text-black/30">
 								Select a chat to view
@@ -191,13 +282,15 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 		}
 	}, [thread.id, thread.chatStatus])
 
+	const { notifications } = useNotificationStore()
+
 	useEffect(() => {
 		// Fetch immediately, then poll — intentional fetch-on-mount + interval pattern.
 		// eslint-disable-next-line react-hooks/set-state-in-effect
 		load()
 		const interval = setInterval(load, POLL_MS)
 		return () => clearInterval(interval)
-	}, [load])
+	}, [load, notifications])
 
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -241,16 +334,31 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	}
 
 	function labelFor(senderType: SponsorshipChatMessage["senderType"]) {
-		if (senderType === "BRAND") return ownName
-		if (senderType === "HOST") return thread.counterpartName
-		return "Meetday"
+		if (senderType === "BRAND") return `${ownName} • Brand`
+		if (senderType === "HOST") return `${thread.counterpartName} • Community`
+		return "Meetday • Admin"
 	}
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col">
-			<div className="px-5 py-3 border-b-[3px] border-black shrink-0">
-				<p className="text-sm font-black text-black truncate">{thread.counterpartName}</p>
-				<p className="text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
+			<div className="px-5 py-3 border-b-[3px] border-black flex items-center gap-3 shrink-0">
+				<div className="w-8 h-8 rounded-full border border-black/15 overflow-hidden shrink-0 relative bg-neutral-100 flex items-center justify-center">
+					{thread.counterpartAvatarUrl ? (
+						<img
+							src={thread.counterpartAvatarUrl}
+							alt={thread.counterpartName}
+							className="w-full h-full object-cover"
+						/>
+					) : (
+						<span className="font-heading font-black text-xs text-black/60">
+							{thread.counterpartName.charAt(0).toUpperCase()}
+						</span>
+					)}
+				</div>
+				<div className="min-w-0">
+					<p className="text-sm font-black text-black truncate">{thread.counterpartName}</p>
+					<p className="text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
+				</div>
 			</div>
 
 			{thread.chatStatus === "ACCEPTED" && (
@@ -296,11 +404,35 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 								{m.content && (
 									<div
 										className={clsx(
-											"px-3.5 py-2 rounded-2xl text-sm font-semibold break-words",
-											isMine ? "bg-[#EE2C2C] text-white rounded-br-sm" : "bg-neutral-100 text-black rounded-bl-sm",
+											"px-3.5 py-2 rounded-2xl text-sm font-semibold break-words border border-black/10",
+											m.senderType === "BRAND" && "bg-[#EE2C2C] text-white",
+											m.senderType === "HOST" && "bg-[#FFC940] text-black",
+											m.senderType === "ADMIN" && "bg-neutral-100 text-black",
+											isMine ? "rounded-br-sm" : "rounded-bl-sm",
 										)}
 									>
 										{m.content}
+									</div>
+								)}
+								{(m.content || m.mediaUrl) && (
+									<div className={clsx("flex items-center gap-1 mt-0.5 text-[9px] font-bold text-black/40 px-1", isMine ? "justify-end" : "justify-start")}>
+										<span>
+											{(() => {
+												try {
+													return new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+												} catch {
+													return ""
+												}
+											})()}
+										</span>
+										{m.senderType === "BRAND" && (() => {
+											const isRead = !!m.hostReadAt
+											return (
+												<span className={clsx("text-[10px] leading-none font-bold", isRead ? "text-red-500 font-black" : "text-gray-400")}>
+													✓✓
+												</span>
+											)
+										})()}
 									</div>
 								)}
 							</div>
