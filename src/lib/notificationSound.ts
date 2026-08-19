@@ -33,14 +33,19 @@ export function playMessageChime() {
 	if (typeof window === "undefined" || !window.speechSynthesis) return
 	try {
 		if (!meetdayVoice) loadPreferredVoice()
-		// Cancel any queued utterance so rapid-fire messages don't stack up a backlog of "Meetday"s.
-		window.speechSynthesis.cancel()
+		const synth = window.speechSynthesis
+		// Calling cancel() unconditionally right before speak() triggers a known Chrome bug where
+		// the next utterance silently stalls for several seconds instead of speaking immediately —
+		// only cancel when something is actually queued/speaking, so the common case (idle) speaks
+		// instantly with no delay.
+		if (synth.speaking || synth.pending) synth.cancel()
 		const utterance = new SpeechSynthesisUtterance("Meetday")
 		if (meetdayVoice) utterance.voice = meetdayVoice
 		utterance.rate = 1.35
 		utterance.pitch = 1.3
 		utterance.volume = 0.85
-		window.speechSynthesis.speak(utterance)
+		synth.resume()
+		synth.speak(utterance)
 	} catch {
 		// speechSynthesis unsupported/blocked — silently skip.
 	}
