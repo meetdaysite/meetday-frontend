@@ -4,6 +4,8 @@ import { Icon } from "@/components/ui/Icon"
 import type { HostCommunityProfile } from "@/lib/api"
 import UploadSvg from "@/icons/outlined/upload.svg"
 import clsx from "clsx"
+import { useState } from "react"
+import Image from "next/image"
 
 interface CommunityProfileDetailsPanelProps {
 	community: HostCommunityProfile
@@ -43,6 +45,7 @@ export function CommunityProfileDetailsPanel({
 	hideStatus = false,
 }: CommunityProfileDetailsPanelProps) {
 	const statusConfig = STATUS_CONFIG[community.approvalStatus]
+	const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null)
 
 	return (
 		<div className="w-full h-full flex flex-col bg-white p-6 overflow-y-auto animate-in fade-in duration-150">
@@ -163,25 +166,56 @@ export function CommunityProfileDetailsPanel({
 					</div>
 				)}
 
-				{/* Past Events (raw rendering — name, description, images) */}
+				{/* Past Events */}
 				{community.pastEvents && community.pastEvents.length > 0 && (
-					<div className="flex flex-col gap-3">
-						<span className="text-xs font-bold text-black/50">Past Events</span>
-						<div className="flex flex-col gap-3">
-							{community.pastEvents.map((event, i) => (
-								<div key={i} className="p-3.5 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-2">
-									{event.name && <p className="text-sm font-bold text-black">{event.name}</p>}
-									{event.description && <p className="text-sm font-semibold text-black/70 whitespace-pre-wrap">{event.description}</p>}
-									{event.imageUrls.length > 0 && (
-										<div className="flex gap-2">
-											{event.imageUrls.map((url, j) => (
-												// eslint-disable-next-line @next/next/no-img-element
-												<img key={j} src={url} alt={event.name || "Past event"} className="size-20 rounded-xl border border-black/10 object-cover" />
-											))}
+					<div className="flex flex-col gap-3 mt-2">
+						<span className="text-xs font-bold text-black/50">Past Experiences</span>
+						<div className="flex flex-col gap-4">
+							{community.pastEvents.map((event, i) => {
+								const hasDesc = !!event.description;
+								const hasName = !!event.name;
+								const hasImages = event.imageUrls && event.imageUrls.length > 0;
+
+								return (
+									<div key={i} className="p-4 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-2.5">
+										<div className="flex justify-between items-center gap-2">
+											{hasName ? (
+												<span className="text-sm font-bold text-black">{event.name}</span>
+											) : (
+												<span className="text-sm font-bold text-black/50">Event #{i + 1}</span>
+											)}
+											{hasName && (
+												<span className="text-[10px] font-bold text-black/40 uppercase bg-black/5 px-2 py-0.5 rounded-md">
+													Event #{i + 1}
+												</span>
+											)}
 										</div>
-									)}
-								</div>
-							))}
+										{hasDesc && (
+											<p className="text-sm font-semibold text-black/70 leading-relaxed whitespace-pre-wrap">
+												{event.description}
+											</p>
+										)}
+										{hasImages && (
+											<div className="flex flex-wrap gap-2 mt-1">
+												{event.imageUrls.slice(0, 2).map((url, j) => (
+													<div 
+														key={j}
+														onClick={() => setEnlargedImageUrl(url)}
+														className="relative w-16 h-16 rounded-xl border border-black/10 overflow-hidden bg-white cursor-pointer hover:opacity-90 transition-opacity shrink-0"
+													>
+														{/* eslint-disable-next-line @next/next/no-img-element */}
+														<img 
+															src={url} 
+															alt={event.name || "Past Event Image"} 
+															className="w-full h-full object-cover" 
+														/>
+													</div>
+												))}
+											</div>
+										)}
+									</div>
+								);
+							})}
 						</div>
 					</div>
 				)}
@@ -238,6 +272,37 @@ export function CommunityProfileDetailsPanel({
 					</div>
 				)}
 			</div>
+
+			{/* Zoomed Event Image Modal */}
+			{enlargedImageUrl && (
+				<div 
+					onClick={() => setEnlargedImageUrl(null)}
+					className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150 cursor-zoom-out"
+				>
+					<div 
+						onClick={(e) => e.stopPropagation()}
+						className="relative max-w-xl w-full bg-white border-[3px] border-black rounded-[28px] p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-3 items-start animate-in zoom-in-95 duration-150 cursor-default"
+					>
+						<button
+							onClick={() => setEnlargedImageUrl(null)}
+							className="absolute top-4 right-4 z-10 size-8 bg-white hover:bg-black/5 border-2 border-black rounded-full flex items-center justify-center text-black font-extrabold text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all active:translate-y-[1px]"
+							aria-label="Close enlarged image"
+						>
+							✕
+						</button>
+						<span className="text-xs font-bold text-black/50 uppercase tracking-wider">Event Image Preview</span>
+						<div className="relative w-full aspect-[16/10] rounded-[20px] border-2 border-black overflow-hidden bg-slate-50">
+							<Image
+								src={enlargedImageUrl}
+								alt="Enlarged Event Image"
+								fill
+								className="object-cover"
+								unoptimized
+							/>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }
