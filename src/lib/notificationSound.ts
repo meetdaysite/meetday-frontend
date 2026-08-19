@@ -3,14 +3,22 @@
 
 let meetdayVoice: SpeechSynthesisVoice | null = null
 
+// Curated names known to be female voices across macOS/Windows/Chrome — used as a fallback when
+// a voice isn't explicitly tagged "female" in its name.
+const KNOWN_FEMALE_VOICE_NAMES = [
+	"Samantha", "Victoria", "Karen", "Moira", "Tessa", "Fiona", "Susan", "Allison", "Ava", "Kate", "Serena", "Zira", "Hazel",
+]
+
 function loadPreferredVoice() {
 	if (typeof window === "undefined" || !window.speechSynthesis) return
 	const voices = window.speechSynthesis.getVoices()
 	if (!voices.length) return
-	// Prefer a natural-sounding English voice — these tend to sound least robotic across browsers.
+	// Always prefer a clearly female-sounding voice, never a male one.
 	meetdayVoice =
-		voices.find(v => /Google US English|Google UK English Female|Samantha|Microsoft Zira|Microsoft David/i.test(v.name)) ??
-		voices.find(v => v.lang.startsWith("en")) ??
+		voices.find(v => /female/i.test(v.name)) ??
+		voices.find(v => KNOWN_FEMALE_VOICE_NAMES.some(name => v.name.includes(name))) ??
+		voices.find(v => v.lang.startsWith("en") && !/male/i.test(v.name)) ??
+		voices.find(v => !/male/i.test(v.name)) ??
 		voices[0]
 }
 
@@ -29,8 +37,8 @@ export function playMessageChime() {
 		window.speechSynthesis.cancel()
 		const utterance = new SpeechSynthesisUtterance("Meetday")
 		if (meetdayVoice) utterance.voice = meetdayVoice
-		utterance.rate = 1
-		utterance.pitch = 1.05
+		utterance.rate = 1.35
+		utterance.pitch = 1.3
 		utterance.volume = 0.85
 		window.speechSynthesis.speak(utterance)
 	} catch {
