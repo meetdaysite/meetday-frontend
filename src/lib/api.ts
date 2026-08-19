@@ -745,6 +745,7 @@ export type SponsorshipChatThread = {
 	lastMessageAt: string | null
 	lastMessagePreview: string | null
 	counterpartName: string
+	unreadCount: number
 }
 
 export type SponsorshipChatMessage = {
@@ -752,6 +753,7 @@ export type SponsorshipChatMessage = {
 	senderType: ChatSenderType
 	senderId: string
 	content: string
+	mediaUrl?: string | null
 	createdAt: string
 	wasRedacted?: boolean
 }
@@ -776,11 +778,11 @@ export async function getSponsorshipChatMessages(
 
 export async function sendSponsorshipChatMessage(
 	interestId: string,
-	content: string,
+	payload: { content?: string; mediaKey?: string },
 ): Promise<SponsorshipChatMessage> {
 	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipChatMessage }>(
 		`/sponsorships/chats/${interestId}/messages`,
-		{ content },
+		payload,
 	)
 	return data.data
 }
@@ -1579,7 +1581,7 @@ export async function getCommunityAnnouncements(
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
-	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT"
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA"
 	contentType: string
 	resourceId?: string
 	mediaType?: string
