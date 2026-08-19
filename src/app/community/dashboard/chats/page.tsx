@@ -213,7 +213,7 @@ function ChatThreadPanel({
 			setMessages(prev => [...prev, msg])
 			setInput("")
 			if (msg.wasRedacted) {
-				toast.warning("Phone numbers and emails aren't allowed here — we removed it from your message to keep things professional.")
+				toast.warning("Phone numbers, emails, and IDs aren't allowed here — we've masked them in your message to keep things safe.")
 			}
 		} catch {
 			toast.error("Failed to send message.")
