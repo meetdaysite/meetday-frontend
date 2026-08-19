@@ -17,11 +17,12 @@ import {
 	type SponsorshipDeal,
 } from "@/lib/api"
 import { DealBanner, DealDetailsModal } from "@/components/sponsorship/DealPanel"
+import { MeetdayChatPanel } from "@/components/support/MeetdayChatPanel"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 
 const POLL_MS = 4000
 
-type Tab = "ALL" | "ACCEPTED"
+type Tab = "ALL" | "ACCEPTED" | "MEETDAY"
 
 function timeAgo(iso: string | null) {
 	if (!iso) return ""
@@ -35,12 +36,18 @@ function timeAgo(iso: string | null) {
 }
 
 export default function BrandChatsPage() {
+	const { profile } = useBrandStore()
+	const ownName = profile?.brandName || "You"
 	const [tab, setTab] = useState<Tab>("ALL")
 	const [threads, setThreads] = useState<SponsorshipChatThread[]>([])
 	const [loadingThreads, setLoadingThreads] = useState(true)
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 
 	const loadThreads = useCallback(async (t: Tab) => {
+		if (t === "MEETDAY") {
+			setLoadingThreads(false)
+			return
+		}
 		try {
 			const data = await getMySponsorshipChats(t === "ACCEPTED" ? "ACCEPTED" : undefined)
 			setThreads(data)
@@ -85,7 +92,7 @@ export default function BrandChatsPage() {
 					{/* Thread list */}
 					<div className="w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col">
 						<div className="flex border-b-[3px] border-black">
-							{(["ALL", "ACCEPTED"] as Tab[]).map(t => (
+							{(["ALL", "ACCEPTED", "MEETDAY"] as Tab[]).map(t => (
 								<button
 									key={t}
 									onClick={() => handleTabChange(t)}
@@ -94,10 +101,11 @@ export default function BrandChatsPage() {
 										tab === t ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
 									)}
 								>
-									{t === "ALL" ? "General" : "Accepted"}
+									{t === "ALL" ? "General" : t === "ACCEPTED" ? "Accepted" : "Meetday"}
 								</button>
 							))}
 						</div>
+						{tab !== "MEETDAY" && (
 						<div className="flex-1 overflow-y-auto">
 							{loadingThreads ? (
 								<p className="text-xs font-semibold text-black/40 text-center py-8">Loading…</p>
@@ -134,11 +142,14 @@ export default function BrandChatsPage() {
 								))
 							)}
 						</div>
+						)}
 					</div>
 
 					{/* Thread detail */}
 					<div className="flex-1 min-h-0 flex flex-col">
-						{!selectedThread ? (
+						{tab === "MEETDAY" ? (
+							<MeetdayChatPanel ownName={ownName} />
+						) : !selectedThread ? (
 							<div className="flex-1 flex items-center justify-center text-sm font-semibold text-black/30">
 								Select a chat to view
 							</div>

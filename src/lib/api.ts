@@ -879,6 +879,33 @@ export async function requestSponsorshipDealChanges(
 	return data.data
 }
 
+// ─── "Talk to Meetday" general support chat — one thread per user, separate from TriChat ──
+
+export type MeetdayChatMessage = {
+	id: string
+	senderType: "USER" | "ADMIN"
+	senderId: string
+	content: string
+	mediaUrl?: string | null
+	createdAt: string
+	wasRedacted?: boolean
+}
+
+export async function getMyMeetdayChat(): Promise<{ messages: MeetdayChatMessage[] }> {
+	const { data } = await apiClient.get<{ success: boolean; data: { messages: MeetdayChatMessage[] } }>(
+		"/meetday-chat/messages",
+	)
+	return data.data
+}
+
+export async function sendMeetdayChatMessage(payload: { content?: string; mediaKey?: string }): Promise<MeetdayChatMessage> {
+	const { data } = await apiClient.post<{ success: boolean; data: MeetdayChatMessage }>(
+		"/meetday-chat/messages",
+		payload,
+	)
+	return data.data
+}
+
 // ─── Host community profile (shown to sponsors) ───────────────────────────────
 
 export type HostCommunityProfilePayload = {
@@ -1663,7 +1690,7 @@ export async function getCommunityAnnouncements(
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
-	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA"
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA"
 	contentType: string
 	resourceId?: string
 	mediaType?: string

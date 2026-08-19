@@ -18,11 +18,12 @@ import {
 	type SponsorshipDeal,
 } from "@/lib/api"
 import { DealBanner, DealFormModal, DealDetailsModal } from "@/components/sponsorship/DealPanel"
+import { MeetdayChatPanel } from "@/components/support/MeetdayChatPanel"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 
 const POLL_MS = 4000
 
-type Segment = "REQUESTED" | "ACCEPTED"
+type Segment = "REQUESTED" | "ACCEPTED" | "MEETDAY"
 
 function timeAgo(iso: string | null) {
 	if (!iso) return ""
@@ -36,12 +37,18 @@ function timeAgo(iso: string | null) {
 }
 
 export default function CommunityChatsPage() {
+	const { profile } = useHostStore()
+	const ownName = profile?.displayName || "You"
 	const [segment, setSegment] = useState<Segment>("REQUESTED")
 	const [threads, setThreads] = useState<SponsorshipChatThread[]>([])
 	const [loadingThreads, setLoadingThreads] = useState(true)
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 
 	const loadThreads = useCallback(async (seg: Segment) => {
+		if (seg === "MEETDAY") {
+			setLoadingThreads(false)
+			return
+		}
 		try {
 			const data = await getMySponsorshipChats(seg)
 			setThreads(data)
@@ -98,7 +105,7 @@ export default function CommunityChatsPage() {
 					{/* Thread list */}
 					<div className="w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col">
 						<div className="flex border-b-[3px] border-black">
-							{(["REQUESTED", "ACCEPTED"] as Segment[]).map(seg => (
+							{(["REQUESTED", "ACCEPTED", "MEETDAY"] as Segment[]).map(seg => (
 								<button
 									key={seg}
 									onClick={() => handleSegmentChange(seg)}
@@ -107,10 +114,11 @@ export default function CommunityChatsPage() {
 										segment === seg ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
 									)}
 								>
-									{seg === "REQUESTED" ? "Requests" : "General"}
+									{seg === "REQUESTED" ? "Requests" : seg === "ACCEPTED" ? "General" : "Meetday"}
 								</button>
 							))}
 						</div>
+						{segment !== "MEETDAY" && (
 						<div className="flex-1 overflow-y-auto">
 							{loadingThreads ? (
 								<p className="text-xs font-semibold text-black/40 text-center py-8">Loading…</p>
@@ -150,11 +158,14 @@ export default function CommunityChatsPage() {
 								))
 							)}
 						</div>
+						)}
 					</div>
 
 					{/* Thread detail */}
 					<div className="flex-1 min-h-0 flex flex-col">
-						{!selectedThread ? (
+						{segment === "MEETDAY" ? (
+							<MeetdayChatPanel ownName={ownName} />
+						) : !selectedThread ? (
 							<div className="flex-1 flex items-center justify-center text-sm font-semibold text-black/30">
 								Select a chat to view
 							</div>
