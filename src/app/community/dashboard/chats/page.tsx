@@ -23,6 +23,7 @@ import { DealBanner, DealFormModal, DealDetailsModal } from "@/components/sponso
 import { MeetdayChatPanel } from "@/components/support/MeetdayChatPanel"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
+import { useChatTyping } from "@/hooks/useChatTyping"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 import { useNotificationStore } from "@/store/notificationStore"
 
@@ -293,6 +294,7 @@ function ChatThreadPanel({
 	const dividerCapturedRef = useRef(false)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
+	const { typingSenderType, notifyTyping, notifyStopTyping } = useChatTyping(thread.id, "HOST")
 
 	const load = useCallback(async () => {
 		try {
@@ -356,6 +358,7 @@ function ChatThreadPanel({
 			setMessages(prev => [...prev, msg])
 			setInput("")
 			setReplyingTo(null)
+			notifyStopTyping()
 			if (msg.wasRedacted) {
 				toast.warning("Phone numbers, emails, and IDs aren't allowed here — we've masked them in your message to keep things safe.")
 			}
@@ -592,6 +595,9 @@ function ChatThreadPanel({
 
 			{thread.chatStatus === "ACCEPTED" && (
 				<div className="border-t-[3px] border-black shrink-0">
+					{typingSenderType && (
+						<p className="px-3 pt-2 text-[11px] font-bold text-black/40 italic">{thread.counterpartName} is typing…</p>
+					)}
 					{editingMessageId && (
 						<div className="px-3 pt-2 flex items-center justify-between">
 							<span className="text-[10px] font-black uppercase text-black/40">Editing message</span>
@@ -621,7 +627,11 @@ function ChatThreadPanel({
 						<EmojiPicker onSelect={emoji => setInput(prev => prev + emoji)} />
 						<input
 							value={input}
-							onChange={e => setInput(e.target.value)}
+							onChange={e => {
+								setInput(e.target.value)
+								if (e.target.value.trim()) notifyTyping()
+								else notifyStopTyping()
+							}}
 							onKeyDown={e => {
 								if (e.key === "Enter" && !e.shiftKey) {
 									e.preventDefault()
