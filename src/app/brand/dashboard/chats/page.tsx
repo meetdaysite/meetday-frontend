@@ -11,9 +11,12 @@ import {
 	getMySponsorshipChats,
 	getSponsorshipChatMessages,
 	sendSponsorshipChatMessage,
+	getSponsorshipDeal,
 	type SponsorshipChatThread,
 	type SponsorshipChatMessage,
+	type SponsorshipDeal,
 } from "@/lib/api"
+import { DealBanner, DealDetailsModal } from "@/components/sponsorship/DealPanel"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 
 const POLL_MS = 4000
@@ -157,19 +160,25 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	const [input, setInput] = useState("")
 	const [sending, setSending] = useState(false)
 	const [uploadingImage, setUploadingImage] = useState(false)
+	const [deal, setDeal] = useState<SponsorshipDeal | null>(null)
+	const [showDealModal, setShowDealModal] = useState(false)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
 	const load = useCallback(async () => {
 		try {
-			const res = await getSponsorshipChatMessages(thread.id)
+			const [res, dealRes] = await Promise.all([
+				getSponsorshipChatMessages(thread.id),
+				thread.chatStatus === "ACCEPTED" ? getSponsorshipDeal(thread.id) : Promise.resolve(null),
+			])
 			setMessages(res.messages)
+			setDeal(dealRes)
 		} catch {
 			// silent on poll
 		} finally {
 			setLoading(false)
 		}
-	}, [thread.id])
+	}, [thread.id, thread.chatStatus])
 
 	useEffect(() => {
 		// Fetch immediately, then poll — intentional fetch-on-mount + interval pattern.
@@ -233,6 +242,10 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 				<p className="text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
 			</div>
 
+			{thread.chatStatus === "ACCEPTED" && (
+				<DealBanner deal={deal} role="BRAND" onView={() => setShowDealModal(true)} />
+			)}
+
 			<div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
 				{loading ? (
 					<p className="text-xs font-semibold text-black/40 text-center">Loading…</p>
@@ -247,6 +260,13 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 					<p className="text-xs font-semibold text-black/40 text-center m-auto">No messages yet — say hi!</p>
 				) : (
 					messages.map(m => {
+						if (m.messageType === "SYSTEM") {
+							return (
+								<div key={m.id} className="self-center max-w-[90%] px-3 py-1.5 rounded-full bg-neutral-100 text-black/50 text-[11px] font-bold text-center">
+									{m.content}
+								</div>
+							)
+						}
 						const isMine = m.senderType === "BRAND"
 						return (
 							<div key={m.id} className={clsx("flex flex-col max-w-[75%]", isMine ? "self-end items-end" : "self-start items-start")}>
@@ -307,6 +327,16 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 						{sending ? "…" : "Send"}
 					</Button>
 				</div>
+			)}
+
+			{showDealModal && deal && (
+				<DealDetailsModal
+					interestId={thread.id}
+					deal={deal}
+					role="BRAND"
+					onClose={() => setShowDealModal(false)}
+					onUpdated={setDeal}
+				/>
 			)}
 		</div>
 	)

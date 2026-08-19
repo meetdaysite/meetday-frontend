@@ -752,6 +752,7 @@ export type SponsorshipChatMessage = {
 	id: string
 	senderType: ChatSenderType
 	senderId: string
+	messageType?: "TEXT" | "SYSTEM"
 	content: string
 	mediaUrl?: string | null
 	createdAt: string
@@ -794,6 +795,87 @@ export async function acceptSponsorshipChatRequest(
 		success: boolean
 		data: { message: string; chatStatus: SponsorshipChatStatus }
 	}>(`/sponsorships/chats/${interestId}/accept`)
+	return data.data
+}
+
+// ─── Deal Lock: negotiated final terms, host fills in, brand approves ─────────
+
+export type SponsorshipDealStatus = "PENDING_APPROVAL" | "CHANGES_REQUESTED" | "APPROVED"
+
+export type SponsorshipDeal = {
+	id: string
+	sponsorshipInterestId: string
+	eventName: string
+	eventDate: string
+	eventTime: string | null
+	venue: string
+	finalAmount: string | number
+	deliverables: string
+	otherTerms: string | null
+	additionalNotes: string | null
+	status: SponsorshipDealStatus
+	version: number
+	changeRequestNote: string | null
+	approvedAt: string | null
+	createdAt: string
+	updatedAt: string
+}
+
+export type SponsorshipDealPayload = {
+	eventName: string
+	eventDate: string
+	eventTime?: string
+	venue: string
+	finalAmount: number
+	deliverables: string
+	otherTerms?: string
+	additionalNotes?: string
+}
+
+export async function getSponsorshipDeal(interestId: string): Promise<SponsorshipDeal | null> {
+	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipDeal | null }>(
+		`/sponsorships/chats/${interestId}/deal`,
+	)
+	return data.data
+}
+
+export async function createSponsorshipDeal(
+	interestId: string,
+	payload: SponsorshipDealPayload,
+): Promise<SponsorshipDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipDeal }>(
+		`/sponsorships/chats/${interestId}/deal`,
+		payload,
+	)
+	return data.data
+}
+
+export async function updateSponsorshipDeal(
+	interestId: string,
+	payload: SponsorshipDealPayload,
+): Promise<SponsorshipDeal> {
+	const { data } = await apiClient.patch<{ success: boolean; data: SponsorshipDeal }>(
+		`/sponsorships/chats/${interestId}/deal`,
+		payload,
+	)
+	return data.data
+}
+
+export async function approveSponsorshipDeal(interestId: string): Promise<SponsorshipDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipDeal }>(
+		`/sponsorships/chats/${interestId}/deal/approve`,
+	)
+	return data.data
+}
+
+export async function requestSponsorshipDealChanges(
+	interestId: string,
+	payload: { note?: string },
+): Promise<SponsorshipDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipDeal }>(
+		`/sponsorships/chats/${interestId}/deal/request-changes`,
+		payload,
+	)
 	return data.data
 }
 
