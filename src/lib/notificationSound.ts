@@ -1,10 +1,9 @@
 // Short, distinct "message arrived" chime synthesized via Web Audio API — no audio asset needed,
 // avoids licensing concerns, and keeps the bundle small. Two quick ascending tones (not a copy
 // of WhatsApp's pop sound). Plays even if the tab is in the background, as long as the page has
-// already had a user interaction (browsers block audio autoplay before that).
+// already had a user interaction somewhere (browsers block audio autoplay before that).
 
 let sharedAudioContext: AudioContext | null = null
-let userHasInteracted = false
 
 function getAudioContext(): AudioContext | null {
 	if (typeof window === "undefined") return null
@@ -14,14 +13,15 @@ function getAudioContext(): AudioContext | null {
 	return sharedAudioContext
 }
 
-function markInteracted() {
-	userHasInteracted = true
+function resumeContext() {
 	getAudioContext()?.resume().catch(() => {})
 }
 
 if (typeof window !== "undefined") {
-	;(["pointerdown", "keydown"] as const).forEach(evt =>
-		window.addEventListener(evt, markInteracted, { once: true, passive: true }),
+	// Any interaction anywhere on the site (login, clicking a nav item, typing) unlocks audio for
+	// the rest of the session — resume proactively on the first one instead of waiting for a chime.
+	;(["pointerdown", "keydown", "click", "touchstart"] as const).forEach(evt =>
+		window.addEventListener(evt, resumeContext, { once: true, passive: true }),
 	)
 }
 
@@ -42,9 +42,17 @@ function playTone(ctx: AudioContext, startTime: number, freq: number, duration: 
 /** Plays a short two-tone "new message" chime. Silently no-ops if audio isn't available/allowed yet. */
 export function playMessageChime() {
 	const ctx = getAudioContext()
-	if (!ctx || !userHasInteracted) return
-	if (ctx.state === "suspended") ctx.resume().catch(() => {})
-	const now = ctx.currentTime
-	playTone(ctx, now, 880, 0.12)
-	playTone(ctx, now + 0.1, 1318.5, 0.16)
+	if (!ctx) return
+	try {
+		if (ctx.state === "suspended") {
+			// Attempt resume then play regardless — most browsers allow this once any earlier
+			// interaction occurred on the page, even if it wasn't captured by our own listeners.
+			void ctx.resume()
+		}
+		const now = ctx.currentTime
+		playTone(ctx, now, 880, 0.12)
+		playTone(ctx, now + 0.1, 1318.5, 0.16)
+	} catch {
+		// Autoplay blocked (no interaction yet this session) — silently skip.
+	}
 }
