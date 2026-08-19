@@ -408,41 +408,96 @@ export default function BrandCommunitiesPage() {
 											{selectedCommunity.pastEvents.length} Event{selectedCommunity.pastEvents.length > 1 ? "s" : ""}
 										</span>
 									</div>
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-										{selectedCommunity.pastEvents.map((event, i) => (
-											<div key={i} className="border-[3px] border-black p-5 rounded-[28px] shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] bg-white flex flex-col gap-3 group/card hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
-												<div className="flex items-center justify-between gap-2 border-b-2 border-black border-dashed pb-2.5">
-													{event.name && <h3 className="font-heading font-black text-black text-base truncate">{event.name}</h3>}
-													<span className="text-[10px] font-black text-black/40 uppercase tracking-wider shrink-0 bg-slate-100 border border-black/10 px-2 py-0.5 rounded-md">
-														Event #{i + 1}
-													</span>
-												</div>
-												{event.description && (
-													<p className="text-sm font-semibold text-black/70 whitespace-pre-wrap leading-relaxed">
-														{event.description}
-													</p>
-												)}
-												{event.imageUrls && event.imageUrls.length > 0 && (
-													<div className="flex flex-wrap gap-3 mt-1.5">
-														{event.imageUrls.map((url, j) => (
-															<div 
-																key={j}
-																onClick={() => setEnlargedImageUrl(url)}
-																className="relative w-24 h-24 rounded-[16px] border-[2px] border-black overflow-hidden bg-slate-50 cursor-pointer shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[1px] hover:translate-x-[1px] transition-all duration-150 group/img"
-															>
-																{/* eslint-disable-next-line @next/next/no-img-element */}
-																<img 
-																	src={url} 
-																	alt={event.name || "Past Event Image"} 
-																	className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-200" 
-																/>
-																<div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors" />
+									<div className="flex flex-wrap gap-6 items-start">
+										{selectedCommunity.pastEvents.map((event, i) => {
+											const hasDesc = !!event.description;
+											const hasName = !!event.name;
+											const hasImages = event.imageUrls && event.imageUrls.length > 0;
+
+											if (!hasDesc) {
+												return (
+													<div key={i} className="border-[3px] border-black p-5 rounded-[28px] shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] bg-white flex flex-col gap-3.5 group/card hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 w-fit max-w-[320px]">
+														<div>
+															<span className="text-[10px] font-black text-black/45 uppercase tracking-wider bg-slate-100 border border-black/10 px-2.5 py-1 rounded-md inline-block mb-1">
+																Event #{i + 1}
+															</span>
+														</div>
+														{hasName && (
+															<div>
+																<span className="bg-[#EE2C2C] text-white px-3 py-1.5 rounded-xl border-2 border-black font-black text-xs uppercase tracking-wider inline-block shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+																	{event.name}
+																</span>
 															</div>
-														))}
+														)}
+														{hasImages && (
+															<div className="flex gap-3 mt-1.5">
+																{event.imageUrls.slice(0, 2).map((url, j) => (
+																	<div 
+																		key={j}
+																		onClick={() => setEnlargedImageUrl(url)}
+																		className="relative w-20 h-20 rounded-[16px] border-[2px] border-black overflow-hidden bg-slate-50 cursor-pointer shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[1px] hover:translate-x-[1px] transition-all duration-150 group/img shrink-0"
+																	>
+																		{/* eslint-disable-next-line @next/next/no-img-element */}
+																		<img 
+																			src={url} 
+																			alt={event.name || "Past Event Image"} 
+																			className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-200" 
+																		/>
+																		<div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors" />
+																	</div>
+																))}
+															</div>
+														)}
 													</div>
-												)}
-											</div>
-										))}
+												);
+											}
+
+											return (
+												<div key={i} className="border-[3px] border-black p-6 rounded-[28px] shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] bg-white flex flex-col md:flex-row gap-6 group/card hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 w-full">
+													{/* Left side (60% width) */}
+													<div className="flex flex-col gap-3 w-full md:w-[60%] shrink-0">
+														<div>
+															<span className="text-[10px] font-black text-black/45 uppercase tracking-wider bg-slate-100 border border-black/10 px-2.5 py-1 rounded-md inline-block mb-2">
+																Event #{i + 1}
+															</span>
+														</div>
+														{event.name && (
+															<div>
+																<span className="bg-[#EE2C2C] text-white px-3 py-1.5 rounded-xl border-2 border-black font-black text-xs uppercase tracking-wider inline-block shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+																	{event.name}
+																</span>
+															</div>
+														)}
+														{event.description && (
+															<div className="bg-[#FFC940] text-black p-4 rounded-[20px] border-2 border-black font-semibold text-xs leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-1.5">
+																<p className="whitespace-pre-wrap">{event.description}</p>
+															</div>
+														)}
+													</div>
+
+													{/* Right side (images in 1:1 aspect ratio side-by-side) */}
+													{event.imageUrls && event.imageUrls.length > 0 && (
+														<div className="flex flex-wrap items-center gap-4 border-t-2 md:border-t-0 md:border-l-2 border-black border-dashed pt-4 md:pt-0 md:pl-6 flex-1">
+															{event.imageUrls.slice(0, 2).map((url, j) => (
+																<div 
+																	key={j}
+																	onClick={() => setEnlargedImageUrl(url)}
+																	className="relative w-28 h-28 rounded-[20px] border-[2px] border-black overflow-hidden bg-slate-50 cursor-pointer shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[1px] hover:translate-x-[1px] transition-all duration-150 group/img shrink-0"
+																>
+																	{/* eslint-disable-next-line @next/next/no-img-element */}
+																	<img 
+																		src={url} 
+																		alt={event.name || "Past Event Image"} 
+																		className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-200" 
+																	/>
+																	<div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors" />
+																</div>
+															))}
+														</div>
+													)}
+												</div>
+											);
+										})}
 									</div>
 								</div>
 							)}
