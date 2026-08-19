@@ -163,6 +163,29 @@ export function CommunityProfileDetailsPanel({
 					</div>
 				)}
 
+				{/* Past Events (raw rendering — name, description, images) */}
+				{community.pastEvents && community.pastEvents.length > 0 && (
+					<div className="flex flex-col gap-3">
+						<span className="text-xs font-bold text-black/50">Past Events</span>
+						<div className="flex flex-col gap-3">
+							{community.pastEvents.map((event, i) => (
+								<div key={i} className="p-3.5 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-2">
+									{event.name && <p className="text-sm font-bold text-black">{event.name}</p>}
+									{event.description && <p className="text-sm font-semibold text-black/70 whitespace-pre-wrap">{event.description}</p>}
+									{event.imageUrls.length > 0 && (
+										<div className="flex gap-2">
+											{event.imageUrls.map((url, j) => (
+												// eslint-disable-next-line @next/next/no-img-element
+												<img key={j} src={url} alt={event.name || "Past event"} className="size-20 rounded-xl border border-black/10 object-cover" />
+											))}
+										</div>
+									)}
+								</div>
+							))}
+						</div>
+					</div>
+				)}
+
 				{/* Social Links */}
 				<div className="flex flex-col gap-2.5 border-t border-black/10 pt-4 mt-2">
 					<span className="text-xs font-bold text-black/50">Digital Presence</span>

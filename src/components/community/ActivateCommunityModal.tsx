@@ -25,6 +25,22 @@ async function uploadLogoAndGetKey(file: File): Promise<string> {
 	return key
 }
 
+async function uploadPastEventImageAndGetKey(file: File): Promise<string> {
+	const { url, key } = await getUploadUrl({ context: "COMMUNITY_PAST_EVENT_MEDIA", contentType: file.type })
+	await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
+	return key
+}
+
+// One past-event entry being edited in the form. Images can be a mix of already-uploaded
+// keys (editing an existing profile) and newly picked local files (uploaded on submit).
+type PastEventDraft = {
+	name: string
+	description: string
+	images: { key?: string; url: string; file?: File }[]
+}
+
+const emptyPastEventDraft = (): PastEventDraft => ({ name: "", description: "", images: [] })
+
 interface ActivateCommunityModalProps {
 	hostId: string
 	profileCommunityName?: string
@@ -71,6 +87,7 @@ export function ActivateCommunityModal({
 	const [secondaryImageFile, setSecondaryImageFile] = useState<File | null>(null)
 	const [secondaryImagePreviewUrl, setSecondaryImagePreviewUrl] = useState<string | null>(null)
 	const secondaryImageInputRef = useRef<HTMLInputElement>(null)
+	const [pastEvents, setPastEvents] = useState<PastEventDraft[]>([])
 	const [submitting, setSubmitting] = useState(false)
 
 	const logoInputRef = useRef<HTMLInputElement>(null)
@@ -97,6 +114,13 @@ export function ActivateCommunityModal({
 					setCategoryIds(existing.categories.map((c) => c.id))
 					setLogoPreviewUrl(existing.logoUrl)
 					setSecondaryImagePreviewUrl(existing.secondaryImageUrl || null)
+					setPastEvents(
+						(existing.pastEvents ?? []).map((e) => ({
+							name: e.name ?? "",
+							description: e.description ?? "",
+							images: e.imageKeys.map((key, i) => ({ key, url: e.imageUrls[i] ?? "" })),
+						})),
+					)
 					setInstagram(profileInstagram)
 					setLinkedin(profileLinkedin)
 					setYoutube(profileYoutube)
@@ -164,6 +188,41 @@ export function ActivateCommunityModal({
 		}
 	}
 
+	function addPastEvent() {
+		setPastEvents((prev) => [...prev, emptyPastEventDraft()])
+	}
+
+	function removePastEvent(index: number) {
+		setPastEvents((prev) => prev.filter((_, i) => i !== index))
+	}
+
+	function updatePastEvent(index: number, field: "name" | "description", value: string) {
+		setPastEvents((prev) => prev.map((e, i) => (i === index ? { ...e, [field]: value } : e)))
+	}
+
+	function addPastEventImage(index: number, file: File) {
+		if (!file.type.startsWith("image/")) {
+			toast.error("Only image files are accepted.")
+			return
+		}
+		setPastEvents((prev) =>
+			prev.map((e, i) => {
+				if (i !== index) return e
+				if (e.images.length >= 2) {
+					toast.error("Only up to 2 images per event are allowed.")
+					return e
+				}
+				return { ...e, images: [...e.images, { file, url: URL.createObjectURL(file) }] }
+			}),
+		)
+	}
+
+	function removePastEventImage(eventIndex: number, imageIndex: number) {
+		setPastEvents((prev) =>
+			prev.map((e, i) => (i === eventIndex ? { ...e, images: e.images.filter((_, j) => j !== imageIndex) } : e)),
+		)
+	}
+
 	const handleActivationSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		if (submitting) return
@@ -206,6 +265,16 @@ export function ActivateCommunityModal({
 			const logoKey = logoFile ? await uploadLogoAndGetKey(logoFile) : community!.logoKey
 			const secondaryImageKey = secondaryImageFile ? await uploadLogoAndGetKey(secondaryImageFile) : (community?.secondaryImageKey || undefined)
 
+			const pastEventsPayload = await Promise.all(
+				pastEvents.map(async (event) => ({
+					name: event.name.trim() || undefined,
+					description: event.description.trim() || undefined,
+					imageKeys: await Promise.all(
+						event.images.map((img) => (img.key ? img.key : uploadPastEventImageAndGetKey(img.file!))),
+					),
+				})),
+			)
+
 			const saved = await activateHostCommunityProfile({
 				name: communityName.trim(),
 				about: aboutCommunity.trim(),
@@ -215,6 +284,7 @@ export function ActivateCommunityModal({
 				avgGuestCount: avgGuestCount.trim(),
 				experiencesPerYear: experiencesPerYear.trim(),
 				categoryIds,
+				pastEvents: pastEventsPayload,
 			})
 
 			try {
@@ -605,6 +675,88 @@ export function ActivateCommunityModal({
 							/>
 						</div>
 					</div>
+				</div>
+
+				{/* Past Events (optional) */}
+				<div className="flex flex-col gap-3">
+					<div className="flex items-center justify-between">
+						<label className="text-xs font-bold text-black">Past Events (optional)</label>
+						<span className="text-[10px] text-black/40">Showcase up to 2 images per event</span>
+					</div>
+					{pastEvents.map((event, i) => (
+						<div key={i} className="flex flex-col gap-2 p-3 rounded-xl border-2 border-black/10 bg-slate-50/50">
+							<div className="flex items-center justify-between">
+								<span className="text-[10px] font-bold text-black/40 uppercase">Event {i + 1}</span>
+								<button
+									type="button"
+									onClick={() => removePastEvent(i)}
+									className="text-black/40 hover:text-red-600 text-xs font-bold transition-colors"
+								>
+									Remove
+								</button>
+							</div>
+							<input
+								type="text"
+								value={event.name}
+								onChange={(e) => updatePastEvent(i, "name", e.target.value)}
+								placeholder="Event name (optional)"
+								className={clsx(
+									"h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors w-full",
+									inline ? "border border-black/15 focus:border-black/35" : "border-2 border-black"
+								)}
+							/>
+							<textarea
+								value={event.description}
+								onChange={(e) => updatePastEvent(i, "description", e.target.value)}
+								placeholder="Event description (optional)"
+								rows={2}
+								className={clsx(
+									"p-2.5 rounded-xl bg-white text-black outline-none text-sm transition-colors resize-none w-full",
+									inline ? "border border-black/15 focus:border-black/35" : "border-2 border-black"
+								)}
+							/>
+							<div className="flex items-center gap-2">
+								{event.images.map((img, j) => (
+									<div key={j} className="relative size-16 rounded-lg border-2 border-black overflow-hidden shrink-0">
+										{/* eslint-disable-next-line @next/next/no-img-element */}
+										<img src={img.url} alt="Past event" className="size-full object-cover" />
+										<button
+											type="button"
+											onClick={() => removePastEventImage(i, j)}
+											className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center leading-none"
+										>
+											×
+										</button>
+									</div>
+								))}
+								{event.images.length < 2 && (
+									<label className="size-16 rounded-lg border-2 border-dashed border-black/30 flex items-center justify-center shrink-0 cursor-pointer hover:bg-black/5">
+										<input
+											type="file"
+											accept="image/*"
+											className="hidden"
+											onChange={(e) => {
+												const file = e.target.files?.[0]
+												e.target.value = ""
+												if (file) addPastEventImage(i, file)
+											}}
+										/>
+										<Icon as={UploadSvg} size="sm" color="muted" />
+									</label>
+								)}
+							</div>
+						</div>
+					))}
+					<Button
+						type="button"
+						variant="secondary"
+						size="xs"
+						radius="md"
+						onClick={addPastEvent}
+						className="bg-white border-2 border-black text-black text-[10px] py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all self-start"
+					>
+						+ Add Another Event
+					</Button>
 				</div>
 
 				{/* Modal Footer */}
