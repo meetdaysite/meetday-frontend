@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useEffect, useRef, useState, useCallback, Fragment } from "react"
 import clsx from "clsx"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
@@ -11,6 +11,8 @@ import {
 	getMySponsorshipChats,
 	getSponsorshipChatMessages,
 	sendSponsorshipChatMessage,
+	editSponsorshipChatMessage,
+	deleteSponsorshipChatMessage,
 	acceptSponsorshipChatRequest,
 	getSponsorshipDeal,
 	type SponsorshipChatThread,
@@ -93,6 +95,7 @@ export default function CommunityChatsPage() {
 	// Clear unread counts in memory instantly when opened
 	useEffect(() => {
 		if (selectedId) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setThreads(prev =>
 				prev.map(t => (t.id === selectedId ? { ...t, unreadCount: 0 } : t))
 			)
@@ -281,6 +284,9 @@ function ChatThreadPanel({
 	const [uploadingImage, setUploadingImage] = useState(false)
 	const [deal, setDeal] = useState<SponsorshipDeal | null>(null)
 	const [dealModal, setDealModal] = useState<"form" | "details" | null>(null)
+	const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
+	const [unreadDivider, setUnreadDivider] = useState<{ messageId: string; count: number } | null>(null)
+	const dividerCapturedRef = useRef(false)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -292,6 +298,14 @@ function ChatThreadPanel({
 			])
 			setMessages(res.messages)
 			setDeal(dealRes)
+			// Only capture the unread boundary once per thread — subsequent polls mark everything
+			// read, so re-computing it every time would make the divider disappear immediately.
+			if (!dividerCapturedRef.current) {
+				dividerCapturedRef.current = true
+				if (res.firstUnreadMessageId && res.unreadCount > 0) {
+					setUnreadDivider({ messageId: res.firstUnreadMessageId, count: res.unreadCount })
+				}
+			}
 		} catch {
 			// silent on poll
 		} finally {
@@ -315,6 +329,23 @@ function ChatThreadPanel({
 
 	async function handleSend() {
 		if (!input.trim()) return
+		if (editingMessageId) {
+			setSending(true)
+			try {
+				const updated = await editSponsorshipChatMessage(thread.id, editingMessageId, input.trim())
+				setMessages(prev => prev.map(m => (m.id === updated.id ? updated : m)))
+				setEditingMessageId(null)
+				setInput("")
+				if (updated.wasRedacted) {
+					toast.warning("Phone numbers, emails, and IDs aren't allowed here — we've masked them in your message to keep things safe.")
+				}
+			} catch {
+				toast.error("Failed to save changes.")
+			} finally {
+				setSending(false)
+			}
+			return
+		}
 		setSending(true)
 		try {
 			const msg = await sendSponsorshipChatMessage(thread.id, { content: input.trim() })
@@ -327,6 +358,27 @@ function ChatThreadPanel({
 			toast.error("Failed to send message.")
 		} finally {
 			setSending(false)
+		}
+	}
+
+	function handleEditStart(m: SponsorshipChatMessage) {
+		setEditingMessageId(m.id)
+		setInput(m.content)
+	}
+
+	function handleEditCancel() {
+		setEditingMessageId(null)
+		setInput("")
+	}
+
+	async function handleDelete(m: SponsorshipChatMessage) {
+		if (!window.confirm("Delete this message? This can't be undone.")) return
+		try {
+			await deleteSponsorshipChatMessage(thread.id, m.id)
+			setMessages(prev => prev.map(x => (x.id === m.id ? { ...x, deletedAt: new Date().toISOString(), content: "", mediaUrl: null } : x)))
+			if (editingMessageId === m.id) handleEditCancel()
+		} catch {
+			toast.error("Failed to delete message.")
 		}
 	}
 
@@ -417,55 +469,83 @@ function ChatThreadPanel({
 							)
 						}
 						const isMine = m.senderType === "HOST"
+						const isDeleted = !!m.deletedAt
 						return (
-							<div key={m.id} className={clsx("flex flex-col max-w-[75%]", isMine ? "self-end items-end" : "self-start items-start")}>
-								<span className="text-[10px] font-black uppercase tracking-wide text-black/30 mb-0.5 px-1">
-									{labelFor(m.senderType)}
-								</span>
-								{m.mediaUrl && (
-									/* eslint-disable-next-line @next/next/no-img-element */
-									<img
-										src={m.mediaUrl}
-										alt="Shared image"
-										onClick={() => window.open(m.mediaUrl!, "_blank")}
-										className="max-w-[220px] max-h-[220px] rounded-2xl border-[3px] border-black object-cover cursor-pointer mb-1"
-									/>
-								)}
-								{m.content && (
-									<div
-										className={clsx(
-											"px-3.5 py-2 rounded-2xl text-sm font-semibold break-words border border-black/10",
-											m.senderType === "BRAND" && "bg-[#EE2C2C] text-white",
-											m.senderType === "HOST" && "bg-[#FFC940] text-black",
-											m.senderType === "ADMIN" && "bg-neutral-100 text-black",
-											isMine ? "rounded-br-sm" : "rounded-bl-sm",
-										)}
-									>
-										{m.content}
-									</div>
-								)}
-								{(m.content || m.mediaUrl) && (
-									<div className={clsx("flex items-center gap-1 mt-0.5 text-[9px] font-bold text-black/40 px-1", isMine ? "justify-end" : "justify-start")}>
-										<span>
-											{(() => {
-												try {
-													return new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-												} catch {
-													return ""
-												}
-											})()}
+							<Fragment key={m.id}>
+								{unreadDivider?.messageId === m.id && (
+									<div className="self-stretch flex items-center gap-2 my-1">
+										<div className="flex-1 h-px bg-[#EE2C2C]/30" />
+										<span className="text-[10px] font-black uppercase text-[#EE2C2C] shrink-0">
+											{unreadDivider.count} unread message{unreadDivider.count > 1 ? "s" : ""}
 										</span>
-										{m.senderType === "HOST" && (() => {
-											const isRead = !!m.brandReadAt
-											return (
-												<span className={clsx("text-[10px] leading-none font-bold", isRead ? "text-red-500 font-black" : "text-gray-400")}>
-													✓✓
-												</span>
-											)
-										})()}
+										<div className="flex-1 h-px bg-[#EE2C2C]/30" />
 									</div>
 								)}
-							</div>
+								<div className={clsx("flex flex-col max-w-[75%]", isMine ? "self-end items-end" : "self-start items-start")}>
+									<div className="flex items-center gap-2 mb-0.5 px-1">
+										<span className="text-[10px] font-black uppercase tracking-wide text-black/30">{labelFor(m.senderType)}</span>
+										{isMine && !isDeleted && (
+											<>
+												<button type="button" onClick={() => handleEditStart(m)} className="text-[10px] font-bold text-black/30 hover:text-black">
+													Edit
+												</button>
+												<button type="button" onClick={() => handleDelete(m)} className="text-[10px] font-bold text-black/30 hover:text-[#EE2C2C]">
+													Delete
+												</button>
+											</>
+										)}
+									</div>
+									{isDeleted ? (
+										<div className="px-3.5 py-2 rounded-2xl text-sm font-semibold italic text-black/40 bg-neutral-50 border border-dashed border-black/15">
+											This message was deleted
+										</div>
+									) : (
+										<>
+											{m.mediaUrl && (
+												/* eslint-disable-next-line @next/next/no-img-element */
+												<img
+													src={m.mediaUrl}
+													alt="Shared image"
+													onClick={() => window.open(m.mediaUrl!, "_blank")}
+													className="max-w-[220px] max-h-[220px] rounded-2xl border-[3px] border-black object-cover cursor-pointer mb-1"
+												/>
+											)}
+											{m.content && (
+												<div
+													className={clsx(
+														"px-3.5 py-2 rounded-2xl text-sm font-semibold break-words border border-black/10",
+														m.senderType === "BRAND" && "bg-[#EE2C2C] text-white",
+														m.senderType === "HOST" && "bg-[#FFC940] text-black",
+														m.senderType === "ADMIN" && "bg-neutral-100 text-black",
+														isMine ? "rounded-br-sm" : "rounded-bl-sm",
+													)}
+												>
+													{m.content}
+													{m.editedAt && <span className="ml-1.5 text-[10px] font-semibold opacity-60">(edited)</span>}
+												</div>
+											)}
+										</>
+									)}
+									{(m.content || m.mediaUrl) && !isDeleted && (
+										<div className={clsx("flex items-center gap-1 mt-0.5 text-[9px] font-bold text-black/40 px-1", isMine ? "justify-end" : "justify-start")}>
+											<span>
+												{(() => {
+													try {
+														return new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+													} catch {
+														return ""
+													}
+												})()}
+											</span>
+											{isMine && (
+												<span className={clsx("text-[10px] leading-none font-black", m.seenByOther ? "text-[#EE2C2C]" : "text-black/25")}>
+													{m.seenByOther ? "✓✓" : "✓"}
+												</span>
+											)}
+										</div>
+									)}
+								</div>
+							</Fragment>
 						)
 					})
 				)}
@@ -473,32 +553,41 @@ function ChatThreadPanel({
 			</div>
 
 			{thread.chatStatus === "ACCEPTED" && (
-				<div className="p-3 border-t-[3px] border-black flex items-center gap-2 shrink-0">
-					<input type="file" accept="image/*" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
-					<button
-						type="button"
-						onClick={() => fileInputRef.current?.click()}
-						disabled={uploadingImage}
-						className="shrink-0 size-9 rounded-xl border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50"
-						aria-label="Attach image"
-					>
-						<Icon as={GallerySvg} size="sm" />
-					</button>
-					<input
-						value={input}
-						onChange={e => setInput(e.target.value)}
-						onKeyDown={e => {
-							if (e.key === "Enter" && !e.shiftKey) {
-								e.preventDefault()
-								handleSend()
-							}
-						}}
-						placeholder="Write a message…"
-						className="flex-1 rounded-2xl border-[3px] border-black bg-white px-4 py-2 text-sm font-semibold outline-none focus:bg-neutral-50"
-					/>
-					<Button onClick={handleSend} disabled={sending || !input.trim()}>
-						{sending ? "…" : "Send"}
-					</Button>
+				<div className="border-t-[3px] border-black shrink-0">
+					{editingMessageId && (
+						<div className="px-3 pt-2 flex items-center justify-between">
+							<span className="text-[10px] font-black uppercase text-black/40">Editing message</span>
+							<button type="button" onClick={handleEditCancel} className="text-[10px] font-bold text-[#EE2C2C]">Cancel</button>
+						</div>
+					)}
+					<div className="p-3 flex items-center gap-2">
+						<input type="file" accept="image/*" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
+						<button
+							type="button"
+							onClick={() => fileInputRef.current?.click()}
+							disabled={uploadingImage || !!editingMessageId}
+							className="shrink-0 size-9 rounded-xl border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50"
+							aria-label="Attach image"
+						>
+							<Icon as={GallerySvg} size="sm" />
+						</button>
+						<input
+							value={input}
+							onChange={e => setInput(e.target.value)}
+							onKeyDown={e => {
+								if (e.key === "Enter" && !e.shiftKey) {
+									e.preventDefault()
+									handleSend()
+								}
+								if (e.key === "Escape" && editingMessageId) handleEditCancel()
+							}}
+							placeholder="Write a message…"
+							className="flex-1 rounded-2xl border-[3px] border-black bg-white px-4 py-2 text-sm font-semibold outline-none focus:bg-neutral-50"
+						/>
+						<Button onClick={handleSend} disabled={sending || !input.trim()}>
+							{sending ? "…" : editingMessageId ? "Save" : "Send"}
+						</Button>
+					</div>
 				</div>
 			)}
 
