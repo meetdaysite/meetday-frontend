@@ -745,6 +745,7 @@ export type SponsorshipChatThread = {
 	lastMessageAt: string | null
 	lastMessagePreview: string | null
 	counterpartName: string
+	counterpartAvatarUrl?: string | null
 	unreadCount: number
 }
 
@@ -755,6 +756,9 @@ export type SponsorshipChatMessage = {
 	messageType?: "TEXT" | "SYSTEM"
 	content: string
 	mediaUrl?: string | null
+	editedAt?: string | null
+	deletedAt?: string | null
+	seenByOther?: boolean
 	createdAt: string
 	wasRedacted?: boolean
 }
@@ -769,10 +773,10 @@ export async function getMySponsorshipChats(status?: SponsorshipChatStatus): Pro
 
 export async function getSponsorshipChatMessages(
 	interestId: string,
-): Promise<{ messages: SponsorshipChatMessage[]; chatStatus: SponsorshipChatStatus }> {
+): Promise<{ messages: SponsorshipChatMessage[]; chatStatus: SponsorshipChatStatus; unreadCount: number; firstUnreadMessageId: string | null }> {
 	const { data } = await apiClient.get<{
 		success: boolean
-		data: { messages: SponsorshipChatMessage[]; chatStatus: SponsorshipChatStatus }
+		data: { messages: SponsorshipChatMessage[]; chatStatus: SponsorshipChatStatus; unreadCount: number; firstUnreadMessageId: string | null }
 	}>(`/sponsorships/chats/${interestId}/messages`)
 	return data.data
 }
@@ -786,6 +790,22 @@ export async function sendSponsorshipChatMessage(
 		payload,
 	)
 	return data.data
+}
+
+export async function editSponsorshipChatMessage(
+	interestId: string,
+	messageId: string,
+	content: string,
+): Promise<SponsorshipChatMessage> {
+	const { data } = await apiClient.patch<{ success: boolean; data: SponsorshipChatMessage }>(
+		`/sponsorships/chats/${interestId}/messages/${messageId}`,
+		{ content },
+	)
+	return data.data
+}
+
+export async function deleteSponsorshipChatMessage(interestId: string, messageId: string): Promise<void> {
+	await apiClient.delete(`/sponsorships/chats/${interestId}/messages/${messageId}`)
 }
 
 export async function acceptSponsorshipChatRequest(
