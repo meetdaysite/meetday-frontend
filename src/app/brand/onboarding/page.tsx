@@ -100,6 +100,7 @@ export default function OnboardingPage() {
 	}, [sessionHydrated, phone, sessionEmail, router])
 
 	const [brandName, setBrandName] = useState("")
+	const [brandNameError, setBrandNameError] = useState<string | null>(null)
 	const [categoryIds, setCategoryIds] = useState<string[]>([])
 	const [website, setWebsite] = useState("")
 	const [instagram, setInstagram] = useState("")
@@ -135,45 +136,44 @@ export default function OnboardingPage() {
 		}
 	}
 
-	async function finishSignup(skip: boolean) {
-		setLoadingMessage(skip ? "Setting up your account…" : "Setting up your brand profile…")
+	async function finishSignup() {
+		if (!brandName.trim()) {
+			setBrandNameError("Brand name is required to continue")
+			return
+		}
+		setLoadingMessage("Setting up your brand profile…")
 		try {
 			try {
 				await registerBrand({
 					firstName: "Brand",
-					lastName: skip ? "User" : brandName,
+					lastName: brandName,
 					email: sessionEmail || "",
 					phone: phone || undefined,
 					accountType: "BRAND",
-					...(!skip && {
-						brandName: brandName || undefined,
-						categoryIds,
-						socialLinks: { website: website || undefined, instagram: instagram || undefined, linkedin: linkedin || undefined },
-					}),
+					brandName,
+					categoryIds,
+					socialLinks: { website: website || undefined, instagram: instagram || undefined, linkedin: linkedin || undefined },
 				})
 			} catch (e) {
 				// 409 = brand already registered — treat as success
 				if (!(e instanceof ApiError && e.statusCode === 409)) throw e
 			}
 
-			// Persist the Step-2-only fields (not part of /auth/register) via a follow-up
-			// profile update — skipped entirely for "Skip for now".
-			if (!skip) {
-				const resolvedIndustry = industry === "Custom" ? customIndustry : industry
-				const hasExtra = workEmail || contactPhone || logoKey || companyType || aboutCompany || resolvedIndustry
-				if (hasExtra) {
-					try {
-						await updateBrandProfile({
-							workEmail: workEmail || undefined,
-							contactPhone: contactPhone || undefined,
-							logoKey: logoKey || undefined,
-							companyType: companyType || undefined,
-							aboutCompany: aboutCompany || undefined,
-							industry: resolvedIndustry || undefined,
-						})
-					} catch {
-						// Non-fatal — account is already created, they can fill these in later from Edit Profile.
-					}
+			// Persist the Step-2-only fields (not part of /auth/register) via a follow-up profile update.
+			const resolvedIndustry = industry === "Custom" ? customIndustry : industry
+			const hasExtra = workEmail || contactPhone || logoKey || companyType || aboutCompany || resolvedIndustry
+			if (hasExtra) {
+				try {
+					await updateBrandProfile({
+						workEmail: workEmail || undefined,
+						contactPhone: contactPhone || undefined,
+						logoKey: logoKey || undefined,
+						companyType: companyType || undefined,
+						aboutCompany: aboutCompany || undefined,
+						industry: resolvedIndustry || undefined,
+					})
+				} catch {
+					// Non-fatal — account is already created, they can fill these in later from Edit Profile.
 				}
 			}
 
@@ -225,18 +225,6 @@ export default function OnboardingPage() {
 					</svg>
 					Back to login
 				</button>
-
-				<button
-					type="button"
-					disabled={!!loadingMessage}
-					onClick={() => finishSignup(true)}
-					className="inline-flex items-center gap-1 text-xs font-bold text-black/50 hover:text-black transition-colors disabled:opacity-40"
-				>
-					Skip for now
-					<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-					</svg>
-				</button>
 			</div>
 
 			<div className="flex flex-col flex-grow justify-between h-full">
@@ -246,7 +234,7 @@ export default function OnboardingPage() {
 						Set up your Brand profile
 					</h2>
 					<p className="text-sm font-semibold text-black/60 max-w-md mx-auto leading-relaxed">
-						Everything below is optional — fill in what you can now, or skip and complete it later from your profile.
+						Brand name is required — everything else below is optional and can be added later from your profile.
 					</p>
 				</div>
 
@@ -262,8 +250,13 @@ export default function OnboardingPage() {
 							<TextField
 								label="Brand Name"
 								value={brandName}
-								onChange={(e) => setBrandName(e.target.value)}
+								onChange={(e) => {
+									setBrandName(e.target.value)
+									if (brandNameError) setBrandNameError(null)
+								}}
 								placeholder="Acme Corp"
+								error={!!brandNameError}
+								helperText={brandNameError ?? undefined}
 							/>
 							<div className="flex flex-col gap-1.5">
 								<p className="text-label-sm font-medium text-text-primary">Company Logo</p>
@@ -392,7 +385,7 @@ export default function OnboardingPage() {
 							radius="pill"
 							className="bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-extrabold text-center shadow-[4px_4px_0px_0px_#FFC940] hover:shadow-[1px_1px_0px_0px_#FFC940] hover:translate-x-[3px] hover:translate-y-[3px] transition-all tracking-wider"
 							disabled={!!loadingMessage}
-							onClick={() => finishSignup(false)}
+							onClick={() => finishSignup()}
 						>
 							{loadingMessage ? "Please wait…" : "Submit"}
 						</Button>

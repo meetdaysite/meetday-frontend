@@ -86,6 +86,7 @@ export function ActivateCommunityModal({
 	const [cityInput, setCityInput] = useState("")
 	const [secondaryImageFile, setSecondaryImageFile] = useState<File | null>(null)
 	const [secondaryImagePreviewUrl, setSecondaryImagePreviewUrl] = useState<string | null>(null)
+	const [secondaryImageRemoved, setSecondaryImageRemoved] = useState(false)
 	const secondaryImageInputRef = useRef<HTMLInputElement>(null)
 	const [pastEvents, setPastEvents] = useState<PastEventDraft[]>([])
 	const [submitting, setSubmitting] = useState(false)
@@ -161,7 +162,15 @@ export function ActivateCommunityModal({
 
 			setSecondaryImageFile(file)
 			setSecondaryImagePreviewUrl(URL.createObjectURL(file))
+			setSecondaryImageRemoved(false)
 		}
+	}
+
+	function removeSecondaryImage() {
+		setSecondaryImageFile(null)
+		setSecondaryImagePreviewUrl(null)
+		setSecondaryImageRemoved(true)
+		if (secondaryImageInputRef.current) secondaryImageInputRef.current.value = ""
 	}
 
 	const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -263,7 +272,11 @@ export function ActivateCommunityModal({
 		setSubmitting(true)
 		try {
 			const logoKey = logoFile ? await uploadLogoAndGetKey(logoFile) : community!.logoKey
-			const secondaryImageKey = secondaryImageFile ? await uploadLogoAndGetKey(secondaryImageFile) : (community?.secondaryImageKey || undefined)
+			const secondaryImageKey = secondaryImageFile
+				? await uploadLogoAndGetKey(secondaryImageFile)
+				: secondaryImageRemoved
+					? null
+					: (community?.secondaryImageKey || undefined)
 
 			const pastEventsPayload = await Promise.all(
 				pastEvents.map(async (event) => ({
@@ -437,12 +450,22 @@ export function ActivateCommunityModal({
 					<label className="text-xs font-bold text-black">Secondary Image (4:5, Optional)</label>
 					<div className="flex items-center gap-4">
 						<div className={clsx(
-							"w-16 h-20 rounded-xl bg-white flex items-center justify-center overflow-hidden shrink-0",
-							inline ? "border border-dashed border-black/20" : "border-2 border-dashed border-black/30"
-						)}>
-							{secondaryImagePreviewUrl ? (
-								// eslint-disable-next-line @next/next/no-img-element
+						"w-16 h-20 rounded-xl bg-white flex items-center justify-center overflow-hidden shrink-0 relative",
+						inline ? "border border-dashed border-black/20" : "border-2 border-dashed border-black/30"
+					)}>
+						{secondaryImagePreviewUrl ? (
+							<>
+								{/* eslint-disable-next-line @next/next/no-img-element */}
 								<img src={secondaryImagePreviewUrl} alt="Secondary preview" className="size-full object-cover" />
+								<button
+									type="button"
+									onClick={removeSecondaryImage}
+									aria-label="Remove secondary image"
+									className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center leading-none"
+								>
+									×
+								</button>
+							</>
 							) : (
 								<Icon as={UploadSvg} size="md" color="muted" />
 							)}

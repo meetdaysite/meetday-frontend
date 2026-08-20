@@ -950,7 +950,7 @@ export type HostCommunityProfilePayload = {
 	avgGuestCount: string
 	experiencesPerYear: string
 	categoryIds: string[]
-	secondaryImageKey?: string
+	secondaryImageKey?: string | null
 	pastEvents?: PastEventPayload[]
 }
 
