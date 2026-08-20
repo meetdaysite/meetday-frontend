@@ -10,26 +10,26 @@ interface AuthShellProps {
 
 export function AuthShell({ children, size = "default" }: AuthShellProps) {
 	return (
-		<div className="w-full h-screen flex flex-col lg:flex-row bg-[#EE2C2C] text-black overflow-hidden">
+		<div className="w-full min-h-screen flex flex-col lg:flex-row bg-[#EE2C2C] text-black">
 			
 			{/* ── Left Side Panel: Logo, Puzzle Heart, Vibration Arcs (lg screens only) ── */}
-			<div className="hidden lg:flex lg:w-1/2 h-full flex-col items-center justify-center relative overflow-hidden select-none">
+			<div className="hidden lg:flex lg:w-1/2 h-full flex-col items-center justify-center relative select-none gap-8 p-6">
 				
-				{/* Top Logo — absolutely pinned to top center aligned with the card's top edge */}
-				<Link href="/" className="absolute top-[5vh] left-1/2 -translate-x-1/2 inline-block z-20">
+				{/* Top Logo */}
+				<Link href="/" className="relative z-20 mb-2 translate-y-8">
 					<Image 
 						src="/assets/brand_logo.svg" 
 						alt="Meetday" 
-						width={140} 
-						height={38} 
+						width={170} 
+						height={46} 
 						priority 
 						style={{ filter: "brightness(0) invert(1)" }} 
-						className="h-9 w-auto"
+						className="h-11 w-auto"
 					/>
 				</Link>
 
-				{/* Center: Puzzle Heart + Vibration Arcs — vertically centered, shifted slightly down */}
-				<div className="translate-y-8 flex items-center justify-center relative">
+				{/* Center: Puzzle Heart + Vibration Arcs — vertically centered */}
+				<div className="flex items-center justify-center relative translate-y-8">
 					{/* The Puzzle Heart Container */}
 					<div className="relative z-10 flex flex-col items-center">
 						
@@ -45,7 +45,7 @@ export function AuthShell({ children, size = "default" }: AuthShellProps) {
 						</div>
 
 						{/* Puzzle Heart SVG */}
-						<svg className="w-[85vw] h-[85vw] sm:w-[75vw] sm:h-[75vw] lg:w-[38vw] lg:h-[38vw] max-w-[540px] max-h-[540px] min-w-[340px] min-h-[340px] overflow-visible drop-shadow-[0_10px_20px_rgba(0,0,0,0.15)]" viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg">
+						<svg className="w-[85vw] h-[85vw] sm:w-[75vw] sm:h-[75vw] lg:w-[38vw] lg:h-[38vw] max-w-[500px] max-h-[500px] min-w-[340px] min-h-[340px] overflow-visible drop-shadow-[0_10px_20px_rgba(0,0,0,0.15)]" viewBox="0 0 360 360" xmlns="http://www.w3.org/2000/svg">
 							
 							{/* Background Vibration Arcs (Concentric Heart Outline from public/images/heart.svg) */}
 							<g className="animate-pulse" transform="translate(-32, 28) scale(0.5)">
@@ -86,7 +86,7 @@ export function AuthShell({ children, size = "default" }: AuthShellProps) {
 								/>
 								<text x="115" y="130" fill="#000000" fontSize="14" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle">Brands</text>
 							</g>
-
+ 
 							{/* White IRL Communities Piece (Right) */}
 							<g>
 								<path 
@@ -99,7 +99,7 @@ export function AuthShell({ children, size = "default" }: AuthShellProps) {
 								<text x="245" y="120" fill="#000000" fontSize="13.5" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle">IRL</text>
 								<text x="245" y="138" fill="#000000" fontSize="13.5" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle">Communities</text>
 							</g>
-
+ 
 							{/* Peach Vibe Piece (Bottom) */}
 							<g>
 								<path 
@@ -112,12 +112,12 @@ export function AuthShell({ children, size = "default" }: AuthShellProps) {
 								<text x="180" y="218" fill="#000000" fontSize="13.5" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle">Vibe</text>
 							</g>
 						</svg>
-
+ 
 					</div>
 				</div>
-
+ 
 			</div>
-
+ 
 			{/* ── Right Side Panel: Form Card ── */}
 			<div className="flex-1 flex flex-col items-center justify-center px-6 py-6 lg:px-10 lg:py-10 z-10 min-h-screen">
 				
@@ -135,9 +135,9 @@ export function AuthShell({ children, size = "default" }: AuthShellProps) {
 						/>
 					</Link>
 				</div>
-
+ 
 				{/* The Onboarding Form Card */}
-				<div className="w-full lg:w-[35vw] max-w-[500px] min-w-[320px] bg-white border-[4px] border-black rounded-[36px] pl-8 pr-2 py-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative flex flex-col h-auto max-h-[85vh] lg:h-[85vh]">
+				<div className="w-full lg:w-[40vw] max-w-[550px] min-w-[340px] bg-white border-[4px] border-black rounded-[36px] pl-8 pr-2 py-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative flex flex-col h-[87vh] max-h-[87vh] translate-y-8">
 					
 					{/* Scrollable Container inside the card */}
 					<div className="w-full flex-1 overflow-y-auto pr-6 flex flex-col min-h-0">

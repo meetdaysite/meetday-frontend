@@ -2,6 +2,7 @@ import { create } from "zustand"
 import { auth } from "@/lib/firebase"
 import { showNotificationToast } from "@/components/ui/NotificationToast"
 import { notificationSocket } from "@/lib/notificationSocket"
+import { playMessageChime } from "@/lib/notificationSound"
 import {
 	getNotifications,
 	getUnreadCount,
@@ -11,6 +12,13 @@ import {
 import type { Notification } from "@/types/notification"
 
 const PAGE_LIMIT = 20
+const CHAT_MESSAGE_NOTIFICATION_TYPES = new Set([
+	"sponsorship_chat_message",
+	"meetday_chat_message",
+	"sponsorship_chat_request",
+	"sponsorship_chat_accepted",
+	"sponsorship_interest_created"
+])
 
 type NotificationStore = {
 	notifications: Notification[]
@@ -31,6 +39,7 @@ type NotificationStore = {
 }
 
 let visibilityHandler: (() => void) | null = null
+let pollInterval: NodeJS.Timeout | null = null
 
 export const useNotificationStore = create<NotificationStore>((set, get) => ({
 	notifications: [],
@@ -91,6 +100,31 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 			if (document.visibilityState === "visible") get().refreshUnreadCount()
 		}
 		document.addEventListener("visibilitychange", visibilityHandler)
+
+		// Set up fallback polling interval for loading notifications automatically
+		if (pollInterval) {
+			clearInterval(pollInterval)
+		}
+		pollInterval = setInterval(async () => {
+			try {
+				const res = await getNotifications({ page: 1, limit: PAGE_LIMIT })
+				// This is the only path notifications get picked up on if the websocket is down
+				// (or never connected) — chime here too, or a missed-socket message stays silent.
+				const existingIds = new Set(get().notifications.map((n) => n.id))
+				const newlyArrived = res.notifications.filter((n) => !existingIds.has(n.id))
+
+				set(() => ({
+					notifications: [...res.notifications],
+					unreadCount: res.unreadCount,
+					total: res.total,
+					hasMore: res.notifications.length < res.total,
+				}))
+
+				if (newlyArrived.some((n) => CHAT_MESSAGE_NOTIFICATION_TYPES.has(n.type))) playMessageChime()
+			} catch {
+				// silent fallback
+			}
+		}, 8000)
 	},
 
 	loadMore: async () => {
@@ -168,6 +202,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 			total: s.total + 1,
 		}))
 		showNotificationToast(notif)
+		if (CHAT_MESSAGE_NOTIFICATION_TYPES.has(notif.type)) playMessageChime()
 	},
 
 	reset: () => {
@@ -175,6 +210,10 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 		if (visibilityHandler) {
 			document.removeEventListener("visibilitychange", visibilityHandler)
 			visibilityHandler = null
+		}
+		if (pollInterval) {
+			clearInterval(pollInterval)
+			pollInterval = null
 		}
 		set({
 			notifications: [],

@@ -1539,7 +1539,7 @@ export default function ProposalPage() {
                                                                     Start with our <span className="text-[#EE2C2C]">AI Companion</span>
                                                                 </h3>
                                                                 <p className="text-[11px] sm:text-xs font-semibold text-black/65 mt-0.5">
-                                                                    Describe your event in a few words — Copilot fills in the rest.
+                                                                    Describe your event in a few words, we fill the rest.
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -1645,7 +1645,7 @@ export default function ProposalPage() {
                                                 value={projAbout}
                                                 onChange={(e) => setProjAbout(e.target.value)}
                                                 placeholder="Describe your project's details, format, and goals..."
-                                                rows={3}
+                                                rows={15}
                                                 className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
                                             />
                                         </div>
@@ -2071,7 +2071,7 @@ export default function ProposalPage() {
                                                         </p>
                                                     </div>
                                                 ) : (
-                                                    <div className="flex flex-row overflow-x-auto sm:flex-wrap sm:overflow-x-visible gap-4 pb-4 sm:pb-0 w-full">
+                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
                                                         {filteredProposals.map((p) => {
                                                             const isViewingRevision = p.pendingRevision != null;
                                                             const cardData = isViewingRevision ? p.pendingRevision! : p;
@@ -2086,7 +2086,7 @@ export default function ProposalPage() {
                                                                 <div
                                                                     key={p.id}
                                                                     onClick={() => setSelectedProposal(p)}
-                                                                    className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-[380px] shrink-0"
+                                                                    className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-full"
                                                                 >
                                                                     {/* Image / Logo */}
                                                                     <div className="relative w-[120px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
@@ -2237,7 +2237,7 @@ export default function ProposalPage() {
                             </>
                         ) : (
                             /* Render the Community details card exactly like the user's mockup! */
-                            <div className="hidden md:flex flex-col p-6 overflow-y-auto h-full w-full bg-white animate-in fade-in duration-150 shrink-0">
+                            <div className="hidden md:flex flex-col h-full w-full bg-white animate-in fade-in duration-150 shrink-0 overflow-hidden">
                                 {renderCommunityCard()}
                             </div>
                         )}

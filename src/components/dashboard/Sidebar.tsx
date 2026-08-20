@@ -8,18 +8,19 @@ import clsx from "clsx"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
-import { getHostCommunityProfile, getMySponsorshipProposals } from "@/lib/api"
+import { getHostCommunityProfile, getMySponsorshipProposals, getMySponsorshipChats } from "@/lib/api"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useToastStore } from "@/store/toastStore"
 import type { ComponentType, SVGProps } from "react"
 
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
-import TicketOutSvg from "@/icons/outlined/ticket.svg"
-import TicketFillSvg from "@/icons/filled/ticket.svg"
+import HeadphonesSvg from "@/icons/filled/headphones.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import BellSvg from "@/icons/outlined/bell.svg"
 import BellFillSvg from "@/icons/filled/bell.svg"
+import ChatOutSvg from "@/icons/outlined/chat.svg"
+import ChatFillSvg from "@/icons/filled/chat.svg"
 
 import WidgetSvg from "@/icons/filled/widget.svg"
 import CalendarFillSvg from "@/icons/filled/calendar.svg"
@@ -33,7 +34,8 @@ const NAV_ITEMS_TOP = [
 ]
 
 const NAV_ITEMS_BOTTOM = [
-	{ label: "Support", href: "/community/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
+	{ label: "Chats", href: "/community/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
+	{ label: "Support Chat", href: "/community/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/community/dashboard/messages", outlined: BellSvg, filled: BellFillSvg },
 ]
 
@@ -52,6 +54,10 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const [community, setCommunity] = useState<any>(null)
 	const [proposals, setProposals] = useState<any[]>([])
 	const [dismissedList, setDismissedList] = useState<any[]>([])
+	const [unreadChatsCount, setUnreadChatsCount] = useState(0)
+	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
+	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
+	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
 
 	useEffect(() => {
 		if (profile?.id) {
@@ -63,8 +69,37 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 				.catch(() => {})
 		}
 	}, [profile?.id])
-	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
-	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
+
+	useEffect(() => {
+		if (!profile?.id) return
+
+		const updateCount = () => {
+			Promise.all([
+				getMySponsorshipChats("ACCEPTED").catch(err => { console.error("accepted error:", err); return [] }),
+				getMySponsorshipChats("REQUESTED").catch(err => { console.error("requested error:", err); return [] }),
+			]).then(([accepted, requested]) => {
+				const count1 = accepted.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+				const count2 = requested.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+				const supportUnread = notifications.filter(n => 
+					!n.isRead && 
+					n.title === "Meetday" && 
+					!n.metadata?.threadId && 
+					!n.metadata?.thread_id && 
+					!n.metadata?.interestId && 
+					!n.metadata?.interest_id && 
+					!n.metadata?.chatId && 
+					!n.metadata?.chat_id && 
+					!n.metadata?.sponsorshipInterestId
+				).length
+				setUnreadChatsCount(count1 + count2)
+				setUnreadSupportCount(supportUnread)
+			}).catch(err => console.error("Promise.all error:", err))
+		}
+
+		updateCount()
+		const interval = setInterval(updateCount, 8000)
+		return () => clearInterval(interval)
+	}, [profile?.id, notifications])
 
 	useEffect(() => {
 		initNotifs()
@@ -355,6 +390,16 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 								)}
 							</div>
 							<span className="flex-1">{label}</span>
+							{label === "Chats" && unreadChatsCount > 0 && (
+								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+									{unreadChatsCount > 9 ? "9+" : unreadChatsCount}
+								</span>
+							)}
+							{label === "Support Chat" && unreadSupportCount > 0 && (
+								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+									{unreadSupportCount > 9 ? "9+" : unreadSupportCount}
+								</span>
+							)}
 						</Link>
 					)
 				})}

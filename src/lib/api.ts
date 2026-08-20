@@ -306,7 +306,7 @@ export async function registerHost(payload: RegisterPayload): Promise<void> {
 	await apiClient.post("/auth/register", payload)
 }
 
-// Brands are a separate, minimal account type on the backend \u2014 just contact identity + brand name.
+// Brands are a separate, minimal account type on the backend — just contact identity + brand name.
 export type BrandRegisterPayload = {
 	firstName: string
 	lastName: string
@@ -712,6 +712,7 @@ export type PublishedSponsorshipDetail = SponsorshipProposal & {
 		user: { firstName: string; lastName: string }
 	}
 	community: SponsorshipCommunityProfile | null
+	alreadyInterested?: boolean
 }
 
 export async function getPublishedSponsorshipDetail(id: string): Promise<PublishedSponsorshipDetail> {
@@ -731,6 +732,216 @@ export async function markSponsorshipInterest(
 	return data.data
 }
 
+// ─── TriChat: Host ↔ Brand (+ Admin) chat tied to a sponsorship interest ────────
+
+export type SponsorshipChatStatus = "REQUESTED" | "ACCEPTED"
+export type ChatSenderType = "HOST" | "BRAND" | "ADMIN"
+
+export type SponsorshipChatThread = {
+	id: string
+	proposalId: string
+	proposalName: string
+	chatStatus: SponsorshipChatStatus
+	createdAt: string
+	chatAcceptedAt: string | null
+	lastMessageAt: string | null
+	lastMessagePreview: string | null
+	counterpartName: string
+	counterpartAvatarUrl?: string | null
+	unreadCount: number
+}
+
+export type SponsorshipChatReplyTo = {
+	id: string
+	senderType: ChatSenderType
+	content: string
+	hasMedia: boolean
+}
+
+export type SponsorshipChatMessage = {
+	id: string
+	senderType: ChatSenderType
+	senderId: string
+	messageType?: "TEXT" | "SYSTEM"
+	content: string
+	mediaUrl?: string | null
+	editedAt?: string | null
+	deletedAt?: string | null
+	seenByOther?: boolean
+	createdAt: string
+	wasRedacted?: boolean
+	hostReadAt?: string | null
+	brandReadAt?: string | null
+	replyTo?: SponsorshipChatReplyTo | null
+}
+
+export async function getMySponsorshipChats(status?: SponsorshipChatStatus): Promise<SponsorshipChatThread[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipChatThread[] }>(
+		"/sponsorships/chats",
+		{ params: status ? { status } : undefined },
+	)
+	return data.data
+}
+
+export async function getSponsorshipChatMessages(
+	interestId: string,
+): Promise<{ messages: SponsorshipChatMessage[]; chatStatus: SponsorshipChatStatus; unreadCount: number; firstUnreadMessageId: string | null }> {
+	const { data } = await apiClient.get<{
+		success: boolean
+		data: { messages: SponsorshipChatMessage[]; chatStatus: SponsorshipChatStatus; unreadCount: number; firstUnreadMessageId: string | null }
+	}>(`/sponsorships/chats/${interestId}/messages`)
+	return data.data
+}
+
+export async function sendSponsorshipChatMessage(
+	interestId: string,
+	payload: { content?: string; mediaKey?: string; replyToId?: string },
+): Promise<SponsorshipChatMessage> {
+	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipChatMessage }>(
+		`/sponsorships/chats/${interestId}/messages`,
+		payload,
+	)
+	return data.data
+}
+
+export async function editSponsorshipChatMessage(
+	interestId: string,
+	messageId: string,
+	content: string,
+): Promise<SponsorshipChatMessage> {
+	const { data } = await apiClient.patch<{ success: boolean; data: SponsorshipChatMessage }>(
+		`/sponsorships/chats/${interestId}/messages/${messageId}`,
+		{ content },
+	)
+	return data.data
+}
+
+export async function deleteSponsorshipChatMessage(interestId: string, messageId: string): Promise<void> {
+	await apiClient.delete(`/sponsorships/chats/${interestId}/messages/${messageId}`)
+}
+
+export async function acceptSponsorshipChatRequest(
+	interestId: string,
+): Promise<{ message: string; chatStatus: SponsorshipChatStatus }> {
+	const { data } = await apiClient.post<{
+		success: boolean
+		data: { message: string; chatStatus: SponsorshipChatStatus }
+	}>(`/sponsorships/chats/${interestId}/accept`)
+	return data.data
+}
+
+// ─── Deal Lock: negotiated final terms, host fills in, brand approves ─────────
+
+export type SponsorshipDealStatus = "PENDING_APPROVAL" | "CHANGES_REQUESTED" | "APPROVED"
+
+export type SponsorshipDeal = {
+	id: string
+	sponsorshipInterestId: string
+	projectName: string
+	startDate: string
+	endDate: string | null
+	time: string | null
+	venue: string
+	sponsorshipAmount: string | number
+	deliverables: string
+	sponsorshipCategory: string | null
+	barterElements: string | null
+	status: SponsorshipDealStatus
+	version: number
+	changeRequestNote: string | null
+	approvedAt: string | null
+	createdAt: string
+	updatedAt: string
+}
+
+export type SponsorshipDealPayload = {
+	projectName: string
+	startDate: string
+	endDate?: string
+	time?: string
+	venue: string
+	sponsorshipAmount: number
+	deliverables: string
+	sponsorshipCategory?: string
+	barterElements?: string
+}
+
+export async function getSponsorshipDeal(interestId: string): Promise<SponsorshipDeal | null> {
+	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipDeal | null }>(
+		`/sponsorships/chats/${interestId}/deal`,
+	)
+	return data.data
+}
+
+export async function createSponsorshipDeal(
+	interestId: string,
+	payload: SponsorshipDealPayload,
+): Promise<SponsorshipDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipDeal }>(
+		`/sponsorships/chats/${interestId}/deal`,
+		payload,
+	)
+	return data.data
+}
+
+export async function updateSponsorshipDeal(
+	interestId: string,
+	payload: SponsorshipDealPayload,
+): Promise<SponsorshipDeal> {
+	const { data } = await apiClient.patch<{ success: boolean; data: SponsorshipDeal }>(
+		`/sponsorships/chats/${interestId}/deal`,
+		payload,
+	)
+	return data.data
+}
+
+export async function approveSponsorshipDeal(interestId: string): Promise<SponsorshipDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipDeal }>(
+		`/sponsorships/chats/${interestId}/deal/approve`,
+	)
+	return data.data
+}
+
+export async function requestSponsorshipDealChanges(
+	interestId: string,
+	payload: { note?: string },
+): Promise<SponsorshipDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipDeal }>(
+		`/sponsorships/chats/${interestId}/deal/request-changes`,
+		payload,
+	)
+	return data.data
+}
+
+// ─── "Talk to Meetday" general support chat — one thread per user, separate from TriChat ──
+
+export type MeetdayChatMessage = {
+	id: string
+	senderType: "USER" | "ADMIN"
+	senderId: string
+	content: string
+	mediaUrl?: string | null
+	createdAt: string
+	wasRedacted?: boolean
+	hostReadAt?: string | null
+	brandReadAt?: string | null
+}
+
+export async function getMyMeetdayChat(): Promise<{ messages: MeetdayChatMessage[] }> {
+	const { data } = await apiClient.get<{ success: boolean; data: { messages: MeetdayChatMessage[] } }>(
+		"/meetday-chat/messages",
+	)
+	return data.data
+}
+
+export async function sendMeetdayChatMessage(payload: { content?: string; mediaKey?: string }): Promise<MeetdayChatMessage> {
+	const { data } = await apiClient.post<{ success: boolean; data: MeetdayChatMessage }>(
+		"/meetday-chat/messages",
+		payload,
+	)
+	return data.data
+}
+
 // ─── Host community profile (shown to sponsors) ───────────────────────────────
 
 export type HostCommunityProfilePayload = {
@@ -741,7 +952,7 @@ export type HostCommunityProfilePayload = {
 	avgGuestCount: string
 	experiencesPerYear: string
 	categoryIds: string[]
-	secondaryImageKey?: string
+	secondaryImageKey?: string | null
 	pastEvents?: PastEventPayload[]
 }
 
@@ -1530,7 +1741,7 @@ export async function getCommunityAnnouncements(
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
-	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "COMMUNITY_PAST_EVENT_MEDIA"
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA"
 	contentType: string
 	resourceId?: string
 	mediaType?: string

@@ -7,16 +7,19 @@ import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import { useBrandStore } from "@/store/brandStore"
 import { useToastStore } from "@/store/toastStore"
-import type { ComponentType, SVGProps } from "react"
+import { useState, useEffect, type ComponentType, type SVGProps } from "react"
+import { getMySponsorshipChats } from "@/lib/api"
+import { useNotificationStore } from "@/store/notificationStore"
 
 import UserSvg from "@/icons/outlined/user.svg"
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import WidgetFillSvg from "@/icons/filled/widget.svg"
-import TicketOutSvg from "@/icons/outlined/ticket.svg"
-import TicketFillSvg from "@/icons/filled/ticket.svg"
+import HeadphonesSvg from "@/icons/filled/headphones.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import BellSvg from "@/icons/outlined/bell.svg"
+import ChatOutSvg from "@/icons/outlined/chat.svg"
+import ChatFillSvg from "@/icons/filled/chat.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -29,8 +32,9 @@ const PRIMARY_NAV: NavItem[] = [
 ]
 
 const SECONDARY_NAV: NavItem[] = [
+	{ label: "Chats", href: "/brand/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
+	{ label: "Support Chat", href: "/brand/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/brand/dashboard/notifications", outlined: BellSvg, filled: BellSvg },
-	{ label: "Support", href: "/brand/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
 ]
 
 function LogoutSvg(props: SVGProps<SVGSVGElement>) {
@@ -59,6 +63,45 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 	const { toasts, removeToast } = useToastStore()
 	const brandName = profile?.brandName || "Brand"
 	const avatarUrl = profile?.logoUrl
+	const [unreadChatsCount, setUnreadChatsCount] = useState(0)
+	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
+
+	const { notifications, init: initNotifs } = useNotificationStore()
+
+	useEffect(() => {
+		initNotifs()
+	}, [initNotifs])
+
+	useEffect(() => {
+		if (!profile?.id) return
+
+		const updateCount = () => {
+			getMySponsorshipChats()
+				.then(chats => {
+					if (Array.isArray(chats)) {
+						const count = chats.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+						const supportUnread = notifications.filter(n => 
+							!n.isRead && 
+							n.title === "Meetday" && 
+							!n.metadata?.threadId && 
+							!n.metadata?.thread_id && 
+							!n.metadata?.interestId && 
+							!n.metadata?.interest_id && 
+							!n.metadata?.chatId && 
+							!n.metadata?.chat_id && 
+							!n.metadata?.sponsorshipInterestId
+						).length
+						setUnreadChatsCount(count)
+						setUnreadSupportCount(supportUnread)
+					}
+				})
+				.catch(() => {})
+		}
+
+		updateCount()
+		const interval = setInterval(updateCount, 8000)
+		return () => clearInterval(interval)
+	}, [profile?.id, notifications])
 
 	return (
 		<div className="flex flex-col h-full bg-[#EE2C2C] text-white overflow-hidden">
@@ -157,6 +200,16 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 								className="text-white shrink-0"
 							/>
 							<span className="flex-1">{label}</span>
+							{label === "Chats" && unreadChatsCount > 0 && (
+								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+									{unreadChatsCount > 9 ? "9+" : unreadChatsCount}
+								</span>
+							)}
+							{label === "Support Chat" && unreadSupportCount > 0 && (
+								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+									{unreadSupportCount > 9 ? "9+" : unreadSupportCount}
+								</span>
+							)}
 						</Link>
 					)
 				})}
