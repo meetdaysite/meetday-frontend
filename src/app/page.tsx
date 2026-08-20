@@ -48,6 +48,10 @@ function SpeechBubble({ text, bg, textColor, rotation, positionClass, tailOffset
 export default function RootPage() {
 	const [index, setIndex] = useState(0)
 	const [animationState, setAnimationState] = useState<"normal" | "leaving" | "entering">("normal")
+	const [isPricingOpen, setIsPricingOpen] = useState(false)
+	const [activeCategory, setActiveCategory] = useState<"host" | "brand" | null>(null)
+	const [activeSub, setActiveSub] = useState<string | null>(null)
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
 	useEffect(() => {
 		const interval = setInterval(() => {
@@ -91,7 +95,7 @@ export default function RootPage() {
 						priority 
 					/>
 				</Link>
-				<nav className="flex items-center gap-3 sm:gap-6 md:gap-8">
+				<nav className="hidden md:flex items-center gap-3 sm:gap-6 md:gap-8">
 					<a 
 						href="https://meetday.ai/website" 
 						target="_blank" 
@@ -100,6 +104,288 @@ export default function RootPage() {
 					>
 						Meetday's Story
 					</a>
+
+					{/* Pricing Dropdown */}
+					<div className="relative">
+						<button 
+							onClick={() => {
+								const nextOpen = !isPricingOpen
+								setIsPricingOpen(nextOpen)
+								if (nextOpen) {
+									setActiveCategory(null)
+									setActiveSub(null)
+								}
+							}}
+							className="flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 bg-[#FFCE29] text-black border-2 border-black rounded-full font-bold text-xs sm:text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer"
+						>
+							<span>Pricing</span>
+							<svg 
+								className={`w-3.5 h-3.5 transition-transform duration-200 ${isPricingOpen ? "rotate-180" : ""}`} 
+								fill="none" 
+								stroke="currentColor" 
+								strokeWidth="3"
+								viewBox="0 0 24 24"
+							>
+								<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+							</svg>
+						</button>
+
+						{isPricingOpen && (
+							<>
+								{/* Invisible full-screen backdrop to close on click outside */}
+								<div 
+									className="fixed inset-0 z-40 cursor-default" 
+									onClick={() => setIsPricingOpen(false)}
+								/>
+								<div 
+									className="absolute right-[-80px] sm:right-0 mt-3.5 w-[290px] sm:w-[340px] bg-[#EE2C2C] border-[3px] border-black rounded-[24px] shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col gap-3 text-left cursor-default"
+								>
+									{/* Category 1: For Community & Host */}
+									<div className="flex flex-col">
+										<button
+											onClick={() => {
+												setActiveCategory(activeCategory === "host" ? null : "host");
+												setActiveSub(null); // Reset sub when category toggles
+											}}
+											className={`w-full text-left font-black uppercase text-[11px] sm:text-xs flex items-center justify-between py-2.5 px-3.5 border-[2.5px] border-black rounded-[16px] cursor-pointer transition-all duration-150 ${
+												activeCategory === "host"
+													? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+													: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+											}`}
+										>
+											<span>For Community & Host</span>
+											<svg
+												className={`w-3.5 h-3.5 transition-transform duration-200 ${
+													activeCategory === "host" ? "rotate-180" : ""
+												}`}
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="3"
+												viewBox="0 0 24 24"
+											>
+												<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+											</svg>
+										</button>
+
+										{activeCategory === "host" && (
+											<div className="flex flex-col gap-2 mt-2.5 pl-2.5 border-l-2 border-white/30">
+												{/* Sub 1: Sponsorship Matchmaking */}
+												<div className="flex flex-col">
+													<button
+														onClick={() => setActiveSub(activeSub === "matchmaking" ? null : "matchmaking")}
+														className={`w-full text-left font-extrabold uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-xl cursor-pointer transition-all duration-150 ${
+															activeSub === "matchmaking"
+																? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+																: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+														}`}
+													>
+														<span>Sponsorship Matchmaking</span>
+														<svg
+															className={`w-3.5 h-3.5 transition-transform duration-200 ${
+																activeSub === "matchmaking" ? "rotate-180" : ""
+															}`}
+															fill="none"
+															stroke="currentColor"
+															strokeWidth="3"
+															viewBox="0 0 24 24"
+														>
+															<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+														</svg>
+													</button>
+
+													{activeSub === "matchmaking" && (
+														<div className="bg-white text-black p-3.5 rounded-xl border-2 border-black font-bold text-[10px] sm:text-[11px] leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-1.5 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-100">
+															<span className="text-[#EE2C2C] font-black uppercase text-[9px] tracking-wider bg-[#EE2C2C]/10 px-2 py-0.5 rounded border border-[#EE2C2C]/20 w-fit">
+																Performance Fee
+															</span>
+															<p className="font-extrabold text-black">
+																15% – 30% commission tiered by raise amount:
+															</p>
+															<ul className="list-none space-y-1 pl-1 text-black/75">
+																<li className="flex items-center gap-1.5">
+																	<span className="w-1.5 h-1.5 rounded-full bg-black shrink-0" />
+																	<span>Up to ₹10L Raise: <span className="font-black text-[#EE2C2C]">30% commission</span></span>
+																</li>
+																<li className="flex items-center gap-1.5">
+																	<span className="w-1.5 h-1.5 rounded-full bg-black shrink-0" />
+																	<span>₹10L – ₹50L Raise: <span className="font-black text-[#EE2C2C]">20% commission</span></span>
+																</li>
+																<li className="flex items-center gap-1.5">
+																	<span className="w-1.5 h-1.5 rounded-full bg-black shrink-0" />
+																	<span>₹50L+ Raise: <span className="font-black text-[#EE2C2C]">15% commission</span></span>
+																</li>
+															</ul>
+														</div>
+													)}
+												</div>
+
+												{/* Sub 2: Co-Created Experiences */}
+												<div className="flex flex-col">
+													<button
+														onClick={() => setActiveSub(activeSub === "co_created" ? null : "co_created")}
+														className={`w-full text-left font-extrabold uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-xl cursor-pointer transition-all duration-150 ${
+															activeSub === "co_created"
+																? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+																: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+														}`}
+													>
+														<span>Co-Created Experiences</span>
+														<svg
+															className={`w-3.5 h-3.5 transition-transform duration-200 ${
+																activeSub === "co_created" ? "rotate-180" : ""
+															}`}
+															fill="none"
+															stroke="currentColor"
+															strokeWidth="3"
+															viewBox="0 0 24 24"
+														>
+															<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+														</svg>
+													</button>
+
+													{activeSub === "co_created" && (
+														<div className="bg-white text-black p-3.5 rounded-xl border-2 border-black font-bold text-[10px] sm:text-[11px] leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-1.5 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-100">
+															<span className="text-[#EE2C2C] font-black uppercase text-[9px] tracking-wider bg-[#EE2C2C]/10 px-2 py-0.5 rounded border border-[#EE2C2C]/20 w-fit">
+																Revenue Share
+															</span>
+															<p className="font-extrabold text-black">
+																20% Revenue Share Split
+															</p>
+															<p className="text-black/75 leading-relaxed font-semibold">
+																Partner with meetday.ai to co-design, market, and produce high-value experiences. We support and split total event revenue with you 20/80.
+															</p>
+														</div>
+													)}
+												</div>
+											</div>
+										)}
+									</div>
+
+									{/* Category 2: For Brand & Agency */}
+									<div className="flex flex-col">
+										<button
+											onClick={() => {
+												setActiveCategory(activeCategory === "brand" ? null : "brand");
+												setActiveSub(null); // Reset sub when category toggles
+											}}
+											className={`w-full text-left font-black uppercase text-[11px] sm:text-xs flex items-center justify-between py-2.5 px-3.5 border-[2.5px] border-black rounded-[16px] cursor-pointer transition-all duration-150 ${
+												activeCategory === "brand"
+													? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+													: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+											}`}
+										>
+											<span>For Brand & Agency</span>
+											<svg
+												className={`w-3.5 h-3.5 transition-transform duration-200 ${
+													activeCategory === "brand" ? "rotate-180" : ""
+												}`}
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="3"
+												viewBox="0 0 24 24"
+											>
+												<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+											</svg>
+										</button>
+
+										{activeCategory === "brand" && (
+											<div className="flex flex-col gap-2 mt-2.5 pl-2.5 border-l-2 border-white/30">
+												{/* Sub 1: Barter & Sampling */}
+												<div className="flex flex-col">
+													<button
+														onClick={() => setActiveSub(activeSub === "barter" ? null : "barter")}
+														className={`w-full text-left font-extrabold uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-xl cursor-pointer transition-all duration-150 ${
+															activeSub === "barter"
+																? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+																: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+														}`}
+													>
+														<span>Barter & Sampling</span>
+														<svg
+															className={`w-3.5 h-3.5 transition-transform duration-200 ${
+																activeSub === "barter" ? "rotate-180" : ""
+															}`}
+															fill="none"
+															stroke="currentColor"
+															strokeWidth="3"
+															viewBox="0 0 24 24"
+														>
+															<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+														</svg>
+													</button>
+
+													{activeSub === "barter" && (
+														<div className="bg-white text-black p-3.5 rounded-xl border-2 border-black font-bold text-[10px] sm:text-[11px] leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-1.5 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-100">
+															<span className="text-[#6C32D1] font-black uppercase text-[9px] tracking-wider bg-[#6C32D1]/10 px-2 py-0.5 rounded border border-[#6C32D1]/20 w-fit">
+																Barter & Sampling
+															</span>
+															<p className="font-extrabold text-black">
+																Flat ₹5,000 per Transaction
+															</p>
+															<ul className="list-none space-y-1.5 pl-1 text-black/75">
+																<li className="flex items-start gap-1.5">
+																	<span className="w-1.5 h-1.5 rounded-full bg-black shrink-0 mt-1.5" />
+																	<span>Product placement, gifting, or venue partnerships with highly engaged local communities.</span>
+																</li>
+																<li className="flex items-start gap-1.5">
+																	<span className="w-1.5 h-1.5 rounded-full bg-black shrink-0 mt-1.5" />
+																	<span>Direct deal matchmaking & coordination support.</span>
+																</li>
+																<li className="flex items-start gap-1.5">
+																	<span className="w-1.5 h-1.5 rounded-full bg-black shrink-0 mt-1.5" />
+																	<span>Zero commission on non-cash value exchanged.</span>
+																</li>
+															</ul>
+														</div>
+													)}
+												</div>
+
+												{/* Sub 2: Campaign Design */}
+												<div className="flex flex-col">
+													<button
+														onClick={() => setActiveSub(activeSub === "campaign" ? null : "campaign")}
+														className={`w-full text-left font-extrabold uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-xl cursor-pointer transition-all duration-150 ${
+															activeSub === "campaign"
+																? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+																: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+														}`}
+													>
+														<span>Campaign Design</span>
+														<svg
+															className={`w-3.5 h-3.5 transition-transform duration-200 ${
+																activeSub === "campaign" ? "rotate-180" : ""
+															}`}
+															fill="none"
+															stroke="currentColor"
+															strokeWidth="3"
+															viewBox="0 0 24 24"
+														>
+															<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+														</svg>
+													</button>
+
+													{activeSub === "campaign" && (
+														<div className="bg-white text-black p-3.5 rounded-xl border-2 border-black font-bold text-[10px] sm:text-[11px] leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-1.5 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-100">
+															<span className="text-[#6C32D1] font-black uppercase text-[9px] tracking-wider bg-[#6C32D1]/10 px-2 py-0.5 rounded border border-[#6C32D1]/20 w-fit">
+																Experiential Campaign
+															</span>
+															<p className="font-extrabold text-black">
+																10% of Total Campaign Budget
+															</p>
+															<p className="text-black/75 leading-relaxed font-semibold">
+																Custom experiential campaign strategy, curator sourcing, host brief development, and multi-city rollout design tailored to your target audience.
+															</p>
+														</div>
+													)}
+												</div>
+											</div>
+										)}
+									</div>
+								</div>
+							</>
+						)}
+					</div>
+
 					<a 
 						href="mailto:info@meetday.ai"
 						className="px-4 sm:px-6 py-2 sm:py-2.5 bg-[#EE2C2C] text-white border-2 border-black rounded-full font-bold text-xs sm:text-sm shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
@@ -107,6 +393,218 @@ export default function RootPage() {
 						Contact Us
 					</a>
 				</nav>
+
+				{/* Hamburger menu for mobile */}
+				<button 
+					onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+					className="md:hidden flex items-center justify-center p-2 bg-[#FFCE29] border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:translate-x-[1px] active:shadow-none transition-all cursor-pointer text-black"
+					aria-label="Toggle menu"
+				>
+					{isMobileMenuOpen ? (
+						// Close Icon (X)
+						<svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					) : (
+						// Hamburger Icon
+						<svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
+						</svg>
+					)}
+				</button>
+
+				{/* Mobile Navigation Dropdown Menu */}
+				{isMobileMenuOpen && (
+					<div className="md:hidden absolute top-20 left-6 right-6 bg-white border-[3px] border-black rounded-[24px] shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] p-5 z-40 flex flex-col gap-4 text-left animate-in fade-in slide-in-from-top-4 duration-200">
+						{/* Option 1: Meetday's Story */}
+						<a 
+							href="https://meetday.ai/website" 
+							target="_blank" 
+							rel="noopener noreferrer" 
+							className="text-black font-black text-sm hover:text-[#EE2C2C] transition-colors py-2 border-b border-black/10"
+						>
+							Meetday's Story
+						</a>
+
+						{/* Option 2: Pricing Accordion (Inlined in mobile menu) */}
+						<div className="flex flex-col gap-2 border-b border-black/10 pb-3">
+							<button 
+								onClick={() => {
+									const nextOpen = !isPricingOpen
+									setIsPricingOpen(nextOpen)
+									if (nextOpen) {
+										setActiveCategory(null)
+										setActiveSub(null)
+									}
+								}}
+								className="w-full text-left flex items-center justify-between font-black text-sm text-black py-2"
+							>
+								<span>Pricing</span>
+								<svg 
+									className={`w-4 h-4 transition-transform duration-200 ${isPricingOpen ? "rotate-180" : ""}`} 
+									fill="none" 
+									stroke="currentColor" 
+									strokeWidth="3"
+									viewBox="0 0 24 24"
+								>
+									<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+								</svg>
+							</button>
+
+							{isPricingOpen && (
+								<div className="bg-[#EE2C2C] border-2 border-black rounded-xl p-3 flex flex-col gap-2.5 mt-1">
+									{/* Category 1: For Community & Host */}
+									<div className="flex flex-col">
+										<button
+											onClick={() => {
+												setActiveCategory(activeCategory === "host" ? null : "host");
+												setActiveSub(null);
+											}}
+											className={`w-full text-left font-black uppercase text-[10px] sm:text-xs flex items-center justify-between py-2 px-3 border-2 border-black rounded-lg cursor-pointer transition-all duration-150 ${
+												activeCategory === "host"
+													? "bg-[#FFCE29] text-black"
+													: "bg-white text-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+											}`}
+										>
+											<span>For Community & Host</span>
+											<svg
+												className={`w-3 h-3 transition-transform duration-200 ${activeCategory === "host" ? "rotate-180" : ""}`}
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="3"
+												viewBox="0 0 24 24"
+											>
+												<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+											</svg>
+										</button>
+
+										{activeCategory === "host" && (
+											<div className="flex flex-col gap-2 mt-2 pl-2 border-l border-white/30">
+												{/* Matchmaking */}
+												<div className="flex flex-col">
+													<button
+														onClick={() => setActiveSub(activeSub === "matchmaking" ? null : "matchmaking")}
+														className={`w-full text-left font-extrabold uppercase text-[9px] sm:text-[10px] flex items-center justify-between py-1.5 px-2.5 border border-black rounded-md cursor-pointer transition-all duration-150 ${
+															activeSub === "matchmaking" ? "bg-[#FFCE29] text-black" : "bg-white text-black"
+														}`}
+													>
+														<span>Sponsorship Matchmaking</span>
+													</button>
+													{activeSub === "matchmaking" && (
+														<div className="bg-white text-black p-2.5 rounded-lg border border-black text-[10px] mt-1 flex flex-col gap-1 leading-normal font-bold">
+															<span className="text-[#EE2C2C] font-black uppercase text-[8px] tracking-wider">Performance Fee</span>
+															<p>15% – 30% commission tiered by raise amount:</p>
+															<ul className="list-disc list-inside text-black/75">
+																<li>Up to ₹10L Raise: <span className="font-black text-[#EE2C2C]">30% commission</span></li>
+																<li>₹10L – ₹50L Raise: <span className="font-black text-[#EE2C2C]">20% commission</span></li>
+																<li>₹50L+ Raise: <span className="font-black text-[#EE2C2C]">15% commission</span></li>
+															</ul>
+														</div>
+													)}
+												</div>
+												
+												{/* Co-Created */}
+												<div className="flex flex-col mt-2">
+													<button
+														onClick={() => setActiveSub(activeSub === "co_created" ? null : "co_created")}
+														className={`w-full text-left font-extrabold uppercase text-[9px] sm:text-[10px] flex items-center justify-between py-1.5 px-2.5 border border-black rounded-md cursor-pointer transition-all duration-150 ${
+															activeSub === "co_created" ? "bg-[#FFCE29] text-black" : "bg-white text-black"
+														}`}
+													>
+														<span>Co-Created Experiences</span>
+													</button>
+													{activeSub === "co_created" && (
+														<div className="bg-white text-black p-2.5 rounded-lg border border-black text-[10px] mt-1 flex flex-col gap-1 leading-normal font-bold">
+															<span className="text-[#EE2C2C] font-black uppercase text-[8px] tracking-wider">Revenue Share</span>
+															<p className="font-black">20% revenue share split</p>
+															<p className="text-black/75">Co-design, market, support, and split event revenue 20/80.</p>
+														</div>
+													)}
+												</div>
+											</div>
+										)}
+									</div>
+
+									{/* Category 2: For Brand & Agency */}
+									<div className="flex flex-col mt-2.5">
+										<button
+											onClick={() => {
+												setActiveCategory(activeCategory === "brand" ? null : "brand");
+												setActiveSub(null);
+											}}
+											className={`w-full text-left font-black uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-lg cursor-pointer transition-all duration-150 ${
+												activeCategory === "brand"
+													? "bg-[#FFCE29] text-black"
+													: "bg-white text-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+											}`}
+										>
+											<span>For Brand & Agency</span>
+											<svg
+												className={`w-3.5 h-3.5 transition-transform duration-200 ${activeCategory === "brand" ? "rotate-180" : ""}`}
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="3"
+												viewBox="0 0 24 24"
+											>
+												<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+											</svg>
+										</button>
+
+										{activeCategory === "brand" && (
+											<div className="flex flex-col gap-2 mt-2 pl-2 border-l border-white/30">
+												{/* Barter */}
+												<div className="flex flex-col">
+													<button
+														onClick={() => setActiveSub(activeSub === "barter" ? null : "barter")}
+														className={`w-full text-left font-extrabold uppercase text-[9px] sm:text-[10px] flex items-center justify-between py-1.5 px-2.5 border border-black rounded-md cursor-pointer transition-all duration-150 ${
+															activeSub === "barter" ? "bg-[#FFCE29] text-black" : "bg-white text-black"
+														}`}
+													>
+														<span>Barter & Sampling</span>
+													</button>
+													{activeSub === "barter" && (
+														<div className="bg-white text-black p-2.5 rounded-lg border border-black text-[10px] mt-1 flex flex-col gap-1 leading-normal font-bold">
+															<span className="text-[#6C32D1] font-black uppercase text-[8px] tracking-wider">Sampling</span>
+															<p className="font-black">Flat ₹5,000 per Transaction</p>
+															<p className="text-black/75">Product placement, coordinate direct deal support with zero commission.</p>
+														</div>
+													)}
+												</div>
+												
+												{/* Campaign Design */}
+												<div className="flex flex-col mt-2">
+													<button
+														onClick={() => setActiveSub(activeSub === "campaign" ? null : "campaign")}
+														className={`w-full text-left font-extrabold uppercase text-[9px] sm:text-[10px] flex items-center justify-between py-1.5 px-2.5 border border-black rounded-md cursor-pointer transition-all duration-150 ${
+															activeSub === "campaign" ? "bg-[#FFCE29] text-black" : "bg-white text-black"
+														}`}
+													>
+														<span>Campaign Design</span>
+													</button>
+													{activeSub === "campaign" && (
+														<div className="bg-white text-black p-2.5 rounded-lg border border-black text-[10px] mt-1 flex flex-col gap-1 leading-normal font-bold">
+															<span className="text-[#6C32D1] font-black uppercase text-[8px] tracking-wider">experiential strategy</span>
+															<p className="font-black">10% of Campaign Budget</p>
+															<p className="text-black/75">Multi-city rollout design, curator sourcing, and host brief development.</p>
+														</div>
+													)}
+												</div>
+											</div>
+										)}
+									</div>
+								</div>
+							)}
+						</div>
+
+						{/* Option 3: Contact Us */}
+						<a 
+							href="mailto:info@meetday.ai"
+							className="w-full text-center py-2.5 bg-[#EE2C2C] text-white border-2 border-black rounded-full font-bold text-sm shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+						>
+							Contact Us
+						</a>
+					</div>
+				)}
 			</header>
 
 			{/* Main Content Area */}
@@ -238,7 +736,7 @@ export default function RootPage() {
 							/>
 						</div>
 						
-						<p className="mt-2 md:mt-4 text-black font-semibold text-center text-[9px] sm:text-sm md:text-base leading-relaxed flex-grow max-w-sm">
+						<p className="mt-2 md:mt-4 text-black font-normal text-center text-[9px] sm:text-sm md:text-base leading-relaxed flex-grow max-w-sm min-h-[36px] sm:min-h-[48px] md:min-h-[60px] flex items-center justify-center">
 							Publish proposals, get discovered by top brands, and lock sponsorship deals instantly.
 						</p>
 						
@@ -265,7 +763,7 @@ export default function RootPage() {
 							/>
 						</div>
 						
-						<p className="mt-2 md:mt-4 text-black font-semibold text-center text-[9px] sm:text-sm md:text-base leading-relaxed flex-grow max-w-sm">
+						<p className="mt-2 md:mt-4 text-black font-normal text-center text-[9px] sm:text-sm md:text-base leading-relaxed flex-grow max-w-sm min-h-[36px] sm:min-h-[48px] md:min-h-[60px] flex items-center justify-center">
 							Publish campaigns, discover verified offline communities, and close partnerships in one workspace.
 						</p>
 						

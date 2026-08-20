@@ -1225,7 +1225,8 @@ export default function ProposalPage() {
                                             title="Share with brands"
                                             className="bg-white text-black border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider select-none flex items-center gap-1.5"
                                             onClick={() => {
-                                                const link = `${window.location.origin}/brand/proposal/${selectedProposal.id}`
+                                                const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" && window.location.origin.includes("localhost") ? window.location.origin : "https://app.meetday.ai")
+                                                const link = `${appUrl}/brand/proposal/${selectedProposal.id}`
                                                 navigator.clipboard.writeText(link)
                                                     .then(() => toast.success("Link copied! Share it with brands."))
                                                     .catch(() => toast.error("Failed to copy link."))
@@ -2129,7 +2130,8 @@ export default function ProposalPage() {
                                                                                 type="button"
                                                                                 title="Share with brands"
                                                                                 onClick={() => {
-                                                                                    const link = `${window.location.origin}/brand/proposal/${p.id}`
+                                                                                    const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" && window.location.origin.includes("localhost") ? window.location.origin : "https://app.meetday.ai")
+                                                                                    const link = `${appUrl}/brand/proposal/${p.id}`
                                                                                     navigator.clipboard.writeText(link)
                                                                                         .then(() => toast.success("Link copied! Share it with brands."))
                                                                                         .catch(() => toast.error("Failed to copy link."))
