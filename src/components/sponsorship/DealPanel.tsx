@@ -183,9 +183,7 @@ export function DealFormModal({
 				endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
 			}
 			const saved = deal ? await updateSponsorshipDeal(interestId, payload) : await createSponsorshipDeal(interestId, payload)
-			if (!deal) {
-				await sendSponsorshipChatMessage(interestId, { content: "📄 A deal proposal was shared for approval." }).catch(() => {})
-			}
+
 			toast.success(deal ? "Deal updated." : "Deal locked — waiting on brand approval.")
 			onSaved(saved)
 			onClose()
@@ -348,7 +346,7 @@ export function DealDetailsModal({
 		setBusy(true)
 		try {
 			const updated = await approveSponsorshipDeal(interestId)
-			await sendSponsorshipChatMessage(interestId, { content: "🔒 The deal is locked!" }).catch(() => {})
+
 			toast.success("🎉 Deal approved and locked!")
 			
 			// Trigger confetti locally in the chat canvas

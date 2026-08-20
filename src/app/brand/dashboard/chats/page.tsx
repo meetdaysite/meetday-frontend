@@ -466,9 +466,19 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 				) : (
 					messages.map(m => {
 						if (m.messageType === "SYSTEM") {
+							const formatSystemMessage = (content: string) => {
+								const lower = content.toLowerCase()
+								if (lower.includes("created") || lower.includes("proposal") || lower.includes("shared")) {
+									return "📄 A deal proposal was shared for approval."
+								}
+								if (lower.includes("approved") || lower.includes("locked") || lower.includes("accepted")) {
+									return "🔒 The deal is locked!"
+								}
+								return content
+							}
 							return (
 								<div key={m.id} className="self-center max-w-[90%] px-3 py-1.5 rounded-full bg-neutral-100 text-black/50 text-[11px] font-bold text-center">
-									{m.content}
+									{formatSystemMessage(m.content ?? "")}
 								</div>
 							)
 						}
