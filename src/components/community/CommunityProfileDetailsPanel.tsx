@@ -126,6 +126,60 @@ export function CommunityProfileDetailsPanel({
 					</div>
 				)}
 
+				{/* Past Experiences */}
+				{community.pastEvents && community.pastEvents.length > 0 && (
+					<div className="flex flex-col gap-3 mt-2">
+						<span className="text-xs font-bold text-black/50">Past Experiences</span>
+						<div className="flex flex-col gap-4">
+							{community.pastEvents.map((event, i) => {
+								const hasDesc = !!event.description;
+								const hasName = !!event.name;
+								const hasImages = event.imageUrls && event.imageUrls.length > 0;
+
+								return (
+									<div key={i} className="p-4 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-2.5">
+										<div className="flex justify-between items-center gap-2">
+											{hasName ? (
+												<span className="text-sm font-bold text-black">{event.name}</span>
+											) : (
+												<span className="text-sm font-bold text-black/50">Experience #{i + 1}</span>
+											)}
+											{hasName && (
+												<span className="text-[10px] font-bold text-black/40 uppercase bg-black/5 px-2 py-0.5 rounded-md">
+													Experience #{i + 1}
+												</span>
+											)}
+										</div>
+										{hasDesc && (
+											<p className="text-sm font-semibold text-black/75 leading-relaxed whitespace-pre-wrap">
+												{event.description}
+											</p>
+										)}
+										{hasImages && (
+											<div className="flex flex-wrap gap-3 mt-1">
+												{event.imageUrls.slice(0, 2).map((url, j) => (
+													<div 
+														key={j}
+														onClick={() => setEnlargedImageUrl(url)}
+														className="relative w-[calc(50%-6px)] aspect-[4/5] rounded-xl border border-black/10 overflow-hidden bg-white cursor-pointer hover:opacity-90 transition-opacity shrink-0"
+													>
+														{/* eslint-disable-next-line @next/next/no-img-element */}
+														<img 
+															src={url} 
+															alt={event.name || "Past Experience Image"} 
+															className="w-full h-full object-cover" 
+														/>
+													</div>
+												))}
+											</div>
+										)}
+									</div>
+								);
+							})}
+						</div>
+					</div>
+				)}
+
 				{/* Statistics / Numbers Grid */}
 				<div className="grid grid-cols-2 gap-4">
 					<div className="p-3.5 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-1">
@@ -166,59 +220,7 @@ export function CommunityProfileDetailsPanel({
 					</div>
 				)}
 
-				{/* Past Events */}
-				{community.pastEvents && community.pastEvents.length > 0 && (
-					<div className="flex flex-col gap-3 mt-2">
-						<span className="text-xs font-bold text-black/50">Past Experiences</span>
-						<div className="flex flex-col gap-4">
-							{community.pastEvents.map((event, i) => {
-								const hasDesc = !!event.description;
-								const hasName = !!event.name;
-								const hasImages = event.imageUrls && event.imageUrls.length > 0;
 
-								return (
-									<div key={i} className="p-4 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-2.5">
-										<div className="flex justify-between items-center gap-2">
-											{hasName ? (
-												<span className="text-sm font-bold text-black">{event.name}</span>
-											) : (
-												<span className="text-sm font-bold text-black/50">Event #{i + 1}</span>
-											)}
-											{hasName && (
-												<span className="text-[10px] font-bold text-black/40 uppercase bg-black/5 px-2 py-0.5 rounded-md">
-													Event #{i + 1}
-												</span>
-											)}
-										</div>
-										{hasDesc && (
-											<p className="text-sm font-semibold text-black/70 leading-relaxed whitespace-pre-wrap">
-												{event.description}
-											</p>
-										)}
-										{hasImages && (
-											<div className="flex flex-wrap gap-2 mt-1">
-												{event.imageUrls.slice(0, 2).map((url, j) => (
-													<div 
-														key={j}
-														onClick={() => setEnlargedImageUrl(url)}
-														className="relative w-16 h-16 rounded-xl border border-black/10 overflow-hidden bg-white cursor-pointer hover:opacity-90 transition-opacity shrink-0"
-													>
-														{/* eslint-disable-next-line @next/next/no-img-element */}
-														<img 
-															src={url} 
-															alt={event.name || "Past Event Image"} 
-															className="w-full h-full object-cover" 
-														/>
-													</div>
-												))}
-											</div>
-										)}
-									</div>
-								);
-							})}
-						</div>
-					</div>
-				)}
 
 				{/* Social Links */}
 				<div className="flex flex-col gap-2.5 border-t border-black/10 pt-4 mt-2">

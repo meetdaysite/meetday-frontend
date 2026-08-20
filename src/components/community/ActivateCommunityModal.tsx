@@ -477,6 +477,88 @@ export function ActivateCommunityModal({
 					</div>
 				</div>
 
+				{/* Past Experiences */}
+				<div className="flex flex-col gap-3">
+					<div className="flex items-center justify-between">
+						<label className="text-xs font-bold text-black">Past Experiences</label>
+						<span className="text-[10px] text-black/40">Showcase up to 2 images per experience (4:5 ratio)</span>
+					</div>
+					{pastEvents.map((event, i) => (
+						<div key={i} className="flex flex-col gap-2 p-3 rounded-xl border-2 border-black/10 bg-slate-50/50">
+							<div className="flex items-center justify-between">
+								<span className="text-[10px] font-bold text-black/40 uppercase">Experience {i + 1}</span>
+								<button
+									type="button"
+									onClick={() => removePastEvent(i)}
+									className="text-black/40 hover:text-red-600 text-xs font-bold transition-colors"
+								>
+									Remove
+								</button>
+							</div>
+							<input
+								type="text"
+								value={event.name}
+								onChange={(e) => updatePastEvent(i, "name", e.target.value)}
+								placeholder="Experience name (optional)"
+								className={clsx(
+									"h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors w-full",
+									inline ? "border border-black/15 focus:border-black/35" : "border-2 border-black"
+								)}
+							/>
+							<textarea
+								value={event.description}
+								onChange={(e) => updatePastEvent(i, "description", e.target.value)}
+								placeholder="Experience description (optional)"
+								rows={2}
+								className={clsx(
+									"p-2.5 rounded-xl bg-white text-black outline-none text-sm transition-colors resize-none w-full",
+									inline ? "border border-black/15 focus:border-black/35" : "border-2 border-black"
+								)}
+							/>
+							<div className="flex items-center gap-2">
+								{event.images.map((img, j) => (
+									<div key={j} className="relative w-16 h-20 rounded-lg border-2 border-black overflow-hidden shrink-0">
+										{/* eslint-disable-next-line @next/next/no-img-element */}
+										<img src={img.url} alt="Past experience" className="size-full object-cover" />
+										<button
+											type="button"
+											onClick={() => removePastEventImage(i, j)}
+											className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center leading-none"
+										>
+											×
+										</button>
+									</div>
+								))}
+								{event.images.length < 2 && (
+									<label className="w-16 h-20 rounded-lg border-2 border-dashed border-black/30 flex items-center justify-center shrink-0 cursor-pointer hover:bg-black/5">
+										<input
+											type="file"
+											accept="image/*"
+											className="hidden"
+											onChange={(e) => {
+												const file = e.target.files?.[0]
+												e.target.value = ""
+												if (file) addPastEventImage(i, file)
+											}}
+										/>
+										<Icon as={UploadSvg} size="sm" color="muted" />
+									</label>
+								)}
+							</div>
+						</div>
+					))}
+					<Button
+						type="button"
+						variant="secondary"
+						size="sm"
+						radius="md"
+						onClick={addPastEvent}
+						className="bg-[#FFC940] border-2 border-black text-black text-xs font-bold py-2 px-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all self-start"
+					>
+						+ Add Showcase
+					</Button>
+				</div>
+
 				{/* Community Size */}
 				<div className="flex flex-col gap-1.5">
 					<label className="text-xs font-bold text-black">Community Size *</label>
@@ -677,87 +759,7 @@ export function ActivateCommunityModal({
 					</div>
 				</div>
 
-				{/* Past Events (optional) */}
-				<div className="flex flex-col gap-3">
-					<div className="flex items-center justify-between">
-						<label className="text-xs font-bold text-black">Past Events (optional)</label>
-						<span className="text-[10px] text-black/40">Showcase up to 2 images per event</span>
-					</div>
-					{pastEvents.map((event, i) => (
-						<div key={i} className="flex flex-col gap-2 p-3 rounded-xl border-2 border-black/10 bg-slate-50/50">
-							<div className="flex items-center justify-between">
-								<span className="text-[10px] font-bold text-black/40 uppercase">Event {i + 1}</span>
-								<button
-									type="button"
-									onClick={() => removePastEvent(i)}
-									className="text-black/40 hover:text-red-600 text-xs font-bold transition-colors"
-								>
-									Remove
-								</button>
-							</div>
-							<input
-								type="text"
-								value={event.name}
-								onChange={(e) => updatePastEvent(i, "name", e.target.value)}
-								placeholder="Event name (optional)"
-								className={clsx(
-									"h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors w-full",
-									inline ? "border border-black/15 focus:border-black/35" : "border-2 border-black"
-								)}
-							/>
-							<textarea
-								value={event.description}
-								onChange={(e) => updatePastEvent(i, "description", e.target.value)}
-								placeholder="Event description (optional)"
-								rows={2}
-								className={clsx(
-									"p-2.5 rounded-xl bg-white text-black outline-none text-sm transition-colors resize-none w-full",
-									inline ? "border border-black/15 focus:border-black/35" : "border-2 border-black"
-								)}
-							/>
-							<div className="flex items-center gap-2">
-								{event.images.map((img, j) => (
-									<div key={j} className="relative size-16 rounded-lg border-2 border-black overflow-hidden shrink-0">
-										{/* eslint-disable-next-line @next/next/no-img-element */}
-										<img src={img.url} alt="Past event" className="size-full object-cover" />
-										<button
-											type="button"
-											onClick={() => removePastEventImage(i, j)}
-											className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center leading-none"
-										>
-											×
-										</button>
-									</div>
-								))}
-								{event.images.length < 2 && (
-									<label className="size-16 rounded-lg border-2 border-dashed border-black/30 flex items-center justify-center shrink-0 cursor-pointer hover:bg-black/5">
-										<input
-											type="file"
-											accept="image/*"
-											className="hidden"
-											onChange={(e) => {
-												const file = e.target.files?.[0]
-												e.target.value = ""
-												if (file) addPastEventImage(i, file)
-											}}
-										/>
-										<Icon as={UploadSvg} size="sm" color="muted" />
-									</label>
-								)}
-							</div>
-						</div>
-					))}
-					<Button
-						type="button"
-						variant="secondary"
-						size="xs"
-						radius="md"
-						onClick={addPastEvent}
-						className="bg-white border-2 border-black text-black text-[10px] py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all self-start"
-					>
-						+ Add Another Event
-					</Button>
-				</div>
+
 
 				{/* Modal Footer */}
 				<div className="flex gap-3 justify-end mt-4 pt-4 border-t border-black/10 shrink-0">

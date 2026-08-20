@@ -125,6 +125,14 @@ export default function BrandCommunitiesPage() {
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [isPosterEnlarged, setIsPosterEnlarged] = useState(false)
+	const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null)
+	const [selectedExperience, setSelectedExperience] = useState<{
+		name?: string | null
+		description?: string | null
+		imageUrls: string[]
+		eventNumber: number
+	} | null>(null)
+	const [viewAllExperiencesMode, setViewAllExperiencesMode] = useState(false)
 
 	useEffect(() => {
 		let cancelled = false
@@ -185,6 +193,18 @@ export default function BrandCommunitiesPage() {
 		  })
 		: []
 
+	const flatExperienceImages = selectedCommunity
+		? (selectedCommunity.pastEvents || []).flatMap((event, eventIdx) => {
+				return (event.imageUrls || []).map((url) => ({
+					url,
+					eventNumber: eventIdx + 1,
+					name: event.name,
+					description: event.description,
+					imageUrls: event.imageUrls,
+				}))
+		  })
+		: []
+
 	return (
 		<div className="flex flex-col min-h-full bg-white">
 			{/* Top Nav / Subheader */}
@@ -211,8 +231,50 @@ export default function BrandCommunitiesPage() {
 						</div>
 
 						<div className="flex flex-col gap-6 overflow-y-auto flex-1 min-h-0 w-full pb-6 px-1">
-							
-							<div>
+							{viewAllExperiencesMode ? (
+								<>
+									<div className="flex justify-between items-center mb-2">
+										<div>
+											<h2 className="text-2xl font-heading font-black text-black">All Past Experiences</h2>
+											<p className="text-sm font-semibold text-black/50">From {selectedCommunity.name}</p>
+										</div>
+										<button
+											type="button"
+											onClick={() => setViewAllExperiencesMode(false)}
+											className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-black/5 border-2 border-black rounded-xl font-bold text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all active:translate-y-[1px]"
+										>
+											✕ Close
+										</button>
+									</div>
+
+									<div className="border-[3px] border-black p-6 rounded-[28px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white w-full">
+										<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+											{flatExperienceImages.map((img, idx) => (
+												<div 
+													key={idx}
+													onClick={() => setSelectedExperience(img)}
+													className="flex flex-col gap-2.5 items-center justify-between p-3 shrink-0 cursor-pointer bg-white border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px] transition-all duration-150 hover:bg-slate-50/50"
+												>
+													<div className="relative w-full aspect-[4/5] rounded-[16px] border-2 border-black overflow-hidden bg-slate-50">
+														<Image 
+															src={img.url} 
+															alt={`Event #${img.eventNumber}`} 
+															fill
+															className="object-cover" 
+															unoptimized
+														/>
+													</div>
+													<span className="text-[10px] font-black text-black/60 uppercase tracking-wider text-center mt-1">
+														event #{img.eventNumber}
+													</span>
+												</div>
+											))}
+										</div>
+									</div>
+								</>
+							) : (
+								<>
+									<div>
 								<h2 className="text-xl font-heading font-black text-black mb-3">Community Profile Details</h2>
 								
 								{/* Grid to place details card and poster side-by-side (collapses to full width if no poster) */}
@@ -398,110 +460,63 @@ export default function BrandCommunitiesPage() {
 							</div>
 							</div>
 
-							{/* Past Events Section */}
-							{selectedCommunity.pastEvents && selectedCommunity.pastEvents.length > 0 && (
-								<div className="flex flex-col gap-4 mt-8">
-									<div className="flex items-center gap-2">
-										<h2 className="text-xl font-heading font-black text-black">Past Experiences</h2>
-										<span className="px-2 py-0.5 bg-[#FFC940] border-2 border-black text-black text-[10px] font-black uppercase rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-											{selectedCommunity.pastEvents.length} Event{selectedCommunity.pastEvents.length > 1 ? "s" : ""}
-										</span>
+							{/* Past Experiences Section */}
+							{flatExperienceImages.length > 0 && (
+								<div className="flex flex-col gap-4 mt-8 w-full px-1">
+									<div className="flex items-center justify-between w-full">
+										<div className="flex items-center gap-2">
+											<h2 className="text-xl font-heading font-black text-black">Past Experiences</h2>
+											<span className="px-2 py-0.5 bg-[#FFC940] border-2 border-black text-black text-[10px] font-black uppercase rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+												{flatExperienceImages.length} Image{flatExperienceImages.length > 1 ? "s" : ""}
+											</span>
+										</div>
+										{flatExperienceImages.length > 5 && (
+											<button
+												type="button"
+												onClick={() => setViewAllExperiencesMode(true)}
+												className="text-xs font-black text-[#6C32D1] hover:underline"
+											>
+												View All &gt;
+											</button>
+										)}
 									</div>
-									<div className="flex flex-wrap gap-6 items-start">
-										{selectedCommunity.pastEvents.map((event, i) => {
-											const hasDesc = !!event.description;
-											const hasName = !!event.name;
-											const hasImages = event.imageUrls && event.imageUrls.length > 0;
-
-											if (!hasDesc) {
-												return (
-													<div key={i} className="border-[3px] border-black p-5 rounded-[28px] shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] bg-white flex flex-col gap-3.5 group/card hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 w-fit max-w-[320px]">
-														<div>
-															<span className="text-[10px] font-black text-black/45 uppercase tracking-wider bg-slate-100 border border-black/10 px-2.5 py-1 rounded-md inline-block mb-1">
-																Event #{i + 1}
-															</span>
-														</div>
-														{hasName && (
-															<div>
-																<span className="bg-[#EE2C2C] text-white px-3 py-1.5 rounded-xl border-2 border-black font-black text-xs uppercase tracking-wider inline-block shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-																	{event.name}
-																</span>
-															</div>
-														)}
-														{hasImages && (
-															<div className="flex gap-3 mt-1.5">
-																{event.imageUrls.slice(0, 2).map((url, j) => (
-																	<div 
-																		key={j}
-																		onClick={() => setEnlargedImageUrl(url)}
-																		className="relative w-20 h-20 rounded-[16px] border-[2px] border-black overflow-hidden bg-slate-50 cursor-pointer shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[1px] hover:translate-x-[1px] transition-all duration-150 group/img shrink-0"
-																	>
-																		{/* eslint-disable-next-line @next/next/no-img-element */}
-																		<img 
-																			src={url} 
-																			alt={event.name || "Past Event Image"} 
-																			className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-200" 
-																		/>
-																		<div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors" />
-																	</div>
-																))}
-															</div>
-														)}
-													</div>
-												);
-											}
-
-											return (
-												<div key={i} className="border-[3px] border-black p-6 rounded-[28px] shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] bg-white flex flex-col md:flex-row gap-6 group/card hover:translate-y-[-2px] hover:translate-x-[-2px] hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 w-full">
-													{/* Left side (60% width) */}
-													<div className="flex flex-col gap-3 w-full md:w-[60%] shrink-0">
-														<div>
-															<span className="text-[10px] font-black text-black/45 uppercase tracking-wider bg-slate-100 border border-black/10 px-2.5 py-1 rounded-md inline-block mb-2">
-																Event #{i + 1}
-															</span>
-														</div>
-														{event.name && (
-															<div>
-																<span className="bg-[#EE2C2C] text-white px-3 py-1.5 rounded-xl border-2 border-black font-black text-xs uppercase tracking-wider inline-block shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-																	{event.name}
-																</span>
-															</div>
-														)}
-														{event.description && (
-															<div className="bg-[#FFC940] text-black p-4 rounded-[20px] border-2 border-black font-semibold text-xs leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-1.5">
-																<p className="whitespace-pre-wrap">{event.description}</p>
-															</div>
-														)}
-													</div>
-
-													{/* Right side (images in 1:1 aspect ratio side-by-side) */}
-													{event.imageUrls && event.imageUrls.length > 0 && (
-														<div className="flex flex-wrap items-center gap-4 border-t-2 md:border-t-0 md:border-l-2 border-black border-dashed pt-4 md:pt-0 md:pl-6 flex-1">
-															{event.imageUrls.slice(0, 2).map((url, j) => (
-																<div 
-																	key={j}
-																	onClick={() => setEnlargedImageUrl(url)}
-																	className="relative w-28 h-28 rounded-[20px] border-[2px] border-black overflow-hidden bg-slate-50 cursor-pointer shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[1px] hover:translate-x-[1px] transition-all duration-150 group/img shrink-0"
-																>
-																	{/* eslint-disable-next-line @next/next/no-img-element */}
-																	<img 
-																		src={url} 
-																		alt={event.name || "Past Event Image"} 
-																		className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-200" 
-																	/>
-																	<div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors" />
-																</div>
-															))}
-														</div>
-													)}
+									<div className="flex flex-row overflow-x-auto gap-5 pb-4 w-full scrollbar-thin scrollbar-thumb-black/20 shrink-0">
+										{flatExperienceImages.slice(0, 5).map((img, idx) => (
+											<div 
+												key={idx}
+												onClick={() => setSelectedExperience(img)}
+												className="flex flex-col gap-2.5 items-center justify-between p-3 shrink-0 cursor-pointer bg-white border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px] transition-all duration-150 w-48 hover:bg-slate-50/50"
+											>
+												<div className="relative w-full aspect-[4/5] rounded-[16px] border-2 border-black overflow-hidden bg-slate-50">
+													<Image 
+														src={img.url} 
+														alt={`Event #${img.eventNumber}`} 
+														fill
+														className="object-cover"
+														unoptimized
+													/>
 												</div>
-											);
-										})}
+												<span className="text-[10px] font-black text-black/60 uppercase tracking-wider text-center mt-1">
+													event #{img.eventNumber}
+												</span>
+											</div>
+										))}
+										{flatExperienceImages.length > 5 && (
+											<button
+												type="button"
+												onClick={() => setViewAllExperiencesMode(true)}
+												className="flex flex-col items-center justify-center shrink-0 w-48 h-[278px] rounded-[24px] border-[3px] border-dashed border-black hover:bg-black/5 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-[2px] hover:translate-x-[2px] text-xs font-black uppercase text-black"
+											>
+												<span>+ View All</span>
+												<span className="text-[10px] font-bold text-black/55 mt-1">({flatExperienceImages.length} images)</span>
+											</button>
+										)}
 									</div>
 								</div>
 							)}
+
 							{/* Active Proposals Section below */}
-							<div className="flex flex-col gap-4 mt-4">
+							<div className="flex flex-col gap-4 mt-6">
 								<h2 className="text-xl font-heading font-black text-black">Active Proposals</h2>
 								{activeProposals.length === 0 ? (
 									<div className="flex flex-col gap-6">
@@ -535,6 +550,8 @@ export default function BrandCommunitiesPage() {
 									</div>
 								)}
 							</div>
+							</>
+							)}
 						</div>
 					</>
 				) : (
@@ -601,6 +618,86 @@ export default function BrandCommunitiesPage() {
 								className="object-cover"
 								unoptimized
 							/>
+						</div>
+					</div>
+				</div>
+			)}
+			{/* Zoomed Event Image Modal */}
+			{enlargedImageUrl && (
+				<div 
+					onClick={() => setEnlargedImageUrl(null)}
+					className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150 cursor-zoom-out"
+				>
+					<div 
+						onClick={(e) => e.stopPropagation()}
+						className="relative max-w-2xl w-full bg-white border-[3px] border-black rounded-[28px] p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-3 items-start animate-in zoom-in-95 duration-150 cursor-default"
+					>
+						<button
+							onClick={() => setEnlargedImageUrl(null)}
+							className="absolute top-4 right-4 z-10 size-8 bg-white hover:bg-black/5 border-2 border-black rounded-full flex items-center justify-center text-black font-extrabold text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all active:translate-y-[1px]"
+							aria-label="Close enlarged image"
+						>
+							✕
+						</button>
+						<span className="text-xs font-bold text-black/50 uppercase tracking-wider">Event Image Preview</span>
+						<div className="relative w-full aspect-[16/10] rounded-[20px] border-2 border-black overflow-hidden bg-slate-50">
+							<Image
+								src={enlargedImageUrl}
+								alt="Enlarged Event Image"
+								fill
+								className="object-cover"
+								unoptimized
+							/>
+						</div>
+					</div>
+				</div>
+			)}
+			{/* Experience Detail Popup Modal */}
+			{selectedExperience && (
+				<div 
+					onClick={() => setSelectedExperience(null)}
+					className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150 cursor-zoom-out"
+				>
+					<div 
+						onClick={(e) => e.stopPropagation()}
+						className="relative max-w-2xl w-full bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-4 items-start animate-in zoom-in-95 duration-150 cursor-default"
+					>
+						<button
+							onClick={() => setSelectedExperience(null)}
+							className="absolute top-4 right-4 z-10 size-8 bg-white hover:bg-black/5 border-2 border-black rounded-full flex items-center justify-center text-black font-extrabold text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all active:translate-y-[1px]"
+							aria-label="Close details"
+						>
+							✕
+						</button>
+						
+						<div className="flex flex-col gap-1 w-full text-left">
+							<span className="text-[10px] font-black text-[#EE2C2C] uppercase tracking-wider">
+								Experience #{selectedExperience.eventNumber}
+							</span>
+							<h3 className="text-xl sm:text-2xl font-heading font-black text-black">
+								{selectedExperience.name || `Experience #${selectedExperience.eventNumber}`}
+							</h3>
+						</div>
+
+						{selectedExperience.description && (
+							<div className="bg-[#FFC940] text-black p-4 rounded-[20px] border-2 border-black font-semibold text-xs leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] w-full text-left">
+								<p className="whitespace-pre-wrap">{selectedExperience.description}</p>
+							</div>
+						)}
+
+						<div className={clsx("flex flex-wrap gap-4 mt-2 w-full", selectedExperience.imageUrls.length === 1 ? "justify-center" : "")}>
+							{selectedExperience.imageUrls.map((url, idx) => (
+								<div 
+									key={idx}
+									className="relative flex-1 min-w-[200px] max-w-[280px] aspect-[4/5] rounded-[20px] border-[3px] border-black overflow-hidden bg-slate-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+								>
+									<img 
+										src={url} 
+										alt={`Experience Image ${idx + 1}`} 
+										className="w-full h-full object-cover" 
+									/>
+								</div>
+							))}
 						</div>
 					</div>
 				</div>
