@@ -25,11 +25,10 @@ import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { useChatTyping } from "@/hooks/useChatTyping"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 import { useNotificationStore } from "@/store/notificationStore"
-import confetti from "canvas-confetti"
 
 const POLL_MS = 4000
 
-type Tab = "ALL" | "ACCEPTED"
+type Tab = "REQUESTED" | "ACCEPTED"
 
 function timeAgo(iso: string | null) {
 	if (!iso) return ""
@@ -45,12 +44,15 @@ function timeAgo(iso: string | null) {
 export default function BrandChatsPage() {
 	const { profile } = useBrandStore()
 	const ownName = profile?.brandName || "You"
-	const [tab, setTab] = useState<Tab>("ALL")
-	const [threads, setThreads] = useState<SponsorshipChatThread[]>([])
+	const [tab, setTab] = useState<Tab>("ACCEPTED")
+	const [requestedThreads, setRequestedThreads] = useState<SponsorshipChatThread[]>([])
+	const [acceptedThreads, setAcceptedThreads] = useState<SponsorshipChatThread[]>([])
 	const [loadingThreads, setLoadingThreads] = useState(true)
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 
 	const { notifications, markRead } = useNotificationStore()
+
+	const threads = tab === "ACCEPTED" ? acceptedThreads : requestedThreads
 
 	const getThreadUnreadCount = useCallback((threadId: string) => {
 		return notifications.filter(n => {
@@ -71,15 +73,27 @@ export default function BrandChatsPage() {
 		}).length
 	}, [notifications])
 
-	const loadThreads = useCallback(async (t: Tab) => {
+	const loadThreads = useCallback(async () => {
 		try {
-			const data = await getMySponsorshipChats(t === "ACCEPTED" ? "ACCEPTED" : undefined)
-			const sorted = [...data].sort((a, b) => {
+			const [requestedData, acceptedData] = await Promise.all([
+				getMySponsorshipChats("REQUESTED").catch(() => []),
+				getMySponsorshipChats("ACCEPTED").catch(() => []),
+			])
+
+			const sortedRequested = [...requestedData].sort((a, b) => {
 				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
 				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
 				return tB - tA
 			})
-			setThreads(sorted)
+
+			const sortedAccepted = [...acceptedData].sort((a, b) => {
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+				return tB - tA
+			})
+
+			setRequestedThreads(sortedRequested)
+			setAcceptedThreads(sortedAccepted)
 		} catch {
 			// silent — polling refresh
 		} finally {
@@ -90,16 +104,19 @@ export default function BrandChatsPage() {
 	useEffect(() => {
 		// Fetch immediately, then poll — intentional fetch-on-mount + interval pattern.
 		// eslint-disable-next-line react-hooks/set-state-in-effect
-		loadThreads(tab)
-		const interval = setInterval(() => loadThreads(tab), POLL_MS * 2)
+		loadThreads()
+		const interval = setInterval(() => loadThreads(), POLL_MS * 2)
 		return () => clearInterval(interval)
-	}, [tab, loadThreads, notifications])
+	}, [loadThreads, notifications])
 
 	// Clear unread counts in memory instantly when opened
 	useEffect(() => {
 		if (selectedId) {
 			// eslint-disable-next-line react-hooks/set-state-in-effect
-			setThreads(prev =>
+			setRequestedThreads(prev =>
+				prev.map(t => (t.id === selectedId ? { ...t, unreadCount: 0 } : t))
+			)
+			setAcceptedThreads(prev =>
 				prev.map(t => (t.id === selectedId ? { ...t, unreadCount: 0 } : t))
 			)
 			const unreadChatNotifs = notifications.filter(n => {
@@ -124,6 +141,10 @@ export default function BrandChatsPage() {
 
 	const selectedThread = threads.find(t => t.id === selectedId) ?? null
 
+	const unreadAcceptedCount = acceptedThreads.reduce((sum, t) => {
+		return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
+	}, 0)
+
 	return (
 		<div className="flex flex-col flex-1 min-h-0 bg-white">
 			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
@@ -142,17 +163,26 @@ export default function BrandChatsPage() {
 					{/* Thread list */}
 					<div className="w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col">
 						<div className="flex border-b-[3px] border-black">
-							{(["ALL", "ACCEPTED"] as Tab[]).map(t => {
+							{(["ACCEPTED", "REQUESTED"] as Tab[]).map(t => {
+								const count = t === "ACCEPTED" ? unreadAcceptedCount : 0
 								return (
 									<button
 										key={t}
 										onClick={() => handleTabChange(t)}
 										className={clsx(
-											"flex-grow py-3 text-xs font-black uppercase tracking-wider transition-colors relative",
+											"flex-grow py-3 text-xs font-black uppercase tracking-wider transition-colors relative flex items-center justify-center gap-1.5",
 											tab === t ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
 										)}
 									>
-										{t === "ALL" ? "General" : "Accepted"}
+										<span>{t === "REQUESTED" ? "Sent Requests" : "Accepted"}</span>
+										{count > 0 && (
+											<span className={clsx(
+												"min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-black flex items-center justify-center border",
+												tab === t ? "bg-white text-[#EE2C2C] border-transparent" : "bg-[#FFC940] text-black border-black/10"
+											)}>
+												{count}
+											</span>
+										)}
 									</button>
 								);
 							})}
@@ -250,18 +280,7 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	const { typingSenderType, notifyTyping, notifyStopTyping } = useChatTyping(thread.id, "BRAND")
-	const firedConfettiRef = useRef<string | null>(null)
 
-	useEffect(() => {
-		if (deal?.status === "APPROVED" && firedConfettiRef.current !== `${deal.id}-approved`) {
-			firedConfettiRef.current = `${deal.id}-approved`
-			confetti({
-				particleCount: 150,
-				spread: 80,
-				origin: { y: 0.6 }
-			})
-		}
-	}, [deal])
 
 	const load = useCallback(async () => {
 		try {
@@ -406,7 +425,8 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	}
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col">
+		<div className="flex-1 min-h-0 flex flex-col relative">
+			<canvas id="chat-confetti-canvas" className="pointer-events-none absolute inset-0 w-full h-full z-30" />
 			<div className="px-5 py-3 border-b-[3px] border-black flex items-center gap-3 shrink-0">
 				<div className="w-8 h-8 rounded-full border border-black/15 overflow-hidden shrink-0 relative bg-neutral-100 flex items-center justify-center">
 					{thread.counterpartAvatarUrl ? (

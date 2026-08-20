@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import clsx from "clsx"
 import { toast } from "sonner"
+import confetti from "canvas-confetti"
 import { Button } from "@/components/ui/Button"
+import { VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
 import {
 	type SponsorshipDeal,
 	type SponsorshipDealPayload,
@@ -11,6 +13,10 @@ import {
 	updateSponsorshipDeal,
 	approveSponsorshipDeal,
 	requestSponsorshipDealChanges,
+	getSponsorshipProposalDetail,
+	getHostCommunityProfile,
+	getCategories,
+	sendSponsorshipChatMessage,
 } from "@/lib/api"
 
 const STATUS_LABEL: Record<SponsorshipDeal["status"], string> = {
@@ -61,7 +67,7 @@ export function DealBanner({
 					{STATUS_LABEL[deal.status]}
 				</span>
 				<p className="text-xs font-bold text-black truncate">
-					{deal.eventName} · {formatAmount(deal.finalAmount)}
+					{deal.projectName} · {formatAmount(deal.sponsorshipAmount)}
 				</p>
 			</div>
 			<div className="flex items-center gap-2 shrink-0">
@@ -74,25 +80,30 @@ export function DealBanner({
 	)
 }
 
+
+
 const EMPTY_FORM: SponsorshipDealPayload = {
-	eventName: "",
-	eventDate: "",
-	eventTime: "",
+	projectName: "",
+	startDate: "",
+	endDate: "",
+	time: "",
 	venue: "",
-	finalAmount: 0,
+	sponsorshipAmount: 0,
 	deliverables: "",
-	otherTerms: "",
-	additionalNotes: "",
+	sponsorshipCategory: "",
+	barterElements: "",
 }
 
 // Host-only form to lock a new deal, or edit an existing (not-yet-approved) one.
 export function DealFormModal({
 	interestId,
+	proposalId,
 	deal,
 	onClose,
 	onSaved,
 }: {
 	interestId: string
+	proposalId?: string
 	deal: SponsorshipDeal | null
 	onClose: () => void
 	onSaved: (deal: SponsorshipDeal) => void
@@ -100,20 +111,67 @@ export function DealFormModal({
 	const [form, setForm] = useState<SponsorshipDealPayload>(
 		deal
 			? {
-					eventName: deal.eventName,
-					eventDate: deal.eventDate.slice(0, 10),
-					eventTime: deal.eventTime ?? "",
+					projectName: deal.projectName,
+					startDate: deal.startDate.slice(0, 10),
+					time: deal.time ?? "",
 					venue: deal.venue,
-					finalAmount: Number(deal.finalAmount),
+					sponsorshipAmount: Number(deal.sponsorshipAmount),
 					deliverables: deal.deliverables,
-					otherTerms: deal.otherTerms ?? "",
-					additionalNotes: deal.additionalNotes ?? "",
+					endDate: deal.endDate ?? "",
+					sponsorshipCategory: deal.sponsorshipCategory ?? "",
+					barterElements: deal.barterElements ?? "",
 				}
 			: EMPTY_FORM,
 	)
 	const [saving, setSaving] = useState(false)
+	const [allCategories, setAllCategories] = useState<{ id: string; name: string }[]>([])
 
-	const isValid = form.eventName.trim() && form.eventDate && form.venue.trim() && form.finalAmount >= 0 && form.deliverables.trim()
+	useEffect(() => {
+		// Load all categories for the dropdown selection
+		getCategories().then(setAllCategories).catch(() => [])
+	}, [])
+
+	useEffect(() => {
+		if (proposalId && !deal) {
+			Promise.all([
+				getSponsorshipProposalDetail(proposalId).catch(() => null),
+				getHostCommunityProfile().catch(() => null),
+			]).then(([proposal, community]) => {
+				if (proposal) {
+					let resolvedCategory = ""
+					if (community?.categories?.length) {
+						resolvedCategory = community.categories.map((c: any) => c.name).join(", ")
+					}
+					setForm((f) => ({
+						...f,
+						projectName: proposal.name || "",
+						startDate: proposal.eventDate ? proposal.eventDate.slice(0, 10) : "",
+						endDate: proposal.eventEndDate ? proposal.eventEndDate.slice(0, 10) : "",
+						venue: proposal.venue || "",
+						sponsorshipCategory: resolvedCategory,
+					}))
+				}
+			})
+		}
+	}, [proposalId, deal])
+
+	const formCategories = form.sponsorshipCategory ? form.sponsorshipCategory.split(", ").filter(Boolean) : []
+
+	const addCategory = (name: string) => {
+		if (!formCategories.includes(name)) {
+			const updated = [...formCategories, name].join(", ")
+			setForm(f => ({ ...f, sponsorshipCategory: updated }))
+		}
+	}
+
+	const removeCategory = (name: string) => {
+		const updated = formCategories.filter(c => c !== name).join(", ")
+		setForm(f => ({ ...f, sponsorshipCategory: updated }))
+	}
+
+	const availableToAdd = allCategories.filter(c => !formCategories.includes(c.name))
+
+	const isValid = form.projectName.trim() && form.startDate && form.endDate?.trim() && form.venue.trim() && form.deliverables.trim()
 
 	async function handleSubmit() {
 		if (!isValid) return
@@ -121,9 +179,13 @@ export function DealFormModal({
 		try {
 			const payload: SponsorshipDealPayload = {
 				...form,
-				eventDate: new Date(form.eventDate).toISOString(),
+				startDate: new Date(form.startDate).toISOString(),
+				endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
 			}
 			const saved = deal ? await updateSponsorshipDeal(interestId, payload) : await createSponsorshipDeal(interestId, payload)
+			if (!deal) {
+				await sendSponsorshipChatMessage(interestId, { content: "📄 A deal proposal was shared for approval." }).catch(() => {})
+			}
 			toast.success(deal ? "Deal updated." : "Deal locked — waiting on brand approval.")
 			onSaved(saved)
 			onClose()
@@ -143,37 +205,114 @@ export function DealFormModal({
 				</div>
 
 				<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3">
-					<Field label="Event / Project Name">
-						<input value={form.eventName} onChange={e => setForm(f => ({ ...f, eventName: e.target.value }))} className={inputClass} placeholder="Summer Music Fest" />
+					<Field label="Project Name">
+						<input value={form.projectName} onChange={e => setForm(f => ({ ...f, projectName: e.target.value }))} className={inputClass} placeholder="Summer Music Fest" />
 					</Field>
 					<div className="grid grid-cols-2 gap-3">
-						<Field label="Event Date">
-							<input type="date" value={form.eventDate} onChange={e => setForm(f => ({ ...f, eventDate: e.target.value }))} className={inputClass} />
+						<Field label="Start Date">
+							<input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={inputClass} />
 						</Field>
-						<Field label="Event Time (optional)">
-							<input value={form.eventTime} onChange={e => setForm(f => ({ ...f, eventTime: e.target.value }))} className={inputClass} placeholder="6:00 PM onwards" />
+						<Field label="End Date">
+							<input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className={inputClass} />
 						</Field>
 					</div>
-					<Field label="Venue">
-						<input value={form.venue} onChange={e => setForm(f => ({ ...f, venue: e.target.value }))} className={inputClass} placeholder="Phoenix Marketcity, Bengaluru" />
+
+					<div className="grid grid-cols-12 gap-3">
+						<div className="col-span-4">
+							<Field label="Time">
+								<input value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} className={inputClass} placeholder="6:00 PM" />
+							</Field>
+						</div>
+						<div className="col-span-8">
+							<Field label="Venue">
+								<VenueAutocompleteInput
+									value={form.venue}
+									error={false}
+									onChange={v => setForm(f => ({ ...f, venue: v }))}
+									onPlaceSelect={fields => setForm(f => ({ ...f, venue: fields.fullAddress }))}
+									placeholder="Phoenix Marketcity, Bengaluru"
+								/>
+							</Field>
+						</div>
+					</div>
+
+					<Field label="Sponsorship Category">
+						<div className="flex flex-col gap-2">
+							<div className="flex flex-wrap gap-1.5 items-center p-2.5 border-[3px] border-black rounded-xl bg-white min-h-[42px]">
+								{formCategories.map(cat => (
+									<span key={cat} className="flex items-center gap-1 px-2 py-0.5 bg-[#FFC940] text-black border border-black rounded-md text-xs font-bold shrink-0">
+										{cat}
+										<button type="button" onClick={() => removeCategory(cat)} className="hover:text-red-500 font-black ml-0.5">×</button>
+									</span>
+								))}
+								{availableToAdd.length > 0 && (
+									<select
+										onChange={e => {
+											if (e.target.value) {
+												addCategory(e.target.value)
+												e.target.value = ""
+											}
+										}}
+										className="text-xs font-bold bg-neutral-100 border border-black/15 rounded px-1.5 py-0.5 cursor-pointer outline-none hover:bg-neutral-200"
+									>
+										<option value="">+ Add</option>
+										{availableToAdd.map(c => (
+											<option key={c.id} value={c.name}>{c.name}</option>
+										))}
+									</select>
+								)}
+							</div>
+							<div className="flex gap-2">
+								<input
+									type="text"
+									id="custom-category-input"
+									placeholder="Or type custom category..."
+									onKeyDown={e => {
+										if (e.key === "Enter") {
+											e.preventDefault()
+											const val = e.currentTarget.value.trim()
+											if (val) {
+												addCategory(val)
+												e.currentTarget.value = ""
+											}
+										}
+									}}
+									className="flex-1 rounded-xl border-[3px] border-black bg-white px-3 py-1 text-xs font-semibold outline-none focus:bg-neutral-50"
+								/>
+								<button
+									type="button"
+									onClick={() => {
+										const inputEl = document.getElementById("custom-category-input") as HTMLInputElement
+										const val = inputEl?.value.trim()
+										if (val) {
+											addCategory(val)
+											inputEl.value = ""
+										}
+									}}
+									className="px-3 py-1 bg-black text-white rounded-xl text-xs font-bold hover:bg-neutral-800 border-[3px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
+								>
+									Add
+								</button>
+							</div>
+						</div>
 					</Field>
-					<Field label="Final Sponsorship Price (₹)">
-						<input
-							type="number"
-							min={0}
-							value={form.finalAmount}
-							onChange={e => setForm(f => ({ ...f, finalAmount: Number(e.target.value) }))}
-							className={inputClass}
-						/>
-					</Field>
+
+					<div className="grid grid-cols-2 gap-3">
+						<Field label="Sponsorship Amount (₹)">
+							<input
+								type="number"
+								min={0}
+								value={form.sponsorshipAmount}
+								onChange={e => setForm(f => ({ ...f, sponsorshipAmount: Number(e.target.value) }))}
+								className={inputClass}
+							/>
+						</Field>
+						<Field label="Barter Elements">
+							<input value={form.barterElements} onChange={e => setForm(f => ({ ...f, barterElements: e.target.value }))} className={inputClass} placeholder="Gifting, Free drinks" />
+						</Field>
+					</div>
 					<Field label="Deliverables">
-						<textarea value={form.deliverables} onChange={e => setForm(f => ({ ...f, deliverables: e.target.value }))} rows={3} className={inputClass} placeholder="Logo on stage backdrop, 2 Instagram posts, on-site booth…" />
-					</Field>
-					<Field label="Other Terms / Conditions (optional)">
-						<textarea value={form.otherTerms} onChange={e => setForm(f => ({ ...f, otherTerms: e.target.value }))} rows={2} className={inputClass} />
-					</Field>
-					<Field label="Additional Notes (optional)">
-						<textarea value={form.additionalNotes} onChange={e => setForm(f => ({ ...f, additionalNotes: e.target.value }))} rows={2} className={inputClass} />
+						<textarea value={form.deliverables} onChange={e => setForm(f => ({ ...f, deliverables: e.target.value }))} rows={4} className={inputClass} placeholder="Logo on stage backdrop, 2 Instagram posts, on-site booth…" />
 					</Field>
 				</div>
 
@@ -185,6 +324,7 @@ export function DealFormModal({
 		</div>
 	)
 }
+
 
 // Read-only detail view for both sides. Brand gets Approve / Request Changes actions here.
 export function DealDetailsModal({
@@ -208,7 +348,23 @@ export function DealDetailsModal({
 		setBusy(true)
 		try {
 			const updated = await approveSponsorshipDeal(interestId)
+			await sendSponsorshipChatMessage(interestId, { content: "🔒 The deal is locked!" }).catch(() => {})
 			toast.success("🎉 Deal approved and locked!")
+			
+			// Trigger confetti locally in the chat canvas
+			const canvas = document.getElementById("chat-confetti-canvas") as HTMLCanvasElement | null
+			if (canvas) {
+				const myConfetti = confetti.create(canvas, {
+					resize: true,
+					useWorker: true
+				})
+				myConfetti({
+					particleCount: 150,
+					spread: 80,
+					origin: { y: 0.6 }
+				})
+			}
+
 			onUpdated(updated)
 			onClose()
 		} catch {
@@ -246,14 +402,21 @@ export function DealDetailsModal({
 				</div>
 
 				<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3 text-sm">
-					<Row label="Event / Project Name" value={deal.eventName} />
-					<Row label="Event Date" value={new Date(deal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })} />
-					{deal.eventTime && <Row label="Event Time" value={deal.eventTime} />}
+					<Row label="Project Name" value={deal.projectName} />
+					<div className="grid grid-cols-2 gap-3">
+						<Row label="Start Date" value={deal.startDate ? new Date(deal.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "—"} />
+						<Row label="End Date" value={deal.endDate ? (deal.endDate.includes("-") ? new Date(deal.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : deal.endDate) : "—"} />
+					</div>
+					<div className="grid grid-cols-2 gap-3">
+						{deal.time && <Row label="Time" value={deal.time} />}
+						{deal.sponsorshipCategory && <Row label="Sponsorship Category" value={deal.sponsorshipCategory} />}
+					</div>
+					<div className="grid grid-cols-2 gap-3">
+						<Row label="Sponsorship Amount" value={formatAmount(deal.sponsorshipAmount)} />
+						{deal.barterElements && <Row label="Barter Elements" value={deal.barterElements} />}
+					</div>
 					<Row label="Venue" value={deal.venue} />
-					<Row label="Final Sponsorship Price" value={formatAmount(deal.finalAmount)} />
 					<Row label="Deliverables" value={deal.deliverables} multiline />
-					{deal.otherTerms && <Row label="Other Terms / Conditions" value={deal.otherTerms} multiline />}
-					{deal.additionalNotes && <Row label="Additional Notes" value={deal.additionalNotes} multiline />}
 					{deal.changeRequestNote && (
 						<div className="rounded-xl border-[3px] border-[#EE2C2C] bg-[#EE2C2C]/5 p-3">
 							<p className="text-[10px] font-black uppercase text-[#EE2C2C] mb-1">Changes Requested</p>

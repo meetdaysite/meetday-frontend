@@ -12,8 +12,13 @@ import {
 import type { Notification } from "@/types/notification"
 
 const PAGE_LIMIT = 20
-// Notification types that represent an incoming chat message — these get a sound, not every notification.
-const CHAT_MESSAGE_NOTIFICATION_TYPES = new Set(["sponsorship_chat_message", "meetday_chat_message"])
+const CHAT_MESSAGE_NOTIFICATION_TYPES = new Set([
+	"sponsorship_chat_message",
+	"meetday_chat_message",
+	"sponsorship_chat_request",
+	"sponsorship_chat_accepted",
+	"sponsorship_interest_created"
+])
 
 type NotificationStore = {
 	notifications: Notification[]

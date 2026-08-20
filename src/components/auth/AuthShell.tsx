@@ -10,13 +10,13 @@ interface AuthShellProps {
 
 export function AuthShell({ children, size = "default" }: AuthShellProps) {
 	return (
-		<div className="w-full h-screen flex flex-col lg:flex-row bg-[#EE2C2C] text-black overflow-hidden">
+		<div className="w-full min-h-screen flex flex-col lg:flex-row bg-[#EE2C2C] text-black">
 			
 			{/* ── Left Side Panel: Logo, Puzzle Heart, Vibration Arcs (lg screens only) ── */}
 			<div className="hidden lg:flex lg:w-1/2 h-full flex-col items-center justify-center relative select-none gap-8 p-6">
 				
 				{/* Top Logo */}
-				<Link href="/" className="inline-block z-20">
+				<Link href="/" className="relative z-20 mb-2 translate-y-8">
 					<Image 
 						src="/assets/brand_logo.svg" 
 						alt="Meetday" 
@@ -29,7 +29,7 @@ export function AuthShell({ children, size = "default" }: AuthShellProps) {
 				</Link>
 
 				{/* Center: Puzzle Heart + Vibration Arcs — vertically centered */}
-				<div className="flex items-center justify-center relative translate-y-16">
+				<div className="flex items-center justify-center relative translate-y-8">
 					{/* The Puzzle Heart Container */}
 					<div className="relative z-10 flex flex-col items-center">
 						
@@ -137,7 +137,7 @@ export function AuthShell({ children, size = "default" }: AuthShellProps) {
 				</div>
  
 				{/* The Onboarding Form Card */}
-				<div className="w-full lg:w-[35vw] max-w-[500px] min-w-[320px] bg-white border-[4px] border-black rounded-[36px] pl-8 pr-2 py-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative flex flex-col h-auto max-h-[76vh] lg:h-[76vh] translate-y-16">
+				<div className="w-full lg:w-[40vw] max-w-[550px] min-w-[340px] bg-white border-[4px] border-black rounded-[36px] pl-8 pr-2 py-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative flex flex-col h-[87vh] max-h-[87vh] translate-y-8">
 					
 					{/* Scrollable Container inside the card */}
 					<div className="w-full flex-1 overflow-y-auto pr-6 flex flex-col min-h-0">

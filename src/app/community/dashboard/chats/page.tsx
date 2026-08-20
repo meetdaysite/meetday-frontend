@@ -47,11 +47,14 @@ export default function CommunityChatsPage() {
 	const { profile } = useHostStore()
 	const ownName = profile?.displayName || "You"
 	const [segment, setSegment] = useState<Segment>("ACCEPTED")
-	const [threads, setThreads] = useState<SponsorshipChatThread[]>([])
+	const [acceptedThreads, setAcceptedThreads] = useState<SponsorshipChatThread[]>([])
+	const [requestedThreads, setRequestedThreads] = useState<SponsorshipChatThread[]>([])
 	const [loadingThreads, setLoadingThreads] = useState(true)
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 
 	const { notifications, markRead } = useNotificationStore()
+
+	const threads = segment === "REQUESTED" ? requestedThreads : acceptedThreads
 
 	const getThreadUnreadCount = useCallback((threadId: string) => {
 		return notifications.filter(n => {
@@ -72,22 +75,29 @@ export default function CommunityChatsPage() {
 		}).length
 	}, [notifications])
 
-	const loadThreads = useCallback(async (seg: Segment) => {
-		if (seg === "MEETDAY") {
-			setLoadingThreads(false)
-			return
-		}
+	const loadThreads = useCallback(async () => {
 		try {
-			const data = await getMySponsorshipChats(seg)
-			console.log("[DEBUG community chats data]:", data)
-			const sorted = [...data].sort((a, b) => {
+			const [acceptedData, requestedData] = await Promise.all([
+				getMySponsorshipChats("ACCEPTED").catch(() => []),
+				getMySponsorshipChats("REQUESTED").catch(() => []),
+			])
+
+			const sortedAccepted = [...acceptedData].sort((a, b) => {
 				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
 				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
 				return tB - tA
 			})
-			setThreads(sorted)
+
+			const sortedRequested = [...requestedData].sort((a, b) => {
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+				return tB - tA
+			})
+
+			setAcceptedThreads(sortedAccepted)
+			setRequestedThreads(sortedRequested)
 		} catch {
-			// silent — polling refresh, don't spam toasts
+			// silent — polling refresh
 		} finally {
 			setLoadingThreads(false)
 		}
@@ -96,16 +106,19 @@ export default function CommunityChatsPage() {
 	useEffect(() => {
 		// Fetch immediately, then poll — intentional fetch-on-mount + interval pattern.
 		// eslint-disable-next-line react-hooks/set-state-in-effect
-		loadThreads(segment)
-		const interval = setInterval(() => loadThreads(segment), POLL_MS * 2)
+		loadThreads()
+		const interval = setInterval(() => loadThreads(), POLL_MS * 2)
 		return () => clearInterval(interval)
-	}, [segment, loadThreads, notifications])
+	}, [loadThreads, notifications])
 
 	// Clear unread counts in memory instantly when opened
 	useEffect(() => {
 		if (selectedId) {
 			// eslint-disable-next-line react-hooks/set-state-in-effect
-			setThreads(prev =>
+			setAcceptedThreads(prev =>
+				prev.map(t => (t.id === selectedId ? { ...t, unreadCount: 0 } : t))
+			)
+			setRequestedThreads(prev =>
 				prev.map(t => (t.id === selectedId ? { ...t, unreadCount: 0 } : t))
 			)
 			const unreadChatNotifs = notifications.filter(n => {
@@ -137,11 +150,18 @@ export default function CommunityChatsPage() {
 
 	const selectedThread = threads.find(t => t.id === selectedId) ?? null
 
+	const unreadAcceptedCount = acceptedThreads.reduce((sum, t) => {
+		return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
+	}, 0)
+	const unreadRequestedCount = requestedThreads.reduce((sum, t) => {
+		return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
+	}, 0)
+
 	async function handleAccept(interestId: string) {
 		try {
 			await acceptSponsorshipChatRequest(interestId)
 			toast.success("Accepted — you can now chat.")
-			await loadThreads(segment)
+			await loadThreads()
 			setSegment("ACCEPTED")
 			setSelectedId(interestId)
 		} catch {
@@ -168,16 +188,26 @@ export default function CommunityChatsPage() {
 					<div className="w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col">
 						<div className="flex border-b-[3px] border-black">
 							{(["ACCEPTED", "REQUESTED"] as Segment[]).map(seg => {
+								const isReq = seg === "REQUESTED"
+								const count = isReq ? unreadRequestedCount : unreadAcceptedCount
 								return (
 									<button
 										key={seg}
 										onClick={() => handleSegmentChange(seg)}
 										className={clsx(
-											"flex-grow py-3 text-xs font-black uppercase tracking-wider transition-colors relative",
+											"flex-grow py-3 text-xs font-black uppercase tracking-wider transition-colors relative flex items-center justify-center gap-1.5",
 											segment === seg ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
 										)}
 									>
-										{seg === "REQUESTED" ? "Requests" : "General"}
+										<span>{seg === "REQUESTED" ? "Requests" : "General"}</span>
+										{count > 0 && (
+											<span className={clsx(
+												"min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-black flex items-center justify-center border",
+												segment === seg ? "bg-white text-[#EE2C2C] border-transparent" : "bg-[#FFC940] text-black border-black/10"
+											)}>
+												{count}
+											</span>
+										)}
 									</button>
 								);
 							})}
@@ -284,16 +314,21 @@ function ChatThreadPanel({
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	const { typingSenderType, notifyTyping, notifyStopTyping } = useChatTyping(thread.id, "HOST")
-	const firedConfettiRef = useRef<string | null>(null)
-
 	useEffect(() => {
-		if (deal?.status === "APPROVED" && firedConfettiRef.current !== `${deal.id}-approved`) {
-			firedConfettiRef.current = `${deal.id}-approved`
-			confetti({
-				particleCount: 150,
-				spread: 80,
-				origin: { y: 0.6 }
-			})
+		if (deal?.status === "APPROVED" && !localStorage.getItem(`confetti-fired-${deal.id}`)) {
+			localStorage.setItem(`confetti-fired-${deal.id}`, "true")
+			const canvas = document.getElementById("chat-confetti-canvas") as HTMLCanvasElement | null
+			if (canvas) {
+				const myConfetti = confetti.create(canvas, {
+					resize: true,
+					useWorker: true
+				})
+				myConfetti({
+					particleCount: 150,
+					spread: 80,
+					origin: { y: 0.6 }
+				})
+			}
 		}
 	}, [deal])
 
@@ -440,7 +475,8 @@ function ChatThreadPanel({
 	}
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col">
+		<div className="flex-1 min-h-0 flex flex-col relative">
+			<canvas id="chat-confetti-canvas" className="pointer-events-none absolute inset-0 w-full h-full z-30" />
 			<div className="px-5 py-3 border-b-[3px] border-black flex items-center justify-between shrink-0">
 				<div className="flex items-center gap-3 min-w-0">
 					<div className="w-8 h-8 rounded-full border border-black/15 overflow-hidden shrink-0 relative bg-neutral-100 flex items-center justify-center">
@@ -653,6 +689,7 @@ function ChatThreadPanel({
 			{dealModal === "form" && (
 				<DealFormModal
 					interestId={thread.id}
+					proposalId={thread.proposalId}
 					deal={deal}
 					onClose={() => setDealModal(null)}
 					onSaved={setDeal}

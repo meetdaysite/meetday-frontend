@@ -15,8 +15,7 @@ import type { ComponentType, SVGProps } from "react"
 
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
-import TicketOutSvg from "@/icons/outlined/ticket.svg"
-import TicketFillSvg from "@/icons/filled/ticket.svg"
+import HeadphonesSvg from "@/icons/filled/headphones.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import BellSvg from "@/icons/outlined/bell.svg"
 import BellFillSvg from "@/icons/filled/bell.svg"
@@ -36,7 +35,7 @@ const NAV_ITEMS_TOP = [
 
 const NAV_ITEMS_BOTTOM = [
 	{ label: "Chats", href: "/community/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
-	{ label: "Support Chat", href: "/community/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
+	{ label: "Support Chat", href: "/community/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/community/dashboard/messages", outlined: BellSvg, filled: BellFillSvg },
 ]
 
@@ -56,6 +55,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const [proposals, setProposals] = useState<any[]>([])
 	const [dismissedList, setDismissedList] = useState<any[]>([])
 	const [unreadChatsCount, setUnreadChatsCount] = useState(0)
+	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
 	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
 	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
 
@@ -80,10 +80,19 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 			]).then(([accepted, requested]) => {
 				const count1 = accepted.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
 				const count2 = requested.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
-				const supportUnread = notifications.filter(n => !n.isRead && n.title === "Meetday" && !n.metadata?.threadId && !n.metadata?.interestId).length
-				const total = count1 + count2 + supportUnread
-				console.log("[sidebar:chats] accepted unread:", count1, "requested unread:", count2, "support unread:", supportUnread, "total:", total)
-				setUnreadChatsCount(total)
+				const supportUnread = notifications.filter(n => 
+					!n.isRead && 
+					n.title === "Meetday" && 
+					!n.metadata?.threadId && 
+					!n.metadata?.thread_id && 
+					!n.metadata?.interestId && 
+					!n.metadata?.interest_id && 
+					!n.metadata?.chatId && 
+					!n.metadata?.chat_id && 
+					!n.metadata?.sponsorshipInterestId
+				).length
+				setUnreadChatsCount(count1 + count2)
+				setUnreadSupportCount(supportUnread)
 			}).catch(err => console.error("Promise.all error:", err))
 		}
 
@@ -384,6 +393,11 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 							{label === "Chats" && unreadChatsCount > 0 && (
 								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
 									{unreadChatsCount > 9 ? "9+" : unreadChatsCount}
+								</span>
+							)}
+							{label === "Support Chat" && unreadSupportCount > 0 && (
+								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+									{unreadSupportCount > 9 ? "9+" : unreadSupportCount}
 								</span>
 							)}
 						</Link>

@@ -1,11 +1,21 @@
 "use client"
 
+import { useEffect } from "react"
+import { useNotificationStore } from "@/store/notificationStore"
 import { useHostStore } from "@/store/hostStore"
 import { MeetdayChatPanel } from "@/components/support/MeetdayChatPanel"
 
 export default function DashboardSupportPage() {
 	const { profile } = useHostStore()
 	const ownName = profile?.displayName || "You"
+	const { notifications, markRead } = useNotificationStore()
+
+	useEffect(() => {
+		const unreadSupportNotifs = notifications.filter(n => !n.isRead && n.title === "Meetday")
+		unreadSupportNotifs.forEach(n => {
+			markRead(n.id).catch(() => {})
+		})
+	}, [notifications, markRead])
 
 	return (
 		<div className="flex flex-col min-h-screen bg-white">

@@ -14,8 +14,7 @@ import { useNotificationStore } from "@/store/notificationStore"
 import UserSvg from "@/icons/outlined/user.svg"
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import WidgetFillSvg from "@/icons/filled/widget.svg"
-import TicketOutSvg from "@/icons/outlined/ticket.svg"
-import TicketFillSvg from "@/icons/filled/ticket.svg"
+import HeadphonesSvg from "@/icons/filled/headphones.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import BellSvg from "@/icons/outlined/bell.svg"
@@ -34,7 +33,7 @@ const PRIMARY_NAV: NavItem[] = [
 
 const SECONDARY_NAV: NavItem[] = [
 	{ label: "Chats", href: "/brand/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
-	{ label: "Support Chat", href: "/brand/dashboard/support", outlined: TicketOutSvg, filled: TicketFillSvg },
+	{ label: "Support Chat", href: "/brand/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/brand/dashboard/notifications", outlined: BellSvg, filled: BellSvg },
 ]
 
@@ -65,6 +64,7 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 	const brandName = profile?.brandName || "Brand"
 	const avatarUrl = profile?.logoUrl
 	const [unreadChatsCount, setUnreadChatsCount] = useState(0)
+	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
 
 	const { notifications, init: initNotifs } = useNotificationStore()
 
@@ -80,8 +80,19 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 				.then(chats => {
 					if (Array.isArray(chats)) {
 						const count = chats.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
-						const supportUnread = notifications.filter(n => !n.isRead && n.title === "Meetday" && !n.metadata?.threadId && !n.metadata?.interestId).length
-						setUnreadChatsCount(count + supportUnread)
+						const supportUnread = notifications.filter(n => 
+							!n.isRead && 
+							n.title === "Meetday" && 
+							!n.metadata?.threadId && 
+							!n.metadata?.thread_id && 
+							!n.metadata?.interestId && 
+							!n.metadata?.interest_id && 
+							!n.metadata?.chatId && 
+							!n.metadata?.chat_id && 
+							!n.metadata?.sponsorshipInterestId
+						).length
+						setUnreadChatsCount(count)
+						setUnreadSupportCount(supportUnread)
 					}
 				})
 				.catch(() => {})
@@ -192,6 +203,11 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 							{label === "Chats" && unreadChatsCount > 0 && (
 								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
 									{unreadChatsCount > 9 ? "9+" : unreadChatsCount}
+								</span>
+							)}
+							{label === "Support Chat" && unreadSupportCount > 0 && (
+								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+									{unreadSupportCount > 9 ? "9+" : unreadSupportCount}
 								</span>
 							)}
 						</Link>

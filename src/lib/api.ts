@@ -837,14 +837,15 @@ export type SponsorshipDealStatus = "PENDING_APPROVAL" | "CHANGES_REQUESTED" | "
 export type SponsorshipDeal = {
 	id: string
 	sponsorshipInterestId: string
-	eventName: string
-	eventDate: string
-	eventTime: string | null
+	projectName: string
+	startDate: string
+	endDate: string | null
+	time: string | null
 	venue: string
-	finalAmount: string | number
+	sponsorshipAmount: string | number
 	deliverables: string
-	otherTerms: string | null
-	additionalNotes: string | null
+	sponsorshipCategory: string | null
+	barterElements: string | null
 	status: SponsorshipDealStatus
 	version: number
 	changeRequestNote: string | null
@@ -854,14 +855,15 @@ export type SponsorshipDeal = {
 }
 
 export type SponsorshipDealPayload = {
-	eventName: string
-	eventDate: string
-	eventTime?: string
+	projectName: string
+	startDate: string
+	endDate?: string
+	time?: string
 	venue: string
-	finalAmount: number
+	sponsorshipAmount: number
 	deliverables: string
-	otherTerms?: string
-	additionalNotes?: string
+	sponsorshipCategory?: string
+	barterElements?: string
 }
 
 export async function getSponsorshipDeal(interestId: string): Promise<SponsorshipDeal | null> {

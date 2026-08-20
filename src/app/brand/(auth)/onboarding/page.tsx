@@ -247,17 +247,33 @@ export default function OnboardingPage() {
 								disabled
 								hint="From your account session"
 							/>
-							<TextField
-								label="Brand Name"
-								value={brandName}
-								onChange={(e) => {
-									setBrandName(e.target.value)
-									if (brandNameError) setBrandNameError(null)
-								}}
-								placeholder="Acme Corp"
-								error={!!brandNameError}
-								helperText={brandNameError ?? undefined}
-							/>
+							<div className="flex flex-col gap-1.5">
+								<div className="flex items-center justify-between gap-2">
+									<label htmlFor="brand-name-input" className="text-label-sm font-semibold text-text-primary">
+										Brand Name <span className="text-[#EE2C2C] font-bold">*</span>
+									</label>
+								</div>
+								<div className={clsx(
+									"group flex items-center rounded-input border-[3px] transition-colors duration-120 h-[var(--size-input-md)] px-4 gap-2 text-sm bg-[#FFC940] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]",
+									brandNameError ? "border-[#EE2C2C]" : "border-black"
+								)}>
+									<input
+										id="brand-name-input"
+										value={brandName}
+										onChange={(e) => {
+											setBrandName(e.target.value)
+											if (brandNameError) setBrandNameError(null)
+										}}
+										placeholder="Acme Corp"
+										className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-black/50 text-black font-bold"
+									/>
+								</div>
+								{brandNameError && (
+									<p className="text-caption text-text-danger">
+										{brandNameError}
+									</p>
+								)}
+							</div>
 							<div className="flex flex-col gap-1.5">
 								<p className="text-label-sm font-medium text-text-primary">Company Logo</p>
 								<div className="flex items-center gap-3">
