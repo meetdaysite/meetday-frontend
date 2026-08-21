@@ -29,6 +29,7 @@ function BreakdownModal({ row, onClose }: { row: SponsorshipDealBillingRow; onCl
 				<div className="px-6 py-4 flex flex-col gap-2 text-sm">
 					<div className="flex justify-between"><span className="text-black/50 font-semibold">Sponsorship Amount</span><span className="font-bold">{formatAmount(row.sponsorshipAmount)}</span></div>
 					<div className="flex justify-between"><span className="text-black/50 font-semibold">Platform Fee (5%)</span><span className="font-bold">{formatAmount(row.platformFeeAmount)}</span></div>
+					<div className="flex justify-between"><span className="text-black/50 font-semibold">Transaction Fee (3%)</span><span className="font-bold">{formatAmount(row.transactionFeeAmount)}</span></div>
 					<div className="flex justify-between"><span className="text-black/50 font-semibold">GST</span><span className="font-bold">{formatAmount(row.taxAmount)}</span></div>
 					<div className="flex justify-between pt-2 border-t-2 border-black/10 mt-1"><span className="font-black">Total Amount</span><span className="font-black">{formatAmount(row.totalAmount)}</span></div>
 				</div>

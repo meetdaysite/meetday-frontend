@@ -852,6 +852,7 @@ export type SponsorshipDeal = {
 	approvedAt: string | null
 	paymentStatus: "UNPAID" | "PAID"
 	platformFeeAmount: string | number | null
+	transactionFeeAmount: string | number | null
 	taxAmount: string | number | null
 	totalAmount: string | number | null
 	paymentExpiresAt: string | null
@@ -991,6 +992,7 @@ export type SponsorshipDealBillingRow = {
 	projectName: string
 	sponsorshipAmount: string | number
 	platformFeeAmount: string | number | null
+	transactionFeeAmount: string | number | null
 	taxAmount: string | number | null
 	totalAmount: string | number | null
 	paymentStatus: "UNPAID" | "PAID"

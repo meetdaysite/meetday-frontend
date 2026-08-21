@@ -547,6 +547,7 @@ export function DealDetailsModal({
 								<div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
 									<Row label="Sponsorship Amount" value={formatAmount(deal.sponsorshipAmount)} />
 									{deal.platformFeeAmount != null && <Row label="Platform Fee (5%)" value={formatAmount(deal.platformFeeAmount)} />}
+									{deal.transactionFeeAmount != null && <Row label="Transaction Fee (3%)" value={formatAmount(deal.transactionFeeAmount)} />}
 									{deal.taxAmount != null && <Row label="GST" value={formatAmount(deal.taxAmount)} />}
 									<Row label="Total Amount" value={formatAmount(deal.totalAmount ?? deal.sponsorshipAmount)} />
 								</div>
