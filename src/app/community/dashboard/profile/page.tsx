@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Icon } from "@/components/ui/Icon"
 import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
+import { NotificationSoundToggle } from "@/components/ui/NotificationSoundToggle"
 import { useHostStore } from "@/store/hostStore"
 import { useAuthStore } from "@/store/authStore"
 import { getHostCommunityProfile, type HostCommunityProfile } from "@/lib/api"
@@ -242,6 +243,8 @@ export default function ProfilePage() {
 								<span className="text-black/50 font-black text-lg">&gt;</span>
 							</div>
 						</div>
+
+						<NotificationSoundToggle />
 
 						{/* Profile Actions */}
 						<div className="flex items-center justify-between py-4">

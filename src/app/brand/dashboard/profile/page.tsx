@@ -13,6 +13,7 @@ import UserSvg from "@/icons/outlined/user.svg"
 import GlobeSvg from "@/icons/outlined/globe.svg"
 import { EditBrandProfilePanel } from "@/components/brand/EditBrandProfilePanel"
 import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
+import { NotificationSoundToggle } from "@/components/ui/NotificationSoundToggle"
 import { getBrandProfile } from "@/lib/api"
 
 export default function BrandProfilePage() {
@@ -149,6 +150,8 @@ export default function BrandProfilePage() {
 							<span className="text-black/50 font-black text-lg">&gt;</span>
 						</div>
 					</div>
+
+					<NotificationSoundToggle />
 
 					{/* Sign Out */}
 					<div className="flex items-center justify-between py-4">
