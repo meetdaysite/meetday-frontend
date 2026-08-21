@@ -1015,6 +1015,13 @@ export async function getSponsorshipDealInvoiceUrl(interestId: string): Promise<
 	return data.data.url
 }
 
+export async function getSponsorshipDealReportPdfUrl(interestId: string): Promise<string> {
+	const { data } = await apiClient.get<{ success: boolean; data: { url: string } }>(
+		`/sponsorships/chats/${interestId}/deal/report/pdf`,
+	)
+	return data.data.url
+}
+
 // ─── "Talk to Meetday" general support chat — one thread per user, separate from TriChat ──
 
 export type MeetdayChatMessage = {
