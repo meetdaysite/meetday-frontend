@@ -71,29 +71,38 @@ export default function CommunityChatsPage() {
 		}).length
 	}, [notifications])
 
+	const loadThreadsSeq = useRef(0)
+
 	const loadThreads = useCallback(async (seg: Segment) => {
 		if (seg === "MEETDAY") {
 			setLoadingThreads(false)
 			return
 		}
+		const seq = ++loadThreadsSeq.current
 		try {
 			const data = await getMySponsorshipChats(seg)
-			console.log("[DEBUG community chats data]:", data)
+			// A newer loadThreads() call already resolved and updated state — discard this
+			// stale response instead of letting it overwrite fresher data (was causing threads
+			// to flicker in and out of the list during active back-and-forth chatting).
+			if (seq !== loadThreadsSeq.current) return
 			setThreads(data)
 		} catch {
 			// silent — polling refresh, don't spam toasts
 		} finally {
-			setLoadingThreads(false)
+			if (seq === loadThreadsSeq.current) setLoadingThreads(false)
 		}
 	}, [])
 
 	useEffect(() => {
 		// Fetch immediately, then poll — intentional fetch-on-mount + interval pattern.
+		// Deliberately NOT depending on `notifications` (it gets a new array reference on every
+		// poll/websocket event, which was re-triggering this effect on every chat message and
+		// firing overlapping fetches).
 		// eslint-disable-next-line react-hooks/set-state-in-effect
 		loadThreads(segment)
 		const interval = setInterval(() => loadThreads(segment), POLL_MS * 2)
 		return () => clearInterval(interval)
-	}, [segment, loadThreads, notifications])
+	}, [segment, loadThreads])
 
 	// Clear unread counts in memory instantly when opened
 	useEffect(() => {
@@ -296,12 +305,17 @@ function ChatThreadPanel({
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	const { typingSenderType, notifyTyping, notifyStopTyping } = useChatTyping(thread.id, "HOST")
 
+	const loadSeq = useRef(0)
+
 	const load = useCallback(async () => {
+		const seq = ++loadSeq.current
 		try {
 			const [res, dealRes] = await Promise.all([
 				getSponsorshipChatMessages(thread.id),
 				thread.chatStatus === "ACCEPTED" ? getSponsorshipDeal(thread.id) : Promise.resolve(null),
 			])
+			// Discard a stale, out-of-order response so it can't revert the view to older data.
+			if (seq !== loadSeq.current) return
 			setMessages(res.messages)
 			setDeal(dealRes)
 			// Only capture the unread boundary once per thread — subsequent polls mark everything
@@ -315,19 +329,18 @@ function ChatThreadPanel({
 		} catch {
 			// silent on poll
 		} finally {
-			setLoading(false)
+			if (seq === loadSeq.current) setLoading(false)
 		}
 	}, [thread.id, thread.chatStatus])
 
-	const { notifications } = useNotificationStore()
-
 	useEffect(() => {
 		// Fetch immediately, then poll — intentional fetch-on-mount + interval pattern.
+		// Deliberately NOT depending on `notifications` — see chats list effect for why.
 		// eslint-disable-next-line react-hooks/set-state-in-effect
 		load()
 		const interval = setInterval(load, POLL_MS)
 		return () => clearInterval(interval)
-	}, [load, notifications])
+	}, [load])
 
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: "smooth" })
