@@ -1,6 +1,27 @@
 // "Meetday" spoken aloud as the new-message notification sound, via the browser's built-in
 // text-to-speech — no audio asset needed, avoids licensing concerns, keeps the bundle small.
 
+const MUTE_STORAGE_KEY = "meetday_notification_sound_muted"
+
+/** Whether the user has turned off the notification sound from their profile. */
+export function isNotificationSoundMuted(): boolean {
+	if (typeof window === "undefined") return false
+	try {
+		return window.localStorage.getItem(MUTE_STORAGE_KEY) === "true"
+	} catch {
+		return false
+	}
+}
+
+export function setNotificationSoundMuted(muted: boolean) {
+	if (typeof window === "undefined") return
+	try {
+		window.localStorage.setItem(MUTE_STORAGE_KEY, muted ? "true" : "false")
+	} catch {
+		// Storage unavailable (private browsing, quota, etc.) — non-critical, just won't persist.
+	}
+}
+
 let meetdayVoice: SpeechSynthesisVoice | null = null
 
 // Curated names known to be female voices across macOS/Windows/Chrome — used as a fallback when
@@ -28,8 +49,9 @@ if (typeof window !== "undefined" && window.speechSynthesis) {
 	window.speechSynthesis.onvoiceschanged = loadPreferredVoice
 }
 
-/** Speaks "Meetday" aloud as the new-message notification sound. Silently no-ops if unsupported/blocked. */
+/** Speaks "Meetday" aloud as the new-message notification sound. Silently no-ops if unsupported/blocked/muted. */
 export function playMessageChime() {
+	if (isNotificationSoundMuted()) return
 	if (typeof window === "undefined" || !window.speechSynthesis) return
 	try {
 		if (!meetdayVoice) loadPreferredVoice()
