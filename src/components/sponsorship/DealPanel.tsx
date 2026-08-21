@@ -20,8 +20,60 @@ import {
 	getHostCommunityProfile,
 	getCategories,
 	sendSponsorshipChatMessage,
+	initiateSponsorshipDealPayment,
+	verifySponsorshipDealPayment,
 } from "@/lib/api"
 import { uploadSponsorshipDealReportImage } from "@/lib/uploadMedia"
+
+function loadRazorpayScript(): Promise<boolean> {
+	return new Promise((resolve) => {
+		if (typeof window === "undefined") return resolve(false)
+		if (window.Razorpay) return resolve(true)
+		const script = document.createElement("script")
+		script.src = "https://checkout.razorpay.com/v1/checkout.js"
+		script.onload = () => resolve(true)
+		script.onerror = () => resolve(false)
+		document.body.appendChild(script)
+	})
+}
+
+// Shared checkout flow — used by both the chat's DealDetailsModal and the Billing page.
+export async function payForSponsorshipDeal(
+	interestId: string,
+	projectName: string,
+	onPaid: (deal: SponsorshipDeal) => void,
+): Promise<void> {
+	const loaded = await loadRazorpayScript()
+	if (!loaded) {
+		toast.error("Failed to load the payment gateway. Please try again.")
+		return
+	}
+	const order = await initiateSponsorshipDealPayment(interestId)
+	const rzp = new window.Razorpay({
+		key: order.keyId,
+		amount: order.amount,
+		currency: order.currency,
+		order_id: order.razorpayOrderId,
+		name: "Meetday",
+		description: `Sponsorship payment · ${projectName}`,
+		handler: async (response) => {
+			try {
+				const updated = await verifySponsorshipDealPayment(interestId, {
+					razorpayOrderId: response.razorpay_order_id,
+					razorpayPaymentId: response.razorpay_payment_id,
+					razorpaySignature: response.razorpay_signature,
+				})
+				toast.success("Payment successful!")
+				onPaid(updated)
+			} catch {
+				toast.error("Payment went through but verification failed — please contact support.")
+			}
+		},
+		theme: { color: "#EE2C2C" },
+	})
+	rzp.on("payment.failed", () => toast.error("Payment failed. Please try again."))
+	rzp.open()
+}
 
 const STATUS_LABEL: Record<SponsorshipDeal["status"], string> = {
 	PENDING_APPROVAL: "Pending Approval",
@@ -37,6 +89,27 @@ const STATUS_COLOR: Record<SponsorshipDeal["status"], string> = {
 
 function formatAmount(amount: string | number) {
 	return `₹${Number(amount).toLocaleString("en-IN")}`
+}
+
+// Computed client-side from the raw paymentStatus + expiry so it's always fresh, no polling needed.
+export type DealPaymentDisplayStatus = "PENDING" | "PAID" | "EXPIRED"
+
+export function getDealPaymentDisplayStatus(deal: { paymentStatus: "UNPAID" | "PAID"; paymentExpiresAt: string | null }): DealPaymentDisplayStatus {
+	if (deal.paymentStatus === "PAID") return "PAID"
+	if (deal.paymentExpiresAt && new Date(deal.paymentExpiresAt).getTime() < Date.now()) return "EXPIRED"
+	return "PENDING"
+}
+
+export const PAYMENT_STATUS_LABEL: Record<DealPaymentDisplayStatus, string> = {
+	PENDING: "Pending",
+	PAID: "Paid",
+	EXPIRED: "Expired",
+}
+
+export const PAYMENT_STATUS_COLOR: Record<DealPaymentDisplayStatus, string> = {
+	PENDING: "bg-neutral-200 text-black/60",
+	PAID: "bg-green-600 text-white",
+	EXPIRED: "bg-[#EE2C2C] text-white",
 }
 
 // Pinned banner shown above the chat input — always reflects the latest deal state so both
@@ -72,6 +145,11 @@ export function DealBanner({
 				<span className={clsx("px-2 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0", STATUS_COLOR[deal.status])}>
 					{STATUS_LABEL[deal.status]}
 				</span>
+				{deal.status === "APPROVED" && (
+					<span className={clsx("px-2 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0", PAYMENT_STATUS_COLOR[getDealPaymentDisplayStatus(deal)])}>
+						{PAYMENT_STATUS_LABEL[getDealPaymentDisplayStatus(deal)]}
+					</span>
+				)}
 				<p className="text-xs font-bold text-black truncate">
 					{deal.projectName} · {formatAmount(deal.sponsorshipAmount)}
 				</p>
@@ -352,6 +430,18 @@ export function DealDetailsModal({
 	const [requestingChanges, setRequestingChanges] = useState(false)
 	const [note, setNote] = useState("")
 	const [busy, setBusy] = useState(false)
+	const [paying, setPaying] = useState(false)
+
+	async function handlePayNow() {
+		setPaying(true)
+		try {
+			await payForSponsorshipDeal(interestId, deal.projectName, onUpdated)
+		} catch {
+			toast.error("Failed to start payment.")
+		} finally {
+			setPaying(false)
+		}
+	}
 
 	async function handleApprove() {
 		setBusy(true)
@@ -433,6 +523,45 @@ export function DealDetailsModal({
 						</div>
 					)}
 					<p className="text-[11px] font-semibold text-black/30">Version {deal.version}</p>
+
+					{deal.status === "APPROVED" && (() => {
+						const displayStatus = getDealPaymentDisplayStatus(deal)
+						return (
+							<div className={clsx(
+								"rounded-xl border-[3px] p-3 flex flex-col gap-2",
+								displayStatus === "PAID" ? "border-green-600 bg-green-50" : displayStatus === "EXPIRED" ? "border-[#EE2C2C] bg-[#EE2C2C]/5" : "border-black bg-neutral-50",
+							)}>
+								<div className="flex items-center justify-between gap-3">
+									<div className="flex items-center gap-2">
+										<p className="text-[10px] font-black uppercase text-black/40">Payment</p>
+										<span className={clsx("px-2 py-0.5 rounded-full text-[9px] font-black uppercase", PAYMENT_STATUS_COLOR[displayStatus])}>
+											{PAYMENT_STATUS_LABEL[displayStatus]}
+										</span>
+									</div>
+									{role === "BRAND" && displayStatus !== "PAID" && (
+										<Button size="sm" onClick={handlePayNow} disabled={paying}>
+											{paying ? "…" : `💳 Pay ${formatAmount(deal.totalAmount ?? deal.sponsorshipAmount)}`}
+										</Button>
+									)}
+								</div>
+								<div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+									<Row label="Sponsorship Amount" value={formatAmount(deal.sponsorshipAmount)} />
+									{deal.platformFeeAmount != null && <Row label="Platform Fee (5%)" value={formatAmount(deal.platformFeeAmount)} />}
+									{deal.taxAmount != null && <Row label="GST" value={formatAmount(deal.taxAmount)} />}
+									<Row label="Total Amount" value={formatAmount(deal.totalAmount ?? deal.sponsorshipAmount)} />
+								</div>
+								{displayStatus === "PAID" && deal.paidAt && (
+									<p className="text-[11px] font-semibold text-black/40">Paid on {new Date(deal.paidAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+								)}
+								{displayStatus !== "PAID" && deal.paymentExpiresAt && (
+									<p className="text-[11px] font-semibold text-black/40">
+										{displayStatus === "EXPIRED" ? "Was due by " : "Due by "}
+										{new Date(deal.paymentExpiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+									</p>
+								)}
+							</div>
+						)
+					})()}
 
 					{role === "BRAND" && deal.status !== "APPROVED" && requestingChanges && (
 						<div className="pt-2 border-t border-black/10">
