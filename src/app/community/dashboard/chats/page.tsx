@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback, Fragment } from "react"
+import { useSearchParams } from "next/navigation"
 import clsx from "clsx"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
@@ -15,11 +16,12 @@ import {
 	deleteSponsorshipChatMessage,
 	acceptSponsorshipChatRequest,
 	getSponsorshipDeal,
+	getSponsorshipDealReport,
 	type SponsorshipChatThread,
 	type SponsorshipChatMessage,
 	type SponsorshipDeal,
 } from "@/lib/api"
-import { DealBanner, DealFormModal, DealDetailsModal } from "@/components/sponsorship/DealPanel"
+import { DealBanner, DealFormModal, DealDetailsModal, DealReportModal } from "@/components/sponsorship/DealPanel"
 import { MeetdayChatPanel } from "@/components/support/MeetdayChatPanel"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
@@ -51,8 +53,15 @@ export default function CommunityChatsPage() {
 	const [requestedThreads, setRequestedThreads] = useState<SponsorshipChatThread[]>([])
 	const [loadingThreads, setLoadingThreads] = useState(true)
 	const [selectedId, setSelectedId] = useState<string | null>(null)
-
+	const searchParams = useSearchParams()
 	const { notifications, markRead } = useNotificationStore()
+
+	useEffect(() => {
+		const interestId = searchParams.get("interestId")
+		if (interestId) {
+			setSelectedId(interestId)
+		}
+	}, [searchParams])
 
 	const threads = segment === "REQUESTED" ? requestedThreads : acceptedThreads
 
@@ -315,12 +324,14 @@ function ChatThreadPanel({
 	const [sending, setSending] = useState(false)
 	const [uploadingImage, setUploadingImage] = useState(false)
 	const [deal, setDeal] = useState<SponsorshipDeal | null>(null)
-	const [dealModal, setDealModal] = useState<"form" | "details" | null>(null)
+	const [report, setReport] = useState<any>(null)
+	const [dealModal, setDealModal] = useState<"form" | "details" | "report" | null>(null)
 	const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
 	const [replyingTo, setReplyingTo] = useState<SponsorshipChatMessage | null>(null)
 	const [unreadDivider, setUnreadDivider] = useState<{ messageId: string; count: number } | null>(null)
 	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const dividerCapturedRef = useRef(false)
+	const autoOpenedRef = useRef(false)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	const { typingSenderType, notifyTyping, notifyStopTyping } = useChatTyping(thread.id, "HOST")
@@ -342,19 +353,36 @@ function ChatThreadPanel({
 		}
 	}, [deal])
 
+	useEffect(() => {
+		if (autoOpenedRef.current) return
+		const searchParams = new URLSearchParams(window.location.search)
+		if (searchParams.get("openDeal") === "true" && deal) {
+			setDealModal(deal.status === "APPROVED" ? "details" : "form")
+			autoOpenedRef.current = true
+			
+			// Remove openDeal from URL to prevent reopening
+			searchParams.delete("openDeal")
+			const newSearch = searchParams.toString()
+			const newPath = window.location.pathname + (newSearch ? `?${newSearch}` : "")
+			window.history.replaceState(null, "", newPath)
+		}
+	}, [deal])
+
 	const loadSeq = useRef(0)
 
 	const load = useCallback(async () => {
 		const seq = ++loadSeq.current
 		try {
-			const [res, dealRes] = await Promise.all([
+			const [res, dealRes, reportRes] = await Promise.all([
 				getSponsorshipChatMessages(thread.id),
 				thread.chatStatus === "ACCEPTED" ? getSponsorshipDeal(thread.id) : Promise.resolve(null),
+				thread.chatStatus === "ACCEPTED" ? getSponsorshipDealReport(thread.id).catch(() => null) : Promise.resolve(null),
 			])
 			// Discard a stale, out-of-order response so it can't revert the view to older data.
 			if (seq !== loadSeq.current) return
 			setMessages(res.messages)
 			setDeal(dealRes)
+			setReport(reportRes)
 			// Only capture the unread boundary once per thread — subsequent polls mark everything
 			// read, so re-computing it every time would make the divider disappear immediately.
 			if (!dividerCapturedRef.current) {
@@ -525,6 +553,8 @@ function ChatThreadPanel({
 					onLock={() => setDealModal("form")}
 					onEdit={() => setDealModal("form")}
 					onView={() => setDealModal("details")}
+					onReport={() => setDealModal("report")}
+					hasReport={!!report}
 				/>
 			)}
 
@@ -727,6 +757,9 @@ function ChatThreadPanel({
 					onClose={() => setDealModal(null)}
 					onUpdated={setDeal}
 				/>
+			)}
+			{dealModal === "report" && (
+				<DealReportModal interestId={thread.id} role="HOST" onClose={() => setDealModal(null)} />
 			)}
 			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
 		</div>

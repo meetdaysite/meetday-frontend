@@ -9,15 +9,72 @@ import { VenueAutocompleteInput } from "@/components/eventForm/AddressAutocomple
 import {
 	type SponsorshipDeal,
 	type SponsorshipDealPayload,
+	type SponsorshipDealReport,
+	getSponsorshipDeal,
 	createSponsorshipDeal,
 	updateSponsorshipDeal,
 	approveSponsorshipDeal,
 	requestSponsorshipDealChanges,
+	getSponsorshipDealReport,
+	upsertSponsorshipDealReport,
 	getSponsorshipProposalDetail,
 	getHostCommunityProfile,
 	getCategories,
 	sendSponsorshipChatMessage,
+	initiateSponsorshipDealPayment,
+	verifySponsorshipDealPayment,
 } from "@/lib/api"
+import { uploadSponsorshipDealReportImage } from "@/lib/uploadMedia"
+
+function loadRazorpayScript(): Promise<boolean> {
+	return new Promise((resolve) => {
+		if (typeof window === "undefined") return resolve(false)
+		if (window.Razorpay) return resolve(true)
+		const script = document.createElement("script")
+		script.src = "https://checkout.razorpay.com/v1/checkout.js"
+		script.onload = () => resolve(true)
+		script.onerror = () => resolve(false)
+		document.body.appendChild(script)
+	})
+}
+
+// Shared checkout flow — used by both the chat's DealDetailsModal and the Billing page.
+export async function payForSponsorshipDeal(
+	interestId: string,
+	projectName: string,
+	onPaid: (deal: SponsorshipDeal) => void,
+): Promise<void> {
+	const loaded = await loadRazorpayScript()
+	if (!loaded) {
+		toast.error("Failed to load the payment gateway. Please try again.")
+		return
+	}
+	const order = await initiateSponsorshipDealPayment(interestId)
+	const rzp = new window.Razorpay({
+		key: order.keyId,
+		amount: order.amount,
+		currency: order.currency,
+		order_id: order.razorpayOrderId,
+		name: "Meetday",
+		description: `Sponsorship payment · ${projectName}`,
+		handler: async (response) => {
+			try {
+				const updated = await verifySponsorshipDealPayment(interestId, {
+					razorpayOrderId: response.razorpay_order_id,
+					razorpayPaymentId: response.razorpay_payment_id,
+					razorpaySignature: response.razorpay_signature,
+				})
+				toast.success("Payment successful!")
+				onPaid(updated)
+			} catch {
+				toast.error("Payment went through but verification failed — please contact support.")
+			}
+		},
+		theme: { color: "#EE2C2C" },
+	})
+	rzp.on("payment.failed", () => toast.error("Payment failed. Please try again."))
+	rzp.open()
+}
 
 const STATUS_LABEL: Record<SponsorshipDeal["status"], string> = {
 	PENDING_APPROVAL: "Pending Approval",
@@ -35,6 +92,27 @@ function formatAmount(amount: string | number) {
 	return `₹${Number(amount).toLocaleString("en-IN")}`
 }
 
+// Computed client-side from the raw paymentStatus + expiry so it's always fresh, no polling needed.
+export type DealPaymentDisplayStatus = "PENDING" | "PAID" | "EXPIRED"
+
+export function getDealPaymentDisplayStatus(deal: { paymentStatus: "UNPAID" | "PAID"; paymentExpiresAt: string | null }): DealPaymentDisplayStatus {
+	if (deal.paymentStatus === "PAID") return "PAID"
+	if (deal.paymentExpiresAt && new Date(deal.paymentExpiresAt).getTime() < Date.now()) return "EXPIRED"
+	return "PENDING"
+}
+
+export const PAYMENT_STATUS_LABEL: Record<DealPaymentDisplayStatus, string> = {
+	PENDING: "Pending",
+	PAID: "Paid",
+	EXPIRED: "Expired",
+}
+
+export const PAYMENT_STATUS_COLOR: Record<DealPaymentDisplayStatus, string> = {
+	PENDING: "bg-neutral-200 text-black/60",
+	PAID: "bg-green-600 text-white",
+	EXPIRED: "bg-[#EE2C2C] text-white",
+}
+
 // Pinned banner shown above the chat input — always reflects the latest deal state so both
 // sides see the same thing, regardless of how far back the actual deal-related chat messages are.
 export function DealBanner({
@@ -43,12 +121,16 @@ export function DealBanner({
 	onLock,
 	onEdit,
 	onView,
+	onReport,
+	hasReport,
 }: {
 	deal: SponsorshipDeal | null
 	role: "HOST" | "BRAND"
 	onLock?: () => void
 	onEdit?: () => void
 	onView: () => void
+	onReport?: () => void
+	hasReport?: boolean
 }) {
 	if (!deal) {
 		if (role !== "HOST") return null
@@ -66,14 +148,34 @@ export function DealBanner({
 				<span className={clsx("px-2 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0", STATUS_COLOR[deal.status])}>
 					{STATUS_LABEL[deal.status]}
 				</span>
+				{deal.status === "APPROVED" && (
+					<span className={clsx("px-2 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0", PAYMENT_STATUS_COLOR[getDealPaymentDisplayStatus(deal)])}>
+						{PAYMENT_STATUS_LABEL[getDealPaymentDisplayStatus(deal)]}
+					</span>
+				)}
 				<p className="text-xs font-bold text-black truncate">
 					{deal.projectName} · {formatAmount(deal.sponsorshipAmount)}
 				</p>
 			</div>
 			<div className="flex items-center gap-2 shrink-0">
-				<Button size="sm" variant="secondary" onClick={onView}>View Details</Button>
+				<Button size="sm" variant="secondary" onClick={onView}>View Deal</Button>
 				{role === "HOST" && deal.status !== "APPROVED" && (
 					<Button size="sm" onClick={onEdit}>Edit Deal</Button>
+				)}
+				{deal.status === "APPROVED" && (
+					<>
+						{hasReport ? (
+							<Button size="sm" onClick={onReport}>
+								📝 View Report
+							</Button>
+						) : (
+							role === "HOST" && (
+								<Button size="sm" onClick={onReport}>
+									📝 Submit Report
+								</Button>
+							)
+						)}
+					</>
 				)}
 			</div>
 		</div>
@@ -341,6 +443,18 @@ export function DealDetailsModal({
 	const [requestingChanges, setRequestingChanges] = useState(false)
 	const [note, setNote] = useState("")
 	const [busy, setBusy] = useState(false)
+	const [paying, setPaying] = useState(false)
+
+	async function handlePayNow() {
+		setPaying(true)
+		try {
+			await payForSponsorshipDeal(interestId, deal.projectName, onUpdated)
+		} catch {
+			toast.error("Failed to start payment.")
+		} finally {
+			setPaying(false)
+		}
+	}
 
 	async function handleApprove() {
 		setBusy(true)
@@ -423,6 +537,46 @@ export function DealDetailsModal({
 					)}
 					<p className="text-[11px] font-semibold text-black/30">Version {deal.version}</p>
 
+					{deal.status === "APPROVED" && (() => {
+						const displayStatus = getDealPaymentDisplayStatus(deal)
+						return (
+							<div className={clsx(
+								"rounded-xl border-[3px] p-3 flex flex-col gap-2",
+								displayStatus === "PAID" ? "border-green-600 bg-green-50" : displayStatus === "EXPIRED" ? "border-[#EE2C2C] bg-[#EE2C2C]/5" : "border-black bg-neutral-50",
+							)}>
+								<div className="flex items-center justify-between gap-3">
+									<div className="flex items-center gap-2">
+										<p className="text-[10px] font-black uppercase text-black/40">Payment</p>
+										<span className={clsx("px-2 py-0.5 rounded-full text-[9px] font-black uppercase", PAYMENT_STATUS_COLOR[displayStatus])}>
+											{PAYMENT_STATUS_LABEL[displayStatus]}
+										</span>
+									</div>
+									{role === "BRAND" && displayStatus !== "PAID" && (
+										<Button size="sm" onClick={handlePayNow} disabled={paying}>
+											{paying ? "…" : `💳 Pay ${formatAmount(deal.totalAmount ?? deal.sponsorshipAmount)}`}
+										</Button>
+									)}
+								</div>
+								<div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+									<Row label="Sponsorship Amount" value={formatAmount(deal.sponsorshipAmount)} />
+									{deal.platformFeeAmount != null && <Row label="Platform Fee (5%)" value={formatAmount(deal.platformFeeAmount)} />}
+									{deal.transactionFeeAmount != null && <Row label="Transaction Fee (3%)" value={formatAmount(deal.transactionFeeAmount)} />}
+									{deal.taxAmount != null && <Row label="GST" value={formatAmount(deal.taxAmount)} />}
+									<Row label="Total Amount" value={formatAmount(deal.totalAmount ?? deal.sponsorshipAmount)} />
+								</div>
+								{displayStatus === "PAID" && deal.paidAt && (
+									<p className="text-[11px] font-semibold text-black/40">Paid on {new Date(deal.paidAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>
+								)}
+								{displayStatus !== "PAID" && deal.paymentExpiresAt && (
+									<p className="text-[11px] font-semibold text-black/40">
+										{displayStatus === "EXPIRED" ? "Was due by " : "Due by "}
+										{new Date(deal.paymentExpiresAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+									</p>
+								)}
+							</div>
+						)
+					})()}
+
 					{role === "BRAND" && deal.status !== "APPROVED" && requestingChanges && (
 						<div className="pt-2 border-t border-black/10">
 							<label className="text-[11px] font-black uppercase text-black/40 mb-1 block">What needs to change? (optional)</label>
@@ -445,6 +599,485 @@ export function DealDetailsModal({
 							</>
 						)}
 					</div>
+				)}
+			</div>
+		</div>
+	)
+}
+
+// Host-only: submit (or resubmit) the deliverables report once the deal is locked. Brand sees
+// it read-only via the same modal.
+export function DealReportModal({
+	interestId,
+	role,
+	onClose,
+}: {
+	interestId: string
+	role: "HOST" | "BRAND"
+	onClose: () => void
+}) {
+	const [loading, setLoading] = useState(true)
+	const [report, setReport] = useState<SponsorshipDealReport | null>(null)
+	const [deal, setDeal] = useState<SponsorshipDeal | null>(null)
+
+	// Editing Mode State
+	const [isEditing, setIsEditing] = useState(false)
+
+	// Fields
+	const [projectName, setProjectName] = useState("")
+	const [date, setDate] = useState("")
+	const [venue, setVenue] = useState("")
+	const [time, setTime] = useState("")
+	const [guestCount, setGuestCount] = useState("")
+	const [ageRange, setAgeRange] = useState("")
+	const [deliverablesList, setDeliverablesList] = useState<{ text: string; checked: boolean }[]>([])
+	const [videoLinks, setVideoLinks] = useState<string[]>([])
+	const [socialLinks, setSocialLinks] = useState<string[]>([])
+	const [images, setImages] = useState<{ key?: string; url: string; file?: File }[]>([])
+
+	// Brand Actions & Status
+	const [reportStatus, setReportStatus] = useState<"PENDING" | "APPROVED" | "REVISION_REQUESTED">("PENDING")
+	const [revisionNote, setRevisionNote] = useState("")
+	const [showRevisionInput, setShowRevisionInput] = useState(false)
+
+	const [saving, setSaving] = useState(false)
+	const [uploading, setUploading] = useState(false)
+
+	useEffect(() => {
+		Promise.all([
+			getSponsorshipDealReport(interestId).catch(() => null),
+			getSponsorshipDeal(interestId).catch(() => null),
+		]).then(([r, d]) => {
+			setDeal(d)
+			setReport(r)
+			if (r) {
+				setIsEditing(false)
+				try {
+					const data = JSON.parse(r.summary)
+					setProjectName(data.projectName || d?.projectName || "")
+					setDate(data.date || d?.startDate || "")
+					setVenue(data.venue || d?.venue || "")
+					setTime(data.time || d?.time || "")
+					setGuestCount(data.guestCount || "")
+					setAgeRange(data.ageRange || "")
+					setDeliverablesList(data.deliverables || [])
+					setVideoLinks(data.videoLinks || [])
+					setSocialLinks(data.socialLinks || [])
+					setReportStatus(data.status || "PENDING")
+					setRevisionNote(data.revisionNote || "")
+				} catch {
+					// Fallback to plain summary if not JSON
+					setProjectName(d?.projectName || "")
+					setDate(d?.startDate || "")
+					setVenue(d?.venue || "")
+					setTime(d?.time || "")
+					const items = d?.deliverables ? d.deliverables.split(/,|\n/).map(s => s.trim()).filter(Boolean) : []
+					setDeliverablesList(items.map(text => ({ text, checked: false })))
+				}
+				setImages(r.proofKeys.map((key, i) => ({ key, url: r.proofUrls[i] ?? "" })))
+			} else {
+				setIsEditing(true)
+				// Pre-populate from deal
+				setProjectName(d?.projectName || "")
+				setDate(d?.startDate || "")
+				setVenue(d?.venue || "")
+				setTime(d?.time || "")
+				const items = d?.deliverables ? d.deliverables.split(/,|\n/).map(s => s.trim()).filter(Boolean) : []
+				setDeliverablesList(items.map(text => ({ text, checked: false })))
+			}
+		}).catch(() => {
+			toast.error("Failed to load report data.")
+		}).finally(() => setLoading(false))
+	}, [interestId])
+
+	async function handleAddImage(file: File) {
+		if (!file.type.startsWith("image/")) {
+			toast.error("Only image files are accepted.")
+			return
+		}
+		if (images.length >= 5) {
+			toast.error("Only up to 5 images are allowed.")
+			return
+		}
+		setUploading(true)
+		try {
+			const key = await uploadSponsorshipDealReportImage(file, interestId)
+			setImages((prev) => [...prev, { key, url: URL.createObjectURL(file) }])
+		} catch {
+			toast.error("Failed to upload image.")
+		} finally {
+			setUploading(false)
+		}
+	}
+
+	function removeImage(index: number) {
+		setImages((prev) => prev.filter((_, i) => i !== index))
+	}
+
+	const isValid = projectName.trim().length > 0 && date.trim().length > 0 && venue.trim().length > 0
+
+	async function handleSubmit() {
+		if (!isValid) {
+			toast.error("Please fill in Project Name, Date, and Venue.")
+			return
+		}
+		setSaving(true)
+		try {
+			const summaryData = JSON.stringify({
+				projectName: projectName.trim(),
+				date: date.trim(),
+				venue: venue.trim(),
+				time: time.trim(),
+				guestCount: guestCount.trim(),
+				ageRange: ageRange.trim(),
+				deliverables: deliverablesList,
+				videoLinks: videoLinks.filter(Boolean),
+				socialLinks: socialLinks.filter(Boolean),
+				status: "PENDING",
+				revisionNote: ""
+			})
+
+			const saved = await upsertSponsorshipDealReport(interestId, {
+				summary: summaryData,
+				notes: "",
+				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
+			})
+			toast.success(report ? "Report resubmitted." : "Report submitted.")
+			setReport(saved)
+			setReportStatus("PENDING")
+			setIsEditing(false)
+			onClose()
+		} catch {
+			toast.error("Failed to save the report.")
+		} finally {
+			setSaving(false)
+		}
+	}
+
+	async function handleBrandAction(status: "APPROVED" | "REVISION_REQUESTED") {
+		setSaving(true)
+		try {
+			const summaryData = JSON.stringify({
+				projectName,
+				date,
+				venue,
+				time,
+				guestCount,
+				ageRange,
+				deliverables: deliverablesList,
+				videoLinks,
+				socialLinks,
+				status,
+				revisionNote: status === "REVISION_REQUESTED" ? revisionNote.trim() : ""
+			})
+
+			const saved = await upsertSponsorshipDealReport(interestId, {
+				summary: summaryData,
+				notes: status === "REVISION_REQUESTED" ? revisionNote.trim() : "",
+				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
+			})
+			toast.success(status === "APPROVED" ? "Report approved!" : "Revision request sent.")
+			setReport(saved)
+			setReportStatus(status)
+			onClose()
+		} catch {
+			toast.error("Failed to update status.")
+		} finally {
+			setSaving(false)
+		}
+	}
+
+	const STATUS_BADGES = {
+		PENDING: { label: "Pending Approval", color: "bg-amber-50 text-amber-700 border-amber-300" },
+		APPROVED: { label: "Approved", color: "bg-green-50 text-green-700 border-green-300" },
+		REVISION_REQUESTED: { label: "Revision Requested", color: "bg-red-50 text-red-700 border-red-300" }
+	}
+
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+			<div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg flex flex-col max-h-[90vh]">
+				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0 bg-neutral-50 rounded-t-[21px]">
+					<div className="flex items-center gap-3">
+						<p className="text-lg font-black text-black">📝 Deliverables Report</p>
+						{report && (
+							<span className={clsx("px-2 py-0.5 border-2 rounded-full text-[9px] font-black uppercase tracking-wide", STATUS_BADGES[reportStatus]?.color)}>
+								{STATUS_BADGES[reportStatus]?.label}
+							</span>
+						)}
+					</div>
+					<button onClick={onClose} className="text-xl font-black text-black/40 hover:text-black" aria-label="Close">×</button>
+				</div>
+
+				{loading ? (
+					<div className="px-6 py-10 text-center text-sm font-semibold text-black/40">Loading…</div>
+				) : role === "BRAND" && !report ? (
+					<div className="px-6 py-10 text-center text-sm font-semibold text-black/40">
+						The community hasn&apos;t submitted a deliverables report yet.
+					</div>
+				) : (
+					<>
+						<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-4">
+							{reportStatus === "REVISION_REQUESTED" && revisionNote && (
+								<div className="bg-red-50 border-2 border-red-300 rounded-xl p-3 text-xs font-semibold text-red-800">
+									<p className="font-bold text-red-900 mb-0.5">Revision Requested By Brand:</p>
+									{revisionNote}
+								</div>
+							)}
+
+							<div className="grid grid-cols-2 gap-3">
+								<Field label="Project Name">
+									<input
+										value={projectName}
+										disabled={role === "BRAND" || !isEditing}
+										onChange={(e) => setProjectName(e.target.value)}
+										className={inputClass}
+										placeholder="Project Name"
+									/>
+								</Field>
+								<Field label="Date">
+									<input
+										value={date}
+										disabled={role === "BRAND" || !isEditing}
+										onChange={(e) => setDate(e.target.value)}
+										className={inputClass}
+										placeholder="e.g. Oct 24, 2026"
+									/>
+								</Field>
+							</div>
+
+							<div className="grid grid-cols-2 gap-3">
+								<Field label="Venue">
+									<input
+										value={venue}
+										disabled={role === "BRAND" || !isEditing}
+										onChange={(e) => setVenue(e.target.value)}
+										className={inputClass}
+										placeholder="Venue"
+									/>
+								</Field>
+								<Field label="Time">
+									<input
+										value={time}
+										disabled={role === "BRAND" || !isEditing}
+										onChange={(e) => setTime(e.target.value)}
+										className={inputClass}
+										placeholder="Time"
+									/>
+								</Field>
+							</div>
+
+							<div className="grid grid-cols-2 gap-3">
+								<Field label="Guest Count">
+									<input
+										value={guestCount}
+										disabled={role === "BRAND" || !isEditing}
+										onChange={(e) => setGuestCount(e.target.value)}
+										className={inputClass}
+										placeholder="Guest Count"
+									/>
+								</Field>
+								<Field label="Age (Range)">
+									<input
+										value={ageRange}
+										disabled={role === "BRAND" || !isEditing}
+										onChange={(e) => setAgeRange(e.target.value)}
+										className={inputClass}
+										placeholder="e.g. 18-25"
+									/>
+								</Field>
+							</div>
+
+							{deliverablesList.length > 0 && (
+								<Field label="Deliverables met (tick mark)">
+									<div className="flex flex-col gap-2 bg-neutral-50 p-3 rounded-xl border-[3px] border-black">
+										{deliverablesList.map((item, idx) => (
+											<label key={idx} className="flex items-center gap-2.5 cursor-pointer select-none">
+												<input
+													type="checkbox"
+													checked={item.checked}
+													disabled={role === "BRAND" || !isEditing}
+													onChange={(e) => {
+														const updated = [...deliverablesList]
+														updated[idx].checked = e.target.checked
+														setDeliverablesList(updated)
+													}}
+													className="rounded border-[2px] border-black text-[#EE2C2C] focus:ring-[#EE2C2C] cursor-pointer"
+												/>
+												<span className="text-xs font-semibold text-black">{item.text}</span>
+											</label>
+										))}
+									</div>
+								</Field>
+							)}
+
+							<Field label="Proof Photos (Upto 5)">
+								<div className="flex flex-wrap items-center gap-2">
+									{images.map((img, i) => (
+										<div key={i} className="relative size-16 rounded-lg border-[3px] border-black overflow-hidden shrink-0 bg-neutral-100">
+											{/* eslint-disable-next-line @next/next/no-img-element */}
+											<img src={img.url} alt="Proof" className="size-full object-cover" />
+											{role === "HOST" && isEditing && (
+												<button
+													type="button"
+													onClick={() => removeImage(i)}
+													aria-label="Remove image"
+													className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/75 text-white text-[10px] flex items-center justify-center leading-none"
+												>
+													×
+												</button>
+											)}
+										</div>
+									))}
+									{role === "HOST" && isEditing && images.length < 5 && (
+										<label className="size-16 rounded-lg border-[3px] border-dashed border-black/30 flex items-center justify-center shrink-0 cursor-pointer hover:bg-black/5">
+											<input
+												type="file"
+												accept="image/*"
+												className="hidden"
+												disabled={uploading}
+												onChange={(e) => {
+													const file = e.target.files?.[0]
+													e.target.value = ""
+													if (file) handleAddImage(file)
+												}}
+											/>
+											<span className="text-[10px] font-black text-black/40">{uploading ? "…" : "+ Add"}</span>
+										</label>
+									)}
+								</div>
+							</Field>
+
+							<Field label="Video Links (Upto 5)">
+								<div className="flex flex-col gap-2">
+									{videoLinks.map((link, idx) => (
+										<div key={idx} className="flex items-center gap-2">
+											<input
+												value={link}
+												disabled={role === "BRAND" || !isEditing}
+												onChange={(e) => {
+													const updated = [...videoLinks]
+													updated[idx] = e.target.value
+													setVideoLinks(updated)
+												}}
+												placeholder="https://youtube.com/..."
+												className={inputClass}
+											/>
+											{role === "HOST" && isEditing && (
+												<button
+													type="button"
+													onClick={() => setVideoLinks((prev) => prev.filter((_, i) => i !== idx))}
+													className="px-2 py-1 bg-red-100 border-2 border-black rounded-lg text-red-600 font-bold hover:bg-red-200 shrink-0"
+												>
+													✕
+												</button>
+											)}
+										</div>
+									))}
+									{role === "HOST" && isEditing && videoLinks.length < 5 && (
+										<Button
+											type="button"
+											size="sm"
+											variant="secondary"
+											onClick={() => setVideoLinks((prev) => [...prev, ""])}
+											className="w-fit"
+										>
+											+ Add Video Link
+										</Button>
+									)}
+								</div>
+							</Field>
+
+							<Field label="Social Links (Upto 5)">
+								<div className="flex flex-col gap-2">
+									{socialLinks.map((link, idx) => (
+										<div key={idx} className="flex items-center gap-2">
+											<input
+												value={link}
+												disabled={role === "BRAND" || !isEditing}
+												onChange={(e) => {
+													const updated = [...socialLinks]
+													updated[idx] = e.target.value
+													setSocialLinks(updated)
+												}}
+												placeholder="https://instagram.com/..."
+												className={inputClass}
+											/>
+											{role === "HOST" && isEditing && (
+												<button
+													type="button"
+													onClick={() => setSocialLinks((prev) => prev.filter((_, i) => i !== idx))}
+													className="px-2 py-1 bg-red-100 border-2 border-black rounded-lg text-red-600 font-bold hover:bg-red-200 shrink-0"
+												>
+													✕
+												</button>
+											)}
+										</div>
+									))}
+									{role === "HOST" && isEditing && socialLinks.length < 5 && (
+										<Button
+											type="button"
+											size="sm"
+											variant="secondary"
+											onClick={() => setSocialLinks((prev) => [...prev, ""])}
+											className="w-fit"
+										>
+											+ Add Social Link
+										</Button>
+									)}
+								</div>
+							</Field>
+						</div>
+
+						{role === "HOST" && (
+							<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-2 shrink-0 bg-neutral-50 rounded-b-[21px]">
+								{isEditing ? (
+									<>
+										{report && (
+											<Button variant="secondary" onClick={() => setIsEditing(false)}>Cancel</Button>
+										)}
+										<Button onClick={handleSubmit} disabled={!isValid || saving}>
+											{saving ? "Saving…" : report ? "Resubmit Report" : "Submit Report"}
+										</Button>
+									</>
+								) : (
+									<Button onClick={() => setIsEditing(true)}>
+										Edit Report
+									</Button>
+								)}
+							</div>
+						)}
+
+						{role === "BRAND" && reportStatus !== "APPROVED" && (
+							<div className="px-6 py-4 border-t-[3px] border-black flex flex-col gap-3 shrink-0 bg-neutral-50 rounded-b-[21px]">
+								{showRevisionInput ? (
+									<div className="flex flex-col gap-2">
+										<textarea
+											value={revisionNote}
+											onChange={(e) => setRevisionNote(e.target.value)}
+											rows={2}
+											placeholder="Write your requested revisions/changes here…"
+											className={inputClass}
+										/>
+										<div className="flex justify-end gap-2">
+											<Button variant="secondary" onClick={() => setShowRevisionInput(false)}>Cancel</Button>
+											<Button onClick={() => handleBrandAction("REVISION_REQUESTED")} disabled={saving || !revisionNote.trim()}>
+												Send Request
+											</Button>
+										</div>
+									</div>
+								) : (
+									<div className="flex justify-end gap-2">
+										<Button variant="secondary" onClick={() => setShowRevisionInput(true)}>
+											Request Revision
+										</Button>
+										<Button onClick={() => handleBrandAction("APPROVED")} disabled={saving}>
+											Approve Report
+										</Button>
+									</div>
+								)}
+							</div>
+						)}
+					</>
 				)}
 			</div>
 		</div>

@@ -335,31 +335,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 					</div>
 				)}
 
-				{showKycCard && community && profile?.kycStatus !== "VERIFIED" && (
-					<div className="bg-white border-[3px] border-black rounded-[24px] p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black relative flex flex-col gap-2">
-						<button 
-							onClick={() => setShowKycCard(false)}
-							className="absolute top-3 right-3 text-black/60 hover:text-black font-extrabold text-sm"
-							aria-label="Close KYC alert"
-						>
-							✕
-						</button>
-						<div>
-							<h3 className="font-heading font-bold text-base text-black leading-tight">Verify Details</h3>
-							<p className="text-[11px] font-semibold text-black/50 mt-0.5 leading-snug">
-								Verify details for payouts to receive sponsorships.
-							</p>
-						</div>
 
-						<Link
-							href="/community/dashboard/profile?open=kyc"
-							onClick={onClose}
-							className="w-full py-2 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-bold text-center text-xs tracking-wider shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all block"
-						>
-							VERIFY NOW
-						</Link>
-					</div>
-				)}
 			</div>
 
 			{/* Navigation Bottom Items */}

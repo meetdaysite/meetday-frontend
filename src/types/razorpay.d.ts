@@ -6,6 +6,7 @@ interface RazorpayOptions {
 	name: string
 	description: string
 	handler: (response: RazorpayPaymentResponse) => void
+	theme?: { color: string }
 	modal?: {
 		ondismiss?: () => void
 	}

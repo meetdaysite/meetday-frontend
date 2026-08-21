@@ -10,9 +10,13 @@ import { Skeleton } from "@/components/ui/Skeleton"
 import {
 	getAllPublishedSponsorships,
 	getBrandCommunities,
+	getSponsorshipBilling,
+	getMySponsorshipChats,
 	type PublishedSponsorshipProposal,
 	type BrandCommunity,
+	type SponsorshipDealBillingRow,
 } from "@/lib/api"
+import clsx from "clsx"
 
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
@@ -26,8 +30,10 @@ export default function BrandDashboardWelcomePage() {
 
 	const [proposals, setProposals] = useState<PublishedSponsorshipProposal[]>([])
 	const [communities, setCommunities] = useState<BrandCommunity[]>([])
+	const [lockedDeals, setLockedDeals] = useState<(SponsorshipDealBillingRow & { communityLogo?: string | null })[]>([])
 	const [loadingProposals, setLoadingProposals] = useState(true)
 	const [loadingCommunities, setLoadingCommunities] = useState(true)
+	const [loadingLockedDeals, setLoadingLockedDeals] = useState(true)
 
 	useEffect(() => {
 		setLoadingProposals(true)
@@ -52,6 +58,28 @@ export default function BrandDashboardWelcomePage() {
 			})
 			.finally(() => {
 				setLoadingCommunities(false)
+			})
+
+		setLoadingLockedDeals(true)
+		Promise.all([
+			getSponsorshipBilling().catch(() => []),
+			getMySponsorshipChats("ACCEPTED").catch(() => []),
+		])
+			.then(([billing, chats]) => {
+				const mapped = billing.map((b) => {
+					const chat = chats.find((c) => c.id === b.sponsorshipInterestId)
+					return {
+						...b,
+						communityLogo: chat ? chat.counterpartAvatarUrl : null,
+					}
+				})
+				setLockedDeals(mapped)
+			})
+			.catch((err) => {
+				console.error("Failed to fetch billing/locked deals for brand dashboard", err)
+			})
+			.finally(() => {
+				setLoadingLockedDeals(false)
 			})
 	}, [])
 
@@ -272,6 +300,91 @@ export default function BrandDashboardWelcomePage() {
 										<CommunityCard community={comm} />
 									</Link>
 								))}
+							</div>
+						)}
+					</div>
+
+					{/* Row 3: Locked Deals */}
+					<div className="flex flex-col w-full">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
+							<div>
+								<h2 className="text-xl font-heading font-black text-black">Locked Deals</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Manage and pay for your locked sponsorship deals.</p>
+							</div>
+							<Link href="/brand/dashboard/billing" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+								View Billing &gt;
+							</Link>
+						</div>
+
+						{loadingLockedDeals ? (
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+								{Array.from({ length: 2 }).map((_, i) => (
+									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
+										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
+										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
+											<div className="h-4 bg-black/5 rounded w-32" />
+											<div className="h-3 bg-black/5 rounded w-20" />
+										</div>
+									</div>
+								))}
+							</div>
+						) : lockedDeals.length === 0 ? (
+							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
+								<p className="text-sm font-black text-black/80">No locked deals yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Once a deal is locked in chat, it will show up here for payouts.</p>
+							</div>
+						) : (
+							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
+								{lockedDeals.map((deal) => {
+									const isPaid = deal.paymentStatus === "PAID"
+									return (
+										<Link
+											key={deal.id}
+											href={`/brand/dashboard/chats?interestId=${deal.sponsorshipInterestId}&openDeal=true`}
+											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all p-4 w-[300px] shrink-0 flex flex-col justify-between"
+										>
+											<div>
+												<div className="flex items-center justify-between gap-2 mb-2">
+													<div className="flex items-center gap-2.5 min-w-0">
+														<div className="w-8 h-8 rounded-full border-[2px] border-black overflow-hidden bg-neutral-100 flex items-center justify-center shrink-0">
+															{deal.communityLogo ? (
+																// eslint-disable-next-line @next/next/no-img-element
+																<img
+																	src={deal.communityLogo}
+																	alt={deal.communityName}
+																	className="w-full h-full object-cover"
+																/>
+															) : (
+																<span className="font-bold text-xs text-black/60">
+																	{deal.communityName.charAt(0).toUpperCase()}
+																</span>
+															)}
+														</div>
+														<span className="font-heading font-black text-base text-black truncate max-w-[150px]">
+															{deal.communityName}
+														</span>
+													</div>
+													{isPaid && (
+														<span className="px-2 py-0.5 border-2 border-black rounded-full text-[8px] font-black uppercase shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-green-400 text-black">
+															PAID
+														</span>
+													)}
+												</div>
+												<p className="text-xs text-black/50 font-semibold truncate mt-2">
+													Project: {deal.proposalName}
+												</p>
+											</div>
+											<div className="mt-4 pt-3 border-t-2 border-black/5 flex justify-between items-center">
+												<span className="text-xs font-black text-black">
+													₹{Number(deal.totalAmount ?? deal.sponsorshipAmount).toLocaleString("en-IN")}
+												</span>
+												<span className="text-[10px] font-black text-[#6C32D1] group-hover:underline">
+													View Details ➔
+												</span>
+											</div>
+										</Link>
+									)
+								})}
 							</div>
 						)}
 					</div>

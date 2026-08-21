@@ -850,6 +850,15 @@ export type SponsorshipDeal = {
 	version: number
 	changeRequestNote: string | null
 	approvedAt: string | null
+	paymentStatus: "UNPAID" | "PAID"
+	platformFeeAmount: string | number | null
+	transactionFeeAmount: string | number | null
+	taxAmount: string | number | null
+	totalAmount: string | number | null
+	paymentExpiresAt: string | null
+	razorpayOrderId: string | null
+	paidAt: string | null
+	invoicePdfKey: string | null
 	createdAt: string
 	updatedAt: string
 }
@@ -911,6 +920,99 @@ export async function requestSponsorshipDealChanges(
 		payload,
 	)
 	return data.data
+}
+
+export type SponsorshipDealReport = {
+	id: string
+	sponsorshipDealId: string
+	summary: string
+	proofKeys: string[]
+	proofUrls: string[]
+	notes: string | null
+	submittedById: string
+	submittedAt: string
+	updatedAt: string
+}
+
+export type SponsorshipDealReportPayload = {
+	summary: string
+	proofKeys?: string[]
+	notes?: string
+}
+
+export async function getSponsorshipDealReport(interestId: string): Promise<SponsorshipDealReport | null> {
+	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipDealReport | null }>(
+		`/sponsorships/chats/${interestId}/deal/report`,
+	)
+	return data.data
+}
+
+export async function upsertSponsorshipDealReport(
+	interestId: string,
+	payload: SponsorshipDealReportPayload,
+): Promise<SponsorshipDealReport> {
+	const { data } = await apiClient.put<{ success: boolean; data: SponsorshipDealReport }>(
+		`/sponsorships/chats/${interestId}/deal/report`,
+		payload,
+	)
+	return data.data
+}
+
+export type SponsorshipDealPaymentOrder = {
+	razorpayOrderId: string
+	amount: number
+	currency: string
+	keyId: string
+}
+
+export async function initiateSponsorshipDealPayment(interestId: string): Promise<SponsorshipDealPaymentOrder> {
+	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipDealPaymentOrder }>(
+		`/sponsorships/chats/${interestId}/deal/payment/initiate`,
+	)
+	return data.data
+}
+
+export async function verifySponsorshipDealPayment(
+	interestId: string,
+	payload: { razorpayOrderId: string; razorpayPaymentId: string; razorpaySignature: string },
+): Promise<SponsorshipDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipDeal }>(
+		`/sponsorships/chats/${interestId}/deal/payment/verify`,
+		payload,
+	)
+	return data.data
+}
+
+// Row shape for the brand's "Billing" page — one per locked deal, across all chats.
+export type SponsorshipDealBillingRow = {
+	id: string
+	sponsorshipInterestId: string
+	proposalName: string
+	communityName: string
+	projectName: string
+	sponsorshipAmount: string | number
+	platformFeeAmount: string | number | null
+	transactionFeeAmount: string | number | null
+	taxAmount: string | number | null
+	totalAmount: string | number | null
+	paymentStatus: "UNPAID" | "PAID"
+	paymentExpiresAt: string | null
+	paidAt: string | null
+	approvedAt: string | null
+	razorpayPaymentId: string | null
+	invoicePdfKey: string | null
+}
+
+export async function getSponsorshipBilling(): Promise<SponsorshipDealBillingRow[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipDealBillingRow[] }>(`/sponsorships/billing`)
+	return data.data
+}
+
+export async function getSponsorshipDealInvoiceUrl(interestId: string): Promise<string> {
+	const { data } = await apiClient.get<{ success: boolean; data: { url: string } }>(
+		`/sponsorships/chats/${interestId}/deal/invoice`,
+	)
+	return data.data.url
 }
 
 // ─── "Talk to Meetday" general support chat — one thread per user, separate from TriChat ──
@@ -1741,7 +1843,7 @@ export async function getCommunityAnnouncements(
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
-	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA"
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "SPONSORSHIP_DEAL_REPORT_MEDIA"
 	contentType: string
 	resourceId?: string
 	mediaType?: string

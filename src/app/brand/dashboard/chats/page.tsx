@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback, Fragment } from "react"
+import { useSearchParams } from "next/navigation"
 import clsx from "clsx"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
@@ -14,11 +15,12 @@ import {
 	editSponsorshipChatMessage,
 	deleteSponsorshipChatMessage,
 	getSponsorshipDeal,
+	getSponsorshipDealReport,
 	type SponsorshipChatThread,
 	type SponsorshipChatMessage,
 	type SponsorshipDeal,
 } from "@/lib/api"
-import { DealBanner, DealDetailsModal } from "@/components/sponsorship/DealPanel"
+import { DealBanner, DealDetailsModal, DealReportModal } from "@/components/sponsorship/DealPanel"
 import { MeetdayChatPanel } from "@/components/support/MeetdayChatPanel"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
@@ -49,8 +51,15 @@ export default function BrandChatsPage() {
 	const [acceptedThreads, setAcceptedThreads] = useState<SponsorshipChatThread[]>([])
 	const [loadingThreads, setLoadingThreads] = useState(true)
 	const [selectedId, setSelectedId] = useState<string | null>(null)
-
+	const searchParams = useSearchParams()
 	const { notifications, markRead } = useNotificationStore()
+
+	useEffect(() => {
+		const interestId = searchParams.get("interestId")
+		if (interestId) {
+			setSelectedId(interestId)
+		}
+	}, [searchParams])
 
 	const threads = tab === "ACCEPTED" ? acceptedThreads : requestedThreads
 
@@ -281,12 +290,15 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	const [sending, setSending] = useState(false)
 	const [uploadingImage, setUploadingImage] = useState(false)
 	const [deal, setDeal] = useState<SponsorshipDeal | null>(null)
+	const [report, setReport] = useState<any>(null)
 	const [showDealModal, setShowDealModal] = useState(false)
+	const [showReportModal, setShowReportModal] = useState(false)
 	const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
 	const [replyingTo, setReplyingTo] = useState<SponsorshipChatMessage | null>(null)
 	const [unreadDivider, setUnreadDivider] = useState<{ messageId: string; count: number } | null>(null)
 	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const dividerCapturedRef = useRef(false)
+	const autoOpenedRef = useRef(false)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	const { typingSenderType, notifyTyping, notifyStopTyping } = useChatTyping(thread.id, "BRAND")
@@ -297,14 +309,16 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	const load = useCallback(async () => {
 		const seq = ++loadSeq.current
 		try {
-			const [res, dealRes] = await Promise.all([
+			const [res, dealRes, reportRes] = await Promise.all([
 				getSponsorshipChatMessages(thread.id),
 				thread.chatStatus === "ACCEPTED" ? getSponsorshipDeal(thread.id) : Promise.resolve(null),
+				thread.chatStatus === "ACCEPTED" ? getSponsorshipDealReport(thread.id).catch(() => null) : Promise.resolve(null),
 			])
 			// Discard a stale, out-of-order response so it can't revert the view to older data.
 			if (seq !== loadSeq.current) return
 			setMessages(res.messages)
 			setDeal(dealRes)
+			setReport(reportRes)
 			// Only capture the unread boundary once per thread — subsequent polls mark everything
 			// read, so re-computing it every time would make the divider disappear immediately.
 			if (!dividerCapturedRef.current) {
@@ -332,6 +346,21 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: "smooth" })
 	}, [messages.length])
+
+	useEffect(() => {
+		if (autoOpenedRef.current) return
+		const searchParams = new URLSearchParams(window.location.search)
+		if (searchParams.get("openDeal") === "true" && deal) {
+			setShowDealModal(true)
+			autoOpenedRef.current = true
+			
+			// Remove openDeal from URL to prevent reopening
+			searchParams.delete("openDeal")
+			const newSearch = searchParams.toString()
+			const newPath = window.location.pathname + (newSearch ? `?${newSearch}` : "")
+			window.history.replaceState(null, "", newPath)
+		}
+	}, [deal])
 
 	async function handleSend() {
 		if (!input.trim()) return
@@ -462,7 +491,7 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 			</div>
 
 			{thread.chatStatus === "ACCEPTED" && (
-				<DealBanner deal={deal} role="BRAND" onView={() => setShowDealModal(true)} />
+				<DealBanner deal={deal} role="BRAND" onView={() => setShowDealModal(true)} onReport={() => setShowReportModal(true)} hasReport={!!report} />
 			)}
 
 			<div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
@@ -655,6 +684,9 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 					onClose={() => setShowDealModal(false)}
 					onUpdated={setDeal}
 				/>
+			)}
+			{showReportModal && (
+				<DealReportModal interestId={thread.id} role="BRAND" onClose={() => setShowReportModal(false)} />
 			)}
 			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
 		</div>
