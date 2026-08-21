@@ -19,7 +19,7 @@ import {
 	type SponsorshipChatMessage,
 	type SponsorshipDeal,
 } from "@/lib/api"
-import { DealBanner, DealFormModal, DealDetailsModal } from "@/components/sponsorship/DealPanel"
+import { DealBanner, DealFormModal, DealDetailsModal, DealReportModal } from "@/components/sponsorship/DealPanel"
 import { MeetdayChatPanel } from "@/components/support/MeetdayChatPanel"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
@@ -305,7 +305,7 @@ function ChatThreadPanel({
 	const [sending, setSending] = useState(false)
 	const [uploadingImage, setUploadingImage] = useState(false)
 	const [deal, setDeal] = useState<SponsorshipDeal | null>(null)
-	const [dealModal, setDealModal] = useState<"form" | "details" | null>(null)
+	const [dealModal, setDealModal] = useState<"form" | "details" | "report" | null>(null)
 	const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
 	const [replyingTo, setReplyingTo] = useState<SponsorshipChatMessage | null>(null)
 	const [unreadDivider, setUnreadDivider] = useState<{ messageId: string; count: number } | null>(null)
@@ -511,6 +511,7 @@ function ChatThreadPanel({
 					onLock={() => setDealModal("form")}
 					onEdit={() => setDealModal("form")}
 					onView={() => setDealModal("details")}
+					onReport={() => setDealModal("report")}
 				/>
 			)}
 
@@ -713,6 +714,9 @@ function ChatThreadPanel({
 					onClose={() => setDealModal(null)}
 					onUpdated={setDeal}
 				/>
+			)}
+			{dealModal === "report" && (
+				<DealReportModal interestId={thread.id} role="HOST" onClose={() => setDealModal(null)} />
 			)}
 			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
 		</div>

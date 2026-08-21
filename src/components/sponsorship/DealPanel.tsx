@@ -9,15 +9,19 @@ import { VenueAutocompleteInput } from "@/components/eventForm/AddressAutocomple
 import {
 	type SponsorshipDeal,
 	type SponsorshipDealPayload,
+	type SponsorshipDealReport,
 	createSponsorshipDeal,
 	updateSponsorshipDeal,
 	approveSponsorshipDeal,
 	requestSponsorshipDealChanges,
+	getSponsorshipDealReport,
+	upsertSponsorshipDealReport,
 	getSponsorshipProposalDetail,
 	getHostCommunityProfile,
 	getCategories,
 	sendSponsorshipChatMessage,
 } from "@/lib/api"
+import { uploadSponsorshipDealReportImage } from "@/lib/uploadMedia"
 
 const STATUS_LABEL: Record<SponsorshipDeal["status"], string> = {
 	PENDING_APPROVAL: "Pending Approval",
@@ -43,12 +47,14 @@ export function DealBanner({
 	onLock,
 	onEdit,
 	onView,
+	onReport,
 }: {
 	deal: SponsorshipDeal | null
 	role: "HOST" | "BRAND"
 	onLock?: () => void
 	onEdit?: () => void
 	onView: () => void
+	onReport?: () => void
 }) {
 	if (!deal) {
 		if (role !== "HOST") return null
@@ -74,6 +80,11 @@ export function DealBanner({
 				<Button size="sm" variant="secondary" onClick={onView}>View Details</Button>
 				{role === "HOST" && deal.status !== "APPROVED" && (
 					<Button size="sm" onClick={onEdit}>Edit Deal</Button>
+				)}
+				{deal.status === "APPROVED" && (
+					<Button size="sm" onClick={onReport}>
+						📝 {role === "HOST" ? "Submit Report" : "View Report"}
+					</Button>
 				)}
 			</div>
 		</div>
@@ -445,6 +456,178 @@ export function DealDetailsModal({
 							</>
 						)}
 					</div>
+				)}
+			</div>
+		</div>
+	)
+}
+
+// Host-only: submit (or resubmit) the deliverables report once the deal is locked. Brand sees
+// it read-only via the same modal.
+export function DealReportModal({
+	interestId,
+	role,
+	onClose,
+}: {
+	interestId: string
+	role: "HOST" | "BRAND"
+	onClose: () => void
+}) {
+	const [loading, setLoading] = useState(true)
+	const [report, setReport] = useState<SponsorshipDealReport | null>(null)
+	const [summary, setSummary] = useState("")
+	const [notes, setNotes] = useState("")
+	const [images, setImages] = useState<{ key?: string; url: string; file?: File }[]>([])
+	const [saving, setSaving] = useState(false)
+	const [uploading, setUploading] = useState(false)
+
+	useEffect(() => {
+		getSponsorshipDealReport(interestId)
+			.then((r) => {
+				setReport(r)
+				if (r) {
+					setSummary(r.summary)
+					setNotes(r.notes ?? "")
+					setImages(r.proofKeys.map((key, i) => ({ key, url: r.proofUrls[i] ?? "" })))
+				}
+			})
+			.catch(() => toast.error("Failed to load the report."))
+			.finally(() => setLoading(false))
+	}, [interestId])
+
+	async function handleAddImage(file: File) {
+		if (!file.type.startsWith("image/")) {
+			toast.error("Only image files are accepted.")
+			return
+		}
+		if (images.length >= 6) {
+			toast.error("Only up to 6 images are allowed.")
+			return
+		}
+		setUploading(true)
+		try {
+			const key = await uploadSponsorshipDealReportImage(file, interestId)
+			setImages((prev) => [...prev, { key, url: URL.createObjectURL(file) }])
+		} catch {
+			toast.error("Failed to upload image.")
+		} finally {
+			setUploading(false)
+		}
+	}
+
+	function removeImage(index: number) {
+		setImages((prev) => prev.filter((_, i) => i !== index))
+	}
+
+	const isValid = summary.trim().length > 0
+
+	async function handleSubmit() {
+		if (!isValid) return
+		setSaving(true)
+		try {
+			const saved = await upsertSponsorshipDealReport(interestId, {
+				summary: summary.trim(),
+				notes: notes.trim() || undefined,
+				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
+			})
+			toast.success(report ? "Report updated." : "Report submitted.")
+			setReport(saved)
+			onClose()
+		} catch {
+			toast.error("Failed to save the report.")
+		} finally {
+			setSaving(false)
+		}
+	}
+
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+			<div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg flex flex-col max-h-[90vh]">
+				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0">
+					<p className="text-lg font-black text-black">📝 Deliverables Report</p>
+					<button onClick={onClose} className="text-xl font-black text-black/40 hover:text-black" aria-label="Close">×</button>
+				</div>
+
+				{loading ? (
+					<div className="px-6 py-10 text-center text-sm font-semibold text-black/40">Loading…</div>
+				) : role === "BRAND" && !report ? (
+					<div className="px-6 py-10 text-center text-sm font-semibold text-black/40">
+						The community hasn&apos;t submitted a deliverables report yet.
+					</div>
+				) : (
+					<>
+						<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3">
+							<Field label="What was delivered?">
+								<textarea
+									value={summary}
+									onChange={(e) => setSummary(e.target.value)}
+									rows={4}
+									disabled={role === "BRAND"}
+									className={inputClass}
+									placeholder="Set up a branded booth at the entrance, ran 3 Instagram stories…"
+								/>
+							</Field>
+							<Field label="Proof photos (optional)">
+								<div className="flex flex-wrap items-center gap-2">
+									{images.map((img, i) => (
+										<div key={i} className="relative size-16 rounded-lg border-[3px] border-black overflow-hidden shrink-0">
+											{/* eslint-disable-next-line @next/next/no-img-element */}
+											<img src={img.url} alt="Proof" className="size-full object-cover" />
+											{role === "HOST" && (
+												<button
+													type="button"
+													onClick={() => removeImage(i)}
+													aria-label="Remove image"
+													className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center leading-none"
+												>
+													×
+												</button>
+											)}
+										</div>
+									))}
+									{role === "HOST" && images.length < 6 && (
+										<label className="size-16 rounded-lg border-[3px] border-dashed border-black/30 flex items-center justify-center shrink-0 cursor-pointer hover:bg-black/5">
+											<input
+												type="file"
+												accept="image/*"
+												className="hidden"
+												disabled={uploading}
+												onChange={(e) => {
+													const file = e.target.files?.[0]
+													e.target.value = ""
+													if (file) handleAddImage(file)
+												}}
+											/>
+											<span className="text-[10px] font-bold text-black/40">{uploading ? "…" : "+ Add"}</span>
+										</label>
+									)}
+								</div>
+							</Field>
+							<Field label="Additional notes (optional)">
+								<textarea
+									value={notes}
+									onChange={(e) => setNotes(e.target.value)}
+									rows={2}
+									disabled={role === "BRAND"}
+									className={inputClass}
+								/>
+							</Field>
+							{report && (
+								<p className="text-[11px] font-semibold text-black/30">
+									{role === "HOST" ? "Last submitted" : "Submitted"} {new Date(report.submittedAt).toLocaleString("en-IN")}
+								</p>
+							)}
+						</div>
+
+						{role === "HOST" && (
+							<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-2 shrink-0">
+								<Button variant="secondary" onClick={onClose}>Cancel</Button>
+								<Button onClick={handleSubmit} disabled={!isValid || saving}>
+									{saving ? "Saving…" : report ? "Update Report" : "Submit Report"}
+								</Button>
+							</div>
+						)}
+					</>
 				)}
 			</div>
 		</div>

@@ -47,6 +47,21 @@ export async function uploadMeetdayChatImage(file: File): Promise<string> {
 	return key
 }
 
+export async function uploadSponsorshipDealReportImage(file: File, interestId: string): Promise<string> {
+	const { url, key } = await getUploadUrl({
+		context: "SPONSORSHIP_DEAL_REPORT_MEDIA",
+		contentType: file.type,
+		resourceId: interestId,
+	})
+	const res = await fetch(url, {
+		method: "PUT",
+		body: file,
+		headers: { "Content-Type": file.type },
+	})
+	if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
+	return key
+}
+
 export function storageUrl(key: string): string {
 	if (!key) return ""
 	if (key.startsWith("http")) return key

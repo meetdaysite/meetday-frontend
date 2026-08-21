@@ -913,6 +913,42 @@ export async function requestSponsorshipDealChanges(
 	return data.data
 }
 
+export type SponsorshipDealReport = {
+	id: string
+	sponsorshipDealId: string
+	summary: string
+	proofKeys: string[]
+	proofUrls: string[]
+	notes: string | null
+	submittedById: string
+	submittedAt: string
+	updatedAt: string
+}
+
+export type SponsorshipDealReportPayload = {
+	summary: string
+	proofKeys?: string[]
+	notes?: string
+}
+
+export async function getSponsorshipDealReport(interestId: string): Promise<SponsorshipDealReport | null> {
+	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipDealReport | null }>(
+		`/sponsorships/chats/${interestId}/deal/report`,
+	)
+	return data.data
+}
+
+export async function upsertSponsorshipDealReport(
+	interestId: string,
+	payload: SponsorshipDealReportPayload,
+): Promise<SponsorshipDealReport> {
+	const { data } = await apiClient.put<{ success: boolean; data: SponsorshipDealReport }>(
+		`/sponsorships/chats/${interestId}/deal/report`,
+		payload,
+	)
+	return data.data
+}
+
 // ─── "Talk to Meetday" general support chat — one thread per user, separate from TriChat ──
 
 export type MeetdayChatMessage = {
@@ -1741,7 +1777,7 @@ export async function getCommunityAnnouncements(
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
-	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA"
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "SPONSORSHIP_DEAL_REPORT_MEDIA"
 	contentType: string
 	resourceId?: string
 	mediaType?: string

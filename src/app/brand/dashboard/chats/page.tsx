@@ -18,7 +18,7 @@ import {
 	type SponsorshipChatMessage,
 	type SponsorshipDeal,
 } from "@/lib/api"
-import { DealBanner, DealDetailsModal } from "@/components/sponsorship/DealPanel"
+import { DealBanner, DealDetailsModal, DealReportModal } from "@/components/sponsorship/DealPanel"
 import { MeetdayChatPanel } from "@/components/support/MeetdayChatPanel"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
@@ -272,6 +272,7 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	const [uploadingImage, setUploadingImage] = useState(false)
 	const [deal, setDeal] = useState<SponsorshipDeal | null>(null)
 	const [showDealModal, setShowDealModal] = useState(false)
+	const [showReportModal, setShowReportModal] = useState(false)
 	const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
 	const [replyingTo, setReplyingTo] = useState<SponsorshipChatMessage | null>(null)
 	const [unreadDivider, setUnreadDivider] = useState<{ messageId: string; count: number } | null>(null)
@@ -448,7 +449,7 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 			</div>
 
 			{thread.chatStatus === "ACCEPTED" && (
-				<DealBanner deal={deal} role="BRAND" onView={() => setShowDealModal(true)} />
+				<DealBanner deal={deal} role="BRAND" onView={() => setShowDealModal(true)} onReport={() => setShowReportModal(true)} />
 			)}
 
 			<div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
@@ -641,6 +642,9 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 					onClose={() => setShowDealModal(false)}
 					onUpdated={setDeal}
 				/>
+			)}
+			{showReportModal && (
+				<DealReportModal interestId={thread.id} role="BRAND" onClose={() => setShowReportModal(false)} />
 			)}
 			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
 		</div>
