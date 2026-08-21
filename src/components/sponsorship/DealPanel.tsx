@@ -23,8 +23,11 @@ import {
 	sendSponsorshipChatMessage,
 	initiateSponsorshipDealPayment,
 	verifySponsorshipDealPayment,
+	getSponsorshipDealReportPdfUrl,
 } from "@/lib/api"
 import { uploadSponsorshipDealReportImage } from "@/lib/uploadMedia"
+import { PdfViewerModal } from "@/components/ui/PdfViewerModal"
+import { ImageLightbox } from "@/components/ui/ImageLightbox"
 
 function loadRazorpayScript(): Promise<boolean> {
 	return new Promise((resolve) => {
@@ -638,6 +641,9 @@ export function DealReportModal({
 	// Brand Actions & Status
 	const [reportStatus, setReportStatus] = useState<"PENDING" | "APPROVED" | "REVISION_REQUESTED">("PENDING")
 	const [revisionNote, setRevisionNote] = useState("")
+	const [downloadingPdf, setDownloadingPdf] = useState(false)
+	const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const [showRevisionInput, setShowRevisionInput] = useState(false)
 
 	const [saving, setSaving] = useState(false)
@@ -689,6 +695,18 @@ export function DealReportModal({
 			toast.error("Failed to load report data.")
 		}).finally(() => setLoading(false))
 	}, [interestId])
+
+	async function handleDownloadPdf() {
+		setDownloadingPdf(true)
+		try {
+			const url = await getSponsorshipDealReportPdfUrl(interestId)
+			setPdfUrl(url)
+		} catch {
+			toast.error("Failed to generate the report PDF.")
+		} finally {
+			setDownloadingPdf(false)
+		}
+	}
 
 	async function handleAddImage(file: File) {
 		if (!file.type.startsWith("image/")) {
@@ -805,7 +823,19 @@ export function DealReportModal({
 							</span>
 						)}
 					</div>
-					<button onClick={onClose} className="text-xl font-black text-black/40 hover:text-black" aria-label="Close">×</button>
+					<div className="flex items-center gap-3 shrink-0">
+						{report && (
+							<button
+								type="button"
+								onClick={handleDownloadPdf}
+								disabled={downloadingPdf}
+								className="text-[10px] font-black uppercase text-black/50 hover:text-black underline underline-offset-2"
+							>
+								{downloadingPdf ? "…" : "Download PDF"}
+							</button>
+						)}
+						<button onClick={onClose} className="text-xl font-black text-black/40 hover:text-black" aria-label="Close">×</button>
+					</div>
 				</div>
 
 				{loading ? (
@@ -915,7 +945,12 @@ export function DealReportModal({
 									{images.map((img, i) => (
 										<div key={i} className="relative size-16 rounded-lg border-[3px] border-black overflow-hidden shrink-0 bg-neutral-100">
 											{/* eslint-disable-next-line @next/next/no-img-element */}
-											<img src={img.url} alt="Proof" className="size-full object-cover" />
+											<img
+												src={img.url}
+												alt="Proof"
+												className="size-full object-cover cursor-zoom-in"
+												onClick={() => setViewingImage(img.url)}
+											/>
 											{role === "HOST" && isEditing && (
 												<button
 													type="button"
@@ -1080,6 +1115,9 @@ export function DealReportModal({
 					</>
 				)}
 			</div>
+
+			{pdfUrl && <PdfViewerModal url={pdfUrl} title="Deliverables Report" onClose={() => setPdfUrl(null)} />}
+			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
 		</div>
 	)
 }

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { getSponsorshipBilling, getSponsorshipDealInvoiceUrl, type SponsorshipDealBillingRow } from "@/lib/api"
 import { payForSponsorshipDeal, getDealPaymentDisplayStatus, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/components/sponsorship/DealPanel"
+import { PdfViewerModal } from "@/components/ui/PdfViewerModal"
 import clsx from "clsx"
 
 function formatAmount(amount: string | number | null) {
@@ -28,9 +29,8 @@ function BreakdownModal({ row, onClose }: { row: SponsorshipDealBillingRow; onCl
 				</div>
 				<div className="px-6 py-4 flex flex-col gap-2 text-sm">
 					<div className="flex justify-between"><span className="text-black/50 font-semibold">Sponsorship Amount</span><span className="font-bold">{formatAmount(row.sponsorshipAmount)}</span></div>
-					<div className="flex justify-between"><span className="text-black/50 font-semibold">Platform Fee (5%)</span><span className="font-bold">{formatAmount(row.platformFeeAmount)}</span></div>
-					<div className="flex justify-between"><span className="text-black/50 font-semibold">Transaction Fee (3%)</span><span className="font-bold">{formatAmount(row.transactionFeeAmount)}</span></div>
-					<div className="flex justify-between"><span className="text-black/50 font-semibold">GST</span><span className="font-bold">{formatAmount(row.taxAmount)}</span></div>
+					{row.transactionFeeAmount != null && <div className="flex justify-between"><span className="text-black/50 font-semibold">Transaction Fee (3%)</span><span className="font-bold">{formatAmount(row.transactionFeeAmount)}</span></div>}
+					{row.taxAmount != null && <div className="flex justify-between"><span className="text-black/50 font-semibold">GST</span><span className="font-bold">{formatAmount(row.taxAmount)}</span></div>}
 					<div className="flex justify-between pt-2 border-t-2 border-black/10 mt-1"><span className="font-black">Total Amount</span><span className="font-black">{formatAmount(row.totalAmount)}</span></div>
 				</div>
 			</div>
@@ -43,6 +43,7 @@ export default function BrandBillingPage() {
 	const [loading, setLoading] = useState(true)
 	const [payingId, setPayingId] = useState<string | null>(null)
 	const [breakdownRow, setBreakdownRow] = useState<SponsorshipDealBillingRow | null>(null)
+	const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null)
 
 	function load() {
 		setLoading(true)
@@ -74,7 +75,7 @@ export default function BrandBillingPage() {
 	async function handleDownloadInvoice(row: SponsorshipDealBillingRow) {
 		try {
 			const url = await getSponsorshipDealInvoiceUrl(row.sponsorshipInterestId)
-			window.open(url, "_blank")
+			setInvoiceUrl(url)
 		} catch {
 			toast.error("Invoice not available yet.")
 		}
@@ -140,6 +141,7 @@ export default function BrandBillingPage() {
 			</div>
 
 			{breakdownRow && <BreakdownModal row={breakdownRow} onClose={() => setBreakdownRow(null)} />}
+			{invoiceUrl && <PdfViewerModal url={invoiceUrl} title="Invoice" onClose={() => setInvoiceUrl(null)} />}
 		</div>
 	)
 }
