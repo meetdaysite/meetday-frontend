@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { toast } from "sonner"
@@ -12,9 +13,12 @@ import {
 	getBrandCommunities,
 	getSponsorshipBilling,
 	getMySponsorshipChats,
+	getSponsorshipDeal,
+	getSponsorshipDealReport,
 	type PublishedSponsorshipProposal,
 	type BrandCommunity,
 	type SponsorshipDealBillingRow,
+	type SponsorshipDeal,
 } from "@/lib/api"
 import clsx from "clsx"
 
@@ -22,15 +26,22 @@ import CalendarOutSvg from "@/icons/outlined/calendar.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 import { CommunityCard } from "./communities/page"
+import { DealDetailsModal, DealReportModal } from "@/components/sponsorship/DealPanel"
 
 
 export default function BrandDashboardWelcomePage() {
+	const router = useRouter()
 	const { profile } = useBrandStore()
 	const displayName = profile?.brandName || "Brand"
 
 	const [proposals, setProposals] = useState<PublishedSponsorshipProposal[]>([])
 	const [communities, setCommunities] = useState<BrandCommunity[]>([])
-	const [lockedDeals, setLockedDeals] = useState<(SponsorshipDealBillingRow & { communityLogo?: string | null })[]>([])
+	const [lockedDeals, setLockedDeals] = useState<(SponsorshipDealBillingRow & { communityLogo?: string | null; hasReport?: boolean })[]>([])
+
+	// Modal states for Lock Deal and Report forms
+	const [selectedDeal, setSelectedDeal] = useState<{ deal: SponsorshipDeal; interestId: string } | null>(null)
+	const [selectedInterestIdForReport, setSelectedInterestIdForReport] = useState<string | null>(null)
+	const [loadingDealDetailId, setLoadingDealDetailId] = useState<string | null>(null)
 	const [loadingProposals, setLoadingProposals] = useState(true)
 	const [loadingCommunities, setLoadingCommunities] = useState(true)
 	const [loadingLockedDeals, setLoadingLockedDeals] = useState(true)
@@ -63,17 +74,26 @@ export default function BrandDashboardWelcomePage() {
 		setLoadingLockedDeals(true)
 		Promise.all([
 			getSponsorshipBilling().catch(() => []),
-			getMySponsorshipChats("ACCEPTED").catch(() => []),
+			getMySponsorshipChats().catch(() => []), // fetch all chats to map logos reliably
 		])
-			.then(([billing, chats]) => {
-				const mapped = billing.map((b) => {
+			.then(async ([billing, chats]) => {
+				const mappedPromises = billing.map(async (b) => {
 					const chat = chats.find((c) => c.id === b.sponsorshipInterestId)
+					let hasReport = false
+					try {
+						const rep = await getSponsorshipDealReport(b.sponsorshipInterestId)
+						if (rep) {
+							hasReport = true
+						}
+					} catch {}
 					return {
 						...b,
 						communityLogo: chat ? chat.counterpartAvatarUrl : null,
+						hasReport,
 					}
 				})
-				setLockedDeals(mapped)
+				const resolved = await Promise.all(mappedPromises)
+				setLockedDeals(resolved)
 			})
 			.catch((err) => {
 				console.error("Failed to fetch billing/locked deals for brand dashboard", err)
@@ -304,12 +324,12 @@ export default function BrandDashboardWelcomePage() {
 						)}
 					</div>
 
-					{/* Row 3: Locked Deals */}
+					{/* Row 3: Locked Deals & Reports */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
 							<div>
-								<h2 className="text-xl font-heading font-black text-black">Locked Deals</h2>
-								<p className="text-xs font-semibold text-black/50 mt-1">Manage and pay for your locked sponsorship deals.</p>
+								<h2 className="text-xl font-heading font-black text-black">Locked Deals & Reports</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">View locked deal terms and submitted deliverables reports.</p>
 							</div>
 							<Link href="/brand/dashboard/billing" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
 								View Billing &gt;
@@ -331,17 +351,21 @@ export default function BrandDashboardWelcomePage() {
 						) : lockedDeals.length === 0 ? (
 							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
 								<p className="text-sm font-black text-black/80">No locked deals yet</p>
-								<p className="text-[11px] font-semibold text-black/40">Once a deal is locked in chat, it will show up here for payouts.</p>
+								<p className="text-[11px] font-semibold text-black/40">Once a deal is locked in chat, it will show up here.</p>
 							</div>
 						) : (
 							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
 								{lockedDeals.map((deal) => {
 									const isPaid = deal.paymentStatus === "PAID"
 									return (
-										<Link
+										<div
 											key={deal.id}
-											href={`/brand/dashboard/chats?interestId=${deal.sponsorshipInterestId}&openDeal=true`}
-											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all p-4 w-[300px] shrink-0 flex flex-col justify-between"
+											onClick={(e) => {
+												const target = e.target as HTMLElement
+												if (target.closest("button") || target.closest("a")) return
+												router.push(`/brand/dashboard/chats?interestId=${deal.sponsorshipInterestId}`)
+											}}
+											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all p-4 w-[300px] shrink-0 flex flex-col justify-between"
 										>
 											<div>
 												<div className="flex items-center justify-between gap-2 mb-2">
@@ -374,15 +398,48 @@ export default function BrandDashboardWelcomePage() {
 													Project: {deal.proposalName}
 												</p>
 											</div>
-											<div className="mt-4 pt-3 border-t-2 border-black/5 flex justify-between items-center">
-												<span className="text-xs font-black text-black">
-													₹{Number(deal.totalAmount ?? deal.sponsorshipAmount).toLocaleString("en-IN")}
-												</span>
-												<span className="text-[10px] font-black text-[#6C32D1] group-hover:underline">
-													View Details ➔
-												</span>
+											<div className="mt-4 pt-3 border-t-2 border-black/5 flex flex-col gap-2">
+												<div className="flex justify-between items-center text-xs font-black text-black">
+													<span>Amount:</span>
+													<span>₹{Number(deal.totalAmount ?? deal.sponsorshipAmount).toLocaleString("en-IN")}</span>
+												</div>
+												<div className={clsx("grid gap-2 mt-1", deal.hasReport ? "grid-cols-2" : "grid-cols-1")}>
+													<button
+														type="button"
+														disabled={loadingDealDetailId === deal.id}
+														onClick={async () => {
+															setLoadingDealDetailId(deal.id)
+															try {
+																const dealObj = await getSponsorshipDeal(deal.sponsorshipInterestId)
+																if (dealObj) {
+																	setSelectedDeal({ deal: dealObj, interestId: deal.sponsorshipInterestId })
+																} else {
+																	toast.error("Deal terms are not active yet.")
+																}
+															} catch {
+																toast.error("Failed to load deal terms.")
+															} finally {
+																setLoadingDealDetailId(null)
+															}
+														}}
+														className="py-1.5 px-2 bg-[#FFC940] text-black border-2 border-black rounded-xl text-[10px] font-black tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none text-center"
+													>
+														{loadingDealDetailId === deal.id ? "..." : "Locked Deal"}
+													</button>
+													{deal.hasReport && (
+														<button
+															type="button"
+															onClick={() => {
+																setSelectedInterestIdForReport(deal.sponsorshipInterestId)
+															}}
+															className="py-1.5 px-2 bg-white text-black border-2 border-black rounded-xl text-[10px] font-black tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none text-center"
+														>
+															Report
+														</button>
+													)}
+												</div>
 											</div>
-										</Link>
+										</div>
 									)
 								})}
 							</div>
@@ -390,6 +447,26 @@ export default function BrandDashboardWelcomePage() {
 					</div>
 				</div>
 			</div>
+
+			{selectedDeal && (
+				<DealDetailsModal
+					interestId={selectedDeal.interestId}
+					deal={selectedDeal.deal}
+					role="BRAND"
+					onClose={() => setSelectedDeal(null)}
+					onUpdated={(updatedDeal) => {
+						setSelectedDeal({ deal: updatedDeal, interestId: selectedDeal.interestId })
+					}}
+				/>
+			)}
+
+			{selectedInterestIdForReport && (
+				<DealReportModal
+					interestId={selectedInterestIdForReport}
+					role="BRAND"
+					onClose={() => setSelectedInterestIdForReport(null)}
+				/>
+			)}
 		</div>
 	)
 }

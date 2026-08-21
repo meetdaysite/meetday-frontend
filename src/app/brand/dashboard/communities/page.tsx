@@ -130,6 +130,7 @@ export default function BrandCommunitiesPage() {
 		name?: string | null
 		description?: string | null
 		imageUrls: string[]
+		url: string
 		eventNumber: number
 	} | null>(null)
 	const [viewAllExperiencesMode, setViewAllExperiencesMode] = useState(false)
@@ -195,12 +196,15 @@ export default function BrandCommunitiesPage() {
 
 	const flatExperienceImages = selectedCommunity
 		? (selectedCommunity.pastEvents || []).flatMap((event, eventIdx) => {
-				return (event.imageUrls || []).map((url) => ({
+				const urls = event.imageUrls || []
+				return urls.map((url, imgIdx) => ({
 					url,
 					eventNumber: eventIdx + 1,
 					name: event.name,
 					description: event.description,
 					imageUrls: event.imageUrls,
+					imgIdx,
+					totalImages: urls.length,
 				}))
 		  })
 		: []
@@ -258,14 +262,19 @@ export default function BrandCommunitiesPage() {
 													<div className="relative w-full aspect-[4/5] rounded-[16px] border-2 border-black overflow-hidden bg-slate-50">
 														<Image 
 															src={img.url} 
-															alt={`Event #${img.eventNumber}`} 
+															alt={img.name || `Event #${img.eventNumber}`} 
 															fill
 															className="object-cover" 
 															unoptimized
 														/>
+														{img.totalImages > 1 && (
+															<span className="absolute top-2 right-2 text-[9px] font-black text-black/40 bg-white/70 backdrop-blur-sm px-1.5 py-0.5 rounded border border-black/10 select-none">
+																Image {img.imgIdx + 1}
+															</span>
+														)}
 													</div>
-													<span className="text-[10px] font-black text-black/60 uppercase tracking-wider text-center mt-1">
-														event #{img.eventNumber}
+													<span className="text-[11px] font-black text-black text-center mt-1 truncate w-full px-1">
+														{img.name || `Event #${img.eventNumber}`}
 													</span>
 												</div>
 											))}
@@ -490,14 +499,19 @@ export default function BrandCommunitiesPage() {
 												<div className="relative w-full aspect-[4/5] rounded-[16px] border-2 border-black overflow-hidden bg-slate-50">
 													<Image 
 														src={img.url} 
-														alt={`Event #${img.eventNumber}`} 
+														alt={img.name || `Event #${img.eventNumber}`} 
 														fill
 														className="object-cover"
 														unoptimized
 													/>
+													{img.totalImages > 1 && (
+														<span className="absolute top-2 right-2 text-[9px] font-black text-black/40 bg-white/70 backdrop-blur-sm px-1.5 py-0.5 rounded border border-black/10 select-none">
+															Image {img.imgIdx + 1}
+														</span>
+													)}
 												</div>
-												<span className="text-[10px] font-black text-black/60 uppercase tracking-wider text-center mt-1">
-													event #{img.eventNumber}
+												<span className="text-[11px] font-black text-black text-center mt-1 truncate w-full px-1">
+													{img.name || `Event #${img.eventNumber}`}
 												</span>
 											</div>
 										))}
@@ -685,19 +699,16 @@ export default function BrandCommunitiesPage() {
 							</div>
 						)}
 
-						<div className={clsx("flex flex-wrap gap-4 mt-2 w-full", selectedExperience.imageUrls.length === 1 ? "justify-center" : "")}>
-							{selectedExperience.imageUrls.map((url, idx) => (
-								<div 
-									key={idx}
-									className="relative flex-1 min-w-[200px] max-w-[280px] aspect-[4/5] rounded-[20px] border-[3px] border-black overflow-hidden bg-slate-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
-								>
-									<img 
-										src={url} 
-										alt={`Experience Image ${idx + 1}`} 
-										className="w-full h-full object-cover" 
-									/>
-								</div>
-							))}
+						<div className="flex justify-center w-full mt-2">
+							<div 
+								className="relative w-full max-w-[320px] aspect-[4/5] rounded-[20px] border-[3px] border-black overflow-hidden bg-slate-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+							>
+								<img 
+									src={selectedExperience.url} 
+									alt="Experience Image" 
+									className="w-full h-full object-cover" 
+								/>
+							</div>
 						</div>
 					</div>
 				</div>

@@ -794,6 +794,9 @@ export function DealReportModal({
 				notes: status === "REVISION_REQUESTED" ? revisionNote.trim() : "",
 				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
 			})
+			if (status === "APPROVED") {
+				await sendSponsorshipChatMessage(interestId, { content: "report approved!", messageType: "SYSTEM" }).catch(() => null)
+			}
 			toast.success(status === "APPROVED" ? "Report approved!" : "Revision request sent.")
 			setReport(saved)
 			setReportStatus(status)
