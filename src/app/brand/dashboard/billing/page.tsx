@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Skeleton } from "@/components/ui/Skeleton"
-import { getSponsorshipBilling, getSponsorshipDealInvoiceUrl, type SponsorshipDealBillingRow } from "@/lib/api"
+import { getSponsorshipBilling, getMySponsorshipChats, getSponsorshipDealInvoiceUrl, type SponsorshipDealBillingRow } from "@/lib/api"
 import { payForSponsorshipDeal, getDealPaymentDisplayStatus, PAYMENT_STATUS_LABEL, PAYMENT_STATUS_COLOR } from "@/components/sponsorship/DealPanel"
 import { PdfViewerModal } from "@/components/ui/PdfViewerModal"
 import clsx from "clsx"
@@ -39,7 +40,8 @@ function BreakdownModal({ row, onClose }: { row: SponsorshipDealBillingRow; onCl
 }
 
 export default function BrandBillingPage() {
-	const [rows, setRows] = useState<SponsorshipDealBillingRow[]>([])
+	const router = useRouter()
+	const [rows, setRows] = useState<(SponsorshipDealBillingRow & { communityLogo?: string | null })[]>([])
 	const [loading, setLoading] = useState(true)
 	const [payingId, setPayingId] = useState<string | null>(null)
 	const [breakdownRow, setBreakdownRow] = useState<SponsorshipDealBillingRow | null>(null)
@@ -47,8 +49,20 @@ export default function BrandBillingPage() {
 
 	function load() {
 		setLoading(true)
-		getSponsorshipBilling()
-			.then(setRows)
+		Promise.all([
+			getSponsorshipBilling().catch(() => []),
+			getMySponsorshipChats().catch(() => []),
+		])
+			.then(([billing, chats]) => {
+				const mapped = billing.map((b) => {
+					const chat = chats.find((c) => c.id === b.sponsorshipInterestId)
+					return {
+						...b,
+						communityLogo: chat ? chat.counterpartAvatarUrl : null,
+					}
+				})
+				setRows(mapped)
+			})
 			.catch(() => toast.error("Failed to load billing."))
 			.finally(() => setLoading(false))
 	}
@@ -108,28 +122,74 @@ export default function BrandBillingPage() {
 						{rows.map((row) => {
 							const displayStatus = getDealPaymentDisplayStatus(row)
 							return (
-								<div key={row.id} className="bg-white border-[3px] border-black rounded-[20px] p-4 flex flex-col md:flex-row md:items-center gap-3 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-									<div className="flex-1 min-w-0">
-										<div className="flex items-center gap-2 flex-wrap">
-											<p className="font-black text-black truncate">{row.communityName}</p>
-											<span className={clsx("px-2 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0", PAYMENT_STATUS_COLOR[displayStatus])}>
-												{PAYMENT_STATUS_LABEL[displayStatus]}
-											</span>
+								<div 
+									key={row.id} 
+									onClick={(e) => {
+										const target = e.target as HTMLElement
+										if (target.closest("button") || target.closest("a")) return
+										router.push(`/brand/dashboard/chats?interestId=${row.sponsorshipInterestId}`)
+									}}
+									className="bg-white border-[3px] border-black rounded-[20px] p-4 grid grid-cols-1 md:grid-cols-[1.8fr_1fr_1fr_1.2fr_1.8fr] items-center gap-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all cursor-pointer"
+								>
+									{/* Column 1: Community Name & Logo */}
+									<div className="flex items-center gap-3 min-w-0">
+										<div className="w-9 h-9 rounded-full border-[2px] border-black overflow-hidden bg-neutral-100 flex items-center justify-center shrink-0">
+											{row.communityLogo ? (
+												// eslint-disable-next-line @next/next/no-img-element
+												<img src={row.communityLogo} alt={row.communityName} className="w-full h-full object-cover" />
+											) : (
+												<span className="font-bold text-xs text-black/60">
+													{row.communityName.charAt(0).toUpperCase()}
+												</span>
+											)}
 										</div>
-										<p className="text-xs font-semibold text-black/50 truncate">{row.proposalName}</p>
-										<p className="text-[11px] font-semibold text-black/30 mt-0.5">
-											Locked on {formatDate(row.approvedAt)}
-											{displayStatus !== "PAID" && row.paymentExpiresAt && ` · Due by ${formatDate(row.paymentExpiresAt)}`}
-											{displayStatus === "PAID" && row.paidAt && ` · Paid on ${formatDate(row.paidAt)}`}
-										</p>
+										<div className="min-w-0">
+											<p className="font-black text-black text-sm truncate">{row.communityName}</p>
+											<p className="text-xs font-semibold text-black/50 truncate">{row.proposalName}</p>
+										</div>
 									</div>
-									<div className="flex items-center gap-2 shrink-0">
+
+									{/* Column 2: Locked Date */}
+									<div className="flex flex-col text-[11px] font-semibold text-black/60 shrink-0">
+										<span className="text-black/45 font-bold uppercase text-[9px] block leading-none mb-1">Locked on</span>
+										<span>{formatDate(row.approvedAt)}</span>
+									</div>
+
+									{/* Column 3: Due/Paid Date */}
+									<div className="flex flex-col text-[11px] font-semibold text-black/60 shrink-0">
+										{displayStatus === "PAID" && row.paidAt ? (
+											<>
+												<span className="text-black/45 font-bold uppercase text-[9px] block leading-none mb-1">Paid on</span>
+												<span>{formatDate(row.paidAt)}</span>
+											</>
+										) : displayStatus !== "PAID" && row.paymentExpiresAt ? (
+											<>
+												<span className="text-red-500/80 font-bold uppercase text-[9px] block leading-none mb-1">Due by</span>
+												<span className="text-red-600">{formatDate(row.paymentExpiresAt)}</span>
+											</>
+										) : (
+											<>
+												<span className="text-black/45 font-bold uppercase text-[9px] block leading-none mb-1">Due by</span>
+												<span>—</span>
+											</>
+										)}
+									</div>
+
+									{/* Column 4: Status Badge (Larger) */}
+									<div className="shrink-0">
+										<span className={clsx("px-3.5 py-1.5 border-[3px] border-black rounded-full text-xs font-black uppercase shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] inline-block", PAYMENT_STATUS_COLOR[displayStatus])}>
+											{PAYMENT_STATUS_LABEL[displayStatus]}
+										</span>
+									</div>
+
+									{/* Column 5: Actions */}
+									<div className="flex items-center gap-2 shrink-0 md:justify-end">
 										<Button size="sm" variant="secondary" onClick={() => setBreakdownRow(row)}>View Breakdown</Button>
 										{displayStatus === "PAID" ? (
 											<Button size="sm" variant="secondary" onClick={() => handleDownloadInvoice(row)}>Download Invoice</Button>
 										) : (
 											<Button size="sm" onClick={() => handlePay(row)} disabled={payingId === row.id}>
-												{payingId === row.id ? "…" : `💳 Pay ${formatAmount(row.totalAmount ?? row.sponsorshipAmount)}`}
+												{payingId === row.id ? "…" : `Pay ${formatAmount(row.totalAmount ?? row.sponsorshipAmount)}`}
 											</Button>
 										)}
 									</div>

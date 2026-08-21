@@ -70,6 +70,9 @@ export function EditProfilePanel({ onClose, onSuccess }: EditProfilePanelProps) 
 
 	const [saving, setSaving] = useState(false)
 
+	const [cropSource, setCropSource] = useState<string | null>(null)
+	const [cropFileMeta, setCropFileMeta] = useState<{ name: string; type: string } | null>(null)
+
 	// Pre-populate from store
 	useEffect(() => {
 		if (!profile) return
@@ -83,11 +86,17 @@ export function EditProfilePanel({ onClose, onSuccess }: EditProfilePanelProps) 
 		setHostType(profile.hostType ?? "INDIVIDUAL")
 	}, [profile])
 
-	async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+	function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0]
 		if (!file || !profile) return
+		setCropSource(URL.createObjectURL(file))
+		setCropFileMeta({ name: file.name, type: file.type })
+		e.target.value = ""
+	}
 
-		setAvatarPreview(URL.createObjectURL(file))
+	async function handleCroppedUpload(file: File, previewUrl: string) {
+		if (!profile) return
+		setAvatarPreview(previewUrl)
 		setAvatarUploading(true)
 		try {
 			const { url, key } = await getUploadUrl({
@@ -101,14 +110,15 @@ export function EditProfilePanel({ onClose, onSuccess }: EditProfilePanelProps) 
 				headers: { "Content-Type": file.type },
 			})
 			setAvatarKey(key)
-			toast.success("Photo uploaded successfully! Save changes to apply.")
+			toast.success("Photo cropped & uploaded successfully! Save changes to apply.")
 		} catch (err) {
 			setAvatarPreview(null)
 			setAvatarKey(null)
 			toast.error(getApiErrorMessage(err))
 		} finally {
 			setAvatarUploading(false)
-			e.target.value = ""
+			setCropSource(null)
+			setCropFileMeta(null)
 		}
 	}
 
@@ -303,6 +313,166 @@ export function EditProfilePanel({ onClose, onSuccess }: EditProfilePanelProps) 
 					>
 						{saving ? "Saving…" : "Save Changes"}
 					</button>
+				</div>
+			</div>
+
+			{cropSource && cropFileMeta && (
+				<LogoCropModal
+					src={cropSource}
+					fileName={cropFileMeta.name}
+					fileType={cropFileMeta.type}
+					onClose={() => {
+						setCropSource(null)
+						setCropFileMeta(null)
+					}}
+					onCrop={handleCroppedUpload}
+				/>
+			)}
+		</div>
+	)
+}
+
+function LogoCropModal({ src, fileName, fileType, onClose, onCrop }: {
+	src: string
+	fileName: string
+	fileType: string
+	onClose: () => void
+	onCrop: (croppedFile: File, previewUrl: string) => void
+}) {
+	const [zoom, setZoom] = useState(1)
+	const [offset, setOffset] = useState({ x: 0, y: 0 })
+	const [isDragging, setIsDragging] = useState(false)
+	const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+	const imgRef = useRef<HTMLImageElement>(null)
+
+	function handleMouseDown(e: React.MouseEvent) {
+		setIsDragging(true)
+		setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y })
+	}
+
+	function handleMouseMove(e: React.MouseEvent) {
+		if (!isDragging) return
+		setOffset({
+			x: e.clientX - dragStart.x,
+			y: e.clientY - dragStart.y,
+		})
+	}
+
+	function handleMouseUp() {
+		setIsDragging(false)
+	}
+
+	function handleTouchStart(e: React.TouchEvent) {
+		if (e.touches.length !== 1) return
+		setIsDragging(true)
+		setDragStart({ x: e.touches[0].clientX - offset.x, y: e.touches[0].clientY - offset.y })
+	}
+
+	function handleTouchMove(e: React.TouchEvent) {
+		if (!isDragging || e.touches.length !== 1) return
+		setOffset({
+			x: e.touches[0].clientX - dragStart.x,
+			y: e.touches[0].clientY - dragStart.y,
+		})
+	}
+
+	function handleApply() {
+		const img = imgRef.current
+		if (!img) return
+
+		const canvas = document.createElement("canvas")
+		canvas.width = 240
+		canvas.height = 240
+		const ctx = canvas.getContext("2d")
+		if (!ctx) return
+
+		ctx.fillStyle = "#ffffff"
+		ctx.fillRect(0, 0, 240, 240)
+
+		ctx.translate(120 + offset.x, 120 + offset.y)
+		ctx.scale(zoom, zoom)
+
+		const aspect = img.naturalWidth / img.naturalHeight
+		let dw = 200
+		let dh = 200
+		if (aspect > 1) {
+			dh = 200 / aspect
+		} else {
+			dw = 200 * aspect
+		}
+
+		ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh)
+
+		canvas.toBlob((blob) => {
+			if (!blob) return
+			const croppedFile = new File([blob], fileName, { type: fileType })
+			const previewUrl = URL.createObjectURL(blob)
+			onCrop(croppedFile, previewUrl)
+		}, fileType)
+	}
+
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+			<div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-sm flex flex-col p-6 gap-4">
+				<div className="flex items-center justify-between border-b-2 border-black pb-2">
+					<h3 className="font-heading font-black text-base text-black">📐 Fit Profile Photo</h3>
+					<button onClick={onClose} className="text-xl font-black text-black/40 hover:text-black">×</button>
+				</div>
+
+				<p className="text-xs text-black/50 font-semibold leading-normal">
+					Drag the image to position it. Use the slider or buttons to zoom.
+				</p>
+
+				<div 
+					className="size-60 rounded-full border-[3px] border-black overflow-hidden relative bg-neutral-100 flex items-center justify-center cursor-move select-none mx-auto"
+					onMouseDown={handleMouseDown}
+					onMouseMove={handleMouseMove}
+					onMouseUp={handleMouseUp}
+					onMouseLeave={handleMouseUp}
+					onTouchStart={handleTouchStart}
+					onTouchMove={handleTouchMove}
+					onTouchEnd={handleMouseUp}
+				>
+					{/* eslint-disable-next-line @next/next/no-img-element */}
+					<img
+						ref={imgRef}
+						src={src}
+						alt="Source"
+						draggable={false}
+						style={{
+							transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+							transition: isDragging ? "none" : "transform 0.15s ease-out",
+							maxWidth: "none",
+							maxHeight: "none",
+							width: "200px",
+							height: "auto",
+						}}
+					/>
+					<div className="absolute inset-0 rounded-full border-2 border-dashed border-red-500/40 pointer-events-none" />
+				</div>
+
+				<div className="flex flex-col gap-2.5 mt-2">
+					<div className="flex items-center justify-between gap-3">
+						<span className="text-[10px] font-black uppercase text-black/40">Zoom</span>
+						<div className="flex items-center gap-2">
+							<Button variant="secondary" size="sm" onClick={() => setZoom(z => Math.max(1, z - 0.1))}>−</Button>
+							<input
+								type="range"
+								min="1"
+								max="4"
+								step="0.05"
+								value={zoom}
+								onChange={(e) => setZoom(parseFloat(e.target.value))}
+								className="w-24 accent-[#EE2C2C]"
+							/>
+							<Button variant="secondary" size="sm" onClick={() => setZoom(z => Math.min(4, z + 0.1))}>+</Button>
+						</div>
+					</div>
+				</div>
+
+				<div className="flex justify-end gap-2 mt-2 border-t-2 border-black pt-4">
+					<Button variant="secondary" onClick={onClose}>Cancel</Button>
+					<Button onClick={handleApply}>Apply & Crop</Button>
 				</div>
 			</div>
 		</div>
