@@ -10,6 +10,7 @@ import {
 	type SponsorshipDeal,
 	type SponsorshipDealPayload,
 	type SponsorshipDealReport,
+	getSponsorshipDeal,
 	createSponsorshipDeal,
 	updateSponsorshipDeal,
 	approveSponsorshipDeal,
@@ -121,6 +122,7 @@ export function DealBanner({
 	onEdit,
 	onView,
 	onReport,
+	hasReport,
 }: {
 	deal: SponsorshipDeal | null
 	role: "HOST" | "BRAND"
@@ -128,6 +130,7 @@ export function DealBanner({
 	onEdit?: () => void
 	onView: () => void
 	onReport?: () => void
+	hasReport?: boolean
 }) {
 	if (!deal) {
 		if (role !== "HOST") return null
@@ -155,14 +158,24 @@ export function DealBanner({
 				</p>
 			</div>
 			<div className="flex items-center gap-2 shrink-0">
-				<Button size="sm" variant="secondary" onClick={onView}>View Details</Button>
+				<Button size="sm" variant="secondary" onClick={onView}>View Deal</Button>
 				{role === "HOST" && deal.status !== "APPROVED" && (
 					<Button size="sm" onClick={onEdit}>Edit Deal</Button>
 				)}
 				{deal.status === "APPROVED" && (
-					<Button size="sm" onClick={onReport}>
-						📝 {role === "HOST" ? "Submit Report" : "View Report"}
-					</Button>
+					<>
+						{hasReport ? (
+							<Button size="sm" onClick={onReport}>
+								📝 View Report
+							</Button>
+						) : (
+							role === "HOST" && (
+								<Button size="sm" onClick={onReport}>
+									📝 Submit Report
+								</Button>
+							)
+						)}
+					</>
 				)}
 			</div>
 		</div>
@@ -605,24 +618,76 @@ export function DealReportModal({
 }) {
 	const [loading, setLoading] = useState(true)
 	const [report, setReport] = useState<SponsorshipDealReport | null>(null)
-	const [summary, setSummary] = useState("")
-	const [notes, setNotes] = useState("")
+	const [deal, setDeal] = useState<SponsorshipDeal | null>(null)
+
+	// Editing Mode State
+	const [isEditing, setIsEditing] = useState(false)
+
+	// Fields
+	const [projectName, setProjectName] = useState("")
+	const [date, setDate] = useState("")
+	const [venue, setVenue] = useState("")
+	const [time, setTime] = useState("")
+	const [guestCount, setGuestCount] = useState("")
+	const [ageRange, setAgeRange] = useState("")
+	const [deliverablesList, setDeliverablesList] = useState<{ text: string; checked: boolean }[]>([])
+	const [videoLinks, setVideoLinks] = useState<string[]>([])
+	const [socialLinks, setSocialLinks] = useState<string[]>([])
 	const [images, setImages] = useState<{ key?: string; url: string; file?: File }[]>([])
+
+	// Brand Actions & Status
+	const [reportStatus, setReportStatus] = useState<"PENDING" | "APPROVED" | "REVISION_REQUESTED">("PENDING")
+	const [revisionNote, setRevisionNote] = useState("")
+	const [showRevisionInput, setShowRevisionInput] = useState(false)
+
 	const [saving, setSaving] = useState(false)
 	const [uploading, setUploading] = useState(false)
 
 	useEffect(() => {
-		getSponsorshipDealReport(interestId)
-			.then((r) => {
-				setReport(r)
-				if (r) {
-					setSummary(r.summary)
-					setNotes(r.notes ?? "")
-					setImages(r.proofKeys.map((key, i) => ({ key, url: r.proofUrls[i] ?? "" })))
+		Promise.all([
+			getSponsorshipDealReport(interestId).catch(() => null),
+			getSponsorshipDeal(interestId).catch(() => null),
+		]).then(([r, d]) => {
+			setDeal(d)
+			setReport(r)
+			if (r) {
+				setIsEditing(false)
+				try {
+					const data = JSON.parse(r.summary)
+					setProjectName(data.projectName || d?.projectName || "")
+					setDate(data.date || d?.startDate || "")
+					setVenue(data.venue || d?.venue || "")
+					setTime(data.time || d?.time || "")
+					setGuestCount(data.guestCount || "")
+					setAgeRange(data.ageRange || "")
+					setDeliverablesList(data.deliverables || [])
+					setVideoLinks(data.videoLinks || [])
+					setSocialLinks(data.socialLinks || [])
+					setReportStatus(data.status || "PENDING")
+					setRevisionNote(data.revisionNote || "")
+				} catch {
+					// Fallback to plain summary if not JSON
+					setProjectName(d?.projectName || "")
+					setDate(d?.startDate || "")
+					setVenue(d?.venue || "")
+					setTime(d?.time || "")
+					const items = d?.deliverables ? d.deliverables.split(/,|\n/).map(s => s.trim()).filter(Boolean) : []
+					setDeliverablesList(items.map(text => ({ text, checked: false })))
 				}
-			})
-			.catch(() => toast.error("Failed to load the report."))
-			.finally(() => setLoading(false))
+				setImages(r.proofKeys.map((key, i) => ({ key, url: r.proofUrls[i] ?? "" })))
+			} else {
+				setIsEditing(true)
+				// Pre-populate from deal
+				setProjectName(d?.projectName || "")
+				setDate(d?.startDate || "")
+				setVenue(d?.venue || "")
+				setTime(d?.time || "")
+				const items = d?.deliverables ? d.deliverables.split(/,|\n/).map(s => s.trim()).filter(Boolean) : []
+				setDeliverablesList(items.map(text => ({ text, checked: false })))
+			}
+		}).catch(() => {
+			toast.error("Failed to load report data.")
+		}).finally(() => setLoading(false))
 	}, [interestId])
 
 	async function handleAddImage(file: File) {
@@ -630,8 +695,8 @@ export function DealReportModal({
 			toast.error("Only image files are accepted.")
 			return
 		}
-		if (images.length >= 6) {
-			toast.error("Only up to 6 images are allowed.")
+		if (images.length >= 5) {
+			toast.error("Only up to 5 images are allowed.")
 			return
 		}
 		setUploading(true)
@@ -649,19 +714,38 @@ export function DealReportModal({
 		setImages((prev) => prev.filter((_, i) => i !== index))
 	}
 
-	const isValid = summary.trim().length > 0
+	const isValid = projectName.trim().length > 0 && date.trim().length > 0 && venue.trim().length > 0
 
 	async function handleSubmit() {
-		if (!isValid) return
+		if (!isValid) {
+			toast.error("Please fill in Project Name, Date, and Venue.")
+			return
+		}
 		setSaving(true)
 		try {
+			const summaryData = JSON.stringify({
+				projectName: projectName.trim(),
+				date: date.trim(),
+				venue: venue.trim(),
+				time: time.trim(),
+				guestCount: guestCount.trim(),
+				ageRange: ageRange.trim(),
+				deliverables: deliverablesList,
+				videoLinks: videoLinks.filter(Boolean),
+				socialLinks: socialLinks.filter(Boolean),
+				status: "PENDING",
+				revisionNote: ""
+			})
+
 			const saved = await upsertSponsorshipDealReport(interestId, {
-				summary: summary.trim(),
-				notes: notes.trim() || undefined,
+				summary: summaryData,
+				notes: "",
 				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
 			})
-			toast.success(report ? "Report updated." : "Report submitted.")
+			toast.success(report ? "Report resubmitted." : "Report submitted.")
 			setReport(saved)
+			setReportStatus("PENDING")
+			setIsEditing(false)
 			onClose()
 		} catch {
 			toast.error("Failed to save the report.")
@@ -670,11 +754,57 @@ export function DealReportModal({
 		}
 	}
 
+	async function handleBrandAction(status: "APPROVED" | "REVISION_REQUESTED") {
+		setSaving(true)
+		try {
+			const summaryData = JSON.stringify({
+				projectName,
+				date,
+				venue,
+				time,
+				guestCount,
+				ageRange,
+				deliverables: deliverablesList,
+				videoLinks,
+				socialLinks,
+				status,
+				revisionNote: status === "REVISION_REQUESTED" ? revisionNote.trim() : ""
+			})
+
+			const saved = await upsertSponsorshipDealReport(interestId, {
+				summary: summaryData,
+				notes: status === "REVISION_REQUESTED" ? revisionNote.trim() : "",
+				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
+			})
+			toast.success(status === "APPROVED" ? "Report approved!" : "Revision request sent.")
+			setReport(saved)
+			setReportStatus(status)
+			onClose()
+		} catch {
+			toast.error("Failed to update status.")
+		} finally {
+			setSaving(false)
+		}
+	}
+
+	const STATUS_BADGES = {
+		PENDING: { label: "Pending Approval", color: "bg-amber-50 text-amber-700 border-amber-300" },
+		APPROVED: { label: "Approved", color: "bg-green-50 text-green-700 border-green-300" },
+		REVISION_REQUESTED: { label: "Revision Requested", color: "bg-red-50 text-red-700 border-red-300" }
+	}
+
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
 			<div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg flex flex-col max-h-[90vh]">
-				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0">
-					<p className="text-lg font-black text-black">📝 Deliverables Report</p>
+				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0 bg-neutral-50 rounded-t-[21px]">
+					<div className="flex items-center gap-3">
+						<p className="text-lg font-black text-black">📝 Deliverables Report</p>
+						{report && (
+							<span className={clsx("px-2 py-0.5 border-2 rounded-full text-[9px] font-black uppercase tracking-wide", STATUS_BADGES[reportStatus]?.color)}>
+								{STATUS_BADGES[reportStatus]?.label}
+							</span>
+						)}
+					</div>
 					<button onClick={onClose} className="text-xl font-black text-black/40 hover:text-black" aria-label="Close">×</button>
 				</div>
 
@@ -686,36 +816,119 @@ export function DealReportModal({
 					</div>
 				) : (
 					<>
-						<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3">
-							<Field label="What was delivered?">
-								<textarea
-									value={summary}
-									onChange={(e) => setSummary(e.target.value)}
-									rows={4}
-									disabled={role === "BRAND"}
-									className={inputClass}
-									placeholder="Set up a branded booth at the entrance, ran 3 Instagram stories…"
-								/>
-							</Field>
-							<Field label="Proof photos (optional)">
+						<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-4">
+							{reportStatus === "REVISION_REQUESTED" && revisionNote && (
+								<div className="bg-red-50 border-2 border-red-300 rounded-xl p-3 text-xs font-semibold text-red-800">
+									<p className="font-bold text-red-900 mb-0.5">Revision Requested By Brand:</p>
+									{revisionNote}
+								</div>
+							)}
+
+							<div className="grid grid-cols-2 gap-3">
+								<Field label="Project Name">
+									<input
+										value={projectName}
+										disabled={role === "BRAND" || !isEditing}
+										onChange={(e) => setProjectName(e.target.value)}
+										className={inputClass}
+										placeholder="Project Name"
+									/>
+								</Field>
+								<Field label="Date">
+									<input
+										value={date}
+										disabled={role === "BRAND" || !isEditing}
+										onChange={(e) => setDate(e.target.value)}
+										className={inputClass}
+										placeholder="e.g. Oct 24, 2026"
+									/>
+								</Field>
+							</div>
+
+							<div className="grid grid-cols-2 gap-3">
+								<Field label="Venue">
+									<input
+										value={venue}
+										disabled={role === "BRAND" || !isEditing}
+										onChange={(e) => setVenue(e.target.value)}
+										className={inputClass}
+										placeholder="Venue"
+									/>
+								</Field>
+								<Field label="Time">
+									<input
+										value={time}
+										disabled={role === "BRAND" || !isEditing}
+										onChange={(e) => setTime(e.target.value)}
+										className={inputClass}
+										placeholder="Time"
+									/>
+								</Field>
+							</div>
+
+							<div className="grid grid-cols-2 gap-3">
+								<Field label="Guest Count">
+									<input
+										value={guestCount}
+										disabled={role === "BRAND" || !isEditing}
+										onChange={(e) => setGuestCount(e.target.value)}
+										className={inputClass}
+										placeholder="Guest Count"
+									/>
+								</Field>
+								<Field label="Age (Range)">
+									<input
+										value={ageRange}
+										disabled={role === "BRAND" || !isEditing}
+										onChange={(e) => setAgeRange(e.target.value)}
+										className={inputClass}
+										placeholder="e.g. 18-25"
+									/>
+								</Field>
+							</div>
+
+							{deliverablesList.length > 0 && (
+								<Field label="Deliverables met (tick mark)">
+									<div className="flex flex-col gap-2 bg-neutral-50 p-3 rounded-xl border-[3px] border-black">
+										{deliverablesList.map((item, idx) => (
+											<label key={idx} className="flex items-center gap-2.5 cursor-pointer select-none">
+												<input
+													type="checkbox"
+													checked={item.checked}
+													disabled={role === "BRAND" || !isEditing}
+													onChange={(e) => {
+														const updated = [...deliverablesList]
+														updated[idx].checked = e.target.checked
+														setDeliverablesList(updated)
+													}}
+													className="rounded border-[2px] border-black text-[#EE2C2C] focus:ring-[#EE2C2C] cursor-pointer"
+												/>
+												<span className="text-xs font-semibold text-black">{item.text}</span>
+											</label>
+										))}
+									</div>
+								</Field>
+							)}
+
+							<Field label="Proof Photos (Upto 5)">
 								<div className="flex flex-wrap items-center gap-2">
 									{images.map((img, i) => (
-										<div key={i} className="relative size-16 rounded-lg border-[3px] border-black overflow-hidden shrink-0">
+										<div key={i} className="relative size-16 rounded-lg border-[3px] border-black overflow-hidden shrink-0 bg-neutral-100">
 											{/* eslint-disable-next-line @next/next/no-img-element */}
 											<img src={img.url} alt="Proof" className="size-full object-cover" />
-											{role === "HOST" && (
+											{role === "HOST" && isEditing && (
 												<button
 													type="button"
 													onClick={() => removeImage(i)}
 													aria-label="Remove image"
-													className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center leading-none"
+													className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/75 text-white text-[10px] flex items-center justify-center leading-none"
 												>
 													×
 												</button>
 											)}
 										</div>
 									))}
-									{role === "HOST" && images.length < 6 && (
+									{role === "HOST" && isEditing && images.length < 5 && (
 										<label className="size-16 rounded-lg border-[3px] border-dashed border-black/30 flex items-center justify-center shrink-0 cursor-pointer hover:bg-black/5">
 											<input
 												type="file"
@@ -728,33 +941,140 @@ export function DealReportModal({
 													if (file) handleAddImage(file)
 												}}
 											/>
-											<span className="text-[10px] font-bold text-black/40">{uploading ? "…" : "+ Add"}</span>
+											<span className="text-[10px] font-black text-black/40">{uploading ? "…" : "+ Add"}</span>
 										</label>
 									)}
 								</div>
 							</Field>
-							<Field label="Additional notes (optional)">
-								<textarea
-									value={notes}
-									onChange={(e) => setNotes(e.target.value)}
-									rows={2}
-									disabled={role === "BRAND"}
-									className={inputClass}
-								/>
+
+							<Field label="Video Links (Upto 5)">
+								<div className="flex flex-col gap-2">
+									{videoLinks.map((link, idx) => (
+										<div key={idx} className="flex items-center gap-2">
+											<input
+												value={link}
+												disabled={role === "BRAND" || !isEditing}
+												onChange={(e) => {
+													const updated = [...videoLinks]
+													updated[idx] = e.target.value
+													setVideoLinks(updated)
+												}}
+												placeholder="https://youtube.com/..."
+												className={inputClass}
+											/>
+											{role === "HOST" && isEditing && (
+												<button
+													type="button"
+													onClick={() => setVideoLinks((prev) => prev.filter((_, i) => i !== idx))}
+													className="px-2 py-1 bg-red-100 border-2 border-black rounded-lg text-red-600 font-bold hover:bg-red-200 shrink-0"
+												>
+													✕
+												</button>
+											)}
+										</div>
+									))}
+									{role === "HOST" && isEditing && videoLinks.length < 5 && (
+										<Button
+											type="button"
+											size="sm"
+											variant="secondary"
+											onClick={() => setVideoLinks((prev) => [...prev, ""])}
+											className="w-fit"
+										>
+											+ Add Video Link
+										</Button>
+									)}
+								</div>
 							</Field>
-							{report && (
-								<p className="text-[11px] font-semibold text-black/30">
-									{role === "HOST" ? "Last submitted" : "Submitted"} {new Date(report.submittedAt).toLocaleString("en-IN")}
-								</p>
-							)}
+
+							<Field label="Social Links (Upto 5)">
+								<div className="flex flex-col gap-2">
+									{socialLinks.map((link, idx) => (
+										<div key={idx} className="flex items-center gap-2">
+											<input
+												value={link}
+												disabled={role === "BRAND" || !isEditing}
+												onChange={(e) => {
+													const updated = [...socialLinks]
+													updated[idx] = e.target.value
+													setSocialLinks(updated)
+												}}
+												placeholder="https://instagram.com/..."
+												className={inputClass}
+											/>
+											{role === "HOST" && isEditing && (
+												<button
+													type="button"
+													onClick={() => setSocialLinks((prev) => prev.filter((_, i) => i !== idx))}
+													className="px-2 py-1 bg-red-100 border-2 border-black rounded-lg text-red-600 font-bold hover:bg-red-200 shrink-0"
+												>
+													✕
+												</button>
+											)}
+										</div>
+									))}
+									{role === "HOST" && isEditing && socialLinks.length < 5 && (
+										<Button
+											type="button"
+											size="sm"
+											variant="secondary"
+											onClick={() => setSocialLinks((prev) => [...prev, ""])}
+											className="w-fit"
+										>
+											+ Add Social Link
+										</Button>
+									)}
+								</div>
+							</Field>
 						</div>
 
 						{role === "HOST" && (
-							<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-2 shrink-0">
-								<Button variant="secondary" onClick={onClose}>Cancel</Button>
-								<Button onClick={handleSubmit} disabled={!isValid || saving}>
-									{saving ? "Saving…" : report ? "Update Report" : "Submit Report"}
-								</Button>
+							<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-2 shrink-0 bg-neutral-50 rounded-b-[21px]">
+								{isEditing ? (
+									<>
+										{report && (
+											<Button variant="secondary" onClick={() => setIsEditing(false)}>Cancel</Button>
+										)}
+										<Button onClick={handleSubmit} disabled={!isValid || saving}>
+											{saving ? "Saving…" : report ? "Resubmit Report" : "Submit Report"}
+										</Button>
+									</>
+								) : (
+									<Button onClick={() => setIsEditing(true)}>
+										Edit Report
+									</Button>
+								)}
+							</div>
+						)}
+
+						{role === "BRAND" && reportStatus !== "APPROVED" && (
+							<div className="px-6 py-4 border-t-[3px] border-black flex flex-col gap-3 shrink-0 bg-neutral-50 rounded-b-[21px]">
+								{showRevisionInput ? (
+									<div className="flex flex-col gap-2">
+										<textarea
+											value={revisionNote}
+											onChange={(e) => setRevisionNote(e.target.value)}
+											rows={2}
+											placeholder="Write your requested revisions/changes here…"
+											className={inputClass}
+										/>
+										<div className="flex justify-end gap-2">
+											<Button variant="secondary" onClick={() => setShowRevisionInput(false)}>Cancel</Button>
+											<Button onClick={() => handleBrandAction("REVISION_REQUESTED")} disabled={saving || !revisionNote.trim()}>
+												Send Request
+											</Button>
+										</div>
+									</div>
+								) : (
+									<div className="flex justify-end gap-2">
+										<Button variant="secondary" onClick={() => setShowRevisionInput(true)}>
+											Request Revision
+										</Button>
+										<Button onClick={() => handleBrandAction("APPROVED")} disabled={saving}>
+											Approve Report
+										</Button>
+									</div>
+								)}
 							</div>
 						)}
 					</>
