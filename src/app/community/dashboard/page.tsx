@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "@/lib/toast"
 import { Icon } from "@/components/ui/Icon"
@@ -11,7 +12,8 @@ import type { DisplayEventStatus } from "@/types/event"
 import { formatEventDateRange } from "@/lib/eventForm"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { getProposals, type StoredProposal } from "./proposal/page"
-import { getHostCommunityProfile, getMySponsorshipChats, getSponsorshipDeal } from "@/lib/api"
+import { getHostCommunityProfile, getMySponsorshipChats, getSponsorshipDeal, getSponsorshipDealReport, type SponsorshipDeal } from "@/lib/api"
+import { DealDetailsModal, DealReportModal } from "@/components/sponsorship/DealPanel"
 import clsx from "clsx"
 
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
@@ -28,17 +30,23 @@ const STATUS_CONFIG: Record<DisplayEventStatus, { label: string; className: stri
 }
 
 export default function DashboardWelcomePage() {
+	const router = useRouter()
 	const { data, isLoading, fetchDashboard } = useDashboardStore()
 	const { profile } = useHostStore()
 	const hostId = profile?.id || ""
 	const displayName = profile?.displayName || "Host"
 
 	const [proposals, setProposals] = useState<StoredProposal[]>([])
-	const [lockedDeals, setLockedDeals] = useState<any[]>([])
+	const [lockedDeals, setLockedDeals] = useState<(SponsorshipDeal & { proposalName: string; brandName: string; brandLogo: string | null | undefined; sponsorshipInterestId: string; hasReport: boolean })[]>([])
 	const [loadingProposals, setLoadingProposals] = useState(true)
 	const [loadingLockedDeals, setLoadingLockedDeals] = useState(true)
 	const [hasCommunityProfile, setHasCommunityProfile] = useState<boolean>(false)
 	const [loadingCommunity, setLoadingCommunity] = useState(true)
+
+	// Modal states for Locked Deal and Report views
+	const [selectedDeal, setSelectedDeal] = useState<{ deal: SponsorshipDeal; interestId: string } | null>(null)
+	const [selectedInterestIdForReport, setSelectedInterestIdForReport] = useState<string | null>(null)
+	const [loadingDealDetailId, setLoadingDealDetailId] = useState<string | null>(null)
 
 	useEffect(() => {
 		if (profile?.id) {
@@ -85,12 +93,18 @@ export default function DashboardWelcomePage() {
 					try {
 						const deal = await getSponsorshipDeal(thread.id)
 						if (deal && deal.status === "APPROVED") {
+							let hasReport = false
+							try {
+								const rep = await getSponsorshipDealReport(thread.id)
+								if (rep) hasReport = true
+							} catch {}
 							return {
 								...deal,
 								proposalName: thread.proposalName,
 								brandName: thread.counterpartName,
 								brandLogo: thread.counterpartAvatarUrl,
 								sponsorshipInterestId: thread.id,
+								hasReport,
 							}
 						}
 					} catch (e) {
@@ -99,7 +113,7 @@ export default function DashboardWelcomePage() {
 					return null
 				})
 				const resolvedDeals = await Promise.all(dealsPromises)
-				setLockedDeals(resolvedDeals.filter(d => d !== null))
+				setLockedDeals(resolvedDeals.filter((d): d is NonNullable<typeof d> => d !== null))
 			})
 			.catch((err) => {
 				console.error("Failed to fetch accepted chats/deals", err)
@@ -302,12 +316,12 @@ export default function DashboardWelcomePage() {
 						)}
 					</div>
 
-					{/* Row 2: Locked Deals */}
+					{/* Row 2: Locked Deals & Reports */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
 							<div>
-								<h2 className="text-xl font-heading font-black text-black">Locked Deals</h2>
-								<p className="text-xs font-semibold text-black/50 mt-1">View your locked sponsorship contracts and payment status.</p>
+								<h2 className="text-xl font-heading font-black text-black">Locked Deals & Reports</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">View locked deal terms and submitted deliverables reports.</p>
 							</div>
 							<Link href="/community/dashboard/chats" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
 								Go to Chats &gt;
@@ -336,10 +350,14 @@ export default function DashboardWelcomePage() {
 								{lockedDeals.map((deal) => {
 									const isPaid = deal.paymentStatus === "PAID"
 									return (
-										<Link
+										<div
 											key={deal.id}
-											href={`/community/dashboard/chats?interestId=${deal.sponsorshipInterestId}&openDeal=true`}
-											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all p-4 w-[300px] shrink-0 flex flex-col justify-between"
+											onClick={(e) => {
+												const target = e.target as HTMLElement
+												if (target.closest("button") || target.closest("a")) return
+												router.push(`/community/dashboard/chats?interestId=${deal.sponsorshipInterestId}`)
+											}}
+											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all p-4 w-[300px] shrink-0 flex flex-col justify-between"
 										>
 											<div>
 												<div className="flex items-center justify-between gap-2 mb-2">
@@ -372,15 +390,48 @@ export default function DashboardWelcomePage() {
 													Project: {deal.proposalName}
 												</p>
 											</div>
-											<div className="mt-4 pt-3 border-t-2 border-black/5 flex justify-between items-center">
-												<span className="text-xs font-black text-black">
-													₹{Number(deal.totalAmount ?? deal.sponsorshipAmount).toLocaleString("en-IN")}
-												</span>
-												<span className="text-[10px] font-black text-[#6C32D1] group-hover:underline">
-													View Details ➔
-												</span>
+											<div className="mt-4 pt-3 border-t-2 border-black/5 flex flex-col gap-2">
+												<div className="flex justify-between items-center text-xs font-black text-black">
+													<span>Amount:</span>
+													<span>₹{Number(deal.totalAmount ?? deal.sponsorshipAmount).toLocaleString("en-IN")}</span>
+												</div>
+												<div className={clsx("grid gap-2 mt-1", deal.hasReport ? "grid-cols-2" : "grid-cols-1")}>
+													<button
+														type="button"
+														disabled={loadingDealDetailId === deal.id}
+														onClick={async () => {
+															setLoadingDealDetailId(deal.id)
+															try {
+																const dealObj = await getSponsorshipDeal(deal.sponsorshipInterestId)
+																if (dealObj) {
+																	setSelectedDeal({ deal: dealObj, interestId: deal.sponsorshipInterestId })
+																} else {
+																	toast.error("Deal terms are not active yet.")
+																}
+															} catch {
+																toast.error("Failed to load deal terms.")
+															} finally {
+																setLoadingDealDetailId(null)
+															}
+														}}
+														className="py-1.5 px-2 bg-[#FFC940] text-black border-2 border-black rounded-xl text-[10px] font-black tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none text-center"
+													>
+														{loadingDealDetailId === deal.id ? "..." : "Locked Deal"}
+													</button>
+													{deal.hasReport && (
+														<button
+															type="button"
+															onClick={() => {
+																setSelectedInterestIdForReport(deal.sponsorshipInterestId)
+															}}
+															className="py-1.5 px-2 bg-white text-black border-2 border-black rounded-xl text-[10px] font-black tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none text-center"
+														>
+															Report
+														</button>
+													)}
+												</div>
 											</div>
-										</Link>
+										</div>
 									)
 								})}
 							</div>
@@ -388,6 +439,26 @@ export default function DashboardWelcomePage() {
 					</div>
 				</div>
 			</div>
+
+			{selectedDeal && (
+				<DealDetailsModal
+					interestId={selectedDeal.interestId}
+					deal={selectedDeal.deal}
+					role="HOST"
+					onClose={() => setSelectedDeal(null)}
+					onUpdated={(updatedDeal) => {
+						setSelectedDeal({ deal: updatedDeal, interestId: selectedDeal.interestId })
+					}}
+				/>
+			)}
+
+			{selectedInterestIdForReport && (
+				<DealReportModal
+					interestId={selectedInterestIdForReport}
+					role="HOST"
+					onClose={() => setSelectedInterestIdForReport(null)}
+				/>
+			)}
 		</div>
 	)
 }

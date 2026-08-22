@@ -17,7 +17,8 @@ const CHAT_MESSAGE_NOTIFICATION_TYPES = new Set([
 	"meetday_chat_message",
 	"sponsorship_chat_request",
 	"sponsorship_chat_accepted",
-	"sponsorship_interest_created"
+	"sponsorship_interest_created",
+	"brand_interested_in_sponsorship"
 ])
 
 type NotificationStore = {
