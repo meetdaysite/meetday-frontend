@@ -230,98 +230,6 @@ export default function DashboardWelcomePage() {
 
 				{/* Overview Section */}
 				<div className="flex flex-col gap-10 pb-8">
-					{/* Row 0: Active Brand Campaigns */}
-					<div className="flex flex-col w-full">
-						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
-							<div>
-								<h2 className="text-xl font-heading font-black text-black">Active Brand Campaigns</h2>
-								<p className="text-xs font-semibold text-black/50 mt-1">Explore campaign briefs from brands looking for sponsors.</p>
-							</div>
-							<Link href="/community/dashboard/campaigns" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
-								View All Campaigns &gt;
-							</Link>
-						</div>
-
-						{loadingCampaigns ? (
-							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-								{Array.from({ length: 2 }).map((_, i) => (
-									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
-										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
-										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
-											<div className="h-4 bg-black/5 rounded w-32" />
-											<div className="h-3 bg-black/5 rounded w-20" />
-										</div>
-									</div>
-								))}
-							</div>
-						) : campaigns.length === 0 ? (
-							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
-								<p className="text-sm font-black text-black/80">No active campaigns yet</p>
-								<p className="text-[11px] font-semibold text-black/40">Check back later for brand sponsorship campaigns.</p>
-							</div>
-						) : (
-							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
-								{campaigns.map((c) => {
-									const displayDates = `${new Date(c.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} - ${new Date(c.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
-									return (
-										<Link
-											key={c.id}
-											href={`/community/dashboard/campaigns?campaignId=${c.id}`}
-											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-[380px] max-w-[85vw] shrink-0"
-										>
-											{/* Image / Logo */}
-											<div className="relative w-[120px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
-												{c.brandProfile?.logoUrl ? (
-													// eslint-disable-next-line @next/next/no-img-element
-													<img
-														src={c.brandProfile.logoUrl}
-														alt={c.name}
-														className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
-													/>
-												) : (
-													<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
-														{c.brandProfile?.brandName ? c.brandProfile.brandName.substring(0, 2).toUpperCase() : "MD"}
-													</div>
-												)}
-
-												{/* Offer Type Badge */}
-												<span className="absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black">
-													{c.offerType}
-												</span>
-											</div>
-
-											{/* Content & Footer info */}
-											<div className="flex-1 p-3 flex flex-col justify-between min-w-0">
-												<div className="flex flex-col gap-1">
-													<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors leading-snug">
-														{c.name}
-													</h3>
-													<p className="text-[11px] font-bold text-black/50 truncate">
-														Brand: {c.brandProfile?.brandName ?? "Brand"} {c.locations?.length > 0 && `• ${c.locations.slice(0, 2).join(", ")}`}{c.locations?.length > 2 ? ` +${c.locations.length - 2}` : ""}
-													</p>
-													{c.description && (
-														<p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">
-															{c.description}
-														</p>
-													)}
-												</div>
-
-												<div className="flex flex-wrap gap-1.5 mt-2">
-													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-														{displayDates}
-													</span>
-													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-														{c.offerType === "BARTER" ? "BARTER" : `${c.budgetCurrency} ${Number(c.budgetAmount).toLocaleString()}`}
-													</span>
-												</div>
-											</div>
-										</Link>
-									)
-								})}
-							</div>
-						)}
-					</div>
-
 					{/* Row 1: Approved Sponsorships */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
@@ -408,6 +316,98 @@ export default function DashboardWelcomePage() {
 													)}
 													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
 														{prop.guestCount} Guests
+													</span>
+												</div>
+											</div>
+										</Link>
+									)
+								})}
+							</div>
+						)}
+					</div>
+
+					{/* Row 0: Active Brand Campaigns */}
+					<div className="flex flex-col w-full">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
+							<div>
+								<h2 className="text-xl font-heading font-black text-black">Active Brand Campaigns</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Explore campaign briefs from brands looking for sponsors.</p>
+							</div>
+							<Link href="/community/dashboard/campaigns" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+								View All Campaigns &gt;
+							</Link>
+						</div>
+
+						{loadingCampaigns ? (
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+								{Array.from({ length: 2 }).map((_, i) => (
+									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
+										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
+										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
+											<div className="h-4 bg-black/5 rounded w-32" />
+											<div className="h-3 bg-black/5 rounded w-20" />
+										</div>
+									</div>
+								))}
+							</div>
+						) : campaigns.length === 0 ? (
+							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
+								<p className="text-sm font-black text-black/80">No active campaigns yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Check back later for brand sponsorship campaigns.</p>
+							</div>
+						) : (
+							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
+								{campaigns.map((c) => {
+									const displayDates = `${new Date(c.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} - ${new Date(c.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
+									return (
+										<Link
+											key={c.id}
+											href={`/community/dashboard/campaigns?campaignId=${c.id}`}
+											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-[380px] max-w-[85vw] shrink-0"
+										>
+											{/* Image / Logo */}
+											<div className="relative w-[120px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
+												{c.brandProfile?.logoUrl ? (
+													// eslint-disable-next-line @next/next/no-img-element
+													<img
+														src={c.brandProfile.logoUrl}
+														alt={c.name}
+														className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
+													/>
+												) : (
+													<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
+														{c.brandProfile?.brandName ? c.brandProfile.brandName.substring(0, 2).toUpperCase() : "MD"}
+													</div>
+												)}
+
+												{/* Offer Type Badge */}
+												<span className="absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black">
+													{c.offerType}
+												</span>
+											</div>
+
+											{/* Content & Footer info */}
+											<div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+												<div className="flex flex-col gap-1">
+													<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors leading-snug">
+														{c.name}
+													</h3>
+													<p className="text-[11px] font-bold text-black/50 truncate">
+														Brand: {c.brandProfile?.brandName ?? "Brand"} {c.locations?.length > 0 && `• ${c.locations.slice(0, 2).join(", ")}`}{c.locations?.length > 2 ? ` +${c.locations.length - 2}` : ""}
+													</p>
+													{c.description && (
+														<p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">
+															{c.description}
+														</p>
+													)}
+												</div>
+
+												<div className="flex flex-wrap gap-1.5 mt-2">
+													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+														{displayDates}
+													</span>
+													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+														{c.offerType === "BARTER" ? "BARTER" : `${c.budgetCurrency} ${Number(c.budgetAmount).toLocaleString()}`}
 													</span>
 												</div>
 											</div>

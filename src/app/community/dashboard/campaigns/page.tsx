@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { getPublishedCampaigns, markCampaignInterest, getMySponsorshipChats, type Campaign } from "@/lib/api"
@@ -16,6 +16,8 @@ import UsersSvg from "@/icons/outlined/users-group.svg"
 
 export default function ExploreCampaignsPage() {
 	const router = useRouter()
+	const searchParams = useSearchParams()
+	const urlCampaignId = searchParams ? searchParams.get("campaignId") : null
 	const { profile } = useHostStore()
 	const [campaigns, setCampaigns] = useState<Campaign[]>([])
 	const [loading, setLoading] = useState(true)
@@ -45,11 +47,7 @@ export default function ExploreCampaignsPage() {
 				next.add(selectedCampaign.id)
 				return next
 			})
-			if (res.interestId) {
-				router.push(`/community/dashboard/chats?interestId=${res.interestId}`)
-			} else {
-				router.push("/community/dashboard/chats")
-			}
+
 		} catch (err) {
 			console.error(err)
 			toast.error("Failed to express interest. Please try again.")
@@ -84,6 +82,15 @@ export default function ExploreCampaignsPage() {
 			console.error("Failed to load existing chat interests", err)
 		})
 	}, [])
+
+	useEffect(() => {
+		if (urlCampaignId && campaigns.length > 0) {
+			const found = campaigns.find(c => c.id === urlCampaignId)
+			if (found) {
+				setSelectedCampaign(found)
+			}
+		}
+	}, [urlCampaignId, campaigns])
 
 	const filteredCampaigns = useMemo(() => {
 		const query = searchQuery.toLowerCase().trim()
@@ -344,7 +351,7 @@ export default function ExploreCampaignsPage() {
 											className={clsx(
 												"w-full py-3 border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all block uppercase select-none",
 												isAlreadyInterested
-													? "bg-green-600 text-white cursor-not-allowed shadow-none translate-x-0 translate-y-0"
+													? "bg-[#EE2C2C] text-white opacity-60 cursor-not-allowed shadow-none translate-x-0 translate-y-0"
 													: isHostApproved
 														? "bg-[#EE2C2C] text-white hover:bg-[#D12525]"
 														: "bg-neutral-200 text-black/40 cursor-not-allowed shadow-none translate-x-0 translate-y-0"
