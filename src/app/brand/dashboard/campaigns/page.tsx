@@ -71,7 +71,7 @@ export default function CampaignsPage() {
 	const [showForm, setShowForm] = useState(false)
 	const [isEditing, setIsEditing] = useState(false)
 	const [name, setName] = useState("")
-	const [goal, setGoal] = useState("")
+	const [goals, setGoals] = useState<string[]>([])
 	const [locations, setLocations] = useState<string[]>([])
 	const [newLocation, setNewLocation] = useState("")
 	const [audience, setAudience] = useState<string[]>([])
@@ -162,7 +162,7 @@ export default function CampaignsPage() {
 		}
 		if (c) {
 			setName(c.name)
-			setGoal(c.goal)
+			setGoals(c.goal ? c.goal.split(",").map(g => g.trim()) : [])
 			setLocations(c.locations)
 			setAudience(c.audience.filter(a => AUDIENCE_OPTIONS.includes(a)))
 			const custom = c.audience.find(a => !AUDIENCE_OPTIONS.includes(a))
@@ -184,7 +184,7 @@ export default function CampaignsPage() {
 			setIsEditing(true)
 		} else {
 			setName("")
-			setGoal("")
+			setGoals([])
 			setLocations([])
 			setNewLocation("")
 			setAudience([])
@@ -306,8 +306,12 @@ export default function CampaignsPage() {
 			toast.error("Campaign Name is required.")
 			return
 		}
-		if (!goal) {
-			toast.error("Please select a goal.")
+		if (!description.trim()) {
+			toast.error("Description is required.")
+			return
+		}
+		if (goals.length === 0) {
+			toast.error("Please select at least one goal.")
 			return
 		}
 		if (locations.length === 0) {
@@ -332,7 +336,7 @@ export default function CampaignsPage() {
 			toast.error("End date cannot be before the start date.")
 			return
 		}
-		if (!budgetAmount || isNaN(Number(budgetAmount)) || Number(budgetAmount) <= 0) {
+		if (offerType !== "BARTER" && (!budgetAmount || isNaN(Number(budgetAmount)) || Number(budgetAmount) <= 0)) {
 			toast.error("Please enter a valid budget amount.")
 			return
 		}
@@ -352,14 +356,14 @@ export default function CampaignsPage() {
 
 		const payload: CampaignPayload = {
 			name,
-			goal,
+			goal: goals.join(", "),
 			locations,
 			audience: finalAudience,
 			startDate,
 			endDate,
 			offerType,
-			budgetAmount: Number(budgetAmount),
-			budgetCurrency,
+			budgetAmount: offerType === "BARTER" ? 0 : Number(budgetAmount),
+			budgetCurrency: offerType === "BARTER" ? "INR" : budgetCurrency,
 			barterElements: (offerType === "BARTER" || offerType === "BOTH") ? barterElements : undefined,
 			description: description.trim() || undefined,
 			status: forceStatus || (isEditing ? selectedCampaign?.status : "DRAFT"),
@@ -419,7 +423,8 @@ export default function CampaignsPage() {
 			)}>
 				{/* Left / Main Panel */}
 				<div className={clsx(
-					"px-4 lg:px-6 py-6 lg:py-8 flex-1 flex flex-col gap-6 overflow-y-auto h-full max-w-4xl w-full mx-auto"
+					"px-4 lg:px-6 py-6 lg:py-8 flex-1 flex flex-col gap-6 overflow-y-auto h-full transition-all duration-300 w-full mx-auto",
+					isSplitLayout ? "max-w-none" : "max-w-6xl"
 				)}>
 					{loading ? (
 						<div className="flex flex-col gap-4 w-full">
@@ -609,17 +614,39 @@ export default function CampaignsPage() {
 									/>
 								</div>
 
+								{/* Description */}
+								<div className="flex flex-col gap-1.5">
+									<div className="flex justify-between items-center">
+										<label className="text-xs font-bold text-black">Description *</label>
+										<span className="text-[10px] text-black/45">Max 250 words</span>
+									</div>
+									<textarea
+										required
+										value={description}
+										onChange={(e) => setDescription(e.target.value)}
+										placeholder='Provide context for our AI matching engine (e.g., "Looking for spaces with high afternoon foot traffic and an eco-friendly vibe.")'
+										rows={4}
+										className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
+									/>
+								</div>
+
 								{/* What is the goal? */}
 								<div className="flex flex-col gap-2">
 									<label className="text-xs font-bold text-black">What is the goal? *</label>
 									<div className="flex flex-wrap gap-2">
 										{GOAL_OPTIONS.map((g) => {
-											const isSelected = goal === g
+											const isSelected = goals.includes(g)
 											return (
 												<button
 													key={g}
 													type="button"
-													onClick={() => setGoal(g)}
+													onClick={() => {
+														if (goals.includes(g)) {
+															setGoals(goals.filter(item => item !== g))
+														} else {
+															setGoals([...goals, g])
+														}
+													}}
 													className={clsx(
 														"px-4 py-2 rounded-xl text-xs font-bold border transition-all select-none",
 														isSelected
@@ -781,31 +808,33 @@ export default function CampaignsPage() {
 								</div>
 
 								{/* Total Budget */}
-								<div className="flex flex-col gap-1.5">
-									<label className="text-xs font-bold text-black">Total Budget *</label>
-									<div className="flex gap-2">
-										<div className="relative flex-1">
-											<input
-												type="number"
-												required
-												min="1"
-												value={budgetAmount}
-												onChange={(e) => setBudgetAmount(e.target.value)}
-												placeholder="e.g. 50,000"
-												className="w-full h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
-											/>
+								{offerType !== "BARTER" && (
+									<div className="flex flex-col gap-1.5">
+										<label className="text-xs font-bold text-black">Total Budget *</label>
+										<div className="flex gap-2">
+											<div className="relative flex-1">
+												<input
+													type="number"
+													required
+													min="1"
+													value={budgetAmount}
+													onChange={(e) => setBudgetAmount(e.target.value)}
+													placeholder="e.g. 50,000"
+													className="w-full h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+												/>
+											</div>
+											<select
+												value={budgetCurrency}
+												onChange={(e) => setBudgetCurrency(e.target.value)}
+												className="h-10 px-3 rounded-xl border border-black/10 bg-slate-50 text-black font-bold outline-none focus:border-black hover:border-black/30 text-sm"
+											>
+												<option value="INR">INR (₹)</option>
+												<option value="USD">USD ($)</option>
+												<option value="EUR">EUR (€)</option>
+											</select>
 										</div>
-										<select
-											value={budgetCurrency}
-											onChange={(e) => setBudgetCurrency(e.target.value)}
-											className="h-10 px-3 rounded-xl border border-black/10 bg-slate-50 text-black font-bold outline-none focus:border-black hover:border-black/30 text-sm"
-										>
-											<option value="INR">INR (₹)</option>
-											<option value="USD">USD ($)</option>
-											<option value="EUR">EUR (€)</option>
-										</select>
 									</div>
-								</div>
+								)}
 
 								{/* Elements for Barter (Conditional) */}
 								{(offerType === "BARTER" || offerType === "BOTH") && (
@@ -822,20 +851,7 @@ export default function CampaignsPage() {
 									</div>
 								)}
 
-								{/* Tell us more */}
-								<div className="flex flex-col gap-1.5">
-									<div className="flex justify-between items-center">
-										<label className="text-xs font-bold text-black">Tell us more (Optional)</label>
-										<span className="text-[10px] text-black/45">Max 250 words</span>
-									</div>
-									<textarea
-										value={description}
-										onChange={(e) => setDescription(e.target.value)}
-										placeholder='Provide context for our AI matching engine (e.g., "Looking for spaces with high afternoon foot traffic and an eco-friendly vibe.")'
-										rows={4}
-										className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
-									/>
-								</div>
+
 							</form>
 						</div>
 					) : (
@@ -898,7 +914,10 @@ export default function CampaignsPage() {
 										</button>
 									</div>
 								) : (
-									<div className="grid grid-cols-1 gap-4">
+									<div className={clsx(
+										"grid gap-6",
+										isSplitLayout ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"
+									)}>
 										{filteredCampaigns.map((c) => {
 											const isSelected = selectedCampaign?.id === c.id
 											return (
@@ -906,49 +925,72 @@ export default function CampaignsPage() {
 													key={c.id}
 													onClick={() => setSelectedCampaign(c)}
 													className={clsx(
-														"group text-left relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] p-4 transition-all flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4",
-														isSelected
-															? "shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-amber-50"
-															: "shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[1px] hover:-translate-y-[1px]"
+														"group text-left relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-full h-[150px]",
+														isSelected && "bg-amber-50 shadow-none translate-x-[2px] translate-y-[2px]"
 													)}
 												>
-													<div className="flex flex-col gap-1 min-w-0">
-														<div className="flex items-center gap-2">
-															<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">
-																{c.name}
-															</h3>
-															<span className={clsx(
-																"text-[8px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
-																c.status === "PUBLISHED" ? "bg-green-400 text-black" :
-																c.status === "UNDER_REVIEW" ? "bg-yellow-300 text-black" :
-																c.status === "REJECTED" ? "bg-red-400 text-white" :
-																"bg-gray-300 text-black"
-															)}>
-																{c.status === "UNDER_REVIEW" ? "PENDING REVIEW" : c.status}
-															</span>
-														</div>
-														<p className="text-[11px] font-bold text-black/50">
-															Goal: {c.goal} • {c.locations.join(", ")}
-														</p>
-														<p className="text-[11px] font-semibold text-black/70 mt-1 line-clamp-1">
-															{c.description || "No description provided."}
-														</p>
+													{/* Image / Logo on the left */}
+													<div className="relative w-[150px] h-full shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
+														{profile?.logoUrl ? (
+															<img
+																src={profile.logoUrl}
+																alt={c.name || "Campaign"}
+																className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
+															/>
+														) : (
+															<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
+																{profile?.brandName ? profile.brandName.substring(0, 2).toUpperCase() : "MD"}
+															</div>
+														)}
+
+														{/* Status Badge */}
+														<span className={clsx(
+															"absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+															c.status === "PUBLISHED" ? "bg-green-400 text-black" :
+															c.status === "UNDER_REVIEW" ? "bg-yellow-300 text-black" :
+															c.status === "REJECTED" ? "bg-red-400 text-white" :
+															"bg-gray-300 text-black"
+														)}>
+															{c.status === "UNDER_REVIEW" ? "PENDING" : c.status}
+														</span>
 													</div>
 
-													<div className="flex items-center gap-3 self-end sm:self-center shrink-0">
-														<span className="text-xs font-black px-2.5 py-1 bg-slate-100 border border-black rounded-lg">
-															{c.budgetCurrency} {Number(c.budgetAmount).toLocaleString()}
-														</span>
-														<button
-															type="button"
-															onClick={(e) => {
-																e.stopPropagation()
-																handleDeleteCampaign(c.id)
-															}}
-															className="p-1.5 border-2 border-black rounded-lg bg-red-50 text-[#EE2C2C] hover:bg-red-100 transition-colors shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
-														>
-															<Icon as={TrashBinSvg} size="xs" />
-														</button>
+													{/* Content & Footer info */}
+													<div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+														<div className="flex flex-col gap-1">
+															<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors leading-snug">
+																{c.name}
+															</h3>
+															<p className="text-[11px] font-bold text-black/50 truncate">
+																Goal: {c.goal} {c.locations?.length > 0 && `• ${c.locations.slice(0, 2).join(", ")}`}{c.locations?.length > 2 ? ` +${c.locations.length - 2}` : ""}
+															</p>
+															{c.description && (
+																<p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">
+																	{c.description}
+																</p>
+															)}
+														</div>
+
+														<div className="flex justify-between items-end mt-auto gap-2">
+															<div className="flex flex-wrap gap-1.5">
+																<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+																	{new Date(c.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} – {new Date(c.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })}
+																</span>
+																<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+																	{c.offerType === "BARTER" ? "BARTER" : `${c.budgetCurrency} ${Number(c.budgetAmount).toLocaleString()}`}
+																</span>
+															</div>
+															<button
+																type="button"
+																onClick={(e) => {
+																	e.stopPropagation()
+																	handleDeleteCampaign(c.id)
+																}}
+																className="p-1.5 border-2 border-black rounded-lg bg-red-50 text-[#EE2C2C] hover:bg-red-100 transition-colors shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] shrink-0 self-end"
+															>
+																<Icon as={TrashBinSvg} size="xs" />
+															</button>
+														</div>
 													</div>
 												</div>
 											)
@@ -1033,7 +1075,9 @@ export default function CampaignsPage() {
 									<div>
 										<p className="text-[9px] text-black/40 font-bold uppercase tracking-wider">Budget & Offer</p>
 										<p className="text-xs font-black text-[#EE2C2C] mt-0.5">
-											{selectedCampaign.budgetCurrency} {Number(selectedCampaign.budgetAmount).toLocaleString()} ({selectedCampaign.offerType})
+											{selectedCampaign.offerType === "BARTER"
+												? "BARTER"
+												: `${selectedCampaign.budgetCurrency} ${Number(selectedCampaign.budgetAmount).toLocaleString()} (${selectedCampaign.offerType})`}
 										</p>
 									</div>
 

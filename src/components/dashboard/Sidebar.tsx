@@ -31,7 +31,7 @@ type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 const NAV_ITEMS_TOP = [
 	{ label: "Dashboard", href: "/community/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "My Sponsorships", href: "/community/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
-	{ label: "Campaigns", href: "/community/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
+	{ label: "Brand Campaigns", href: "/community/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
 	{ label: "My Experiences", href: "/community/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg, disabled: true },
 ]
 

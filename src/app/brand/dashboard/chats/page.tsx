@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback, Fragment } from "react"
+import { useEffect, useRef, useState, useCallback, useMemo, Fragment } from "react"
 import { useSearchParams } from "next/navigation"
 import clsx from "clsx"
 import { toast } from "sonner"
@@ -47,6 +47,7 @@ export default function BrandChatsPage() {
 	const { profile } = useBrandStore()
 	const ownName = profile?.brandName || "You"
 	const [tab, setTab] = useState<Tab>("ACCEPTED")
+	const [dealType, setDealType] = useState<"SPONSORSHIP" | "CAMPAIGN">("SPONSORSHIP")
 	const [requestedThreads, setRequestedThreads] = useState<SponsorshipChatThread[]>([])
 	const [acceptedThreads, setAcceptedThreads] = useState<SponsorshipChatThread[]>([])
 	const [loadingThreads, setLoadingThreads] = useState(true)
@@ -61,7 +62,16 @@ export default function BrandChatsPage() {
 		}
 	}, [searchParams])
 
-	const threads = tab === "ACCEPTED" ? acceptedThreads : requestedThreads
+	const threads = useMemo(() => {
+		const baseList = tab === "ACCEPTED" ? acceptedThreads : requestedThreads
+		return baseList.filter(t => {
+			if (dealType === "SPONSORSHIP") {
+				return !t.campaignId
+			} else {
+				return !!t.campaignId
+			}
+		})
+	}, [tab, acceptedThreads, requestedThreads, dealType])
 
 	const getThreadUnreadCount = useCallback((threadId: string) => {
 		return notifications.filter(n => {
@@ -181,7 +191,26 @@ export default function BrandChatsPage() {
 				<div className="h-[calc(100vh-240px)] border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row bg-white">
 					{/* Thread list */}
 					<div className="w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col">
-						<div className="flex border-b-[3px] border-black">
+						{/* Sponsorship vs Campaign deals Tab selectors */}
+						<div className="flex border-b-[3px] border-black bg-neutral-50 divide-x-[3px] divide-black shrink-0">
+							{(["SPONSORSHIP", "CAMPAIGN"] as const).map(dt => (
+								<button
+									key={dt}
+									onClick={() => {
+										setDealType(dt)
+										setSelectedId(null)
+									}}
+									className={clsx(
+										"flex-1 py-2 text-[10px] font-black uppercase tracking-wider text-center transition-colors select-none",
+										dealType === dt ? "bg-black text-[#FFC940]" : "bg-white text-black/50 hover:bg-neutral-100"
+									)}
+								>
+									{dt === "SPONSORSHIP" ? "Sponsorships" : "Campaigns"}
+								</button>
+							))}
+						</div>
+
+						<div className="flex border-b-[3px] border-black shrink-0">
 							{(["ACCEPTED", "REQUESTED"] as Tab[]).map(t => {
 								const count = t === "ACCEPTED" ? unreadAcceptedCount : 0
 								return (
@@ -193,7 +222,7 @@ export default function BrandChatsPage() {
 											tab === t ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
 										)}
 									>
-										<span>{t === "REQUESTED" ? "Sent Requests" : "Accepted"}</span>
+										<span>{t === "REQUESTED" ? (dealType === "SPONSORSHIP" ? "Sent Requests" : "Requests") : "Accepted"}</span>
 										{count > 0 && (
 											<span className={clsx(
 												"min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-black flex items-center justify-center border",
