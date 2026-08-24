@@ -100,8 +100,8 @@ export default function CommunityChatsPage() {
 		const seq = ++loadThreadsSeq.current
 		try {
 			const [acceptedData, requestedData] = await Promise.all([
-				getMySponsorshipChats("ACCEPTED").catch(() => []),
-				getMySponsorshipChats("REQUESTED").catch(() => []),
+				getMySponsorshipChats("ACCEPTED", "HOST").catch(() => []),
+				getMySponsorshipChats("REQUESTED", "HOST").catch(() => []),
 			])
 			// A newer loadThreads() call already resolved and updated state — discard this
 			// stale response instead of letting it overwrite fresher data (was causing threads
@@ -584,6 +584,7 @@ function ChatThreadPanel({
 					onView={() => setDealModal("details")}
 					onReport={() => setDealModal("report")}
 					hasReport={!!report}
+					isCampaign={!!thread.campaignId}
 				/>
 			)}
 
@@ -591,11 +592,22 @@ function ChatThreadPanel({
 				{loading ? (
 					<p className="text-xs font-semibold text-black/40 text-center">Loading…</p>
 				) : thread.chatStatus === "REQUESTED" ? (
-					<div className="m-auto text-center max-w-xs">
-						<p className="text-sm font-black text-black">This brand is interested in your proposal</p>
-						<p className="text-xs font-semibold text-black/50 mt-2">
-							Accept the request to open the chat and reply.
-						</p>
+					<div className="m-auto text-center max-w-xs animate-in fade-in duration-200">
+						{thread.campaignId ? (
+							<>
+								<p className="text-sm font-black text-black">Request sent</p>
+								<p className="text-xs font-semibold text-black/50 mt-2">
+									Waiting for the brand to accept your interest before you can chat.
+								</p>
+							</>
+						) : (
+							<>
+								<p className="text-sm font-black text-black">This brand is interested in your proposal</p>
+								<p className="text-xs font-semibold text-black/50 mt-2">
+									Accept the request to open the chat and reply.
+								</p>
+							</>
+						)}
 					</div>
 				) : messages.length === 0 ? (
 					<p className="text-xs font-semibold text-black/40 text-center m-auto">No messages yet — say hi!</p>

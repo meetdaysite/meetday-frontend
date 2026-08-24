@@ -69,8 +69,8 @@ export default function ExploreCampaignsPage() {
 			.finally(() => setLoading(false))
 
 		Promise.all([
-			getMySponsorshipChats("REQUESTED").catch(() => []),
-			getMySponsorshipChats("ACCEPTED").catch(() => []),
+			getMySponsorshipChats("REQUESTED", "HOST").catch(() => []),
+			getMySponsorshipChats("ACCEPTED", "HOST").catch(() => []),
 		]).then(([req, acc]) => {
 			const ids = new Set<string>()
 			const all = [...req, ...acc]
@@ -334,8 +334,9 @@ export default function ExploreCampaignsPage() {
 							<div className="pt-2 border-t border-black/10">
 								<p className="text-[10px] font-bold text-black/40 uppercase mb-2">Interested in matching?</p>
 								{(() => {
-									const isAlreadyInterested = selectedCampaign ? interestedCampaignIds.has(selectedCampaign.id) : false
-									return (
+								const isAlreadyInterested = selectedCampaign ? interestedCampaignIds.has(selectedCampaign.id) : false
+								return (
+									<>
 										<button
 											type="button"
 											disabled={submittingInterest || isAlreadyInterested || !isHostApproved}
@@ -355,14 +356,20 @@ export default function ExploreCampaignsPage() {
 													? "SUBMITTING..."
 													: "I'M INTERESTED ➔"}
 										</button>
-									)
-								})()}
-								{!isHostApproved && (
-									<p className="text-[10px] font-bold text-red-500 mt-2">
-										* You must have an approved community profile to express interest.
-									</p>
-								)}
-							</div>
+										{isAlreadyInterested && (
+											<p className="text-[10px] font-black text-green-600 mt-2 uppercase tracking-wide text-center">
+												* You have already expressed interest in this campaign.
+											</p>
+										)}
+									</>
+								)
+							})()}
+							{!isHostApproved && (
+								<p className="text-[10px] font-bold text-red-500 mt-2">
+									* You must have an approved community profile to express interest.
+								</p>
+							)}
+						</div>
 						</div>
 					</div>
 				)}

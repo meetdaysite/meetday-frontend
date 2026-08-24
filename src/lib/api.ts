@@ -787,10 +787,18 @@ export type SponsorshipChatMessage = {
 	replyTo?: SponsorshipChatReplyTo | null
 }
 
-export async function getMySponsorshipChats(status?: SponsorshipChatStatus): Promise<SponsorshipChatThread[]> {
+export async function getMySponsorshipChats(
+	status?: SponsorshipChatStatus,
+	role?: "HOST" | "BRAND",
+): Promise<SponsorshipChatThread[]> {
 	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipChatThread[] }>(
 		"/sponsorships/chats",
-		{ params: status ? { status } : undefined },
+		{
+			params: {
+				...(status && { status }),
+				...(role && { role }),
+			},
+		},
 	)
 	return data.data
 }

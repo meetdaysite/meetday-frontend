@@ -126,6 +126,7 @@ export function DealBanner({
 	onView,
 	onReport,
 	hasReport,
+	isCampaign = false,
 }: {
 	deal: SponsorshipDeal | null
 	role: "HOST" | "BRAND"
@@ -134,9 +135,12 @@ export function DealBanner({
 	onView: () => void
 	onReport?: () => void
 	hasReport?: boolean
+	isCampaign?: boolean
 }) {
+	const canLockOrEdit = isCampaign ? role === "BRAND" : role === "HOST"
+
 	if (!deal) {
-		if (role !== "HOST") return null
+		if (!canLockOrEdit) return null
 		return (
 			<div className="px-5 py-2.5 border-b-[3px] border-black bg-neutral-50 flex items-center justify-between gap-3 shrink-0">
 				<p className="text-xs font-bold text-black/50">Once terms are agreed, submit the final details here.</p>
@@ -162,7 +166,7 @@ export function DealBanner({
 			</div>
 			<div className="flex items-center gap-2 shrink-0">
 				<Button size="sm" variant="secondary" onClick={onView}>View Deal</Button>
-				{role === "HOST" && deal.status !== "APPROVED" && (
+				{canLockOrEdit && deal.status !== "APPROVED" && (
 					<Button size="sm" onClick={onEdit}>Edit Deal</Button>
 				)}
 				{deal.status === "APPROVED" && (

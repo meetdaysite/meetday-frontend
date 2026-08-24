@@ -89,7 +89,7 @@ export default function DashboardWelcomePage() {
 	useEffect(() => {
 		if (!hostId) return
 		setLoadingLockedDeals(true)
-		getMySponsorshipChats("ACCEPTED")
+		getMySponsorshipChats("ACCEPTED", "HOST")
 			.then(async (threads) => {
 				const dealsPromises = threads.map(async (thread) => {
 					try {
