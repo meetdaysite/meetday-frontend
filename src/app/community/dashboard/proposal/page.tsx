@@ -23,6 +23,7 @@ import {
     activateHostCommunityProfile,
     deactivateHostCommunityProfile,
     generateProposalDraft,
+    extractProposalCopilotDocument,
     type SponsorshipProposal as ApiSponsorshipProposal,
     type SponsorshipProposalPayload,
     type HostCommunityProfile,
@@ -213,6 +214,10 @@ export default function ProposalPage() {
     const [proposalCopilotOpen, setProposalCopilotOpen] = useState(false)
     const [proposalCopilotPrompt, setProposalCopilotPrompt] = useState("")
     const [proposalCopilotLoading, setProposalCopilotLoading] = useState(false)
+    const [copilotDocFile, setCopilotDocFile] = useState<File | null>(null)
+    const [copilotDocText, setCopilotDocText] = useState<string | null>(null)
+    const [copilotDocUploading, setCopilotDocUploading] = useState(false)
+    const copilotDocInputRef = useRef<HTMLInputElement>(null)
     const [loadingMessageIndex, setLoadingMessageIndex] = useState(0)
 
     const loadingMessages = useMemo(() => [
@@ -622,12 +627,47 @@ export default function ProposalPage() {
         }
     }
 
+    async function handleCopilotDocPick(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0]
+        e.target.value = ""
+        if (!file) return
+        const ext = file.name.split(".").pop()?.toLowerCase()
+        if (!ext || !["pdf", "docx", "pptx"].includes(ext)) {
+            toast.error("Only PDF, Word (.docx), and PowerPoint (.pptx) files are supported.")
+            return
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error("File size cannot exceed 10MB.")
+            return
+        }
+        setCopilotDocFile(file)
+        setCopilotDocUploading(true)
+        try {
+            const text = await extractProposalCopilotDocument(file)
+            setCopilotDocText(text)
+        } catch {
+            toast.error("Couldn't read that document. Please try a different file.")
+            setCopilotDocFile(null)
+            setCopilotDocText(null)
+        } finally {
+            setCopilotDocUploading(false)
+        }
+    }
+
+    function handleRemoveCopilotDoc() {
+        setCopilotDocFile(null)
+        setCopilotDocText(null)
+    }
+
     async function handleGenerateProposalDraft() {
         const trimmed = proposalCopilotPrompt.trim()
         if (!trimmed || proposalCopilotLoading) return
         setProposalCopilotLoading(true)
         try {
-            const draft = await generateProposalDraft(trimmed)
+            const combinedPrompt = copilotDocText
+                ? `${trimmed}\n\nAdditional context from an uploaded document:\n${copilotDocText}`
+                : trimmed
+            const draft = await generateProposalDraft(combinedPrompt)
             setProjName(draft.name)
             setProjAbout(draft.about)
             setProjAudience(draft.audience_profile)
@@ -635,6 +675,7 @@ export default function ProposalPage() {
             setProjGuestCount(draft.guest_count)
             setSponsorPrices(draft.sponsor_tiers.length > 0 ? draft.sponsor_tiers : [{ name: "", price: "" }])
             setProposalCopilotOpen(false)
+            handleRemoveCopilotDoc()
             toast.success("Meetday filled in the proposal — review and adjust as needed.")
         } catch (err: unknown) {
             const status = (err as { response?: { status?: number } })?.response?.status
@@ -1592,6 +1633,37 @@ export default function ProposalPage() {
                                                                 disabled={proposalCopilotLoading}
                                                                 className="px-4 py-2.5 rounded-xl border-2 border-black/30 bg-white/80 text-black outline-none focus:border-black text-sm transition-colors resize-none disabled:opacity-50"
                                                             />
+                                                            <input
+                                                                type="file"
+                                                                accept=".pdf,.docx,.pptx"
+                                                                ref={copilotDocInputRef}
+                                                                onChange={handleCopilotDocPick}
+                                                                className="hidden"
+                                                            />
+                                                            {copilotDocFile ? (
+                                                                <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border-2 border-black/20 bg-white/80">
+                                                                    <span className="text-xs font-bold text-black truncate">
+                                                                        {copilotDocUploading ? "Reading document..." : `📎 ${copilotDocFile.name}`}
+                                                                    </span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={handleRemoveCopilotDoc}
+                                                                        disabled={copilotDocUploading}
+                                                                        className="text-xs font-black text-black/50 hover:text-black shrink-0 disabled:opacity-50"
+                                                                    >
+                                                                        Remove
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => copilotDocInputRef.current?.click()}
+                                                                    disabled={proposalCopilotLoading}
+                                                                    className="self-start text-xs font-black text-purple-700 hover:text-[#EE2C2C] transition-colors disabled:opacity-50"
+                                                                >
+                                                                    + Upload a document (optional) — PDF, Word, or PowerPoint
+                                                                </button>
+                                                            )}
                                                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between mt-1">
                                                                 <p className="text-xs font-bold text-black/60">
                                                                     {proposalCopilotPrompt.trim().length < 20
@@ -1610,7 +1682,7 @@ export default function ProposalPage() {
                                                                     <button
                                                                         type="button"
                                                                         onClick={handleGenerateProposalDraft}
-                                                                        disabled={proposalCopilotLoading || proposalCopilotPrompt.trim().length < 20}
+                                                                        disabled={proposalCopilotLoading || copilotDocUploading || proposalCopilotPrompt.trim().length < 20}
                                                                         className="flex items-center gap-2 bg-black text-white text-sm font-black px-4 py-2.5 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#EE2C2C] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50 transition-all select-none"
                                                                     >
                                                                         <Icon as={MagicStickSvg} size="sm" color="inherit" />

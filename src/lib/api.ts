@@ -2173,6 +2173,17 @@ export async function generateProposalDraft(prompt: string): Promise<ProposalCop
 	return data.data
 }
 
+export async function extractProposalCopilotDocument(file: File): Promise<string> {
+	const formData = new FormData()
+	formData.append("file", file)
+	const { data } = await apiClient.post<{ success: boolean; data: { text: string } }>(
+		"/sponsorships/copilot/extract-document",
+		formData,
+		{ headers: { "Content-Type": "multipart/form-data" } },
+	)
+	return data.data.text
+}
+
 // ─── Host communities â€“ overview ─────────────────────────────────────────────
 
 export type HostCommunityOverviewCommunity = {
