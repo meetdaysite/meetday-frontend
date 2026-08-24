@@ -1726,8 +1726,8 @@ export default function ProposalPage() {
                                                 </button>
                                             </div>
                                             {projVenues.map((v, idx) => (
-                                                <div key={idx} className="flex gap-3 items-center">
-                                                    <div className="flex-1">
+                                                <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center p-3 sm:p-0 bg-slate-100/50 sm:bg-transparent rounded-xl border border-black/5 sm:border-0 relative">
+                                                    <div className="w-full sm:flex-1">
                                                         <AddressAutocompleteInput
                                                             value={v}
                                                             error={false}
@@ -1749,7 +1749,7 @@ export default function ProposalPage() {
                                                             placeholder="e.g. Palace of Fine Arts"
                                                         />
                                                     </div>
-                                                    <div className="w-40">
+                                                    <div className="w-full sm:w-40">
                                                         <input
                                                             type="text"
                                                             value={projVenueCities[idx] || ""}
@@ -1769,7 +1769,7 @@ export default function ProposalPage() {
                                                                 setProjVenues(projVenues.filter((_, i) => i !== idx))
                                                                 setProjVenueCities(projVenueCities.filter((_, i) => i !== idx))
                                                             }}
-                                                            className="text-red-500 hover:text-red-700 font-bold text-lg"
+                                                            className="absolute top-2 right-2 sm:relative sm:top-0 sm:right-0 text-red-500 hover:text-red-700 font-bold text-lg p-1"
                                                         >
                                                             ✕
                                                         </button>
@@ -1781,7 +1781,7 @@ export default function ProposalPage() {
                                         {/* Audience Profile */}
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-xs font-bold text-black">Audience Profile *</label>
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-2 min-w-0">
                                                 <input
                                                     type="text"
                                                     value={newAudience}
@@ -1796,8 +1796,8 @@ export default function ProposalPage() {
                                                             }
                                                         }
                                                     }}
-                                                    placeholder="e.g. Tech Founders (press Add or Enter)"
-                                                    className="flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                    placeholder="e.g. Tech Founders"
+                                                    className="min-w-0 flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
                                                 />
                                                 <button
                                                     type="button"
@@ -1808,7 +1808,7 @@ export default function ProposalPage() {
                                                             setNewAudience("")
                                                         }
                                                     }}
-                                                    className="px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
+                                                    className="shrink-0 px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
                                                 >
                                                     Add
                                                 </button>
@@ -1921,7 +1921,7 @@ export default function ProposalPage() {
                                                 </button>
                                             </div>
                                             {sponsorPrices.map((sp, idx) => (
-                                                <div key={idx} className="flex gap-3 items-center">
+                                                <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center p-3 sm:p-0 bg-slate-100/50 sm:bg-transparent rounded-xl border border-black/5 sm:border-0 relative">
                                                     <input
                                                         type="text"
                                                         required
@@ -1932,9 +1932,9 @@ export default function ProposalPage() {
                                                             updated[idx].name = e.target.value
                                                             setSponsorPrices(updated)
                                                         }}
-                                                        className="flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                        className="w-full sm:flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
                                                     />
-                                                    <div className="relative flex-1">
+                                                    <div className="relative w-full sm:flex-1">
                                                         <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-black/40 select-none">₹</span>
                                                         <input
                                                             type="text"
@@ -1953,7 +1953,7 @@ export default function ProposalPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() => setSponsorPrices(sponsorPrices.filter((_, i) => i !== idx))}
-                                                            className="text-red-500 hover:text-red-700 font-bold text-lg"
+                                                            className="absolute top-2 right-2 sm:relative sm:top-0 sm:right-0 text-red-500 hover:text-red-700 font-bold text-lg p-1"
                                                         >
                                                             ✕
                                                         </button>
