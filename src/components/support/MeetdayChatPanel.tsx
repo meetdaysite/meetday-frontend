@@ -12,6 +12,8 @@ import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 
 const POLL_MS = 4000
+// Must match backend's AGENT_OFFER_MESSAGE in meetday-chat.service.ts exactly.
+const AGENT_OFFER_MESSAGE = "Would you like to talk to a Meetday agent?"
 
 // Single persistent support chat with the Meetday team — one thread per user, no thread list
 // needed (unlike TriChat). Shared by both the host and brand chat pages.
@@ -22,6 +24,8 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 	const [sending, setSending] = useState(false)
 	const [uploadingImage, setUploadingImage] = useState(false)
 	const [viewingImage, setViewingImage] = useState<string | null>(null)
+	const [respondingOfferId, setRespondingOfferId] = useState<string | null>(null)
+	const [dismissedOfferIds, setDismissedOfferIds] = useState<Set<string>>(new Set())
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -62,6 +66,22 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 			toast.error("Failed to send message.")
 		} finally {
 			setSending(false)
+		}
+	}
+
+	async function handleOfferResponse(offerId: string, accepted: boolean) {
+		if (!accepted) {
+			setDismissedOfferIds(prev => new Set(prev).add(offerId))
+			return
+		}
+		setRespondingOfferId(offerId)
+		try {
+			const msg = await sendMeetdayChatMessage({ content: "Yes" })
+			setMessages(prev => [...prev, msg])
+		} catch {
+			toast.error("Failed to send response.")
+		} finally {
+			setRespondingOfferId(null)
 		}
 	}
 
@@ -144,6 +164,26 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 												✓✓
 											</span>
 										)}
+									</div>
+								)}
+								{m.senderType === "BOT" && m.content === AGENT_OFFER_MESSAGE && m.id === messages[messages.length - 1]?.id && !dismissedOfferIds.has(m.id) && (
+									<div className="flex items-center gap-2 mt-1.5">
+										<button
+											type="button"
+											onClick={() => handleOfferResponse(m.id, true)}
+											disabled={respondingOfferId === m.id}
+											className="px-3 py-1.5 rounded-xl border-[2px] border-black bg-[#FFC940] text-black text-xs font-black hover:brightness-95 disabled:opacity-50"
+										>
+											Yes
+										</button>
+										<button
+											type="button"
+											onClick={() => handleOfferResponse(m.id, false)}
+											disabled={respondingOfferId === m.id}
+											className="px-3 py-1.5 rounded-xl border-[2px] border-black bg-white text-black text-xs font-black hover:bg-neutral-50 disabled:opacity-50"
+										>
+											No
+										</button>
 									</div>
 								)}
 							</div>
