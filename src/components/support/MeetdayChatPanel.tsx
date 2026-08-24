@@ -101,6 +101,16 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 					messages.map(m => {
 						const isMine = m.senderType === "USER"
 						const isBot = m.senderType === "BOT"
+						const isSystemMessage = m.content?.startsWith("[System]")
+						if (isSystemMessage) {
+							return (
+								<div key={m.id} className="w-full flex justify-center my-1">
+									<span className="text-[11px] font-bold text-black/40 bg-neutral-100 px-3 py-1 rounded-full">
+										{m.content.replace(/^\[System\]\s*/, "")}
+									</span>
+								</div>
+							)
+						}
 						const senderLabel = isMine
 							? (role === "HOST" ? `${ownName} • Community` : `${ownName} • Brand`)
 							: isBot ? "Meetday • Bot" : "Meetday • Admin"
