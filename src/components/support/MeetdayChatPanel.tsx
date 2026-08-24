@@ -12,8 +12,6 @@ import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 
 const POLL_MS = 4000
-// Must match backend's AGENT_OFFER_MESSAGE in meetday-chat.service.ts exactly.
-const AGENT_OFFER_MESSAGE = "Would you like to talk to a Meetday agent?"
 
 // Single persistent support chat with the Meetday team — one thread per user, no thread list
 // needed (unlike TriChat). Shared by both the host and brand chat pages.
@@ -24,8 +22,6 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 	const [sending, setSending] = useState(false)
 	const [uploadingImage, setUploadingImage] = useState(false)
 	const [viewingImage, setViewingImage] = useState<string | null>(null)
-	const [respondingOfferId, setRespondingOfferId] = useState<string | null>(null)
-	const [dismissedOfferIds, setDismissedOfferIds] = useState<Set<string>>(new Set())
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -69,22 +65,6 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 		}
 	}
 
-	async function handleOfferResponse(offerId: string, accepted: boolean) {
-		if (!accepted) {
-			setDismissedOfferIds(prev => new Set(prev).add(offerId))
-			return
-		}
-		setRespondingOfferId(offerId)
-		try {
-			const msg = await sendMeetdayChatMessage({ content: "Yes" })
-			setMessages(prev => [...prev, msg])
-		} catch {
-			toast.error("Failed to send response.")
-		} finally {
-			setRespondingOfferId(null)
-		}
-	}
-
 	async function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0]
 		e.target.value = ""
@@ -120,9 +100,10 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 				) : (
 					messages.map(m => {
 						const isMine = m.senderType === "USER"
+						const isBot = m.senderType === "BOT"
 						const senderLabel = isMine
 							? (role === "HOST" ? `${ownName} • Community` : `${ownName} • Brand`)
-							: m.senderType === "BOT" ? "Meetday • Bot" : "Meetday • Admin"
+							: isBot ? "Meetday • Bot" : "Meetday • Admin"
 						return (
 							<div key={m.id} className={clsx("flex flex-col max-w-[75%]", isMine ? "self-end items-end" : "self-start items-start")}>
 								<span className="text-[10px] font-black uppercase tracking-wide text-black/30 mb-0.5 px-1">
@@ -141,7 +122,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 									<div
 										className={clsx(
 											"px-3.5 py-2 rounded-2xl text-sm font-semibold break-words border border-black/10",
-											isMine ? (role === "BRAND" ? "bg-[#EE2C2C] text-white" : "bg-[#FFC940] text-black") : "bg-neutral-100 text-black",
+											isMine ? (role === "BRAND" ? "bg-[#EE2C2C] text-white" : "bg-[#FFC940] text-black") : isBot ? "bg-black text-white" : "bg-neutral-100 text-black",
 											isMine ? "rounded-br-sm" : "rounded-bl-sm",
 										)}
 									>
@@ -164,26 +145,6 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 												✓✓
 											</span>
 										)}
-									</div>
-								)}
-								{m.senderType === "BOT" && m.content === AGENT_OFFER_MESSAGE && m.id === messages[messages.length - 1]?.id && !dismissedOfferIds.has(m.id) && (
-									<div className="flex items-center gap-2 mt-1.5">
-										<button
-											type="button"
-											onClick={() => handleOfferResponse(m.id, true)}
-											disabled={respondingOfferId === m.id}
-											className="px-3 py-1.5 rounded-xl border-[2px] border-black bg-[#FFC940] text-black text-xs font-black hover:brightness-95 disabled:opacity-50"
-										>
-											Yes
-										</button>
-										<button
-											type="button"
-											onClick={() => handleOfferResponse(m.id, false)}
-											disabled={respondingOfferId === m.id}
-											className="px-3 py-1.5 rounded-xl border-[2px] border-black bg-white text-black text-xs font-black hover:bg-neutral-50 disabled:opacity-50"
-										>
-											No
-										</button>
 									</div>
 								)}
 							</div>
