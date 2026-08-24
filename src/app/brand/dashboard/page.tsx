@@ -153,21 +153,20 @@ export default function BrandDashboardWelcomePage() {
 							<h2 className="text-lg font-heading font-black text-black">
 								Create a Campaign
 							</h2>
-							<span className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
-								COMING SOON
+							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
+								LIVE
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
 							Post a sponsorship brief detailing your requirements for offline marketing and invite communities to apply.
 						</p>
-						<button
-							type="button"
-							onClick={() => toast.info("Creating campaigns is coming soon — stay tuned!")}
-							className="w-full py-3 bg-black/10 text-black/40 border-[3px] border-black/20 rounded-2xl font-black text-center text-xs tracking-wider cursor-not-allowed flex items-center justify-center gap-2 select-none"
+						<Link
+							href="/brand/dashboard/campaigns"
+							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
 						>
 							CREATE BRIEF
 							<span className="text-base font-bold">➔</span>
-						</button>
+						</Link>
 					</div>
 				</div>
 
