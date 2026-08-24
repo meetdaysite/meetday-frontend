@@ -1026,8 +1026,8 @@ export async function getSponsorshipDealReportPdfUrl(interestId: string): Promis
 
 export type MeetdayChatMessage = {
 	id: string
-	senderType: "USER" | "ADMIN"
-	senderId: string
+	senderType: "USER" | "ADMIN" | "BOT"
+	senderId: string | null
 	content: string
 	mediaUrl?: string | null
 	createdAt: string
