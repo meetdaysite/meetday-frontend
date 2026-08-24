@@ -2184,6 +2184,41 @@ export async function extractProposalCopilotDocument(file: File): Promise<string
 	return data.data.text
 }
 
+// ─── AI Copilot — campaigns ────────────────────────────────────────────────────
+
+export type CampaignCopilotDraft = {
+	name: string
+	goal: string
+	locations: string[]
+	audience: string[]
+	offer_type: "CASH" | "BARTER" | "BOTH"
+	budget_amount: number
+	budget_currency: string
+	barter_elements: string | null
+	description: string | null
+	confidence_score: number
+	ai_suggestions_used: string[]
+}
+
+export async function generateCampaignDraft(prompt: string): Promise<CampaignCopilotDraft> {
+	const { data } = await apiClient.post<{ success: boolean; data: CampaignCopilotDraft }>(
+		"/campaigns/copilot/generate-draft",
+		{ prompt },
+	)
+	return data.data
+}
+
+export async function extractCampaignCopilotDocument(file: File): Promise<string> {
+	const formData = new FormData()
+	formData.append("file", file)
+	const { data } = await apiClient.post<{ success: boolean; data: { text: string } }>(
+		"/campaigns/copilot/extract-document",
+		formData,
+		{ headers: { "Content-Type": "multipart/form-data" } },
+	)
+	return data.data.text
+}
+
 // ─── Host communities â€“ overview ─────────────────────────────────────────────
 
 export type HostCommunityOverviewCommunity = {

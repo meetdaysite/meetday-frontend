@@ -14,6 +14,8 @@ import {
 	getMyCampaigns,
 	updateCampaign,
 	deleteCampaign,
+	generateCampaignDraft,
+	extractCampaignCopilotDocument,
 	type Campaign,
 	type CampaignPayload,
 	type CampaignStatus
@@ -21,6 +23,8 @@ import {
 
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
+import AiAvatarSvg from "@/assets/ai-avatar.svg"
+import MagicStickSvg from "@/icons/duotone/magic-stick-3.svg"
 
 const AUDIENCE_OPTIONS = [
 	"Tech Developers",
@@ -80,6 +84,36 @@ export default function CampaignsPage() {
 	const [budgetCurrency, setBudgetCurrency] = useState("INR")
 	const [barterElements, setBarterElements] = useState("")
 	const [description, setDescription] = useState("")
+
+	const [campaignCopilotOpen, setCampaignCopilotOpen] = useState(false)
+	const [campaignCopilotPrompt, setCampaignCopilotPrompt] = useState("")
+	const [campaignCopilotLoading, setCampaignCopilotLoading] = useState(false)
+	const [copilotDocFile, setCopilotDocFile] = useState<File | null>(null)
+	const [copilotDocText, setCopilotDocText] = useState<string | null>(null)
+	const [copilotDocUploading, setCopilotDocUploading] = useState(false)
+	const copilotDocInputRef = useRef<HTMLInputElement>(null)
+	const [loadingMessageIndex, setLoadingMessageIndex] = useState(0)
+
+	const loadingMessages = useMemo(() => [
+		"Meetday is cooking... 🍳",
+		"Spicing up the campaign details... 🌶️",
+		"Whipping up the target audience profile... 📊",
+		"Simmering the budget and offer details... 💰",
+		"Adding the secret sauce to the brief... 🍯",
+		"Plating the perfect campaign... 🍽️",
+		"Garnishing with final touches... ✨"
+	], [])
+
+	useEffect(() => {
+		let interval: NodeJS.Timeout
+		if (campaignCopilotLoading) {
+			setLoadingMessageIndex(0)
+			interval = setInterval(() => {
+				setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length)
+			}, 2000)
+		}
+		return () => clearInterval(interval)
+	}, [campaignCopilotLoading, loadingMessages])
 
 	const [activeTab, setActiveTab] = useState<"ALL" | "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED">("ALL")
 	const [loading, setLoading] = useState(true)
@@ -172,6 +206,81 @@ export default function CampaignsPage() {
 	const resetForm = () => {
 		setShowForm(false)
 		setIsEditing(false)
+		setCampaignCopilotOpen(false)
+		setCampaignCopilotPrompt("")
+		setCopilotDocFile(null)
+		setCopilotDocText(null)
+	}
+
+	async function handleCopilotDocPick(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0]
+		e.target.value = ""
+		if (!file) return
+		const ext = file.name.split(".").pop()?.toLowerCase()
+		if (!ext || !["pdf", "docx", "pptx"].includes(ext)) {
+			toast.error("Only PDF, Word (.docx), and PowerPoint (.pptx) files are supported.")
+			return
+		}
+		if (file.size > 10 * 1024 * 1024) {
+			toast.error("File size cannot exceed 10MB.")
+			return
+		}
+		setCopilotDocFile(file)
+		setCopilotDocUploading(true)
+		try {
+			const text = await extractCampaignCopilotDocument(file)
+			setCopilotDocText(text)
+		} catch {
+			toast.error("Couldn't read that document. Please try a different file.")
+			setCopilotDocFile(null)
+			setCopilotDocText(null)
+		} finally {
+			setCopilotDocUploading(false)
+		}
+	}
+
+	function handleRemoveCopilotDoc() {
+		setCopilotDocFile(null)
+		setCopilotDocText(null)
+	}
+
+	async function handleGenerateCampaignDraft() {
+		const trimmed = campaignCopilotPrompt.trim()
+		if (!trimmed || campaignCopilotLoading) return
+		setCampaignCopilotLoading(true)
+		try {
+			const combinedPrompt = copilotDocText
+				? `${trimmed}\n\nAdditional context from an uploaded document:\n${copilotDocText}`
+				: trimmed
+			const draft = await generateCampaignDraft(combinedPrompt)
+			setName(draft.name)
+			setGoal(GOAL_OPTIONS.includes(draft.goal) ? draft.goal : GOAL_OPTIONS[0])
+			setLocations(draft.locations)
+			const knownAudience = draft.audience.filter(a => AUDIENCE_OPTIONS.includes(a))
+			const customAud = draft.audience.find(a => !AUDIENCE_OPTIONS.includes(a))
+			setAudience(knownAudience)
+			if (customAud) {
+				setCustomAudience(customAud)
+				setShowCustomAudienceInput(true)
+			} else {
+				setCustomAudience("")
+				setShowCustomAudienceInput(false)
+			}
+			setOfferType(draft.offer_type)
+			setBudgetAmount(String(draft.budget_amount))
+			setBudgetCurrency(draft.budget_currency)
+			setBarterElements(draft.barter_elements || "")
+			setDescription(draft.description || "")
+			setCampaignCopilotOpen(false)
+			handleRemoveCopilotDoc()
+			toast.success("Meetday filled in the campaign brief — review and adjust as needed.")
+		} catch (err: any) {
+			const status = err?.response?.status
+			if (status === 403) toast.error("Brand role required to use Meetday AI.")
+			else toast.error("Couldn't generate a draft right now. Please try again.")
+		} finally {
+			setCampaignCopilotLoading(false)
+		}
 	}
 
 	const handleAddLocation = () => {
@@ -353,7 +462,140 @@ export default function CampaignsPage() {
 							</div>
 
 							<form onSubmit={(e) => handleFormSubmit(e, "UNDER_REVIEW")} className="border-[3px] border-dashed border-black/30 rounded-[28px] p-6 bg-white flex flex-col gap-6 w-full">
-								
+
+								{/* AI assist */}
+								{!isEditing && (
+									<div className="w-full">
+										{!campaignCopilotOpen ? (
+											<div
+												onClick={() => setCampaignCopilotOpen(true)}
+												className="group border-[3px] border-black bg-purple-100 hover:bg-purple-200 p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer flex flex-col md:flex-row items-center justify-between gap-4 select-none"
+											>
+												<div className="flex items-center gap-4 text-left">
+													<div className="flex items-center justify-center h-12 w-12 rounded-xl bg-[#EE2C2C] text-white shrink-0 transition-transform duration-300 p-2" style={{ animation: 'aiIconPulse 2s ease-in-out infinite' }}>
+														<Icon as={AiAvatarSvg} size="2xl" color="inherit" className="w-full h-full" />
+													</div>
+													<div>
+														<h3 className="font-heading text-sm sm:text-base font-extrabold text-black uppercase tracking-wider">
+															Start with our <span className="text-[#EE2C2C]">AI Companion</span>
+														</h3>
+														<p className="text-[11px] sm:text-xs font-semibold text-black/65 mt-0.5">
+															Describe your campaign in a few words, we fill the rest.
+														</p>
+													</div>
+												</div>
+												<div className="flex items-center gap-2 bg-black text-white text-sm font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black group-hover:bg-[#EE2C2C] transition-colors duration-200 shrink-0">
+													<Icon as={MagicStickSvg} size="sm" color="inherit" />
+													Draft with AI
+												</div>
+											</div>
+										) : campaignCopilotLoading ? (
+											<div className="border-[3px] border-black bg-purple-100 p-8 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center justify-center gap-5 text-center min-h-[180px]">
+												<div className="relative flex items-center justify-center h-16 w-16">
+													<div className="absolute inset-0 rounded-full border-4 border-dashed border-[#EE2C2C]/40 animate-spin" style={{ animationDuration: '4s' }} />
+													<div className="flex items-center justify-center h-10 w-10 rounded-full bg-[#EE2C2C] text-white p-2">
+														<Icon as={AiAvatarSvg} size="xl" color="inherit" className="w-full h-full" />
+													</div>
+												</div>
+												<div className="flex flex-col gap-1.5">
+													<h4 className="font-heading text-lg font-black text-black tracking-wide">
+														{loadingMessages[loadingMessageIndex]}
+													</h4>
+													<p className="text-sm text-purple-700 font-bold tracking-tight">
+														Whipping up goals, audiences, and budget suggestions...
+													</p>
+												</div>
+											</div>
+										) : (
+											<div className="border-[3px] border-black bg-purple-100 p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-4">
+												<div className="flex items-center gap-3">
+													<div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[#EE2C2C] text-white shrink-0 p-1.5">
+														<Icon as={AiAvatarSvg} size="xl" color="inherit" className="w-full h-full" />
+													</div>
+													<div>
+														<h3 className="font-heading text-sm font-extrabold text-black uppercase tracking-wider">
+															Meetday AI Companion
+														</h3>
+														<p className="text-xs font-bold text-purple-700">
+															Generate structure and fields from your description
+														</p>
+													</div>
+												</div>
+												<div className="flex flex-col gap-2">
+													<label className="text-sm font-bold text-black">
+														Describe your campaign
+													</label>
+													<textarea
+														value={campaignCopilotPrompt}
+														onChange={(e) => setCampaignCopilotPrompt(e.target.value)}
+														placeholder="e.g. We want to sample our new energy drink at rooftop networking meetups for young professionals in Bangalore and Mumbai over the next quarter."
+														rows={3}
+														disabled={campaignCopilotLoading}
+														className="px-4 py-2.5 rounded-xl border-2 border-black/30 bg-white/80 text-black outline-none focus:border-black text-sm transition-colors resize-none disabled:opacity-50"
+													/>
+													<input
+														type="file"
+														accept=".pdf,.docx,.pptx"
+														ref={copilotDocInputRef}
+														onChange={handleCopilotDocPick}
+														className="hidden"
+													/>
+													{copilotDocFile ? (
+														<div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl border-2 border-black/20 bg-white/80">
+															<span className="text-xs font-bold text-black truncate">
+																{copilotDocUploading ? "Reading document..." : `\ud83d\udcce ${copilotDocFile.name}`}
+															</span>
+															<button
+																type="button"
+																onClick={handleRemoveCopilotDoc}
+																disabled={copilotDocUploading}
+																className="text-xs font-black text-black/50 hover:text-black shrink-0 disabled:opacity-50"
+															>
+																Remove
+															</button>
+														</div>
+													) : (
+														<button
+															type="button"
+															onClick={() => copilotDocInputRef.current?.click()}
+															disabled={campaignCopilotLoading}
+															className="self-start text-xs font-black text-purple-700 hover:text-[#EE2C2C] transition-colors disabled:opacity-50"
+														>
+															+ Upload a document (optional) — PDF, Word, or PowerPoint
+														</button>
+													)}
+													<div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between mt-1">
+														<p className="text-xs font-bold text-black/60">
+															{campaignCopilotPrompt.trim().length < 20
+																? "Write a bit more — at least 20 characters to continue."
+																: <span className="text-purple-700">Ready — click below when you&apos;re done writing.</span>}
+														</p>
+														<div className="flex items-center gap-2 self-end shrink-0">
+															<button
+																type="button"
+																onClick={() => setCampaignCopilotOpen(false)}
+																disabled={campaignCopilotLoading}
+																className="px-3 py-2 text-sm font-black text-black/60 hover:text-black transition-colors disabled:opacity-50"
+															>
+																Cancel
+															</button>
+															<button
+																type="button"
+																onClick={handleGenerateCampaignDraft}
+																disabled={campaignCopilotLoading || copilotDocUploading || campaignCopilotPrompt.trim().length < 20}
+																className="flex items-center gap-2 bg-black text-white text-sm font-black px-4 py-2.5 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#EE2C2C] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50 transition-all select-none"
+															>
+																<Icon as={MagicStickSvg} size="sm" color="inherit" />
+																Start Cooking
+															</button>
+														</div>
+													</div>
+												</div>
+											</div>
+										)}
+									</div>
+								)}
+
 								{/* Campaign Name */}
 								<div className="flex flex-col gap-1.5">
 									<label className="text-xs font-bold text-black">Campaign Name *</label>
