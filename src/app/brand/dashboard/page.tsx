@@ -15,10 +15,12 @@ import {
 	getMySponsorshipChats,
 	getSponsorshipDeal,
 	getSponsorshipDealReport,
+	getMyCampaigns,
 	type PublishedSponsorshipProposal,
 	type BrandCommunity,
 	type SponsorshipDealBillingRow,
 	type SponsorshipDeal,
+	type Campaign,
 } from "@/lib/api"
 import clsx from "clsx"
 
@@ -45,6 +47,8 @@ export default function BrandDashboardWelcomePage() {
 	const [loadingProposals, setLoadingProposals] = useState(true)
 	const [loadingCommunities, setLoadingCommunities] = useState(true)
 	const [loadingLockedDeals, setLoadingLockedDeals] = useState(true)
+	const [campaigns, setCampaigns] = useState<Campaign[]>([])
+	const [loadingCampaigns, setLoadingCampaigns] = useState(true)
 
 	useEffect(() => {
 		setLoadingProposals(true)
@@ -100,6 +104,19 @@ export default function BrandDashboardWelcomePage() {
 			})
 			.finally(() => {
 				setLoadingLockedDeals(false)
+			})
+
+		setLoadingCampaigns(true)
+		getMyCampaigns()
+			.then((res) => {
+				const approved = (res || []).filter((c) => c.status === "PUBLISHED")
+				setCampaigns(approved)
+			})
+			.catch((err) => {
+				console.error("Failed to fetch campaigns for dashboard", err)
+			})
+			.finally(() => {
+				setLoadingCampaigns(false)
 			})
 	}, [])
 
@@ -189,6 +206,60 @@ export default function BrandDashboardWelcomePage() {
 
 				{/* Overview Section */}
 				<div className="flex flex-col gap-10 pb-8">
+					{/* Row 0: Approved Campaigns */}
+					{campaigns.length > 0 && (
+						<div className="flex flex-col w-full">
+							<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
+								<div>
+									<h2 className="text-xl font-heading font-black text-black">My Active Campaigns</h2>
+									<p className="text-xs font-semibold text-black/50 mt-1">Your approved and running campaigns.</p>
+								</div>
+								<Link href="/brand/dashboard/campaigns" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+									Manage Campaigns &gt;
+								</Link>
+							</div>
+
+							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
+								{campaigns.map((c) => {
+									const displayDates = `${new Date(c.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} - ${new Date(c.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
+									return (
+										<Link
+											key={c.id}
+											href={`/brand/dashboard/campaigns?campaignId=${c.id}`}
+											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all p-4 w-[320px] shrink-0 flex flex-col justify-between"
+										>
+											<div className="flex flex-col gap-1 min-w-0">
+												<div className="flex items-center justify-between gap-2">
+													<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">
+														{c.name}
+													</h3>
+													<span className="text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-green-400 text-black shrink-0">
+														Active
+													</span>
+												</div>
+												<p className="text-[11px] font-bold text-black/50">
+													Goal: {c.goal}
+												</p>
+												<p className="text-[11px] font-semibold text-black/70 mt-1 line-clamp-2 leading-relaxed">
+													{c.description || "No description provided."}
+												</p>
+											</div>
+
+											<div className="flex justify-between items-center mt-4 pt-3 border-t-2 border-black/5">
+												<span className="text-[10px] font-black bg-[#6C32D1] text-white px-2 py-0.5 border border-black rounded-full shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+													{displayDates}
+												</span>
+												<span className="text-xs font-black text-[#EE2C2C]">
+													{c.budgetCurrency} {Number(c.budgetAmount).toLocaleString()}
+												</span>
+											</div>
+										</Link>
+									)
+								})}
+							</div>
+						</div>
+					)}
+
 					{/* Row 1: Proposals */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">

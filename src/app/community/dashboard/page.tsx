@@ -172,30 +172,24 @@ export default function DashboardWelcomePage() {
 						</Link>
 					</div>
 
-					{/* CTA 2: Community Profile */}
+					{/* CTA 2: Explore Campaigns */}
 					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
 						<div className="flex items-center justify-between w-full mb-4">
 							<h2 className="text-lg font-heading font-black text-black">
-								Community Profile
+								Explore Campaigns
 							</h2>
-							<span className={`text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse ${
-								loadingCommunity 
-									? "bg-[#6C32D1] text-white" 
-									: hasCommunityProfile 
-										? "bg-green-500 text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]" 
-										: "bg-[#EE2C2C] text-white border border-black"
-							}`}>
-								{loadingCommunity ? "LOADING" : hasCommunityProfile ? "ACTIVE" : "INCOMPLETE"}
+							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
+								ACTIVE
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
-							Update your public profile, past event highlights, and key achievements to stand out to brand partners.
+							Browse active marketing and sponsorship campaign briefs posted by brands, review requirements, and contact them to collaborate.
 						</p>
 						<Link
-							href="/community/dashboard/profile?open=community"
+							href="/community/dashboard/campaigns"
 							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
 						>
-							MANAGE PROFILE
+							EXPLORE CAMPAIGNS
 							<span className="text-base font-bold">➔</span>
 						</Link>
 					</div>

@@ -18,6 +18,7 @@ import HeadphonesSvg from "@/icons/filled/headphones.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import BellSvg from "@/icons/outlined/bell.svg"
+import RocketSvg from "@/icons/outlined/rocket.svg"
 import ChatOutSvg from "@/icons/outlined/chat.svg"
 import ChatFillSvg from "@/icons/filled/chat.svg"
 import DollarSvg from "@/icons/outlined/dollar.svg"
@@ -28,7 +29,7 @@ type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon
 
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
-	{ label: "Campaigns", href: "/brand/dashboard/campaigns", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "My Campaigns", href: "/brand/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
 	{ label: "Proposals", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
 ]

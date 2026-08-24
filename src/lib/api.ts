@@ -2718,6 +2718,15 @@ export type Campaign = {
 	adminRejectionRemark?: string | null
 	createdAt: string
 	updatedAt: string
+	brandProfile?: {
+		id: string
+		brandName: string
+		user: {
+			firstName: string
+			lastName: string
+			email: string
+		}
+	}
 }
 
 export async function createCampaign(payload: CampaignPayload = {}): Promise<Campaign> {
@@ -2742,6 +2751,16 @@ export async function updateCampaign(id: string, payload: CampaignPayload): Prom
 
 export async function deleteCampaign(id: string): Promise<void> {
 	await apiClient.delete(`/campaigns/${id}`)
+}
+
+export async function getPublishedCampaigns(): Promise<Campaign[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: Campaign[] }>("/campaigns/published")
+	return data.data
+}
+
+export async function getPublishedCampaignDetail(id: string): Promise<Campaign> {
+	const { data } = await apiClient.get<{ success: boolean; data: Campaign }>(`/campaigns/published/${id}`)
+	return data.data
 }
 
 

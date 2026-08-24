@@ -52,6 +52,14 @@ export default function CampaignsPage() {
 	const searchParams = useSearchParams()
 	const urlCampaignId = searchParams ? searchParams.get("campaignId") : null
 
+	const todayStr = useMemo(() => {
+		const today = new Date()
+		const yyyy = today.getFullYear()
+		const mm = String(today.getMonth() + 1).padStart(2, "0")
+		const dd = String(today.getDate()).padStart(2, "0")
+		return `${yyyy}-${mm}-${dd}`
+	}, [])
+
 	const [campaigns, setCampaigns] = useState<Campaign[]>([])
 	const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
 	
@@ -486,6 +494,7 @@ export default function CampaignsPage() {
 										<input
 											type="date"
 											required
+											min={todayStr}
 											value={startDate}
 											onChange={(e) => setStartDate(e.target.value)}
 											className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
