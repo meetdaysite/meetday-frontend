@@ -254,7 +254,7 @@ export default function CampaignsPage() {
 				: trimmed
 			const draft = await generateCampaignDraft(combinedPrompt)
 			setName(draft.name)
-			setGoal(GOAL_OPTIONS.includes(draft.goal) ? draft.goal : GOAL_OPTIONS[0])
+			setGoals([GOAL_OPTIONS.includes(draft.goal) ? draft.goal : GOAL_OPTIONS[0]])
 			setLocations(draft.locations)
 			const knownAudience = draft.audience.filter(a => AUDIENCE_OPTIONS.includes(a))
 			const customAud = draft.audience.find(a => !AUDIENCE_OPTIONS.includes(a))
