@@ -18,6 +18,7 @@ import HeadphonesSvg from "@/icons/filled/headphones.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import BellSvg from "@/icons/outlined/bell.svg"
+import RocketSvg from "@/icons/outlined/rocket.svg"
 import ChatOutSvg from "@/icons/outlined/chat.svg"
 import ChatFillSvg from "@/icons/filled/chat.svg"
 import DollarSvg from "@/icons/outlined/dollar.svg"
@@ -28,6 +29,7 @@ type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon
 
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
+	{ label: "My Campaigns", href: "/brand/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
 	{ label: "Proposals", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
 ]
@@ -78,26 +80,45 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 		if (!profile?.id) return
 
 		const updateCount = () => {
-			getMySponsorshipChats()
-				.then(chats => {
-					if (Array.isArray(chats)) {
-						const count = chats.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
-						const supportUnread = notifications.filter(n => 
-							!n.isRead && 
-							n.title === "Meetday" && 
-							!n.metadata?.threadId && 
-							!n.metadata?.thread_id && 
-							!n.metadata?.interestId && 
-							!n.metadata?.interest_id && 
-							!n.metadata?.chatId && 
-							!n.metadata?.chat_id && 
-							!n.metadata?.sponsorshipInterestId
-						).length
-						setUnreadChatsCount(count)
-						setUnreadSupportCount(supportUnread)
-					}
-				})
-				.catch(() => {})
+			Promise.all([
+				getMySponsorshipChats("ACCEPTED", "BRAND").catch(() => []),
+				getMySponsorshipChats("REQUESTED", "BRAND").catch(() => []),
+			]).then(([accepted, requested]) => {
+				const all = [...accepted, ...requested]
+				const threadCount = all.reduce((sum, t) => {
+					const notifCount = notifications.filter(n => {
+						if (n.isRead) return false
+						const m = n.metadata || {}
+						const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+						return tId === t.id
+					}).length
+					return sum + Math.max(t.unreadCount || 0, notifCount)
+				}, 0)
+
+				const standaloneChatNotifs = notifications.filter(n => {
+					if (n.isRead) return false
+					const m = n.metadata || {}
+					const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+					if (tId && all.some(t => t.id === tId)) return false
+					const isChatType = n.type === "chat_message" || n.type === "sponsorship_chat_message" || n.type === "sponsorship_chat_request" || n.type === "sponsorship_interest" || n.type === "host_interested_in_campaign" || n.type === "host_interest_confirmed"
+					return isChatType || !!tId
+				}).length
+
+				const supportUnread = notifications.filter(n => 
+					!n.isRead && 
+					n.title === "Meetday" && 
+					!n.metadata?.threadId && 
+					!n.metadata?.thread_id && 
+					!n.metadata?.interestId && 
+					!n.metadata?.interest_id && 
+					!n.metadata?.chatId && 
+					!n.metadata?.chat_id && 
+					!n.metadata?.sponsorshipInterestId
+				).length
+
+				setUnreadChatsCount(threadCount + standaloneChatNotifs)
+				setUnreadSupportCount(supportUnread)
+			}).catch(() => {})
 		}
 
 		updateCount()

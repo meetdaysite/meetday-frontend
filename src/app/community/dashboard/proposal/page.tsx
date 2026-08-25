@@ -1629,7 +1629,7 @@ export default function ProposalPage() {
                                                                 value={proposalCopilotPrompt}
                                                                 onChange={(e) => setProposalCopilotPrompt(e.target.value)}
                                                                 placeholder="e.g. We run a monthly rooftop networking meetup for startup founders in Bangalore, around 200 people attend each time."
-                                                                rows={3}
+                                                                rows={10}
                                                                 disabled={proposalCopilotLoading}
                                                                 className="px-4 py-2.5 rounded-xl border-2 border-black/30 bg-white/80 text-black outline-none focus:border-black text-sm transition-colors resize-none disabled:opacity-50"
                                                             />

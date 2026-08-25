@@ -100,9 +100,20 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 				) : (
 					messages.map(m => {
 						const isMine = m.senderType === "USER"
-						const senderLabel = isMine 
+						const isBot = m.senderType === "BOT"
+						const isSystemMessage = m.content?.startsWith("[System]")
+						if (isSystemMessage) {
+							return (
+								<div key={m.id} className="w-full flex justify-center my-1">
+									<span className="text-[11px] font-bold text-black/40 bg-neutral-100 px-3 py-1 rounded-full">
+										{m.content.replace(/^\[System\]\s*/, "")}
+									</span>
+								</div>
+							)
+						}
+						const senderLabel = isMine
 							? (role === "HOST" ? `${ownName} • Community` : `${ownName} • Brand`)
-							: "Meetday • Admin"
+							: isBot ? "Meetday • Bot" : "Meetday • Admin"
 						return (
 							<div key={m.id} className={clsx("flex flex-col max-w-[75%]", isMine ? "self-end items-end" : "self-start items-start")}>
 								<span className="text-[10px] font-black uppercase tracking-wide text-black/30 mb-0.5 px-1">
@@ -121,7 +132,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 									<div
 										className={clsx(
 											"px-3.5 py-2 rounded-2xl text-sm font-semibold break-words border border-black/10",
-											isMine ? (role === "BRAND" ? "bg-[#EE2C2C] text-white" : "bg-[#FFC940] text-black") : "bg-neutral-100 text-black",
+											isMine ? (role === "BRAND" ? "bg-[#EE2C2C] text-white" : "bg-[#FFC940] text-black") : isBot ? "bg-black text-white" : "bg-neutral-100 text-black",
 											isMine ? "rounded-br-sm" : "rounded-bl-sm",
 										)}
 									>

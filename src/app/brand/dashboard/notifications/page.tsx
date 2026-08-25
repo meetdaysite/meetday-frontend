@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import clsx from "clsx"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
@@ -11,11 +12,25 @@ import BellSvg from "@/icons/outlined/bell.svg"
 
 export default function NotificationsPage() {
 	const { notifications, isLoading, init, markRead, markAllRead } = useNotificationStore()
+	const router = useRouter()
 
 	useEffect(() => {
 		init()
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
+
+	const handleNotificationClick = (n: any) => {
+		if (!n.isRead) {
+			markRead(n.id)
+		}
+		const m = n.metadata || {}
+		const tId = m.sponsorshipInterestId || m.interestId || m.interest_id || m.chatId || m.chat_id
+		if (tId) {
+			router.push(`/brand/dashboard/chats?interestId=${tId}`)
+		} else if (m.proposalId || m.proposal_id) {
+			router.push(`/brand/dashboard/proposals`)
+		}
+	}
 
 	return (
 		<div className="flex flex-col flex-1 min-h-0 bg-white">
@@ -65,7 +80,7 @@ export default function NotificationsPage() {
 							{notifications.map((n) => (
 								<div
 									key={n.id}
-									onClick={() => !n.isRead && markRead(n.id)}
+									onClick={() => handleNotificationClick(n)}
 									className={clsx(
 										"flex items-start justify-between p-4 gap-4 transition-colors cursor-pointer",
 										n.isRead ? "bg-white hover:bg-slate-50" : "bg-[#6C32D1]/5 hover:bg-[#6C32D1]/10"

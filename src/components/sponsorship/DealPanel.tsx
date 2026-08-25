@@ -19,6 +19,7 @@ import {
 	upsertSponsorshipDealReport,
 	getSponsorshipProposalDetail,
 	getHostCommunityProfile,
+	getPublishedCampaignDetail,
 	// getCategories, // Sponsorship Category editing is commented out in the Lock the Deal form
 	sendSponsorshipChatMessage,
 	initiateSponsorshipDealPayment,
@@ -126,6 +127,7 @@ export function DealBanner({
 	onView,
 	onReport,
 	hasReport,
+	isCampaign = false,
 }: {
 	deal: SponsorshipDeal | null
 	role: "HOST" | "BRAND"
@@ -134,9 +136,12 @@ export function DealBanner({
 	onView: () => void
 	onReport?: () => void
 	hasReport?: boolean
+	isCampaign?: boolean
 }) {
+	const canLockOrEdit = isCampaign ? role === "BRAND" : role === "HOST"
+
 	if (!deal) {
-		if (role !== "HOST") return null
+		if (!canLockOrEdit) return null
 		return (
 			<div className="px-5 py-2.5 border-b-[3px] border-black bg-neutral-50 flex items-center justify-between gap-3 shrink-0">
 				<p className="text-xs font-bold text-black/50">Once terms are agreed, submit the final details here.</p>
@@ -162,7 +167,7 @@ export function DealBanner({
 			</div>
 			<div className="flex items-center gap-2 shrink-0">
 				<Button size="sm" variant="secondary" onClick={onView}>View Deal</Button>
-				{role === "HOST" && deal.status !== "APPROVED" && (
+				{canLockOrEdit && deal.status !== "APPROVED" && (
 					<Button size="sm" onClick={onEdit}>Edit Deal</Button>
 				)}
 				{deal.status === "APPROVED" && (
@@ -203,12 +208,14 @@ const EMPTY_FORM: SponsorshipDealPayload = {
 export function DealFormModal({
 	interestId,
 	proposalId,
+	campaignId,
 	deal,
 	onClose,
 	onSaved,
 }: {
 	interestId: string
 	proposalId?: string
+	campaignId?: string
 	deal: SponsorshipDeal | null
 	onClose: () => void
 	onSaved: (deal: SponsorshipDeal) => void
@@ -237,7 +244,9 @@ export function DealFormModal({
 	// }, [])
 
 	useEffect(() => {
-		if (proposalId && !deal) {
+		if (deal) return
+
+		if (proposalId) {
 			Promise.all([
 				getSponsorshipProposalDetail(proposalId).catch(() => null),
 				getHostCommunityProfile().catch(() => null),
@@ -257,8 +266,30 @@ export function DealFormModal({
 					}))
 				}
 			})
+		} else if (campaignId) {
+			console.log("[DealFormModal] Fetching campaign detail for campaignId:", campaignId)
+			Promise.all([
+				getPublishedCampaignDetail(campaignId).catch((err) => { console.error("[DealFormModal] getPublishedCampaignDetail failed:", err?.response?.status, err?.message); return null }),
+				getHostCommunityProfile().catch((err) => { console.error("[DealFormModal] getHostCommunityProfile failed:", err?.message); return null }),
+			]).then(([campaign, community]) => {
+				console.log("[DealFormModal] campaign:", campaign, "community:", community)
+				if (campaign) {
+					let resolvedCategory = ""
+					if (community?.categories?.length) {
+						resolvedCategory = community.categories.map((c: any) => c.name).join(", ")
+					}
+					setForm((f) => ({
+						...f,
+						projectName: campaign.name || "",
+						startDate: campaign.startDate ? campaign.startDate.slice(0, 10) : "",
+						endDate: campaign.endDate ? campaign.endDate.slice(0, 10) : "",
+						venue: campaign.locations?.length ? campaign.locations.join(", ") : "",
+						sponsorshipCategory: resolvedCategory,
+					}))
+				}
+			})
 		}
-	}, [proposalId, deal])
+	}, [proposalId, campaignId, deal])
 
 	// const formCategories = form.sponsorshipCategory ? form.sponsorshipCategory.split(", ").filter(Boolean) : []
 

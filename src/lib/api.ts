@@ -732,6 +732,16 @@ export async function markSponsorshipInterest(
 	return data.data
 }
 
+export async function markCampaignInterest(
+	id: string,
+): Promise<{ message: string; alreadyInterested: boolean; interestId?: string }> {
+	const { data } = await apiClient.post<{
+		success: boolean
+		data: { message: string; alreadyInterested: boolean; interestId?: string }
+	}>(`/campaigns/published/${id}/interest`)
+	return data.data
+}
+
 // ─── TriChat: Host ↔ Brand (+ Admin) chat tied to a sponsorship interest ────────
 
 export type SponsorshipChatStatus = "REQUESTED" | "ACCEPTED"
@@ -739,8 +749,8 @@ export type ChatSenderType = "HOST" | "BRAND" | "ADMIN"
 
 export type SponsorshipChatThread = {
 	id: string
-	proposalId: string
-	proposalName: string
+	proposalId?: string | null
+	proposalName?: string | null
 	chatStatus: SponsorshipChatStatus
 	createdAt: string
 	chatAcceptedAt: string | null
@@ -749,6 +759,8 @@ export type SponsorshipChatThread = {
 	counterpartName: string
 	counterpartAvatarUrl?: string | null
 	unreadCount: number
+	sponsorshipProposalId?: string | null
+	campaignId?: string | null
 }
 
 export type SponsorshipChatReplyTo = {
@@ -775,10 +787,18 @@ export type SponsorshipChatMessage = {
 	replyTo?: SponsorshipChatReplyTo | null
 }
 
-export async function getMySponsorshipChats(status?: SponsorshipChatStatus): Promise<SponsorshipChatThread[]> {
+export async function getMySponsorshipChats(
+	status?: SponsorshipChatStatus,
+	role?: "HOST" | "BRAND",
+): Promise<SponsorshipChatThread[]> {
 	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipChatThread[] }>(
 		"/sponsorships/chats",
-		{ params: status ? { status } : undefined },
+		{
+			params: {
+				...(status && { status }),
+				...(role && { role }),
+			},
+		},
 	)
 	return data.data
 }
@@ -1026,8 +1046,8 @@ export async function getSponsorshipDealReportPdfUrl(interestId: string): Promis
 
 export type MeetdayChatMessage = {
 	id: string
-	senderType: "USER" | "ADMIN"
-	senderId: string
+	senderType: "USER" | "ADMIN" | "BOT"
+	senderId: string | null
 	content: string
 	mediaUrl?: string | null
 	createdAt: string
@@ -2184,6 +2204,40 @@ export async function extractProposalCopilotDocument(file: File): Promise<string
 	return data.data.text
 }
 
+// ─── AI Copilot — campaigns ────────────────────────────────────────────────────
+
+export type CampaignCopilotDraft = {
+	name: string
+	goal: string
+	locations: string[]
+	audience: string[]
+	offer_type: "CASH" | "BARTER" | "BOTH"
+	budget_amount: number
+	budget_currency: string
+	barter_elements: string | null
+	description: string | null
+	confidence_score: number
+	ai_suggestions_used: string[]
+}
+
+export async function generateCampaignDraft(prompt: string): Promise<CampaignCopilotDraft> {
+	const { data } = await apiClient.post<{ success: boolean; data: CampaignCopilotDraft }>(
+		"/campaigns/copilot/generate-draft",
+		{ prompt },
+	)
+	return data.data
+}
+
+export async function extractCampaignCopilotDocument(file: File): Promise<string> {
+	const formData = new FormData()
+	formData.append("file", file)
+	const { data } = await apiClient.post<{ success: boolean; data: { text: string } }>(
+		"/campaigns/copilot/extract-document",
+		formData,
+		{ headers: { "Content-Type": "multipart/form-data" } },
+	)
+	return data.data.text
+}
 // ─── Host communities â€“ overview ─────────────────────────────────────────────
 
 export type HostCommunityOverviewCommunity = {
@@ -2680,5 +2734,89 @@ export async function getHostBrowseCommunities(
 	)
 	return data.data
 }
+
+// ─── Brand Campaigns ──────────────────────────────────────────────────────────
+
+export type CampaignStatus = "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED"
+
+export type CampaignPayload = {
+	name?: string
+	goal?: string
+	locations?: string[]
+	audience?: string[]
+	startDate?: string
+	endDate?: string
+	offerType?: string // "CASH" | "BARTER" | "BOTH"
+	budgetAmount?: number
+	budgetCurrency?: string
+	barterElements?: string
+	description?: string
+	status?: CampaignStatus
+}
+
+export type Campaign = {
+	id: string
+	brandProfileId: string
+	name: string
+	goal: string
+	locations: string[]
+	audience: string[]
+	startDate: string
+	endDate: string
+	offerType: string
+	budgetAmount: number
+	budgetCurrency: string
+	barterElements: string | null
+	description: string | null
+	status: CampaignStatus
+	adminRejectionRemark?: string | null
+	createdAt: string
+	updatedAt: string
+	brandProfile?: {
+		id: string
+		brandName: string
+		logoUrl?: string | null
+		user: {
+			firstName: string
+			lastName: string
+			email: string
+		}
+	}
+}
+
+export async function createCampaign(payload: CampaignPayload = {}): Promise<Campaign> {
+	const { data } = await apiClient.post<{ success: boolean; data: Campaign }>("/campaigns", payload)
+	return data.data
+}
+
+export async function getMyCampaigns(): Promise<Campaign[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: Campaign[] }>("/campaigns")
+	return data.data
+}
+
+export async function getCampaignDetail(id: string): Promise<Campaign> {
+	const { data } = await apiClient.get<{ success: boolean; data: Campaign }>(`/campaigns/${id}`)
+	return data.data
+}
+
+export async function updateCampaign(id: string, payload: CampaignPayload): Promise<Campaign> {
+	const { data } = await apiClient.patch<{ success: boolean; data: Campaign }>(`/campaigns/${id}`, payload)
+	return data.data
+}
+
+export async function deleteCampaign(id: string): Promise<void> {
+	await apiClient.delete(`/campaigns/${id}`)
+}
+
+export async function getPublishedCampaigns(): Promise<Campaign[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: Campaign[] }>("/campaigns/published")
+	return data.data
+}
+
+export async function getPublishedCampaignDetail(id: string): Promise<Campaign> {
+	const { data } = await apiClient.get<{ success: boolean; data: Campaign }>(`/campaigns/published/${id}`)
+	return data.data
+}
+
 
 

@@ -15,10 +15,12 @@ import {
 	getMySponsorshipChats,
 	getSponsorshipDeal,
 	getSponsorshipDealReport,
+	getMyCampaigns,
 	type PublishedSponsorshipProposal,
 	type BrandCommunity,
 	type SponsorshipDealBillingRow,
 	type SponsorshipDeal,
+	type Campaign,
 } from "@/lib/api"
 import clsx from "clsx"
 
@@ -45,6 +47,8 @@ export default function BrandDashboardWelcomePage() {
 	const [loadingProposals, setLoadingProposals] = useState(true)
 	const [loadingCommunities, setLoadingCommunities] = useState(true)
 	const [loadingLockedDeals, setLoadingLockedDeals] = useState(true)
+	const [campaigns, setCampaigns] = useState<Campaign[]>([])
+	const [loadingCampaigns, setLoadingCampaigns] = useState(true)
 
 	useEffect(() => {
 		setLoadingProposals(true)
@@ -101,6 +105,19 @@ export default function BrandDashboardWelcomePage() {
 			.finally(() => {
 				setLoadingLockedDeals(false)
 			})
+
+		setLoadingCampaigns(true)
+		getMyCampaigns()
+			.then((res) => {
+				const approved = (res || []).filter((c) => c.status === "PUBLISHED")
+				setCampaigns(approved)
+			})
+			.catch((err) => {
+				console.error("Failed to fetch campaigns for dashboard", err)
+			})
+			.finally(() => {
+				setLoadingCampaigns(false)
+			})
 	}, [])
 
 	return (
@@ -151,23 +168,21 @@ export default function BrandDashboardWelcomePage() {
 					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
 						<div className="flex items-center justify-between w-full mb-4">
 							<h2 className="text-lg font-heading font-black text-black">
-								Create a Campaign
+								Launch a Campaign
 							</h2>
-							<span className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
-								COMING SOON
+							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
+								LIVE
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
-							Post a sponsorship brief detailing your requirements for offline marketing and invite communities to apply.
+							Share your offline marketing requirements with active communities and get matched instantly.
 						</p>
-						<button
-							type="button"
-							onClick={() => toast.info("Creating campaigns is coming soon — stay tuned!")}
-							className="w-full py-3 bg-black/10 text-black/40 border-[3px] border-black/20 rounded-2xl font-black text-center text-xs tracking-wider cursor-not-allowed flex items-center justify-center gap-2 select-none"
+						<Link
+							href="/brand/dashboard/campaigns"
+							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
 						>
-							CREATE BRIEF
-							<span className="text-base font-bold">➔</span>
-						</button>
+							POST A BRIEF →
+						</Link>
 					</div>
 				</div>
 
@@ -190,6 +205,81 @@ export default function BrandDashboardWelcomePage() {
 
 				{/* Overview Section */}
 				<div className="flex flex-col gap-10 pb-8">
+					{/* Row 0: Approved Campaigns */}
+					{campaigns.length > 0 && (
+						<div className="flex flex-col w-full">
+							<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
+								<div>
+									<h2 className="text-xl font-heading font-black text-black">My Active Campaigns</h2>
+									<p className="text-xs font-semibold text-black/50 mt-1">Your approved and running campaigns.</p>
+								</div>
+								<Link href="/brand/dashboard/campaigns" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+									Manage Campaigns &gt;
+								</Link>
+							</div>
+
+							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
+								{campaigns.map((c) => {
+									const displayDates = `${new Date(c.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} - ${new Date(c.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
+									return (
+										<Link
+											key={c.id}
+											href={`/brand/dashboard/campaigns?campaignId=${c.id}`}
+											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-[380px] max-w-[85vw] shrink-0"
+										>
+											{/* Image / Logo */}
+											<div className="relative w-[120px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
+												{profile?.logoUrl ? (
+													// eslint-disable-next-line @next/next/no-img-element
+													<img
+														src={profile.logoUrl}
+														alt={c.name}
+														className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
+													/>
+												) : (
+													<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
+														{profile?.brandName ? profile.brandName.substring(0, 2).toUpperCase() : "MD"}
+													</div>
+												)}
+
+												{/* Offer Type Badge */}
+												<span className="absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black">
+													{c.offerType}
+												</span>
+											</div>
+
+											{/* Content & Footer info */}
+											<div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+												<div className="flex flex-col gap-1">
+													<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors leading-snug">
+														{c.name}
+													</h3>
+													<p className="text-[11px] font-bold text-black/50 truncate">
+														Goal: {c.goal}
+													</p>
+													{c.description && (
+														<p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">
+															{c.description}
+														</p>
+													)}
+												</div>
+
+												<div className="flex flex-wrap gap-1.5 mt-2">
+													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+														{displayDates}
+													</span>
+													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+														{c.offerType === "BARTER" ? "BARTER" : `${c.budgetCurrency} ${Number(c.budgetAmount).toLocaleString()}`}
+													</span>
+												</div>
+											</div>
+										</Link>
+									)
+								})}
+							</div>
+						</div>
+					)}
+
 					{/* Row 1: Proposals */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">

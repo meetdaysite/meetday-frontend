@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback, Fragment } from "react"
+import { useEffect, useRef, useState, useCallback, useMemo, Fragment } from "react"
 import { useSearchParams } from "next/navigation"
 import clsx from "clsx"
 import { toast } from "sonner"
@@ -14,13 +14,14 @@ import {
 	sendSponsorshipChatMessage,
 	editSponsorshipChatMessage,
 	deleteSponsorshipChatMessage,
+	acceptSponsorshipChatRequest,
 	getSponsorshipDeal,
 	getSponsorshipDealReport,
 	type SponsorshipChatThread,
 	type SponsorshipChatMessage,
 	type SponsorshipDeal,
 } from "@/lib/api"
-import { DealBanner, DealDetailsModal, DealReportModal } from "@/components/sponsorship/DealPanel"
+import { DealBanner, DealFormModal, DealDetailsModal, DealReportModal } from "@/components/sponsorship/DealPanel"
 import { MeetdayChatPanel } from "@/components/support/MeetdayChatPanel"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
@@ -47,6 +48,7 @@ export default function BrandChatsPage() {
 	const { profile } = useBrandStore()
 	const ownName = profile?.brandName || "You"
 	const [tab, setTab] = useState<Tab>("ACCEPTED")
+	const [dealType, setDealType] = useState<"SPONSORSHIP" | "CAMPAIGN">("SPONSORSHIP")
 	const [requestedThreads, setRequestedThreads] = useState<SponsorshipChatThread[]>([])
 	const [acceptedThreads, setAcceptedThreads] = useState<SponsorshipChatThread[]>([])
 	const [loadingThreads, setLoadingThreads] = useState(true)
@@ -61,7 +63,16 @@ export default function BrandChatsPage() {
 		}
 	}, [searchParams])
 
-	const threads = tab === "ACCEPTED" ? acceptedThreads : requestedThreads
+	const threads = useMemo(() => {
+		const baseList = tab === "ACCEPTED" ? acceptedThreads : requestedThreads
+		return baseList.filter(t => {
+			if (dealType === "SPONSORSHIP") {
+				return !t.campaignId
+			} else {
+				return !!t.campaignId
+			}
+		})
+	}, [tab, acceptedThreads, requestedThreads, dealType])
 
 	const getThreadUnreadCount = useCallback((threadId: string) => {
 		return notifications.filter(n => {
@@ -88,8 +99,8 @@ export default function BrandChatsPage() {
 		const seq = ++loadThreadsSeq.current
 		try {
 			const [requestedData, acceptedData] = await Promise.all([
-				getMySponsorshipChats("REQUESTED").catch(() => []),
-				getMySponsorshipChats("ACCEPTED").catch(() => []),
+				getMySponsorshipChats("REQUESTED", "BRAND").catch(() => []),
+				getMySponsorshipChats("ACCEPTED", "BRAND").catch(() => []),
 			])
 			// A newer loadThreads() call already resolved and updated state — discard this
 			// stale response instead of letting it overwrite fresher data (was causing threads
@@ -97,14 +108,14 @@ export default function BrandChatsPage() {
 			if (seq !== loadThreadsSeq.current) return
 
 			const sortedRequested = [...requestedData].sort((a, b) => {
-				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
-				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0)
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0)
 				return tB - tA
 			})
 
 			const sortedAccepted = [...acceptedData].sort((a, b) => {
-				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
-				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0)
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0)
 				return tB - tA
 			})
 
@@ -158,11 +169,42 @@ export default function BrandChatsPage() {
 		setLoadingThreads(true)
 	}
 
+	async function handleAccept(threadId: string) {
+		try {
+			await acceptSponsorshipChatRequest(threadId)
+			toast.success("Request accepted!")
+			loadThreads()
+		} catch (err) {
+			console.error(err)
+			toast.error("Failed to accept request.")
+		}
+	}
+
 	const selectedThread = threads.find(t => t.id === selectedId) ?? null
 
 	const unreadAcceptedCount = acceptedThreads.reduce((sum, t) => {
 		return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
 	}, 0)
+
+	const unreadRequestedCount = requestedThreads.reduce((sum, t) => {
+		return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
+	}, 0)
+
+	const sponsorshipUnreadCount = useMemo(() => {
+		const all = [...acceptedThreads, ...requestedThreads]
+		return all.reduce((sum, t) => {
+			if (t.campaignId) return sum
+			return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
+		}, 0)
+	}, [acceptedThreads, requestedThreads, selectedId, getThreadUnreadCount])
+
+	const campaignUnreadCount = useMemo(() => {
+		const all = [...acceptedThreads, ...requestedThreads]
+		return all.reduce((sum, t) => {
+			if (!t.campaignId) return sum
+			return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
+		}, 0)
+	}, [acceptedThreads, requestedThreads, selectedId, getThreadUnreadCount])
 
 	return (
 		<div className="flex flex-col flex-1 min-h-0 bg-white">
@@ -181,9 +223,39 @@ export default function BrandChatsPage() {
 				<div className="h-[calc(100vh-240px)] border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row bg-white">
 					{/* Thread list */}
 					<div className="w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col">
-						<div className="flex border-b-[3px] border-black">
+						{/* Sponsorship vs Campaign deals Tab selectors */}
+						<div className="flex border-b-[3px] border-black bg-neutral-50 divide-x-[3px] divide-black shrink-0">
+							{(["SPONSORSHIP", "CAMPAIGN"] as const).map(dt => {
+								const tabUnread = dt === "SPONSORSHIP" ? sponsorshipUnreadCount : campaignUnreadCount
+								return (
+									<button
+										key={dt}
+										onClick={() => {
+											setDealType(dt)
+											setSelectedId(null)
+										}}
+										className={clsx(
+											"flex-grow py-2 text-[10px] font-black uppercase tracking-wider text-center transition-colors select-none flex items-center justify-center gap-1.5",
+											dealType === dt ? "bg-black text-[#FFC940]" : "bg-white text-black/50 hover:bg-neutral-100"
+										)}
+									>
+										<span>{dt === "SPONSORSHIP" ? "Sponsorships" : "Campaigns"}</span>
+										{tabUnread > 0 && (
+											<span className={clsx(
+												"min-w-[14px] h-[14px] px-1 rounded-full text-[8px] font-black flex items-center justify-center border border-transparent",
+												dealType === dt ? "bg-[#FFC940] text-black" : "bg-[#EE2C2C] text-white"
+											)}>
+												{tabUnread}
+											</span>
+										)}
+									</button>
+								)
+							})}
+						</div>
+
+						<div className="flex border-b-[3px] border-black shrink-0">
 							{(["ACCEPTED", "REQUESTED"] as Tab[]).map(t => {
-								const count = t === "ACCEPTED" ? unreadAcceptedCount : 0
+								const count = t === "ACCEPTED" ? unreadAcceptedCount : unreadRequestedCount
 								return (
 									<button
 										key={t}
@@ -193,7 +265,7 @@ export default function BrandChatsPage() {
 											tab === t ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
 										)}
 									>
-										<span>{t === "REQUESTED" ? "Sent Requests" : "Accepted"}</span>
+										<span>{t === "REQUESTED" ? (dealType === "SPONSORSHIP" ? "Sent Requests" : "Requests") : "Accepted"}</span>
 										{count > 0 && (
 											<span className={clsx(
 												"min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-black flex items-center justify-center border",
@@ -254,9 +326,15 @@ export default function BrandChatsPage() {
 											<div className="flex items-center justify-between gap-2 mt-0.5">
 												<p className="text-[11px] font-semibold text-black/50 truncate">{t.proposalName}</p>
 											</div>
-											<p className={clsx("text-[11px] font-bold mt-1", t.chatStatus === "REQUESTED" ? "text-black/40" : "text-black/40")}>
-												{t.chatStatus === "REQUESTED" ? "Waiting for acceptance…" : (t.lastMessagePreview ?? "Chat open")}
-											</p>
+											{t.chatStatus === "REQUESTED" ? (
+												<p className={clsx("text-[11px] mt-1", t.campaignId ? "font-bold text-[#EE2C2C]" : "font-semibold text-black/40")}>
+													{t.campaignId ? "This community is interested in your campaign" : "Waiting for acceptance…"}
+												</p>
+											) : (
+												<p className="text-[11px] font-semibold text-black/40 truncate mt-1">
+													{t.lastMessagePreview ?? "Chat open"}
+												</p>
+											)}
 										</div>
 									</button>
 								);
@@ -272,7 +350,7 @@ export default function BrandChatsPage() {
 								Select a chat to view
 							</div>
 						) : (
-							<BrandChatThreadPanel key={selectedThread.id} thread={selectedThread} />
+							<BrandChatThreadPanel key={selectedThread.id} thread={selectedThread} onAccept={handleAccept} />
 						)}
 					</div>
 				</div>
@@ -281,7 +359,7 @@ export default function BrandChatsPage() {
 	)
 }
 
-function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
+function BrandChatThreadPanel({ thread, onAccept }: { thread: SponsorshipChatThread; onAccept: (id: string) => void }) {
 	const { profile } = useBrandStore()
 	const ownName = profile?.brandName || "You"
 	const [messages, setMessages] = useState<SponsorshipChatMessage[]>([])
@@ -293,6 +371,7 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	const [report, setReport] = useState<any>(null)
 	const [showDealModal, setShowDealModal] = useState(false)
 	const [showReportModal, setShowReportModal] = useState(false)
+	const [showFormModal, setShowFormModal] = useState(false)
 	const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
 	const [replyingTo, setReplyingTo] = useState<SponsorshipChatMessage | null>(null)
 	const [unreadDivider, setUnreadDivider] = useState<{ messageId: string; count: number } | null>(null)
@@ -470,39 +549,66 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 	return (
 		<div className="flex-1 min-h-0 flex flex-col relative">
 			<canvas id="chat-confetti-canvas" className="pointer-events-none absolute inset-0 w-full h-full z-30" />
-			<div className="px-5 py-3 border-b-[3px] border-black flex items-center gap-3 shrink-0">
-				<div className="w-8 h-8 rounded-full border border-black/15 overflow-hidden shrink-0 relative bg-neutral-100 flex items-center justify-center">
-					{thread.counterpartAvatarUrl ? (
-						<img
-							src={thread.counterpartAvatarUrl}
-							alt={thread.counterpartName}
-							className="w-full h-full object-cover"
-						/>
-					) : (
-						<span className="font-heading font-black text-xs text-black/60">
-							{thread.counterpartName.charAt(0).toUpperCase()}
-						</span>
-					)}
+			<div className="px-5 py-3 border-b-[3px] border-black flex items-center justify-between shrink-0">
+				<div className="flex items-center gap-3 min-w-0">
+					<div className="w-8 h-8 rounded-full border border-black/15 overflow-hidden shrink-0 relative bg-neutral-100 flex items-center justify-center">
+						{thread.counterpartAvatarUrl ? (
+							<img
+								src={thread.counterpartAvatarUrl}
+								alt={thread.counterpartName}
+								className="w-full h-full object-cover"
+							/>
+						) : (
+							<span className="font-heading font-black text-xs text-black/60">
+								{thread.counterpartName.charAt(0).toUpperCase()}
+							</span>
+						)}
+					</div>
+					<div className="min-w-0">
+						<p className="text-sm font-black text-black truncate">{thread.counterpartName}</p>
+						<p className="text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
+					</div>
 				</div>
-				<div className="min-w-0">
-					<p className="text-sm font-black text-black truncate">{thread.counterpartName}</p>
-					<p className="text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
-				</div>
+				{thread.chatStatus === "REQUESTED" && !!thread.campaignId && (
+					<Button size="sm" onClick={() => onAccept(thread.id)}>
+						Accept
+					</Button>
+				)}
 			</div>
 
-			{thread.chatStatus === "ACCEPTED" && (
-				<DealBanner deal={deal} role="BRAND" onView={() => setShowDealModal(true)} onReport={() => setShowReportModal(true)} hasReport={!!report} />
+			{thread.chatStatus === "ACCEPTED" && !thread.campaignId && (
+				<DealBanner
+					deal={deal}
+					role="BRAND"
+					onLock={() => setShowFormModal(true)}
+					onEdit={() => setShowFormModal(true)}
+					onView={() => setShowDealModal(true)}
+					onReport={() => setShowReportModal(true)}
+					hasReport={!!report}
+					isCampaign={!!thread.campaignId}
+				/>
 			)}
 
 			<div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
 				{loading ? (
 					<p className="text-xs font-semibold text-black/40 text-center">Loading…</p>
 				) : thread.chatStatus === "REQUESTED" ? (
-					<div className="m-auto text-center max-w-xs">
-						<p className="text-sm font-black text-black">Request sent</p>
-						<p className="text-xs font-semibold text-black/50 mt-2">
-							Waiting for the community to accept your interest before you can chat.
-						</p>
+					<div className="m-auto text-center max-w-xs animate-in fade-in duration-200">
+						{thread.campaignId ? (
+							<>
+								<p className="text-sm font-black text-black">This community is interested in your campaign</p>
+								<p className="text-xs font-semibold text-black/50 mt-2">
+									Accept the request to open the chat and reply.
+								</p>
+							</>
+						) : (
+							<>
+								<p className="text-sm font-black text-black">Request sent</p>
+								<p className="text-xs font-semibold text-black/50 mt-2">
+									Waiting for the community to accept your interest before you can chat.
+								</p>
+							</>
+						)}
 					</div>
 				) : messages.length === 0 ? (
 					<p className="text-xs font-semibold text-black/40 text-center m-auto">No messages yet — say hi!</p>
@@ -674,6 +780,16 @@ function BrandChatThreadPanel({ thread }: { thread: SponsorshipChatThread }) {
 						</Button>
 					</div>
 				</div>
+			)}
+
+			{showFormModal && (
+				<DealFormModal
+					interestId={thread.id}
+					proposalId={thread.proposalId ?? undefined}
+					deal={deal}
+					onClose={() => setShowFormModal(false)}
+					onSaved={setDeal}
+				/>
 			)}
 
 			{showDealModal && deal && (

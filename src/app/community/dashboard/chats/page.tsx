@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback, Fragment } from "react"
+import { useEffect, useRef, useState, useCallback, useMemo, Fragment } from "react"
 import { useSearchParams } from "next/navigation"
 import clsx from "clsx"
 import { toast } from "sonner"
@@ -49,6 +49,7 @@ export default function CommunityChatsPage() {
 	const { profile } = useHostStore()
 	const ownName = profile?.displayName || "You"
 	const [segment, setSegment] = useState<Segment>("ACCEPTED")
+	const [dealType, setDealType] = useState<"SPONSORSHIP" | "CAMPAIGN">("SPONSORSHIP")
 	const [acceptedThreads, setAcceptedThreads] = useState<SponsorshipChatThread[]>([])
 	const [requestedThreads, setRequestedThreads] = useState<SponsorshipChatThread[]>([])
 	const [loadingThreads, setLoadingThreads] = useState(true)
@@ -63,7 +64,16 @@ export default function CommunityChatsPage() {
 		}
 	}, [searchParams])
 
-	const threads = segment === "REQUESTED" ? requestedThreads : acceptedThreads
+	const threads = useMemo(() => {
+		const baseList = segment === "REQUESTED" ? requestedThreads : acceptedThreads
+		return baseList.filter(t => {
+			if (dealType === "SPONSORSHIP") {
+				return !t.campaignId
+			} else {
+				return !!t.campaignId
+			}
+		})
+	}, [segment, acceptedThreads, requestedThreads, dealType])
 
 	const getThreadUnreadCount = useCallback((threadId: string) => {
 		return notifications.filter(n => {
@@ -90,8 +100,8 @@ export default function CommunityChatsPage() {
 		const seq = ++loadThreadsSeq.current
 		try {
 			const [acceptedData, requestedData] = await Promise.all([
-				getMySponsorshipChats("ACCEPTED").catch(() => []),
-				getMySponsorshipChats("REQUESTED").catch(() => []),
+				getMySponsorshipChats("ACCEPTED", "HOST").catch(() => []),
+				getMySponsorshipChats("REQUESTED", "HOST").catch(() => []),
 			])
 			// A newer loadThreads() call already resolved and updated state — discard this
 			// stale response instead of letting it overwrite fresher data (was causing threads
@@ -99,14 +109,14 @@ export default function CommunityChatsPage() {
 			if (seq !== loadThreadsSeq.current) return
 
 			const sortedAccepted = [...acceptedData].sort((a, b) => {
-				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
-				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0)
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0)
 				return tB - tA
 			})
 
 			const sortedRequested = [...requestedData].sort((a, b) => {
-				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
-				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0)
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0)
 				return tB - tA
 			})
 
@@ -176,6 +186,22 @@ export default function CommunityChatsPage() {
 		return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
 	}, 0)
 
+	const sponsorshipUnreadCount = useMemo(() => {
+		const all = [...acceptedThreads, ...requestedThreads]
+		return all.reduce((sum, t) => {
+			if (t.campaignId) return sum
+			return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
+		}, 0)
+	}, [acceptedThreads, requestedThreads, selectedId, getThreadUnreadCount])
+
+	const campaignUnreadCount = useMemo(() => {
+		const all = [...acceptedThreads, ...requestedThreads]
+		return all.reduce((sum, t) => {
+			if (!t.campaignId) return sum
+			return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
+		}, 0)
+	}, [acceptedThreads, requestedThreads, selectedId, getThreadUnreadCount])
+
 	async function handleAccept(interestId: string) {
 		try {
 			await acceptSponsorshipChatRequest(interestId)
@@ -205,7 +231,37 @@ export default function CommunityChatsPage() {
 				<div className="h-[calc(100vh-240px)] border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row bg-white">
 					{/* Thread list */}
 					<div className="w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col">
-						<div className="flex border-b-[3px] border-black">
+						{/* Sponsorship vs Campaign deals Tab selectors */}
+						<div className="flex border-b-[3px] border-black bg-neutral-50 divide-x-[3px] divide-black shrink-0">
+							{(["SPONSORSHIP", "CAMPAIGN"] as const).map(dt => {
+								const tabUnread = dt === "SPONSORSHIP" ? sponsorshipUnreadCount : campaignUnreadCount
+								return (
+									<button
+										key={dt}
+										onClick={() => {
+											setDealType(dt)
+											setSelectedId(null)
+										}}
+										className={clsx(
+											"flex-grow py-2 text-[10px] font-black uppercase tracking-wider text-center transition-colors select-none flex items-center justify-center gap-1.5",
+											dealType === dt ? "bg-black text-[#FFC940]" : "bg-white text-black/50 hover:bg-neutral-100"
+										)}
+									>
+										<span>{dt === "SPONSORSHIP" ? "Sponsorships" : "Campaigns"}</span>
+										{tabUnread > 0 && (
+											<span className={clsx(
+												"min-w-[14px] h-[14px] px-1 rounded-full text-[8px] font-black flex items-center justify-center border border-transparent",
+												dealType === dt ? "bg-[#FFC940] text-black" : "bg-[#EE2C2C] text-white"
+											)}>
+												{tabUnread}
+											</span>
+										)}
+									</button>
+								)
+							})}
+						</div>
+
+						<div className="flex border-b-[3px] border-black shrink-0">
 							{(["ACCEPTED", "REQUESTED"] as Segment[]).map(seg => {
 								const isReq = seg === "REQUESTED"
 								const count = isReq ? unreadRequestedCount : unreadAcceptedCount
@@ -218,7 +274,7 @@ export default function CommunityChatsPage() {
 											segment === seg ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50",
 										)}
 									>
-										<span>{seg === "REQUESTED" ? "Requests" : "General"}</span>
+										<span>{seg === "REQUESTED" ? (dealType === "SPONSORSHIP" ? "Requests" : "Sent Requests") : "Accepted"}</span>
 										{count > 0 && (
 											<span className={clsx(
 												"min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-black flex items-center justify-center border",
@@ -280,7 +336,11 @@ export default function CommunityChatsPage() {
 													<p className="text-[11px] font-semibold text-black/50 truncate">{t.proposalName}</p>
 												</div>
 											{segment === "REQUESTED" && (
-												<p className="text-[11px] font-bold text-[#EE2C2C] mt-1">This brand is interested in your proposal</p>
+												<p className="text-[11px] font-bold text-[#EE2C2C] mt-1">
+													{t.campaignId
+														? "You've shown interest to this campaign by this brand. Waiting for brand approval."
+														: "This brand is interested in your proposal"}
+												</p>
 											)}
 											{t.lastMessagePreview && segment === "ACCEPTED" && (
 												<p className="text-[11px] text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
@@ -539,14 +599,14 @@ function ChatThreadPanel({
 						<p className="text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
 					</div>
 				</div>
-				{thread.chatStatus === "REQUESTED" && (
+				{thread.chatStatus === "REQUESTED" && !thread.campaignId && (
 					<Button size="sm" onClick={() => onAccept(thread.id)}>
 						Accept
 					</Button>
 				)}
 			</div>
 
-			{thread.chatStatus === "ACCEPTED" && (
+			{thread.chatStatus === "ACCEPTED" && !thread.campaignId && (
 				<DealBanner
 					deal={deal}
 					role="HOST"
@@ -555,6 +615,7 @@ function ChatThreadPanel({
 					onView={() => setDealModal("details")}
 					onReport={() => setDealModal("report")}
 					hasReport={!!report}
+					isCampaign={!!thread.campaignId}
 				/>
 			)}
 
@@ -562,11 +623,22 @@ function ChatThreadPanel({
 				{loading ? (
 					<p className="text-xs font-semibold text-black/40 text-center">Loading…</p>
 				) : thread.chatStatus === "REQUESTED" ? (
-					<div className="m-auto text-center max-w-xs">
-						<p className="text-sm font-black text-black">This brand is interested in your proposal</p>
-						<p className="text-xs font-semibold text-black/50 mt-2">
-							Accept the request to open the chat and reply.
-						</p>
+					<div className="m-auto text-center max-w-xs animate-in fade-in duration-200">
+						{thread.campaignId ? (
+							<>
+								<p className="text-sm font-black text-black">Interest Expressed</p>
+								<p className="text-xs font-semibold text-black/50 mt-2">
+									You've shown interest to this campaign by this brand. Waiting for brand approval.
+								</p>
+							</>
+						) : (
+							<>
+								<p className="text-sm font-black text-black">This brand is interested in your proposal</p>
+								<p className="text-xs font-semibold text-black/50 mt-2">
+									Accept the request to open the chat and reply.
+								</p>
+							</>
+						)}
 					</div>
 				) : messages.length === 0 ? (
 					<p className="text-xs font-semibold text-black/40 text-center m-auto">No messages yet — say hi!</p>
@@ -743,7 +815,8 @@ function ChatThreadPanel({
 			{dealModal === "form" && (
 				<DealFormModal
 					interestId={thread.id}
-					proposalId={thread.proposalId}
+					proposalId={!thread.campaignId ? (thread.proposalId ?? undefined) : undefined}
+					campaignId={thread.campaignId ?? undefined}
 					deal={deal}
 					onClose={() => setDealModal(null)}
 					onSaved={setDeal}
