@@ -77,11 +77,43 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 
 		const updateCount = () => {
 			Promise.all([
-				getMySponsorshipChats("ACCEPTED").catch(err => { console.error("accepted error:", err); return [] }),
-				getMySponsorshipChats("REQUESTED").catch(err => { console.error("requested error:", err); return [] }),
+				getMySponsorshipChats("ACCEPTED", "HOST").catch(() => []),
+				getMySponsorshipChats("REQUESTED", "HOST").catch(() => []),
 			]).then(([accepted, requested]) => {
-				const count1 = accepted.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
-				const count2 = requested.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+				const allChats = [...accepted, ...requested]
+				const chatThreadIds = new Set(allChats.map(c => c.id))
+				
+				const chatCount = allChats.reduce((sum, t) => {
+					const notifCount = notifications.filter(n => {
+						if (n.isRead) return false
+						const m = n.metadata || {}
+						const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+						return tId === t.id
+					}).length
+					return sum + Math.max(t.unreadCount || 0, notifCount)
+				}, 0)
+
+				const requestNotifsCount = notifications.filter(n => {
+					if (n.isRead) return false
+					const type = (n.type || "").toLowerCase()
+					const title = (n.title || "").toLowerCase()
+					const isChatOrRequest = 
+						type.includes("chat") || 
+						type.includes("interest") || 
+						type.includes("campaign") || 
+						type.includes("proposal") ||
+						type.includes("sponsorship") ||
+						title.includes("interest") ||
+						title.includes("campaign") ||
+						title.includes("proposal") ||
+						title.includes("chat")
+					if (!isChatOrRequest) return false
+					const m = (n.metadata || {}) as Record<string, any>
+					const rawId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+					const tId = typeof rawId === "string" ? rawId : ""
+					return !tId || !chatThreadIds.has(tId)
+				}).length
+
 				const supportUnread = notifications.filter(n => 
 					!n.isRead && 
 					n.title === "Meetday" && 
@@ -93,9 +125,10 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 					!n.metadata?.chat_id && 
 					!n.metadata?.sponsorshipInterestId
 				).length
-				setUnreadChatsCount(count1 + count2)
+
+				setUnreadChatsCount(chatCount + requestNotifsCount)
 				setUnreadSupportCount(supportUnread)
-			}).catch(err => console.error("Promise.all error:", err))
+			}).catch(() => {})
 		}
 
 		updateCount()

@@ -80,26 +80,59 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 		if (!profile?.id) return
 
 		const updateCount = () => {
-			getMySponsorshipChats()
-				.then(chats => {
-					if (Array.isArray(chats)) {
-						const count = chats.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
-						const supportUnread = notifications.filter(n => 
-							!n.isRead && 
-							n.title === "Meetday" && 
-							!n.metadata?.threadId && 
-							!n.metadata?.thread_id && 
-							!n.metadata?.interestId && 
-							!n.metadata?.interest_id && 
-							!n.metadata?.chatId && 
-							!n.metadata?.chat_id && 
-							!n.metadata?.sponsorshipInterestId
-						).length
-						setUnreadChatsCount(count)
-						setUnreadSupportCount(supportUnread)
-					}
-				})
-				.catch(() => {})
+			Promise.all([
+				getMySponsorshipChats("ACCEPTED", "BRAND").catch(() => []),
+				getMySponsorshipChats("REQUESTED", "BRAND").catch(() => []),
+			]).then(([accepted, requested]) => {
+				const allChats = [...accepted, ...requested]
+				const chatThreadIds = new Set(allChats.map(c => c.id))
+				
+				const chatCount = allChats.reduce((sum, t) => {
+					const notifCount = notifications.filter(n => {
+						if (n.isRead) return false
+						const m = n.metadata || {}
+						const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+						return tId === t.id
+					}).length
+					return sum + Math.max(t.unreadCount || 0, notifCount)
+				}, 0)
+
+				const requestNotifsCount = notifications.filter(n => {
+					if (n.isRead) return false
+					const type = (n.type || "").toLowerCase()
+					const title = (n.title || "").toLowerCase()
+					const isChatOrRequest = 
+						type.includes("chat") || 
+						type.includes("interest") || 
+						type.includes("campaign") || 
+						type.includes("proposal") ||
+						type.includes("sponsorship") ||
+						title.includes("interest") ||
+						title.includes("campaign") ||
+						title.includes("proposal") ||
+						title.includes("chat")
+					if (!isChatOrRequest) return false
+					const m = (n.metadata || {}) as Record<string, any>
+					const rawId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+					const tId = typeof rawId === "string" ? rawId : ""
+					return !tId || !chatThreadIds.has(tId)
+				}).length
+
+				const supportUnread = notifications.filter(n => 
+					!n.isRead && 
+					n.title === "Meetday" && 
+					!n.metadata?.threadId && 
+					!n.metadata?.thread_id && 
+					!n.metadata?.interestId && 
+					!n.metadata?.interest_id && 
+					!n.metadata?.chatId && 
+					!n.metadata?.chat_id && 
+					!n.metadata?.sponsorshipInterestId
+				).length
+
+				setUnreadChatsCount(chatCount + requestNotifsCount)
+				setUnreadSupportCount(supportUnread)
+			}).catch(() => {})
 		}
 
 		updateCount()
