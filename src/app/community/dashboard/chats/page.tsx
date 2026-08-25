@@ -309,7 +309,11 @@ export default function CommunityChatsPage() {
 													<p className="text-[11px] font-semibold text-black/50 truncate">{t.proposalName}</p>
 												</div>
 											{segment === "REQUESTED" && (
-												<p className="text-[11px] font-bold text-[#EE2C2C] mt-1">This brand is interested in your proposal</p>
+												<p className="text-[11px] font-bold text-[#EE2C2C] mt-1">
+													{t.campaignId
+														? "You've shown interest to this campaign by this brand. Waiting for brand approval."
+														: "This brand is interested in your proposal"}
+												</p>
 											)}
 											{t.lastMessagePreview && segment === "ACCEPTED" && (
 												<p className="text-[11px] text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
@@ -568,7 +572,7 @@ function ChatThreadPanel({
 						<p className="text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
 					</div>
 				</div>
-				{thread.chatStatus === "REQUESTED" && (
+				{thread.chatStatus === "REQUESTED" && !thread.campaignId && (
 					<Button size="sm" onClick={() => onAccept(thread.id)}>
 						Accept
 					</Button>
@@ -595,9 +599,9 @@ function ChatThreadPanel({
 					<div className="m-auto text-center max-w-xs animate-in fade-in duration-200">
 						{thread.campaignId ? (
 							<>
-								<p className="text-sm font-black text-black">Request sent</p>
+								<p className="text-sm font-black text-black">Interest Expressed</p>
 								<p className="text-xs font-semibold text-black/50 mt-2">
-									Waiting for the brand to accept your interest before you can chat.
+									You've shown interest to this campaign by this brand. Waiting for brand approval.
 								</p>
 							</>
 						) : (
