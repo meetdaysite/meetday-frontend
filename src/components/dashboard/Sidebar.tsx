@@ -77,13 +77,11 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 
 		const updateCount = () => {
 			Promise.all([
-				getMySponsorshipChats("ACCEPTED", "HOST").catch(() => []),
-				getMySponsorshipChats("REQUESTED", "HOST").catch(() => []),
+				getMySponsorshipChats("ACCEPTED", "HOST").catch(err => { console.error("accepted error:", err); return [] }),
+				getMySponsorshipChats("REQUESTED", "HOST").catch(err => { console.error("requested error:", err); return [] }),
 			]).then(([accepted, requested]) => {
-				const allChats = [...accepted, ...requested]
-				const chatThreadIds = new Set(allChats.map(c => c.id))
-				
-				const chatCount = allChats.reduce((sum, t) => {
+				const all = [...accepted, ...requested]
+				const threadCount = all.reduce((sum, t) => {
 					const notifCount = notifications.filter(n => {
 						if (n.isRead) return false
 						const m = n.metadata || {}
@@ -93,25 +91,13 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 					return sum + Math.max(t.unreadCount || 0, notifCount)
 				}, 0)
 
-				const requestNotifsCount = notifications.filter(n => {
+				const standaloneChatNotifs = notifications.filter(n => {
 					if (n.isRead) return false
-					const type = (n.type || "").toLowerCase()
-					const title = (n.title || "").toLowerCase()
-					const isChatOrRequest = 
-						type.includes("chat") || 
-						type.includes("interest") || 
-						type.includes("campaign") || 
-						type.includes("proposal") ||
-						type.includes("sponsorship") ||
-						title.includes("interest") ||
-						title.includes("campaign") ||
-						title.includes("proposal") ||
-						title.includes("chat")
-					if (!isChatOrRequest) return false
-					const m = (n.metadata || {}) as Record<string, any>
-					const rawId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
-					const tId = typeof rawId === "string" ? rawId : ""
-					return !tId || !chatThreadIds.has(tId)
+					const m = n.metadata || {}
+					const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+					if (tId && all.some(t => t.id === tId)) return false
+					const isChatType = n.type === "chat_message" || n.type === "sponsorship_chat_message" || n.type === "sponsorship_chat_request" || n.type === "sponsorship_interest" || n.type === "host_interested_in_campaign" || n.type === "host_interest_confirmed"
+					return isChatType || !!tId
 				}).length
 
 				const supportUnread = notifications.filter(n => 
@@ -126,9 +112,9 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 					!n.metadata?.sponsorshipInterestId
 				).length
 
-				setUnreadChatsCount(chatCount + requestNotifsCount)
+				setUnreadChatsCount(threadCount + standaloneChatNotifs)
 				setUnreadSupportCount(supportUnread)
-			}).catch(() => {})
+			}).catch(err => console.error("Promise.all error:", err))
 		}
 
 		updateCount()

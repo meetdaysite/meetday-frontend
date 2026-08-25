@@ -66,17 +66,12 @@ export default function CommunityChatsPage() {
 
 	const threads = useMemo(() => {
 		const baseList = segment === "REQUESTED" ? requestedThreads : acceptedThreads
-		const filtered = baseList.filter(t => {
+		return baseList.filter(t => {
 			if (dealType === "SPONSORSHIP") {
 				return !t.campaignId
 			} else {
 				return !!t.campaignId
 			}
-		})
-		return filtered.sort((a, b) => {
-			const tA = a.lastMessageAt || a.createdAt ? new Date(a.lastMessageAt || a.createdAt).getTime() : 0
-			const tB = b.lastMessageAt || b.createdAt ? new Date(b.lastMessageAt || b.createdAt).getTime() : 0
-			return tB - tA
 		})
 	}, [segment, acceptedThreads, requestedThreads, dealType])
 
@@ -113,13 +108,17 @@ export default function CommunityChatsPage() {
 			// to flicker in and out of the list during active back-and-forth chatting).
 			if (seq !== loadThreadsSeq.current) return
 
-			const getTime = (t: SponsorshipChatThread) => {
-				const timeStr = t.lastMessageAt || t.createdAt
-				return timeStr ? new Date(timeStr).getTime() : 0
-			}
+			const sortedAccepted = [...acceptedData].sort((a, b) => {
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0)
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0)
+				return tB - tA
+			})
 
-			const sortedAccepted = [...acceptedData].sort((a, b) => getTime(b) - getTime(a))
-			const sortedRequested = [...requestedData].sort((a, b) => getTime(b) - getTime(a))
+			const sortedRequested = [...requestedData].sort((a, b) => {
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0)
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0)
+				return tB - tA
+			})
 
 			setAcceptedThreads(sortedAccepted)
 			setRequestedThreads(sortedRequested)
