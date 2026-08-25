@@ -1623,7 +1623,7 @@ export default function ProposalPage() {
                                                         </div>
                                                         <div className="flex flex-col gap-2">
                                                             <label className="text-sm font-bold text-black">
-                                                                Describe your sponsorship opportunity
+                                                                Describe your project in a minimum of 20 words to continue
                                                             </label>
                                                             <textarea
                                                                 value={proposalCopilotPrompt}
@@ -1661,7 +1661,7 @@ export default function ProposalPage() {
                                                                     disabled={proposalCopilotLoading}
                                                                     className="self-start text-xs font-black text-purple-700 hover:text-[#EE2C2C] transition-colors disabled:opacity-50"
                                                                 >
-                                                                    + Upload a document (optional) — PDF, Word, or PowerPoint
+                                                                    You can also upload a document for better output (PDF, Word, and Powerpoint)
                                                                 </button>
                                                             )}
                                                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between mt-1">
