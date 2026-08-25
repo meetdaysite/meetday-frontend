@@ -676,7 +676,7 @@ export default function ProposalPage() {
             setSponsorPrices(draft.sponsor_tiers.length > 0 ? draft.sponsor_tiers : [{ name: "", price: "" }])
             setProposalCopilotOpen(false)
             handleRemoveCopilotDoc()
-            toast.success("Meetday filled in the proposal — review and adjust as needed.")
+            toast.success("Meetday filled in the proposal. Review and adjust as needed.")
         } catch (err: unknown) {
             const status = (err as { response?: { status?: number } })?.response?.status
             if (status === 403) toast.error("Host role required to use Meetday AI.")
@@ -1667,8 +1667,8 @@ export default function ProposalPage() {
                                                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between mt-1">
                                                                 <p className="text-xs font-bold text-black/60">
                                                                     {proposalCopilotPrompt.trim().length < 20
-                                                                        ? "Write a bit more — at least 20 characters to continue."
-                                                                        : <span className="text-purple-700">Ready — click below when you&apos;re done writing.</span>}
+                                                                        ? "Write a bit more. At least 20 characters to continue."
+                                                                        : <span className="text-purple-700">Ready. Click below when you&apos;re done writing.</span>}
                                                                 </p>
                                                                 <div className="flex items-center gap-2 self-end shrink-0">
                                                                     <button

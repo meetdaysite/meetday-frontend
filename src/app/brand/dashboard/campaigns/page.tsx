@@ -273,7 +273,7 @@ export default function CampaignsPage() {
 			setDescription(draft.description || "")
 			setCampaignCopilotOpen(false)
 			handleRemoveCopilotDoc()
-			toast.success("Meetday filled in the campaign brief — review and adjust as needed.")
+			toast.success("Meetday filled in the campaign brief. Review and adjust as needed.")
 		} catch (err: any) {
 			const status = err?.response?.status
 			if (status === 403) toast.error("Brand role required to use Meetday AI.")
@@ -566,14 +566,14 @@ export default function CampaignsPage() {
 															disabled={campaignCopilotLoading}
 															className="self-start text-xs font-black text-purple-700 hover:text-[#EE2C2C] transition-colors disabled:opacity-50"
 														>
-															+ Upload a document (optional) — PDF, Word, or PowerPoint
+															+ Upload a document (optional). PDF, Word, or PowerPoint
 														</button>
 													)}
 													<div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between mt-1">
 														<p className="text-xs font-bold text-black/60">
 															{campaignCopilotPrompt.trim().length < 20
-																? "Write a bit more — at least 20 characters to continue."
-																: <span className="text-purple-700">Ready — click below when you&apos;re done writing.</span>}
+																? "Write a bit more. At least 20 characters to continue."
+																: <span className="text-purple-700">Ready. Click below when you&apos;re done writing.</span>}
 														</p>
 														<div className="flex items-center gap-2 self-end shrink-0">
 															<button
