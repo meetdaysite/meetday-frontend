@@ -732,6 +732,16 @@ export async function markSponsorshipInterest(
 	return data.data
 }
 
+export async function markCampaignInterest(
+	id: string,
+): Promise<{ message: string; alreadyInterested: boolean; interestId?: string }> {
+	const { data } = await apiClient.post<{
+		success: boolean
+		data: { message: string; alreadyInterested: boolean; interestId?: string }
+	}>(`/campaigns/published/${id}/interest`)
+	return data.data
+}
+
 // ─── TriChat: Host ↔ Brand (+ Admin) chat tied to a sponsorship interest ────────
 
 export type SponsorshipChatStatus = "REQUESTED" | "ACCEPTED"
@@ -739,8 +749,8 @@ export type ChatSenderType = "HOST" | "BRAND" | "ADMIN"
 
 export type SponsorshipChatThread = {
 	id: string
-	proposalId: string
-	proposalName: string
+	proposalId?: string | null
+	proposalName?: string | null
 	chatStatus: SponsorshipChatStatus
 	createdAt: string
 	chatAcceptedAt: string | null
@@ -749,6 +759,8 @@ export type SponsorshipChatThread = {
 	counterpartName: string
 	counterpartAvatarUrl?: string | null
 	unreadCount: number
+	sponsorshipProposalId?: string | null
+	campaignId?: string | null
 }
 
 export type SponsorshipChatReplyTo = {
@@ -775,10 +787,18 @@ export type SponsorshipChatMessage = {
 	replyTo?: SponsorshipChatReplyTo | null
 }
 
-export async function getMySponsorshipChats(status?: SponsorshipChatStatus): Promise<SponsorshipChatThread[]> {
+export async function getMySponsorshipChats(
+	status?: SponsorshipChatStatus,
+	role?: "HOST" | "BRAND",
+): Promise<SponsorshipChatThread[]> {
 	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipChatThread[] }>(
 		"/sponsorships/chats",
-		{ params: status ? { status } : undefined },
+		{
+			params: {
+				...(status && { status }),
+				...(role && { role }),
+			},
+		},
 	)
 	return data.data
 }
@@ -2756,6 +2776,7 @@ export type Campaign = {
 	brandProfile?: {
 		id: string
 		brandName: string
+		logoUrl?: string | null
 		user: {
 			firstName: string
 			lastName: string

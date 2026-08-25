@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { notFound } from "next/navigation"
 import { CommunityCard } from "@/components/attendee/CommunityCard"
 import { EventCard } from "@/components/attendee/EventCard"
 import { Button } from "@/components/ui/Button"
@@ -17,6 +18,8 @@ import { Skeleton } from "@/components/ui/Skeleton"
 // ---------------------------------------------------------------------------
 
 export default function ExploreEventsPage() {
+	notFound()
+
 	const [communities, setCommunities] = useState<PublicCommunity[]>([])
 	const [communitiesLoading, setCommunitiesLoading] = useState(true)
 
