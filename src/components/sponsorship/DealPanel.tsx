@@ -5,7 +5,7 @@ import clsx from "clsx"
 import { toast } from "sonner"
 import confetti from "canvas-confetti"
 import { Button } from "@/components/ui/Button"
-import { VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
+// import { VenueAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput" // venue is now read-only, auto-filled from the proposal
 import {
 	type SponsorshipDeal,
 	type SponsorshipDealPayload,
@@ -19,7 +19,7 @@ import {
 	upsertSponsorshipDealReport,
 	getSponsorshipProposalDetail,
 	getHostCommunityProfile,
-	getCategories,
+	// getCategories, // Sponsorship Category editing is commented out in the Lock the Deal form
 	sendSponsorshipChatMessage,
 	initiateSponsorshipDealPayment,
 	verifySponsorshipDealPayment,
@@ -233,12 +233,12 @@ export function DealFormModal({
 			: EMPTY_FORM,
 	)
 	const [saving, setSaving] = useState(false)
-	const [allCategories, setAllCategories] = useState<{ id: string; name: string }[]>([])
+	// const [allCategories, setAllCategories] = useState<{ id: string; name: string }[]>([]) // Sponsorship Category editing is commented out below
 
-	useEffect(() => {
-		// Load all categories for the dropdown selection
-		getCategories().then(setAllCategories).catch(() => [])
-	}, [])
+	// useEffect(() => {
+	// 	// Load all categories for the dropdown selection
+	// 	getCategories().then(setAllCategories).catch(() => [])
+	// }, [])
 
 	useEffect(() => {
 		if (proposalId && !deal) {
@@ -264,21 +264,21 @@ export function DealFormModal({
 		}
 	}, [proposalId, deal])
 
-	const formCategories = form.sponsorshipCategory ? form.sponsorshipCategory.split(", ").filter(Boolean) : []
+	// const formCategories = form.sponsorshipCategory ? form.sponsorshipCategory.split(", ").filter(Boolean) : []
 
-	const addCategory = (name: string) => {
-		if (!formCategories.includes(name)) {
-			const updated = [...formCategories, name].join(", ")
-			setForm(f => ({ ...f, sponsorshipCategory: updated }))
-		}
-	}
+	// const addCategory = (name: string) => {
+	// 	if (!formCategories.includes(name)) {
+	// 		const updated = [...formCategories, name].join(", ")
+	// 		setForm(f => ({ ...f, sponsorshipCategory: updated }))
+	// 	}
+	// }
 
-	const removeCategory = (name: string) => {
-		const updated = formCategories.filter(c => c !== name).join(", ")
-		setForm(f => ({ ...f, sponsorshipCategory: updated }))
-	}
+	// const removeCategory = (name: string) => {
+	// 	const updated = formCategories.filter(c => c !== name).join(", ")
+	// 	setForm(f => ({ ...f, sponsorshipCategory: updated }))
+	// }
 
-	const availableToAdd = allCategories.filter(c => !formCategories.includes(c.name))
+	// const availableToAdd = allCategories.filter(c => !formCategories.includes(c.name))
 
 	const isValid = form.projectName.trim() && form.startDate && form.endDate?.trim() && form.venue.trim() && form.deliverables.trim()
 
@@ -313,7 +313,7 @@ export function DealFormModal({
 
 				<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3">
 					<Field label="Project Name">
-						<input value={form.projectName} onChange={e => setForm(f => ({ ...f, projectName: e.target.value }))} className={inputClass} placeholder="Summer Music Fest" />
+						<input value={form.projectName} disabled readOnly title="Edit this in the proposal to update it here" className={`${inputClass} bg-neutral-100 text-black/50 cursor-not-allowed`} placeholder="Summer Music Fest" />
 					</Field>
 					<div className="grid grid-cols-2 gap-3">
 						<Field label="Start Date">
@@ -332,17 +332,19 @@ export function DealFormModal({
 						</div>
 						<div className="col-span-8">
 							<Field label="Venue">
-								<VenueAutocompleteInput
+								<input
 									value={form.venue}
-									error={false}
-									onChange={v => setForm(f => ({ ...f, venue: v }))}
-									onPlaceSelect={fields => setForm(f => ({ ...f, venue: fields.fullAddress }))}
+									disabled
+									readOnly
+									title="Edit this in the proposal to update it here"
+									className={`${inputClass} bg-neutral-100 text-black/50 cursor-not-allowed`}
 									placeholder="Phoenix Marketcity, Bengaluru"
 								/>
 							</Field>
 						</div>
 					</div>
 
+					{/* Sponsorship Category editing removed from this form — categories are managed on the host community profile
 					<Field label="Sponsorship Category">
 						<div className="flex flex-col gap-2">
 							<div className="flex flex-wrap gap-1.5 items-center p-2.5 border-[3px] border-black rounded-xl bg-white min-h-[42px]">
@@ -403,6 +405,7 @@ export function DealFormModal({
 							</div>
 						</div>
 					</Field>
+					*/}
 
 					<div className="grid grid-cols-2 gap-3">
 						<Field label="Sponsorship Amount (₹)">
