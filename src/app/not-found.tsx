@@ -2,7 +2,6 @@ import Link from "next/link"
 import Image from "next/image"
 import { Icon } from "@/components/ui/Icon"
 import ArrowLeftSvg from "@/icons/outlined/arrow-left.svg"
-import CalendarSvg from "@/icons/outlined/calendar.svg"
 
 export default function NotFound() {
 	return (
@@ -46,13 +45,6 @@ export default function NotFound() {
 							>
 								<Icon as={ArrowLeftSvg} size="sm" color="inherit" />
 								Back to home
-							</Link>
-							<Link
-								href="/explore"
-								className="inline-flex items-center gap-2 h-(--size-action-md) px-4 text-label-sm font-medium rounded-action bg-action-secondary text-action-secondary-text border border-action-secondary-border hover:bg-action-secondary-hover transition-colors duration-(--duration-120)"
-							>
-								<Icon as={CalendarSvg} size="sm" color="inherit" />
-								Explore events
 							</Link>
 						</div>
 					</div>
