@@ -108,14 +108,14 @@ export default function BrandChatsPage() {
 			if (seq !== loadThreadsSeq.current) return
 
 			const sortedRequested = [...requestedData].sort((a, b) => {
-				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
-				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0)
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0)
 				return tB - tA
 			})
 
 			const sortedAccepted = [...acceptedData].sort((a, b) => {
-				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
-				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0)
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0)
 				return tB - tA
 			})
 
@@ -186,6 +186,26 @@ export default function BrandChatsPage() {
 		return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
 	}, 0)
 
+	const unreadRequestedCount = requestedThreads.reduce((sum, t) => {
+		return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
+	}, 0)
+
+	const sponsorshipUnreadCount = useMemo(() => {
+		const all = [...acceptedThreads, ...requestedThreads]
+		return all.reduce((sum, t) => {
+			if (t.campaignId) return sum
+			return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
+		}, 0)
+	}, [acceptedThreads, requestedThreads, selectedId, getThreadUnreadCount])
+
+	const campaignUnreadCount = useMemo(() => {
+		const all = [...acceptedThreads, ...requestedThreads]
+		return all.reduce((sum, t) => {
+			if (!t.campaignId) return sum
+			return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
+		}, 0)
+	}, [acceptedThreads, requestedThreads, selectedId, getThreadUnreadCount])
+
 	return (
 		<div className="flex flex-col flex-1 min-h-0 bg-white">
 			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
@@ -205,26 +225,37 @@ export default function BrandChatsPage() {
 					<div className="w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col">
 						{/* Sponsorship vs Campaign deals Tab selectors */}
 						<div className="flex border-b-[3px] border-black bg-neutral-50 divide-x-[3px] divide-black shrink-0">
-							{(["SPONSORSHIP", "CAMPAIGN"] as const).map(dt => (
-								<button
-									key={dt}
-									onClick={() => {
-										setDealType(dt)
-										setSelectedId(null)
-									}}
-									className={clsx(
-										"flex-1 py-2 text-[10px] font-black uppercase tracking-wider text-center transition-colors select-none",
-										dealType === dt ? "bg-black text-[#FFC940]" : "bg-white text-black/50 hover:bg-neutral-100"
-									)}
-								>
-									{dt === "SPONSORSHIP" ? "Sponsorships" : "Campaigns"}
-								</button>
-							))}
+							{(["SPONSORSHIP", "CAMPAIGN"] as const).map(dt => {
+								const tabUnread = dt === "SPONSORSHIP" ? sponsorshipUnreadCount : campaignUnreadCount
+								return (
+									<button
+										key={dt}
+										onClick={() => {
+											setDealType(dt)
+											setSelectedId(null)
+										}}
+										className={clsx(
+											"flex-grow py-2 text-[10px] font-black uppercase tracking-wider text-center transition-colors select-none flex items-center justify-center gap-1.5",
+											dealType === dt ? "bg-black text-[#FFC940]" : "bg-white text-black/50 hover:bg-neutral-100"
+										)}
+									>
+										<span>{dt === "SPONSORSHIP" ? "Sponsorships" : "Campaigns"}</span>
+										{tabUnread > 0 && (
+											<span className={clsx(
+												"min-w-[14px] h-[14px] px-1 rounded-full text-[8px] font-black flex items-center justify-center border border-transparent",
+												dealType === dt ? "bg-[#FFC940] text-black" : "bg-[#EE2C2C] text-white"
+											)}>
+												{tabUnread}
+											</span>
+										)}
+									</button>
+								)
+							})}
 						</div>
 
 						<div className="flex border-b-[3px] border-black shrink-0">
 							{(["ACCEPTED", "REQUESTED"] as Tab[]).map(t => {
-								const count = t === "ACCEPTED" ? unreadAcceptedCount : 0
+								const count = t === "ACCEPTED" ? unreadAcceptedCount : unreadRequestedCount
 								return (
 									<button
 										key={t}
@@ -295,9 +326,15 @@ export default function BrandChatsPage() {
 											<div className="flex items-center justify-between gap-2 mt-0.5">
 												<p className="text-[11px] font-semibold text-black/50 truncate">{t.proposalName}</p>
 											</div>
-											<p className={clsx("text-[11px] font-bold mt-1", t.chatStatus === "REQUESTED" ? "text-black/40" : "text-black/40")}>
-												{t.chatStatus === "REQUESTED" ? "Waiting for acceptance…" : (t.lastMessagePreview ?? "Chat open")}
-											</p>
+											{t.chatStatus === "REQUESTED" ? (
+												<p className={clsx("text-[11px] mt-1", t.campaignId ? "font-bold text-[#EE2C2C]" : "font-semibold text-black/40")}>
+													{t.campaignId ? "This community is interested in your campaign" : "Waiting for acceptance…"}
+												</p>
+											) : (
+												<p className="text-[11px] font-semibold text-black/40 truncate mt-1">
+													{t.lastMessagePreview ?? "Chat open"}
+												</p>
+											)}
 										</div>
 									</button>
 								);
@@ -539,7 +576,7 @@ function BrandChatThreadPanel({ thread, onAccept }: { thread: SponsorshipChatThr
 				)}
 			</div>
 
-			{thread.chatStatus === "ACCEPTED" && (
+			{thread.chatStatus === "ACCEPTED" && !thread.campaignId && (
 				<DealBanner
 					deal={deal}
 					role="BRAND"

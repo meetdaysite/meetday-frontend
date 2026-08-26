@@ -109,14 +109,14 @@ export default function CommunityChatsPage() {
 			if (seq !== loadThreadsSeq.current) return
 
 			const sortedAccepted = [...acceptedData].sort((a, b) => {
-				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
-				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0)
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0)
 				return tB - tA
 			})
 
 			const sortedRequested = [...requestedData].sort((a, b) => {
-				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0
-				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0
+				const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0)
+				const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0)
 				return tB - tA
 			})
 
@@ -186,6 +186,22 @@ export default function CommunityChatsPage() {
 		return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
 	}, 0)
 
+	const sponsorshipUnreadCount = useMemo(() => {
+		const all = [...acceptedThreads, ...requestedThreads]
+		return all.reduce((sum, t) => {
+			if (t.campaignId) return sum
+			return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
+		}, 0)
+	}, [acceptedThreads, requestedThreads, selectedId, getThreadUnreadCount])
+
+	const campaignUnreadCount = useMemo(() => {
+		const all = [...acceptedThreads, ...requestedThreads]
+		return all.reduce((sum, t) => {
+			if (!t.campaignId) return sum
+			return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
+		}, 0)
+	}, [acceptedThreads, requestedThreads, selectedId, getThreadUnreadCount])
+
 	async function handleAccept(interestId: string) {
 		try {
 			await acceptSponsorshipChatRequest(interestId)
@@ -217,21 +233,32 @@ export default function CommunityChatsPage() {
 					<div className="w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col">
 						{/* Sponsorship vs Campaign deals Tab selectors */}
 						<div className="flex border-b-[3px] border-black bg-neutral-50 divide-x-[3px] divide-black shrink-0">
-							{(["SPONSORSHIP", "CAMPAIGN"] as const).map(dt => (
-								<button
-									key={dt}
-									onClick={() => {
-										setDealType(dt)
-										setSelectedId(null)
-									}}
-									className={clsx(
-										"flex-1 py-2 text-[10px] font-black uppercase tracking-wider text-center transition-colors select-none",
-										dealType === dt ? "bg-black text-[#FFC940]" : "bg-white text-black/50 hover:bg-neutral-100"
-									)}
-								>
-									{dt === "SPONSORSHIP" ? "Sponsorships" : "Campaigns"}
-								</button>
-							))}
+							{(["SPONSORSHIP", "CAMPAIGN"] as const).map(dt => {
+								const tabUnread = dt === "SPONSORSHIP" ? sponsorshipUnreadCount : campaignUnreadCount
+								return (
+									<button
+										key={dt}
+										onClick={() => {
+											setDealType(dt)
+											setSelectedId(null)
+										}}
+										className={clsx(
+											"flex-grow py-2 text-[10px] font-black uppercase tracking-wider text-center transition-colors select-none flex items-center justify-center gap-1.5",
+											dealType === dt ? "bg-black text-[#FFC940]" : "bg-white text-black/50 hover:bg-neutral-100"
+										)}
+									>
+										<span>{dt === "SPONSORSHIP" ? "Sponsorships" : "Campaigns"}</span>
+										{tabUnread > 0 && (
+											<span className={clsx(
+												"min-w-[14px] h-[14px] px-1 rounded-full text-[8px] font-black flex items-center justify-center border border-transparent",
+												dealType === dt ? "bg-[#FFC940] text-black" : "bg-[#EE2C2C] text-white"
+											)}>
+												{tabUnread}
+											</span>
+										)}
+									</button>
+								)
+							})}
 						</div>
 
 						<div className="flex border-b-[3px] border-black shrink-0">
@@ -309,7 +336,11 @@ export default function CommunityChatsPage() {
 													<p className="text-[11px] font-semibold text-black/50 truncate">{t.proposalName}</p>
 												</div>
 											{segment === "REQUESTED" && (
-												<p className="text-[11px] font-bold text-[#EE2C2C] mt-1">This brand is interested in your proposal</p>
+												<p className="text-[11px] font-bold text-[#EE2C2C] mt-1">
+													{t.campaignId
+														? "You've shown interest to this campaign by this brand. Waiting for brand approval."
+														: "This brand is interested in your proposal"}
+												</p>
 											)}
 											{t.lastMessagePreview && segment === "ACCEPTED" && (
 												<p className="text-[11px] text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
@@ -568,14 +599,14 @@ function ChatThreadPanel({
 						<p className="text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
 					</div>
 				</div>
-				{thread.chatStatus === "REQUESTED" && (
+				{thread.chatStatus === "REQUESTED" && !thread.campaignId && (
 					<Button size="sm" onClick={() => onAccept(thread.id)}>
 						Accept
 					</Button>
 				)}
 			</div>
 
-			{thread.chatStatus === "ACCEPTED" && (
+			{thread.chatStatus === "ACCEPTED" && !thread.campaignId && (
 				<DealBanner
 					deal={deal}
 					role="HOST"
@@ -595,9 +626,9 @@ function ChatThreadPanel({
 					<div className="m-auto text-center max-w-xs animate-in fade-in duration-200">
 						{thread.campaignId ? (
 							<>
-								<p className="text-sm font-black text-black">Request sent</p>
+								<p className="text-sm font-black text-black">Interest Expressed</p>
 								<p className="text-xs font-semibold text-black/50 mt-2">
-									Waiting for the brand to accept your interest before you can chat.
+									You've shown interest to this campaign by this brand. Waiting for brand approval.
 								</p>
 							</>
 						) : (
@@ -784,7 +815,8 @@ function ChatThreadPanel({
 			{dealModal === "form" && (
 				<DealFormModal
 					interestId={thread.id}
-					proposalId={thread.proposalId ?? undefined}
+					proposalId={!thread.campaignId ? (thread.proposalId ?? undefined) : undefined}
+					campaignId={thread.campaignId ?? undefined}
 					deal={deal}
 					onClose={() => setDealModal(null)}
 					onSaved={setDeal}

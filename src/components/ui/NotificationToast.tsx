@@ -34,6 +34,12 @@ function getIconConfig(type: NotificationType): IconConfig {
 			return { icon: CheckCircleSvg, iconBg: "bg-purple-50", iconColor: "text-purple-600" }
 		case "subscription_expiring":
 			return { icon: DangerTriangleSvg, iconBg: "bg-amber-50", iconColor: "text-amber-500" }
+		case "brand_interested_in_sponsorship":
+		case "brand_interest_confirmed":
+		case "host_interested_in_campaign":
+		case "host_interest_confirmed":
+		case "sponsorship_chat_accepted":
+			return { icon: CheckCircleSvg, iconBg: "bg-emerald-50", iconColor: "text-emerald-600" }
 		default:
 			return { icon: BellSvg, iconBg: "bg-neutral-200", iconColor: "text-neutral-500" }
 	}

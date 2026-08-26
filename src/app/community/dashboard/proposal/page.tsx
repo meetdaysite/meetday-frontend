@@ -1629,7 +1629,7 @@ export default function ProposalPage() {
                                                                 value={proposalCopilotPrompt}
                                                                 onChange={(e) => setProposalCopilotPrompt(e.target.value)}
                                                                 placeholder="e.g. We run a monthly rooftop networking meetup for startup founders in Bangalore, around 200 people attend each time."
-                                                                rows={3}
+                                                                rows={10}
                                                                 disabled={proposalCopilotLoading}
                                                                 className="px-4 py-2.5 rounded-xl border-2 border-black/30 bg-white/80 text-black outline-none focus:border-black text-sm transition-colors resize-none disabled:opacity-50"
                                                             />
@@ -1665,31 +1665,24 @@ export default function ProposalPage() {
                                                                     Upload a document for better output (PDF, Word, and Powerpoint)
                                                                 </button>
                                                             )}
-                                                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between mt-1">
-                                                                <p className="text-xs font-bold text-black/60">
-                                                                    {proposalCopilotPrompt.trim().length < 20
-                                                                        ? "Write a bit more. At least 20 characters to continue."
-                                                                        : <span className="text-purple-700">Ready. Click below when you&apos;re done writing.</span>}
-                                                                </p>
-                                                                <div className="flex items-center gap-2 self-end shrink-0">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setProposalCopilotOpen(false)}
-                                                                        disabled={proposalCopilotLoading}
-                                                                        className="px-3 py-2 text-sm font-black text-black/60 hover:text-black transition-colors disabled:opacity-50"
-                                                                    >
-                                                                        Cancel
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={handleGenerateProposalDraft}
-                                                                        disabled={proposalCopilotLoading || copilotDocUploading || proposalCopilotPrompt.trim().length < 20}
-                                                                        className="flex items-center gap-2 bg-black text-white text-sm font-black px-4 py-2.5 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#EE2C2C] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50 transition-all select-none"
-                                                                    >
-                                                                        <Icon as={MagicStickSvg} size="sm" color="inherit" />
-                                                                        Start Cooking
-                                                                    </button>
-                                                                </div>
+                                                            <div className="flex justify-end gap-2 mt-1">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setProposalCopilotOpen(false)}
+                                                                    disabled={proposalCopilotLoading}
+                                                                    className="px-3 py-2 text-sm font-black text-black/60 hover:text-black transition-colors disabled:opacity-50"
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={handleGenerateProposalDraft}
+                                                                    disabled={proposalCopilotLoading || copilotDocUploading || proposalCopilotPrompt.trim().length < 20}
+                                                                    className="flex items-center gap-2 bg-black text-white text-sm font-black px-4 py-2.5 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#EE2C2C] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50 transition-all select-none"
+                                                                >
+                                                                    <Icon as={MagicStickSvg} size="sm" color="inherit" />
+                                                                    Start Cooking
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     </div>

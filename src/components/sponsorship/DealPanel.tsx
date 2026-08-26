@@ -19,6 +19,7 @@ import {
 	upsertSponsorshipDealReport,
 	getSponsorshipProposalDetail,
 	getHostCommunityProfile,
+	getPublishedCampaignDetail,
 	// getCategories, // Sponsorship Category editing is commented out in the Lock the Deal form
 	sendSponsorshipChatMessage,
 	initiateSponsorshipDealPayment,
@@ -207,12 +208,14 @@ const EMPTY_FORM: SponsorshipDealPayload = {
 export function DealFormModal({
 	interestId,
 	proposalId,
+	campaignId,
 	deal,
 	onClose,
 	onSaved,
 }: {
 	interestId: string
 	proposalId?: string
+	campaignId?: string
 	deal: SponsorshipDeal | null
 	onClose: () => void
 	onSaved: (deal: SponsorshipDeal) => void
@@ -241,7 +244,9 @@ export function DealFormModal({
 	// }, [])
 
 	useEffect(() => {
-		if (proposalId && !deal) {
+		if (deal) return
+
+		if (proposalId) {
 			Promise.all([
 				getSponsorshipProposalDetail(proposalId).catch(() => null),
 				getHostCommunityProfile().catch(() => null),
@@ -261,8 +266,30 @@ export function DealFormModal({
 					}))
 				}
 			})
+		} else if (campaignId) {
+			console.log("[DealFormModal] Fetching campaign detail for campaignId:", campaignId)
+			Promise.all([
+				getPublishedCampaignDetail(campaignId).catch((err) => { console.error("[DealFormModal] getPublishedCampaignDetail failed:", err?.response?.status, err?.message); return null }),
+				getHostCommunityProfile().catch((err) => { console.error("[DealFormModal] getHostCommunityProfile failed:", err?.message); return null }),
+			]).then(([campaign, community]) => {
+				console.log("[DealFormModal] campaign:", campaign, "community:", community)
+				if (campaign) {
+					let resolvedCategory = ""
+					if (community?.categories?.length) {
+						resolvedCategory = community.categories.map((c: any) => c.name).join(", ")
+					}
+					setForm((f) => ({
+						...f,
+						projectName: campaign.name || "",
+						startDate: campaign.startDate ? campaign.startDate.slice(0, 10) : "",
+						endDate: campaign.endDate ? campaign.endDate.slice(0, 10) : "",
+						venue: campaign.locations?.length ? campaign.locations.join(", ") : "",
+						sponsorshipCategory: resolvedCategory,
+					}))
+				}
+			})
 		}
-	}, [proposalId, deal])
+	}, [proposalId, campaignId, deal])
 
 	// const formCategories = form.sponsorshipCategory ? form.sponsorshipCategory.split(", ").filter(Boolean) : []
 

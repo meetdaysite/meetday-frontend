@@ -77,11 +77,29 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 
 		const updateCount = () => {
 			Promise.all([
-				getMySponsorshipChats("ACCEPTED").catch(err => { console.error("accepted error:", err); return [] }),
-				getMySponsorshipChats("REQUESTED").catch(err => { console.error("requested error:", err); return [] }),
+				getMySponsorshipChats("ACCEPTED", "HOST").catch(err => { console.error("accepted error:", err); return [] }),
+				getMySponsorshipChats("REQUESTED", "HOST").catch(err => { console.error("requested error:", err); return [] }),
 			]).then(([accepted, requested]) => {
-				const count1 = accepted.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
-				const count2 = requested.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+				const all = [...accepted, ...requested]
+				const threadCount = all.reduce((sum, t) => {
+					const notifCount = notifications.filter(n => {
+						if (n.isRead) return false
+						const m = n.metadata || {}
+						const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+						return tId === t.id
+					}).length
+					return sum + Math.max(t.unreadCount || 0, notifCount)
+				}, 0)
+
+				const standaloneChatNotifs = notifications.filter(n => {
+					if (n.isRead) return false
+					const m = n.metadata || {}
+					const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+					if (tId && all.some(t => t.id === tId)) return false
+					const isChatType = n.type === "chat_message" || n.type === "sponsorship_chat_message" || n.type === "sponsorship_chat_request" || n.type === "sponsorship_interest" || n.type === "host_interested_in_campaign" || n.type === "host_interest_confirmed"
+					return isChatType || !!tId
+				}).length
+
 				const supportUnread = notifications.filter(n => 
 					!n.isRead && 
 					n.title === "Meetday" && 
@@ -93,7 +111,8 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 					!n.metadata?.chat_id && 
 					!n.metadata?.sponsorshipInterestId
 				).length
-				setUnreadChatsCount(count1 + count2)
+
+				setUnreadChatsCount(threadCount + standaloneChatNotifs)
 				setUnreadSupportCount(supportUnread)
 			}).catch(err => console.error("Promise.all error:", err))
 		}
