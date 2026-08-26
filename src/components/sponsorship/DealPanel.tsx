@@ -334,10 +334,15 @@ export function DealFormModal({
 							<Field label="Venue">
 								<input
 									value={form.venue}
-									disabled
 									readOnly
-									title="Edit this in the proposal to update it here"
-									className={`${inputClass} bg-neutral-100 text-black/50 cursor-not-allowed`}
+									title="Click to open in Google Maps · Edit this in the proposal to update it"
+									onClick={(e) => {
+										e.currentTarget.blur()
+										if (form.venue.trim()) {
+											window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.venue)}`, "_blank", "noopener,noreferrer")
+										}
+									}}
+									className={`${inputClass} bg-neutral-100 text-black/50 cursor-pointer hover:bg-neutral-200`}
 									placeholder="Phoenix Marketcity, Bengaluru"
 								/>
 							</Field>
