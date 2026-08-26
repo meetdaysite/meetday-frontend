@@ -23,6 +23,7 @@ import {
 
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import TrashBinSvg from "@/icons/outlined/trash-bin.svg"
+import UploadSvg from "@/icons/outlined/upload.svg"
 import AiAvatarSvg from "@/assets/ai-avatar.svg"
 import MagicStickSvg from "@/icons/duotone/magic-stick-3.svg"
 
@@ -564,9 +565,10 @@ export default function CampaignsPage() {
 															type="button"
 															onClick={() => copilotDocInputRef.current?.click()}
 															disabled={campaignCopilotLoading}
-															className="self-start text-xs font-black text-purple-700 hover:text-[#EE2C2C] transition-colors disabled:opacity-50"
+															className="self-start flex items-center gap-2 bg-white text-purple-700 text-xs font-black px-3.5 py-2 rounded-lg border-2 border-purple-700 hover:bg-purple-700 hover:text-white transition-colors disabled:opacity-50"
 														>
-															+ Upload a document (optional). PDF, Word, or PowerPoint
+															<Icon as={UploadSvg} size="sm" color="inherit" />
+															Upload a document for better output (PDF, Word, and Powerpoint)
 														</button>
 													)}
 													<div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between mt-1">
