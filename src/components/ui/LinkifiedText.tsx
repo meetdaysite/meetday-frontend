@@ -2,7 +2,7 @@
 
 import React, { Fragment } from "react"
 
-const URL_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi
+const MENTION_OR_URL_REGEX = /(https?:\/\/[^\s]+|www\.[^\s]+|@[a-zA-Z0-9_.-]+)/gi
 
 interface LinkifiedTextProps {
 	text: string
@@ -13,12 +13,25 @@ interface LinkifiedTextProps {
 export function LinkifiedText({ text, className, linkClassName }: LinkifiedTextProps) {
 	if (!text) return null
 
-	const parts = text.split(URL_REGEX)
+	const parts = text.split(MENTION_OR_URL_REGEX)
 
 	return (
 		<span className={className}>
 			{parts.map((part, index) => {
-				if (part.match(URL_REGEX)) {
+				if (!part) return null
+
+				if (part.startsWith("@") && part.length > 1) {
+					return (
+						<span
+							key={index}
+							className="inline-flex items-center px-1.5 py-0.2 rounded-md font-black bg-black/15 text-inherit text-[0.92em] shadow-xs tracking-tight"
+						>
+							{part}
+						</span>
+					)
+				}
+
+				if (part.match(/(https?:\/\/[^\s]+|www\.[^\s]+)/i)) {
 					let href = part
 					let trailing = ""
 

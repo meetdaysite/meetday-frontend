@@ -25,8 +25,10 @@ import { DealBanner, DealFormModal, DealDetailsModal, DealReportModal } from "@/
 import { MeetdayChatPanel } from "@/components/support/MeetdayChatPanel"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
+import { MentionPicker, type MentionSuggestion } from "@/components/chat/MentionPicker"
 import { useChatTyping } from "@/hooks/useChatTyping"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
+import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { useNotificationStore } from "@/store/notificationStore"
 import { LinkifiedText } from "@/components/ui/LinkifiedText"
 import confetti from "canvas-confetti"
@@ -223,15 +225,18 @@ export default function CommunityChatsPage() {
 				</p>
 			</div>
 
-			<div className="flex-1 min-h-0 px-6 lg:px-8 py-6 max-w-6xl w-full mx-auto flex flex-col gap-4">
+			<div className="flex-1 min-h-0 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-6xl w-full mx-auto flex flex-col gap-4">
 				<div>
-					<h1 className="text-3xl font-heading font-black text-black">Chats</h1>
-					<p className="text-sm font-semibold text-black/50 mt-1">Talk to brands interested in your proposals.</p>
+					<h1 className="text-2xl sm:text-3xl font-heading font-black text-black">Chats</h1>
+					<p className="text-xs sm:text-sm font-semibold text-black/50 mt-1">Talk to brands interested in your proposals.</p>
 				</div>
 
 				<div className="h-[calc(100vh-240px)] border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row bg-white">
 					{/* Thread list */}
-					<div className="w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col">
+					<div className={clsx(
+						"w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col",
+						selectedId ? "hidden sm:flex" : "flex"
+					)}>
 						{/* Sponsorship vs Campaign deals Tab selectors */}
 						<div className="flex border-b-[3px] border-black bg-neutral-50 divide-x-[3px] divide-black shrink-0">
 							{(["SPONSORSHIP", "CAMPAIGN"] as const).map(dt => {
@@ -322,9 +327,16 @@ export default function CommunityChatsPage() {
 													)}
 												</div>
 												{unread > 0 && (
-													<span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border-2 border-white shadow-[2px_2px_4px_rgba(0,0,0,0.15)]">
-														{unread > 9 ? "9+" : unread}
-													</span>
+													<div className="absolute -top-1.5 -right-2 flex items-center gap-0.5 z-10">
+														{t.hasUnreadMention && (
+															<span className="size-4.5 rounded-full bg-black text-[#FFC940] text-[10px] font-black flex items-center justify-center border-2 border-white shadow-sm" title="You were mentioned or replied to">
+																@
+															</span>
+														)}
+														<span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border-2 border-white shadow-[2px_2px_4px_rgba(0,0,0,0.15)]">
+															{unread > 9 ? "9+" : unread}
+														</span>
+													</div>
 												)}
 											</div>
 
@@ -341,32 +353,40 @@ export default function CommunityChatsPage() {
 												<div className="flex items-center justify-between gap-2 mt-0.5">
 													<p className="text-[11px] font-semibold text-black/50 truncate">{t.proposalName}</p>
 												</div>
-											{segment === "REQUESTED" && (
-												<p className="text-[11px] font-bold text-[#EE2C2C] mt-1">
-													{t.campaignId
-														? "You've shown interest to this campaign by this brand. Waiting for brand approval."
-														: "This brand is interested in your proposal"}
-												</p>
-											)}
-											{t.lastMessagePreview && segment === "ACCEPTED" && (
-												<p className="text-[11px] text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
-											)}
-										</div>
-									</button>
-								);
-							})
+												{segment === "REQUESTED" && (
+													<p className="text-[11px] font-bold text-[#EE2C2C] mt-1">
+														{t.campaignId
+															? "You've shown interest to this campaign by this brand. Waiting for brand approval."
+															: "This brand is interested in your proposal"}
+													</p>
+												)}
+												{t.lastMessagePreview && segment === "ACCEPTED" && (
+													<p className="text-[11px] text-black/40 truncate mt-1">{t.lastMessagePreview}</p>
+												)}
+											</div>
+										</button>
+									);
+								})
 							)}
 						</div>
 					</div>
 
 					{/* Thread detail */}
-					<div className="flex-1 min-h-0 flex flex-col">
+					<div className={clsx(
+						"flex-1 min-h-0 flex flex-col",
+						selectedId ? "flex" : "hidden sm:flex"
+					)}>
 						{!selectedThread ? (
 							<div className="flex-1 flex items-center justify-center text-sm font-semibold text-black/30">
 								Select a chat to view
 							</div>
 						) : (
-							<ChatThreadPanel key={selectedThread.id} thread={selectedThread} onAccept={handleAccept} />
+							<ChatThreadPanel
+								key={selectedThread.id}
+								thread={selectedThread}
+								onAccept={handleAccept}
+								onBack={() => setSelectedId(null)}
+							/>
 						)}
 					</div>
 				</div>
@@ -378,9 +398,11 @@ export default function CommunityChatsPage() {
 function ChatThreadPanel({
 	thread,
 	onAccept,
+	onBack,
 }: {
 	thread: SponsorshipChatThread
 	onAccept: (interestId: string) => void
+	onBack?: () => void
 }) {
 	const { profile } = useHostStore()
 	const ownName = profile?.displayName || "You"
@@ -396,10 +418,59 @@ function ChatThreadPanel({
 	const [replyingTo, setReplyingTo] = useState<SponsorshipChatMessage | null>(null)
 	const [unreadDivider, setUnreadDivider] = useState<{ messageId: string; count: number } | null>(null)
 	const [viewingImage, setViewingImage] = useState<string | null>(null)
-	const dividerCapturedRef = useRef(false)
-	const autoOpenedRef = useRef(false)
+	const [mentionQuery, setMentionQuery] = useState("")
+	const [isMentionOpen, setIsMentionOpen] = useState(false)
 	const bottomRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
+	const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+	const mentionSuggestions: MentionSuggestion[] = [
+		{
+			id: "counterpart",
+			name: thread.counterpartName,
+			tag: thread.counterpartName.replace(/\s+/g, ""),
+			role: "Brand",
+			avatarUrl: thread.counterpartAvatarUrl,
+		},
+		{
+			id: "meetday",
+			name: "Meetday Support",
+			tag: "Meetday",
+			role: "Admin",
+		},
+	]
+
+	const handleInputChange = (val: string) => {
+		setInput(val)
+		if (val.trim()) notifyTyping()
+		else notifyStopTyping()
+
+		const lastAt = val.lastIndexOf("@")
+		if (lastAt !== -1 && (lastAt === 0 || /\s/.test(val[lastAt - 1]))) {
+			const q = val.slice(lastAt + 1)
+			if (!/\s/.test(q)) {
+				setMentionQuery(q)
+				setIsMentionOpen(true)
+				return
+			}
+		}
+		setIsMentionOpen(false)
+	}
+
+	const handleMentionSelect = (tag: string) => {
+		const lastAt = input.lastIndexOf("@")
+		if (lastAt !== -1) {
+			const next = input.slice(0, lastAt) + `@${tag} `
+			setInput(next)
+		} else {
+			setInput(prev => prev + `@${tag} `)
+		}
+		setIsMentionOpen(false)
+	}
+	const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null)
+	const highlightTimerRef = useRef<NodeJS.Timeout | null>(null)
+	const dividerCapturedRef = useRef(false)
+	const autoOpenedRef = useRef(false)
 	const { typingSenderType, notifyTyping, notifyStopTyping } = useChatTyping(thread.id, "HOST")
 	useEffect(() => {
 		if (deal?.status === "APPROVED" && !localStorage.getItem(`confetti-fired-${deal.id}`)) {
@@ -524,6 +595,18 @@ function ChatThreadPanel({
 		setInput("")
 	}
 
+	const handleJumpToMessage = useCallback((messageId: string) => {
+		const el = document.getElementById(`msg-${messageId}`)
+		if (el) {
+			el.scrollIntoView({ behavior: "smooth", block: "center" })
+			if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current)
+			setHighlightedMessageId(messageId)
+			highlightTimerRef.current = setTimeout(() => {
+				setHighlightedMessageId(null)
+			}, 2000)
+		}
+	}, [])
+
 	function handleReplyStart(m: SponsorshipChatMessage) {
 		handleEditCancel()
 		setReplyingTo(m)
@@ -583,10 +666,20 @@ function ChatThreadPanel({
 	}
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col relative">
+		<div className="flex-1 min-h-0 flex flex-col relative h-full bg-white">
 			<canvas id="chat-confetti-canvas" className="pointer-events-none absolute inset-0 w-full h-full z-30" />
-			<div className="px-5 py-3 border-b-[3px] border-black flex items-center justify-between shrink-0">
-				<div className="flex items-center gap-3 min-w-0">
+			<div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-white flex items-center justify-between shrink-0 gap-2">
+				<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+					{onBack && (
+						<button
+							type="button"
+							onClick={onBack}
+							className="md:hidden p-1.5 -ml-1 text-black/70 hover:text-black hover:bg-neutral-100 rounded-full shrink-0 transition-colors"
+							aria-label="Back to chat list"
+						>
+							<Icon as={AltArrowLeftSvg} size="sm" />
+						</button>
+					)}
 					<div className="w-8 h-8 rounded-full border border-black/15 overflow-hidden shrink-0 relative bg-neutral-100 flex items-center justify-center">
 						{thread.counterpartAvatarUrl ? (
 							<img
@@ -600,16 +693,16 @@ function ChatThreadPanel({
 							</span>
 						)}
 					</div>
-					<div className="min-w-0">
+					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-1.5">
-							<p className="text-sm font-black text-black truncate">{thread.counterpartName}</p>
+							<p className="text-xs sm:text-sm font-black text-black truncate leading-tight">{thread.counterpartName}</p>
 							{((deal && deal.status === "APPROVED") || thread.isDealLocked) && (
-								<span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-									🔒 Deal Locked
+								<span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+									🔒 Locked
 								</span>
 							)}
 						</div>
-						<p className="text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
+						<p className="text-[10px] sm:text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
 					</div>
 				</div>
 				{thread.chatStatus === "REQUESTED" && !thread.campaignId && (
@@ -687,7 +780,14 @@ function ChatThreadPanel({
 										<div className="flex-1 h-px bg-[#EE2C2C]/30" />
 									</div>
 								)}
-								<div className={clsx("flex flex-col max-w-[75%]", isMine ? "self-end items-end" : "self-start items-start")}>
+								<div
+									id={`msg-${m.id}`}
+									className={clsx(
+										"flex flex-col max-w-[85%] sm:max-w-[75%] md:max-w-[70%] transition-all duration-300 rounded-2xl p-1",
+										isMine ? "self-end items-end" : "self-start items-start",
+										highlightedMessageId === m.id && "ring-4 ring-[#EE2C2C] bg-[#FFC940]/30 shadow-lg scale-[1.02]"
+									)}
+								>
 									<div className="flex items-center gap-2 mb-0.5 px-1">
 										<span className="text-[10px] font-black uppercase tracking-wide text-black/30">{labelFor(m.senderType)}</span>
 										{!isDeleted && (
@@ -711,12 +811,45 @@ function ChatThreadPanel({
 											This message was deleted
 										</div>
 									) : (
-										<>
+										<div
+											className={clsx(
+												"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words border flex flex-col shadow-xs",
+												m.senderType === "BRAND" && "bg-[#EE2C2C] text-white rounded-bl-sm border-[#EE2C2C]",
+												m.senderType === "HOST" && "bg-[#FFC940] text-black rounded-br-sm border-[#FFC940]",
+												m.senderType === "ADMIN" && "bg-neutral-100 text-black rounded-bl-sm border-black/10",
+											)}
+										>
 											{m.replyTo && (
-												<div className="mb-1 pl-2 border-l-2 border-black/20 max-w-[220px]">
-													<p className="text-[9px] font-black uppercase text-black/40">{replyLabel(m.replyTo.senderType)}</p>
-													<p className="text-[11px] font-semibold text-black/50 truncate">{replySnippet(m.replyTo)}</p>
-												</div>
+												<button
+													type="button"
+													onClick={() => handleJumpToMessage(m.replyTo!.id)}
+													className={clsx(
+														"w-full text-left mb-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer block border-l-4 shadow-xs",
+														m.senderType === "BRAND"
+															? "bg-black/25 hover:bg-black/35 text-white border-white/80"
+															: m.senderType === "HOST"
+															? "bg-black/10 hover:bg-black/15 text-black border-black/40"
+															: "bg-white hover:bg-neutral-50 text-black border-[#EE2C2C] border border-black/10"
+													)}
+													title="Click to jump to message"
+												>
+													<p className={clsx(
+														"text-[9px] font-black uppercase tracking-wider",
+														m.senderType === "BRAND" ? "text-white/80" : "text-black/60"
+													)}>
+														↩ Replying to {replyLabel(m.replyTo.senderType)}
+													</p>
+													{m.replyTo.hasMedia && (
+														<p className={clsx("text-xs font-semibold flex items-center gap-1 my-0.5", m.senderType === "BRAND" ? "text-white/90" : "text-black/70")}>
+															📷 Photo
+														</p>
+													)}
+													{m.replyTo.content && (
+														<p className={clsx("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", m.senderType === "BRAND" ? "text-white/90" : "text-black/80")}>
+															{m.replyTo.content}
+														</p>
+													)}
+												</button>
 											)}
 											{m.mediaUrl && (
 												/* eslint-disable-next-line @next/next/no-img-element */
@@ -724,24 +857,16 @@ function ChatThreadPanel({
 													src={m.mediaUrl}
 													alt="Shared image"
 													onClick={() => setViewingImage(m.mediaUrl!)}
-													className="max-w-[220px] max-h-[220px] rounded-2xl border-[3px] border-black object-cover cursor-pointer mb-1"
+													className="max-w-[220px] max-h-[220px] rounded-xl border border-black/15 object-cover cursor-pointer mb-1 shadow-sm"
 												/>
 											)}
 											{m.content && (
-												<div
-													className={clsx(
-														"px-3.5 py-2 rounded-2xl text-sm font-semibold break-words border border-black/10",
-														m.senderType === "BRAND" && "bg-[#EE2C2C] text-white",
-														m.senderType === "HOST" && "bg-[#FFC940] text-black",
-														m.senderType === "ADMIN" && "bg-neutral-100 text-black",
-														isMine ? "rounded-br-sm" : "rounded-bl-sm",
-													)}
-												>
+												<div className="px-1 py-0.5">
 													<LinkifiedText text={m.content} />
 													{m.editedAt && <span className="ml-1.5 text-[10px] font-semibold opacity-60">(edited)</span>}
 												</div>
 											)}
-										</>
+										</div>
 									)}
 									{(m.content || m.mediaUrl) && !isDeleted && (
 										<div className={clsx("flex items-center gap-1 mt-0.5 text-[9px] font-bold text-black/40 px-1", isMine ? "justify-end" : "justify-start")}>
@@ -770,7 +895,7 @@ function ChatThreadPanel({
 			</div>
 
 			{thread.chatStatus === "ACCEPTED" && (
-				<div className="border-t-[3px] border-black shrink-0">
+				<div className="border-t-[3px] border-black shrink-0 bg-white flex flex-col">
 					{typingSenderType && (
 						<p className="px-3 pt-2 text-[11px] font-bold text-black/40 italic">{thread.counterpartName} is typing…</p>
 					)}
@@ -781,15 +906,22 @@ function ChatThreadPanel({
 						</div>
 					)}
 					{replyingTo && !editingMessageId && (
-						<div className="px-3 pt-2 flex items-center justify-between gap-2">
+						<div className="px-3 pt-2 flex items-center justify-between gap-2 border-b border-black/10 pb-2">
 							<div className="min-w-0 pl-2 border-l-2 border-[#EE2C2C]">
 								<p className="text-[10px] font-black uppercase text-black/40">Replying to {replyLabel(replyingTo.senderType)}</p>
-								<p className="text-[11px] font-semibold text-black/50 truncate">{replyingTo.content?.trim() ? replyingTo.content : (replyingTo.mediaUrl ? "Photo" : "")}</p>
+								<p className="text-[11px] font-semibold text-black/60 truncate">{replyingTo.content?.trim() ? replyingTo.content : (replyingTo.mediaUrl ? "Photo" : "")}</p>
 							</div>
 							<button type="button" onClick={handleReplyCancel} className="text-[10px] font-bold text-[#EE2C2C] shrink-0">Cancel</button>
 						</div>
 					)}
-					<div className="p-3 flex items-center gap-2">
+					<div className="relative p-2.5 sm:p-3 flex items-center gap-2 pb-[max(0.6rem,env(safe-area-inset-bottom))]">
+						<MentionPicker
+							suggestions={mentionSuggestions}
+							query={mentionQuery}
+							isOpen={isMentionOpen}
+							onSelect={handleMentionSelect}
+							onClose={() => setIsMentionOpen(false)}
+						/>
 						<input type="file" accept="image/*" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
 						<button
 							type="button"
@@ -803,22 +935,18 @@ function ChatThreadPanel({
 						<EmojiPicker onSelect={emoji => setInput(prev => prev + emoji)} />
 						<input
 							value={input}
-							onChange={e => {
-								setInput(e.target.value)
-								if (e.target.value.trim()) notifyTyping()
-								else notifyStopTyping()
-							}}
+							onChange={e => handleInputChange(e.target.value)}
 							onKeyDown={e => {
-								if (e.key === "Enter" && !e.shiftKey) {
+								if (e.key === "Enter" && !e.shiftKey && !isMentionOpen) {
 									e.preventDefault()
 									handleSend()
 								}
 								if (e.key === "Escape" && editingMessageId) handleEditCancel()
 							}}
-							placeholder="Write a message…"
-							className="flex-1 rounded-2xl border-[3px] border-black bg-white px-4 py-2 text-sm font-semibold outline-none focus:bg-neutral-50"
+							placeholder="Write a message… (type @ to tag)"
+							className="flex-1 min-w-0 rounded-2xl border-[3px] border-black bg-white px-3.5 sm:px-4 py-2 text-sm font-semibold outline-none focus:bg-neutral-50"
 						/>
-						<Button onClick={handleSend} disabled={sending || !input.trim()}>
+						<Button onClick={handleSend} disabled={sending || !input.trim()} className="shrink-0 whitespace-nowrap">
 							{sending ? "…" : editingMessageId ? "Save" : "Send"}
 						</Button>
 					</div>
