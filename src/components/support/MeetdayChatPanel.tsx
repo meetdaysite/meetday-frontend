@@ -9,6 +9,7 @@ import { uploadMeetdayChatImage } from "@/lib/uploadMedia"
 import { getMyMeetdayChat, sendMeetdayChatMessage, type MeetdayChatMessage } from "@/lib/api"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
+import { LinkifiedText } from "@/components/ui/LinkifiedText"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 
 const POLL_MS = 4000
@@ -136,7 +137,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 											isMine ? "rounded-br-sm" : "rounded-bl-sm",
 										)}
 									>
-										{m.content}
+										<LinkifiedText text={m.content} />
 									</div>
 								)}
 								{(m.content || m.mediaUrl) && (

@@ -761,6 +761,7 @@ export type SponsorshipChatThread = {
 	unreadCount: number
 	sponsorshipProposalId?: string | null
 	campaignId?: string | null
+	isDealLocked?: boolean
 }
 
 export type SponsorshipChatReplyTo = {

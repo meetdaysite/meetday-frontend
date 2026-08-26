@@ -28,6 +28,7 @@ import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { useChatTyping } from "@/hooks/useChatTyping"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 import { useNotificationStore } from "@/store/notificationStore"
+import { LinkifiedText } from "@/components/ui/LinkifiedText"
 import confetti from "canvas-confetti"
 
 const POLL_MS = 4000
@@ -329,7 +330,12 @@ export default function CommunityChatsPage() {
 
 											<div className="flex-1 min-w-0">
 												<div className="flex items-center justify-between gap-2">
-													<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
+													<div className="flex items-center gap-1.5 min-w-0">
+														<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
+														{t.isDealLocked && (
+															<span className="shrink-0 text-xs" title="Deal Locked">🔒</span>
+														)}
+													</div>
 													<span className="text-[10px] font-semibold text-black/30 shrink-0">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
 												</div>
 												<div className="flex items-center justify-between gap-2 mt-0.5">
@@ -595,7 +601,14 @@ function ChatThreadPanel({
 						)}
 					</div>
 					<div className="min-w-0">
-						<p className="text-sm font-black text-black truncate">{thread.counterpartName}</p>
+						<div className="flex items-center gap-1.5">
+							<p className="text-sm font-black text-black truncate">{thread.counterpartName}</p>
+							{((deal && deal.status === "APPROVED") || thread.isDealLocked) && (
+								<span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+									🔒 Deal Locked
+								</span>
+							)}
+						</div>
 						<p className="text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
 					</div>
 				</div>
@@ -724,7 +737,7 @@ function ChatThreadPanel({
 														isMine ? "rounded-br-sm" : "rounded-bl-sm",
 													)}
 												>
-													{m.content}
+													<LinkifiedText text={m.content} />
 													{m.editedAt && <span className="ml-1.5 text-[10px] font-semibold opacity-60">(edited)</span>}
 												</div>
 											)}

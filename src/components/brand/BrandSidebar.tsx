@@ -22,6 +22,8 @@ import RocketSvg from "@/icons/outlined/rocket.svg"
 import ChatOutSvg from "@/icons/outlined/chat.svg"
 import ChatFillSvg from "@/icons/filled/chat.svg"
 import DollarSvg from "@/icons/outlined/dollar.svg"
+import LockOutSvg from "@/icons/outlined/lock.svg"
+import LockFillSvg from "@/icons/filled/lock.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -32,6 +34,7 @@ const PRIMARY_NAV: NavItem[] = [
 	{ label: "My Campaigns", href: "/brand/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
 	{ label: "Proposals", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
+	{ label: "Locked Deals", href: "/brand/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
 ]
 
 const SECONDARY_NAV: NavItem[] = [

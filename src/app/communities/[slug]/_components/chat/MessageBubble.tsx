@@ -10,6 +10,7 @@ import ChatDotsSvg from "@/icons/outlined/chat-dots.svg"
 import SmileCircleSvg from "@/icons/outlined/smile-circle.svg"
 import { ReactionBar } from "./ReactionBar"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
+import { LinkifiedText } from "@/components/ui/LinkifiedText"
 import { avatarColor } from "@/lib/avatarColor"
 import type { StoredMessage } from "@/store/chatStore"
 import type { CommunityRole } from "@/lib/api"
@@ -155,7 +156,7 @@ export function MessageBubble({
 					)}
 
 					<p className="text-label-sm text-text-primary font-normal leading-relaxed whitespace-pre-line">
-						{message.content}
+						<LinkifiedText text={message.content} />
 					</p>
 
 					<ReactionBar

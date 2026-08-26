@@ -561,10 +561,7 @@ export function DealDetailsModal({
 						<Row label="Start Date" value={deal.startDate ? new Date(deal.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "—"} />
 						<Row label="End Date" value={deal.endDate ? (deal.endDate.includes("-") ? new Date(deal.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : deal.endDate) : "—"} />
 					</div>
-					<div className="grid grid-cols-2 gap-3">
-						{deal.time && <Row label="Time" value={deal.time} />}
-						{deal.sponsorshipCategory && <Row label="Sponsorship Category" value={deal.sponsorshipCategory} />}
-					</div>
+					{deal.time && <Row label="Time" value={deal.time} />}
 					<div className="grid grid-cols-2 gap-3">
 						<Row label="Sponsorship Amount" value={formatAmount(deal.sponsorshipAmount)} />
 						{deal.barterElements && <Row label="Barter Elements" value={deal.barterElements} />}
