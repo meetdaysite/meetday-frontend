@@ -1659,9 +1659,10 @@ export default function ProposalPage() {
                                                                     type="button"
                                                                     onClick={() => copilotDocInputRef.current?.click()}
                                                                     disabled={proposalCopilotLoading}
-                                                                    className="self-start text-xs font-black text-purple-700 hover:text-[#EE2C2C] transition-colors disabled:opacity-50"
+                                                                    className="self-start flex items-center gap-2 bg-white text-purple-700 text-xs font-black px-3.5 py-2 rounded-lg border-2 border-purple-700 hover:bg-purple-700 hover:text-white transition-colors disabled:opacity-50"
                                                                 >
-                                                                    You can also upload a document for better output (PDF, Word, and Powerpoint)
+                                                                    <Icon as={UploadSvg} size="sm" color="inherit" />
+                                                                    Upload a document for better output (PDF, Word, and Powerpoint)
                                                                 </button>
                                                             )}
                                                             <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between mt-1">
