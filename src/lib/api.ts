@@ -1056,6 +1056,14 @@ export type MeetdayChatMessage = {
 	wasRedacted?: boolean
 	hostReadAt?: string | null
 	brandReadAt?: string | null
+	replyTo?: MeetdayChatReplyTo | null
+}
+
+export type MeetdayChatReplyTo = {
+	id: string
+	senderType: "USER" | "ADMIN" | "BOT"
+	content: string
+	hasMedia: boolean
 }
 
 export async function getMyMeetdayChat(): Promise<{ messages: MeetdayChatMessage[] }> {
@@ -1065,7 +1073,7 @@ export async function getMyMeetdayChat(): Promise<{ messages: MeetdayChatMessage
 	return data.data
 }
 
-export async function sendMeetdayChatMessage(payload: { content?: string; mediaKey?: string }): Promise<MeetdayChatMessage> {
+export async function sendMeetdayChatMessage(payload: { content?: string; mediaKey?: string; replyToId?: string }): Promise<MeetdayChatMessage> {
 	const { data } = await apiClient.post<{ success: boolean; data: MeetdayChatMessage }>(
 		"/meetday-chat/messages",
 		payload,
