@@ -7,6 +7,7 @@ import CloseSvg from "@/icons/outlined/close.svg"
 import ChatDotsSvg from "@/icons/outlined/chat-dots.svg"
 import { getMessageReplies } from "@/lib/chatApi"
 import { MessageInput } from "./MessageInput"
+import { LinkifiedText } from "@/components/ui/LinkifiedText"
 import { avatarColor } from "@/lib/avatarColor"
 import type { ChatMessage } from "@/lib/chatApi"
 import type { StoredMessage } from "@/store/chatStore"
@@ -101,7 +102,7 @@ export function ThreadPanel({
 					<div className="flex-1 min-w-0">
 						<p className="text-label-sm font-bold text-text-primary">{parentName}</p>
 						<p className="text-label-sm text-text-primary font-normal mt-0.5 leading-snug line-clamp-4">
-							{parentMessage.content}
+							<LinkifiedText text={parentMessage.content} />
 						</p>
 					</div>
 				</div>
@@ -144,7 +145,7 @@ export function ThreadPanel({
 									<span className="text-[11px] text-text-muted">{formatTime(reply.createdAt)}</span>
 								</div>
 								<p className="text-label-sm text-text-primary font-normal mt-0.5 leading-snug">
-									{reply.content}
+									<LinkifiedText text={reply.content} />
 								</p>
 							</div>
 						</div>

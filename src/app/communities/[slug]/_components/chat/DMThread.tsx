@@ -6,6 +6,7 @@ import { Icon } from "@/components/ui/Icon"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { MessageInput } from "./MessageInput"
 import { TypingIndicator } from "./TypingIndicator"
+import { LinkifiedText } from "@/components/ui/LinkifiedText"
 import type { DmConversation, DmMessage } from "@/lib/chatApi"
 
 function formatTime(iso: string) {
@@ -157,7 +158,7 @@ export function DMThread({
 											: "bg-surface-card border border-border-default text-text-primary rounded-tl-sm"
 									}`}
 								>
-									{msg.content ?? <span className="italic opacity-60">Message unavailable</span>}
+									{msg.content ? <LinkifiedText text={msg.content} /> : <span className="italic opacity-60">Message unavailable</span>}
 								</div>
 								<span className="text-[10px] text-text-muted">{formatTime(msg.createdAt)}</span>
 							</div>

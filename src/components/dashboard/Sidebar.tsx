@@ -25,6 +25,8 @@ import ChatFillSvg from "@/icons/filled/chat.svg"
 import WidgetSvg from "@/icons/filled/widget.svg"
 import CalendarFillSvg from "@/icons/filled/calendar.svg"
 import RocketSvg from "@/icons/outlined/rocket.svg"
+import LockOutSvg from "@/icons/outlined/lock.svg"
+import LockFillSvg from "@/icons/filled/lock.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -32,6 +34,7 @@ const NAV_ITEMS_TOP = [
 	{ label: "Dashboard", href: "/community/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "My Sponsorships", href: "/community/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Brand Campaigns", href: "/community/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
+	{ label: "Locked Deals", href: "/community/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
 	{ label: "My Experiences", href: "/community/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg, disabled: true },
 ]
 

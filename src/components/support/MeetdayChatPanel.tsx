@@ -9,6 +9,7 @@ import { uploadMeetdayChatImage } from "@/lib/uploadMedia"
 import { getMyMeetdayChat, sendMeetdayChatMessage, type MeetdayChatMessage } from "@/lib/api"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
+import { LinkifiedText } from "@/components/ui/LinkifiedText"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 
 const POLL_MS = 4000
@@ -113,7 +114,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 						}
 						const senderLabel = isMine
 							? (role === "HOST" ? `${ownName} • Community` : `${ownName} • Brand`)
-							: isBot ? "Meetday • Bot" : "Meetday • Admin"
+							: isBot ? "Meetday" : "Meetday • Admin"
 						return (
 							<div key={m.id} className={clsx("flex flex-col max-w-[75%]", isMine ? "self-end items-end" : "self-start items-start")}>
 								<span className="text-[10px] font-black uppercase tracking-wide text-black/30 mb-0.5 px-1">
@@ -136,7 +137,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 											isMine ? "rounded-br-sm" : "rounded-bl-sm",
 										)}
 									>
-										{m.content}
+										<LinkifiedText text={m.content} />
 									</div>
 								)}
 								{(m.content || m.mediaUrl) && (
