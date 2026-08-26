@@ -759,6 +759,7 @@ export type SponsorshipChatThread = {
 	counterpartName: string
 	counterpartAvatarUrl?: string | null
 	unreadCount: number
+	hasUnreadMention?: boolean
 	sponsorshipProposalId?: string | null
 	campaignId?: string | null
 	isDealLocked?: boolean
