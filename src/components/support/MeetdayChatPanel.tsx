@@ -113,7 +113,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 						}
 						const senderLabel = isMine
 							? (role === "HOST" ? `${ownName} • Community` : `${ownName} • Brand`)
-							: isBot ? "Meetday • Bot" : "Meetday • Admin"
+							: isBot ? "Meetday" : "Meetday • Admin"
 						return (
 							<div key={m.id} className={clsx("flex flex-col max-w-[75%]", isMine ? "self-end items-end" : "self-start items-start")}>
 								<span className="text-[10px] font-black uppercase tracking-wide text-black/30 mb-0.5 px-1">
