@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
-import { uploadSponsorshipChatImage } from "@/lib/uploadMedia"
+import { uploadSponsorshipChatImage, isPdfMediaUrl } from "@/lib/uploadMedia"
 import {
 	getMySponsorshipChats,
 	getSponsorshipChatMessages,
@@ -632,8 +632,8 @@ function ChatThreadPanel({
 		const file = e.target.files?.[0]
 		e.target.value = ""
 		if (!file) return
-		if (!file.type.startsWith("image/")) {
-			toast.error("Only image files can be sent.")
+		if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
+			toast.error("Only image or PDF files can be sent.")
 			return
 		}
 		setUploadingImage(true)
@@ -643,7 +643,7 @@ function ChatThreadPanel({
 			setMessages(prev => [...prev, msg])
 			setReplyingTo(null)
 		} catch {
-			toast.error("Failed to send image.")
+			toast.error("Failed to send file.")
 		} finally {
 			setUploadingImage(false)
 		}
@@ -657,7 +657,7 @@ function ChatThreadPanel({
 
 	function replySnippet(replyTo: SponsorshipChatMessage["replyTo"]) {
 		if (!replyTo) return ""
-		return replyTo.content?.trim() ? replyTo.content : replyTo.hasMedia ? "📷 Photo" : ""
+		return replyTo.content?.trim() ? replyTo.content : replyTo.hasMedia ? "📄 Attachment" : ""
 	}
 
 	function replyLabel(senderType: SponsorshipChatMessage["senderType"]) {
@@ -832,7 +832,7 @@ function ChatThreadPanel({
 													</p>
 													{m.replyTo.hasMedia && (
 														<p className={clsx("text-xs font-semibold flex items-center gap-1 my-0.5", m.senderType === "BRAND" ? "text-white/90" : "text-black/70")}>
-															📷 Photo
+														📄 Attachment
 														</p>
 													)}
 													{m.replyTo.content && (
@@ -843,13 +843,24 @@ function ChatThreadPanel({
 												</button>
 											)}
 											{m.mediaUrl && (
-												/* eslint-disable-next-line @next/next/no-img-element */
-												<img
-													src={m.mediaUrl}
-													alt="Shared image"
-													onClick={() => setViewingImage(m.mediaUrl!)}
-													className="max-w-[220px] max-h-[220px] rounded-xl border border-black/15 object-cover cursor-pointer mb-1 shadow-sm"
-												/>
+												isPdfMediaUrl(m.mediaUrl) ? (
+													<a
+														href={m.mediaUrl}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border-[3px] border-black bg-white hover:bg-neutral-50 mb-1 text-sm font-bold text-black"
+													>
+														📄 View PDF
+													</a>
+												) : (
+													/* eslint-disable-next-line @next/next/no-img-element */
+													<img
+														src={m.mediaUrl}
+														alt="Shared image"
+														onClick={() => setViewingImage(m.mediaUrl!)}
+														className="max-w-[220px] max-h-[220px] rounded-2xl border-[3px] border-black object-cover cursor-pointer mb-1"
+													/>
+												)
 											)}
 											{m.content && (
 												<div className="px-1 py-0.5">
@@ -900,26 +911,19 @@ function ChatThreadPanel({
 						<div className="px-3 pt-2 flex items-center justify-between gap-2 border-b border-black/10 pb-2">
 							<div className="min-w-0 pl-2 border-l-2 border-[#EE2C2C]">
 								<p className="text-[10px] font-black uppercase text-black/40">Replying to {replyLabel(replyingTo.senderType)}</p>
-								<p className="text-[11px] font-semibold text-black/60 truncate">{replyingTo.content?.trim() ? replyingTo.content : (replyingTo.mediaUrl ? "Photo" : "")}</p>
+								<p className="text-[11px] font-semibold text-black/50 truncate">{replyingTo.content?.trim() ? replyingTo.content : (replyingTo.mediaUrl ? "Attachment" : "")}</p>
 							</div>
 							<button type="button" onClick={handleReplyCancel} className="text-[10px] font-bold text-[#EE2C2C] shrink-0">Cancel</button>
 						</div>
 					)}
-					<div className="relative p-2.5 sm:p-3 flex items-center gap-2 pb-[max(0.6rem,env(safe-area-inset-bottom))]">
-						<MentionPicker
-							suggestions={mentionSuggestions}
-							query={mentionQuery}
-							isOpen={isMentionOpen}
-							onSelect={handleMentionSelect}
-							onClose={() => setIsMentionOpen(false)}
-						/>
-						<input type="file" accept="image/*" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
+					<div className="p-3 flex items-center gap-2">
+						<input type="file" accept="image/*,application/pdf" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
 						<button
 							type="button"
 							onClick={() => fileInputRef.current?.click()}
 							disabled={uploadingImage || !!editingMessageId}
 							className="shrink-0 size-9 rounded-xl border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50"
-							aria-label="Attach image"
+							aria-label="Attach image or PDF"
 						>
 							<Icon as={GallerySvg} size="sm" />
 						</button>
