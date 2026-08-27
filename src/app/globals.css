@@ -243,3 +243,18 @@ body:has(aside) [data-sonner-toaster] {
 	0%, 100% { transform: scale(1); }
 	50% { transform: scale(1.15); }
 }
+
+/* Button zoom in/out animation */
+@keyframes zoomInOut {
+	0%, 100% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.08);
+	}
+}
+
+.animate-zoom-in-out {
+	animation: zoomInOut 1.8s ease-in-out infinite;
+	will-change: transform;
+}

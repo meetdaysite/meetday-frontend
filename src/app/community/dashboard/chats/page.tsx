@@ -31,6 +31,7 @@ import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { useNotificationStore } from "@/store/notificationStore"
 import { LinkifiedText } from "@/components/ui/LinkifiedText"
+import { SystemMessageBubble } from "@/components/chat/SystemMessageBubble"
 import confetti from "canvas-confetti"
 
 const POLL_MS = 4000
@@ -706,9 +707,13 @@ function ChatThreadPanel({
 					</div>
 				</div>
 				{thread.chatStatus === "REQUESTED" && !thread.campaignId && (
-					<Button size="sm" onClick={() => onAccept(thread.id)}>
-						Accept
-					</Button>
+					<button
+						type="button"
+						onClick={() => onAccept(thread.id)}
+						className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer select-none"
+					>
+						Accept Request
+					</button>
 				)}
 			</div>
 
@@ -751,21 +756,7 @@ function ChatThreadPanel({
 				) : (
 					messages.map(m => {
 						if (m.messageType === "SYSTEM") {
-							const formatSystemMessage = (content: string) => {
-								const lower = content.toLowerCase()
-								if (lower.includes("created") || lower.includes("proposal") || lower.includes("shared")) {
-									return "📄 A deal proposal was shared for approval."
-								}
-								if (lower.includes("approved") || lower.includes("locked") || lower.includes("accepted")) {
-									return "🔒 The deal is locked!"
-								}
-								return content
-							}
-							return (
-								<div key={m.id} className="self-center max-w-[90%] px-3 py-1.5 rounded-full bg-neutral-100 text-black/50 text-[11px] font-bold text-center">
-									{formatSystemMessage(m.content ?? "")}
-								</div>
-							)
+							return <SystemMessageBubble key={m.id} content={m.content ?? ""} />
 						}
 						const isMine = m.senderType === "HOST"
 						const isDeleted = !!m.deletedAt

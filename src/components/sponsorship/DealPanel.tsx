@@ -143,44 +143,96 @@ export function DealBanner({
 	if (!deal) {
 		if (!canLockOrEdit) return null
 		return (
-			<div className="px-5 py-2.5 border-b-[3px] border-black bg-neutral-50 flex items-center justify-between gap-3 shrink-0">
-				<p className="text-xs font-bold text-black/50">Once terms are agreed, submit the final details here.</p>
-				<Button size="sm" onClick={onLock}>🔒 Lock the Deal</Button>
+			<div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-[#FFFBEB] flex items-center justify-between gap-3 shrink-0">
+				<div className="flex items-center gap-2">
+					<span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+					<p className="text-xs font-bold text-black/60">Once terms are agreed, submit the final details here.</p>
+				</div>
+				<button
+					type="button"
+					onClick={onLock}
+					className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#FFC940] hover:bg-[#ffbe1a] text-black font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none"
+				>
+					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+						<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+						<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+					</svg>
+					<span>Lock the Deal</span>
+				</button>
 			</div>
 		)
 	}
 
 	return (
-		<div className="px-5 py-2.5 border-b-[3px] border-black bg-neutral-50 flex items-center justify-between gap-3 shrink-0">
+		<div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-neutral-50 flex items-center justify-between gap-3 shrink-0">
 			<div className="min-w-0 flex items-center gap-2">
-				<span className={clsx("px-2 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0", STATUS_COLOR[deal.status])}>
+				<span className={clsx("px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]", STATUS_COLOR[deal.status])}>
 					{STATUS_LABEL[deal.status]}
 				</span>
 				{deal.status === "APPROVED" && (
-					<span className={clsx("px-2 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0", PAYMENT_STATUS_COLOR[getDealPaymentDisplayStatus(deal)])}>
+					<span className={clsx("px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]", PAYMENT_STATUS_COLOR[getDealPaymentDisplayStatus(deal)])}>
 						{PAYMENT_STATUS_LABEL[getDealPaymentDisplayStatus(deal)]}
 					</span>
 				)}
-				<p className="text-xs font-bold text-black truncate">
+				<p className="text-xs font-black text-black truncate">
 					{deal.projectName} · {formatAmount(deal.sponsorshipAmount)}
 				</p>
 			</div>
-			<div className="flex items-center gap-2 shrink-0">
-				<Button size="sm" variant="secondary" onClick={onView}>View Deal</Button>
+			<div className="flex items-center gap-2.5 shrink-0">
+				<button
+					type="button"
+					onClick={onView}
+					className="animate-zoom-in-out hover:animate-none inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:scale-105 active:scale-95 transition-transform cursor-pointer select-none"
+				>
+					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+						<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+						<circle cx="12" cy="12" r="3" />
+					</svg>
+					<span>View Deal</span>
+				</button>
 				{canLockOrEdit && deal.status !== "APPROVED" && (
-					<Button size="sm" onClick={onEdit}>Edit Deal</Button>
+					<button
+						type="button"
+						onClick={onEdit}
+						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFC940] hover:bg-[#ffbe1a] text-black font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none"
+					>
+						<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+							<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+						</svg>
+						<span>Edit Deal</span>
+					</button>
 				)}
 				{deal.status === "APPROVED" && (
 					<>
 						{hasReport ? (
-							<Button size="sm" onClick={onReport}>
-								📝 View Report
-							</Button>
+							<button
+								type="button"
+								onClick={onReport}
+								className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFC940] hover:bg-[#ffbe1a] text-black font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none"
+							>
+								<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+									<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+									<polyline points="14 2 14 8 20 8" />
+									<line x1="16" y1="13" x2="8" y2="13" />
+									<line x1="16" y1="17" x2="8" y2="17" />
+								</svg>
+								<span>View Report</span>
+							</button>
 						) : (
 							role === "HOST" && (
-								<Button size="sm" onClick={onReport}>
-									📝 Submit Report
-								</Button>
+								<button
+									type="button"
+									onClick={onReport}
+									className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FFC940] hover:bg-[#ffbe1a] text-black font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none"
+								>
+									<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+										<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+										<polyline points="14 2 14 8 20 8" />
+										<line x1="12" y1="18" x2="12" y2="12" />
+										<line x1="9" y1="15" x2="15" y2="15" />
+									</svg>
+									<span>Submit Report</span>
+								</button>
 							)
 						)}
 					</>
@@ -458,9 +510,26 @@ export function DealFormModal({
 					</Field>
 				</div>
 
-				<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-2 shrink-0">
-					<Button variant="secondary" onClick={onClose}>Cancel</Button>
-					<Button onClick={handleSubmit} disabled={!isValid || saving}>{saving ? "Saving…" : deal ? "Save Changes" : "Submit Deal"}</Button>
+				<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-3 shrink-0 bg-neutral-50 rounded-b-[21px]">
+					<button
+						type="button"
+						onClick={onClose}
+						className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-black font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none"
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						onClick={handleSubmit}
+						disabled={!isValid || saving}
+						className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+					>
+						<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+							<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+							<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+						</svg>
+						<span>{saving ? "Saving…" : deal ? "Save Changes" : "Submit & Lock Deal"}</span>
+					</button>
 				</div>
 			</div>
 		</div>
@@ -591,9 +660,18 @@ export function DealDetailsModal({
 										</span>
 									</div>
 									{role === "BRAND" && displayStatus !== "PAID" && (
-										<Button size="sm" onClick={handlePayNow} disabled={paying}>
-											{paying ? "…" : `💳 Pay ${formatAmount(deal.totalAmount ?? deal.sponsorshipAmount)}`}
-										</Button>
+										<button
+											type="button"
+											onClick={handlePayNow}
+											disabled={paying}
+											className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+										>
+											<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+												<rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+												<line x1="1" y1="10" x2="23" y2="10" />
+											</svg>
+											<span>{paying ? "…" : `Pay ${formatAmount(deal.totalAmount ?? deal.sponsorshipAmount)}`}</span>
+										</button>
 									)}
 								</div>
 								<div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
@@ -625,16 +703,56 @@ export function DealDetailsModal({
 				</div>
 
 				{role === "BRAND" && deal.status !== "APPROVED" && (
-					<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-2 shrink-0">
+					<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-3 shrink-0 bg-neutral-50 rounded-b-[21px]">
 						{requestingChanges ? (
 							<>
-								<Button variant="secondary" onClick={() => setRequestingChanges(false)} disabled={busy}>Back</Button>
-								<Button onClick={handleRequestChanges} disabled={busy}>{busy ? "…" : "Send Request"}</Button>
+								<button
+									type="button"
+									onClick={() => setRequestingChanges(false)}
+									disabled={busy}
+									className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-black font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+								>
+									Back
+								</button>
+								<button
+									type="button"
+									onClick={handleRequestChanges}
+									disabled={busy}
+									className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+								>
+									<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+										<path d="M22 2L11 13" />
+										<path d="M22 2l-7 20-4-9-9-4 20-7z" />
+									</svg>
+									<span>{busy ? "…" : "Send Request"}</span>
+								</button>
 							</>
 						) : (
 							<>
-								<Button variant="secondary" onClick={() => setRequestingChanges(true)} disabled={busy}>Request Changes</Button>
-								<Button onClick={handleApprove} disabled={busy}>{busy ? "…" : "Approve Deal"}</Button>
+								<button
+									type="button"
+									onClick={() => setRequestingChanges(true)}
+									disabled={busy}
+									className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-neutral-50 text-[#EE2C2C] font-black text-xs border-[2.5px] border-[#EE2C2C] shadow-[2.5px_2.5px_0px_0px_#EE2C2C] hover:shadow-[1px_1px_0px_0px_#EE2C2C] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+								>
+									<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+										<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+										<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+									</svg>
+									<span>Request Changes</span>
+								</button>
+								<button
+									type="button"
+									onClick={handleApprove}
+									disabled={busy}
+									className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#FFC940] hover:bg-[#ffbe1a] text-black font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+								>
+									<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+										<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+										<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+									</svg>
+									<span>{busy ? "…" : "Approve & Lock Deal"}</span>
+								</button>
 							</>
 						)}
 					</div>
@@ -1048,15 +1166,13 @@ export function DealReportModal({
 										</div>
 									))}
 									{role === "HOST" && isEditing && videoLinks.length < 5 && (
-										<Button
+										<button
 											type="button"
-											size="sm"
-											variant="secondary"
 											onClick={() => setVideoLinks((prev) => [...prev, ""])}
-											className="w-fit"
+											className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-50 text-black font-black text-xs border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer select-none w-fit"
 										>
 											+ Add Video Link
-										</Button>
+										</button>
 									)}
 								</div>
 							</Field>
@@ -1088,35 +1204,54 @@ export function DealReportModal({
 										</div>
 									))}
 									{role === "HOST" && isEditing && socialLinks.length < 5 && (
-										<Button
+										<button
 											type="button"
-											size="sm"
-											variant="secondary"
 											onClick={() => setSocialLinks((prev) => [...prev, ""])}
-											className="w-fit"
+											className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-50 text-black font-black text-xs border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer select-none w-fit"
 										>
 											+ Add Social Link
-										</Button>
+										</button>
 									)}
 								</div>
 							</Field>
 						</div>
 
 						{role === "HOST" && (
-							<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-2 shrink-0 bg-neutral-50 rounded-b-[21px]">
+							<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-3 shrink-0 bg-neutral-50 rounded-b-[21px]">
 								{isEditing ? (
 									<>
 										{report && (
-											<Button variant="secondary" onClick={() => setIsEditing(false)}>Cancel</Button>
+											<button
+												type="button"
+												onClick={() => setIsEditing(false)}
+												className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-black font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none"
+											>
+												Cancel
+											</button>
 										)}
-										<Button onClick={handleSubmit} disabled={!isValid || saving}>
-											{saving ? "Saving…" : report ? "Resubmit Report" : "Submit Report"}
-										</Button>
+										<button
+											type="button"
+											onClick={handleSubmit}
+											disabled={!isValid || saving}
+											className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#10B981] hover:bg-[#059669] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+										>
+											<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+												<polyline points="20 6 9 17 4 12" />
+											</svg>
+											<span>{saving ? "Saving…" : report ? "Resubmit Report" : "Submit Report"}</span>
+										</button>
 									</>
 								) : (
-									<Button onClick={() => setIsEditing(true)}>
-										Edit Report
-									</Button>
+									<button
+										type="button"
+										onClick={() => setIsEditing(true)}
+										className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#FFC940] hover:bg-[#ffbe1a] text-black font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none"
+									>
+										<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+											<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+										</svg>
+										<span>Edit Report</span>
+									</button>
 								)}
 							</div>
 						)}
@@ -1132,21 +1267,52 @@ export function DealReportModal({
 											placeholder="Write your requested revisions/changes here…"
 											className={inputClass}
 										/>
-										<div className="flex justify-end gap-2">
-											<Button variant="secondary" onClick={() => setShowRevisionInput(false)}>Cancel</Button>
-											<Button onClick={() => handleBrandAction("REVISION_REQUESTED")} disabled={saving || !revisionNote.trim()}>
-												Send Request
-											</Button>
+										<div className="flex justify-end gap-3">
+											<button
+												type="button"
+												onClick={() => setShowRevisionInput(false)}
+												className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-neutral-100 text-black font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none"
+											>
+												Cancel
+											</button>
+											<button
+												type="button"
+												onClick={() => handleBrandAction("REVISION_REQUESTED")}
+												disabled={saving || !revisionNote.trim()}
+												className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+											>
+												<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+													<path d="M22 2L11 13" />
+													<path d="M22 2l-7 20-4-9-9-4 20-7z" />
+												</svg>
+												<span>Send Request</span>
+											</button>
 										</div>
 									</div>
 								) : (
-									<div className="flex justify-end gap-2">
-										<Button variant="secondary" onClick={() => setShowRevisionInput(true)}>
-											Request Revision
-										</Button>
-										<Button onClick={() => handleBrandAction("APPROVED")} disabled={saving}>
-											Approve Report
-										</Button>
+									<div className="flex justify-end gap-3">
+										<button
+											type="button"
+											onClick={() => setShowRevisionInput(true)}
+											className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-neutral-50 text-[#EE2C2C] font-black text-xs border-[2.5px] border-[#EE2C2C] shadow-[2.5px_2.5px_0px_0px_#EE2C2C] hover:shadow-[1px_1px_0px_0px_#EE2C2C] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none"
+										>
+											<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+												<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+												<path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+											</svg>
+											<span>Request Revision</span>
+										</button>
+										<button
+											type="button"
+											onClick={() => handleBrandAction("APPROVED")}
+											disabled={saving}
+											className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#10B981] hover:bg-[#059669] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+										>
+											<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+												<polyline points="20 6 9 17 4 12" />
+											</svg>
+											<span>Approve Report</span>
+										</button>
 									</div>
 								)}
 							</div>
