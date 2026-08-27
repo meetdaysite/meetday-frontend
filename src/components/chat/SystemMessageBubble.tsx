@@ -4,8 +4,34 @@ import clsx from "clsx"
 export function SystemMessageBubble({ content }: { content: string }) {
 	const lower = content.toLowerCase()
 
-	// 1. Deal Locked / Approved
-	if (lower.includes("approved") || lower.includes("locked") || lower.includes("deal confirmed")) {
+	// 1. Report Approved / Deal Closed (Check first so "report approved" isn't shadowed by generic "approved")
+	if (
+		lower.includes("report approved") ||
+		lower.includes("deliverables approved") ||
+		lower.includes("deal is closed") ||
+		lower.includes("closed")
+	) {
+		return (
+			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#ECFDF5] border-2 border-black text-[#065F46] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
+				<div className="size-6 rounded-full bg-[#10B981] border-2 border-black text-white flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+						<polyline points="20 6 9 17 4 12" />
+					</svg>
+				</div>
+				<span className="leading-snug">
+					🎉 <strong className="font-black text-black">Report approved</strong>, the <strong className="font-black text-black">deal is closed</strong>!
+				</span>
+			</div>
+		)
+	}
+
+	// 2. Deal Locked / Approved
+	if (
+		lower.includes("locked") ||
+		lower.includes("deal confirmed") ||
+		lower.includes("deal approved") ||
+		lower.includes("approved")
+	) {
 		return (
 			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#ECFDF5] border-2 border-black text-[#065F46] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
 				<div className="size-6 rounded-full bg-[#10B981] border-2 border-black text-white flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
@@ -15,14 +41,19 @@ export function SystemMessageBubble({ content }: { content: string }) {
 					</svg>
 				</div>
 				<span className="leading-snug">
-					🎉 The <strong className="font-black text-black">deal is officially locked</strong> and confirmed!
+					🔒 The <strong className="font-black text-black">deal is officially locked</strong> and confirmed!
 				</span>
 			</div>
 		)
 	}
 
-	// 2. Deal Proposal Created / Shared
-	if (lower.includes("created") || lower.includes("proposal") || lower.includes("shared") || lower.includes("deal terms")) {
+	// 3. Deal Proposal Created / Shared
+	if (
+		lower.includes("created") ||
+		lower.includes("proposal") ||
+		lower.includes("shared") ||
+		lower.includes("deal terms")
+	) {
 		return (
 			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#FFFBEB] border-2 border-black text-[#92400E] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
 				<div className="size-6 rounded-full bg-[#FFC940] border-2 border-black text-black flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
@@ -40,7 +71,7 @@ export function SystemMessageBubble({ content }: { content: string }) {
 		)
 	}
 
-	// 3. Changes Requested
+	// 4. Changes Requested
 	if (lower.includes("changes") || lower.includes("requested change") || lower.includes("revision")) {
 		return (
 			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#FEF2F2] border-2 border-black text-[#991B1B] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
@@ -52,22 +83,6 @@ export function SystemMessageBubble({ content }: { content: string }) {
 				</div>
 				<span className="leading-snug">
 					⚠️ <strong className="font-black text-black">Changes were requested</strong> on the proposal.
-				</span>
-			</div>
-		)
-	}
-
-	// 4. Report Approved
-	if (lower.includes("report approved") || lower.includes("deliverables approved")) {
-		return (
-			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#F0FDF4] border-2 border-black text-[#15803D] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
-				<div className="size-6 rounded-full bg-[#22C55E] border-2 border-black text-white flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-						<polyline points="20 6 9 17 4 12" />
-					</svg>
-				</div>
-				<span className="leading-snug">
-					✅ Deliverables <strong className="font-black text-black">report approved</strong>!
 				</span>
 			</div>
 		)

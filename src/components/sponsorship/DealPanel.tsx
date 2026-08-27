@@ -905,7 +905,7 @@ export function DealReportModal({
 				deliverables: deliverablesList,
 				videoLinks: videoLinks.filter(Boolean),
 				socialLinks: socialLinks.filter(Boolean),
-				status: "PENDING",
+				status: reportStatus || "PENDING",
 				revisionNote: ""
 			})
 
@@ -914,9 +914,8 @@ export function DealReportModal({
 				notes: "",
 				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
 			})
-			toast.success(report ? "Report resubmitted." : "Report submitted.")
+			toast.success(report ? "Report saved." : "Report submitted.")
 			setReport(saved)
-			setReportStatus("PENDING")
 			setIsEditing(false)
 			onClose()
 		} catch {
@@ -949,9 +948,9 @@ export function DealReportModal({
 				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
 			})
 			if (status === "APPROVED") {
-				await sendSponsorshipChatMessage(interestId, { content: "report approved!", messageType: "SYSTEM" }).catch(() => null)
+				await sendSponsorshipChatMessage(interestId, { content: "report approved, deal is closed", messageType: "SYSTEM" }).catch(() => null)
 			}
-			toast.success(status === "APPROVED" ? "Report approved!" : "Revision request sent.")
+			toast.success(status === "APPROVED" ? "Report approved, deal is closed!" : "Revision request sent.")
 			setReport(saved)
 			setReportStatus(status)
 			onClose()
@@ -1216,7 +1215,7 @@ export function DealReportModal({
 							</Field>
 						</div>
 
-						{role === "HOST" && (
+						{role === "HOST" && reportStatus !== "APPROVED" && (
 							<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-3 shrink-0 bg-neutral-50 rounded-b-[21px]">
 								{isEditing ? (
 									<>
