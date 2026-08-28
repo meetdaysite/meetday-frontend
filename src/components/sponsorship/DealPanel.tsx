@@ -10,6 +10,7 @@ import {
 	type SponsorshipDeal,
 	type SponsorshipDealPayload,
 	type SponsorshipDealReport,
+	isReportApproved,
 	getSponsorshipDeal,
 	createSponsorshipDeal,
 	updateSponsorshipDeal,
@@ -127,6 +128,7 @@ export function DealBanner({
 	onView,
 	onReport,
 	hasReport,
+	report,
 	isCampaign = false,
 }: {
 	deal: SponsorshipDeal | null
@@ -136,6 +138,7 @@ export function DealBanner({
 	onView: () => void
 	onReport?: () => void
 	hasReport?: boolean
+	report?: SponsorshipDealReport | null
 	isCampaign?: boolean
 }) {
 	const canLockOrEdit = isCampaign ? role === "BRAND" : role === "HOST"
@@ -163,11 +166,27 @@ export function DealBanner({
 		)
 	}
 
+	const isClosed = isReportApproved(report)
+
 	return (
 		<div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-neutral-50 flex items-center justify-between gap-3 shrink-0">
 			<div className="min-w-0 flex items-center gap-2">
-				<span className={clsx("px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]", STATUS_COLOR[deal.status])}>
-					{STATUS_LABEL[deal.status]}
+				<span className={clsx(
+					"px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] inline-flex items-center gap-1.5",
+					isClosed ? "bg-black text-white" : STATUS_COLOR[deal.status]
+				)}>
+					{isClosed ? (
+						<>
+							<span className="inline-flex items-center justify-center size-3.5 rounded-full bg-[#10B981] text-white shrink-0">
+								<svg className="size-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+									<polyline points="20 6 9 17 4 12" />
+								</svg>
+							</span>
+							<span>Closed</span>
+						</>
+					) : (
+						STATUS_LABEL[deal.status]
+					)}
 				</span>
 				{deal.status === "APPROVED" && (
 					<span className={clsx("px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]", PAYMENT_STATUS_COLOR[getDealPaymentDisplayStatus(deal)])}>
@@ -496,8 +515,9 @@ export function DealFormModal({
 							<input
 								type="number"
 								min={0}
-								value={form.sponsorshipAmount}
-								onChange={e => setForm(f => ({ ...f, sponsorshipAmount: Number(e.target.value) }))}
+								value={form.sponsorshipAmount === 0 ? "" : form.sponsorshipAmount}
+								onChange={e => setForm(f => ({ ...f, sponsorshipAmount: e.target.value === "" ? 0 : Number(e.target.value) }))}
+								placeholder="0"
 								className={inputClass}
 							/>
 						</Field>
@@ -733,7 +753,7 @@ export function DealDetailsModal({
 									type="button"
 									onClick={() => setRequestingChanges(true)}
 									disabled={busy}
-									className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-neutral-50 text-[#EE2C2C] font-black text-xs border-[2.5px] border-[#EE2C2C] shadow-[2.5px_2.5px_0px_0px_#EE2C2C] hover:shadow-[1px_1px_0px_0px_#EE2C2C] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+									className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
 								>
 									<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
 										<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -905,7 +925,7 @@ export function DealReportModal({
 				deliverables: deliverablesList,
 				videoLinks: videoLinks.filter(Boolean),
 				socialLinks: socialLinks.filter(Boolean),
-				status: "PENDING",
+				status: reportStatus || "PENDING",
 				revisionNote: ""
 			})
 
@@ -914,9 +934,8 @@ export function DealReportModal({
 				notes: "",
 				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
 			})
-			toast.success(report ? "Report resubmitted." : "Report submitted.")
+			toast.success(report ? "Report saved." : "Report submitted.")
 			setReport(saved)
-			setReportStatus("PENDING")
 			setIsEditing(false)
 			onClose()
 		} catch {
@@ -949,9 +968,22 @@ export function DealReportModal({
 				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
 			})
 			if (status === "APPROVED") {
-				await sendSponsorshipChatMessage(interestId, { content: "report approved!", messageType: "SYSTEM" }).catch(() => null)
+				await sendSponsorshipChatMessage(interestId, { content: "report approved, deal is closed", messageType: "SYSTEM" }).catch(() => null)
+				// Trigger confetti sparkle animation locally in the chat canvas
+				const canvas = document.getElementById("chat-confetti-canvas") as HTMLCanvasElement | null
+				if (canvas) {
+					const myConfetti = confetti.create(canvas, {
+						resize: true,
+						useWorker: true
+					})
+					myConfetti({
+						particleCount: 150,
+						spread: 80,
+						origin: { y: 0.6 }
+					})
+				}
 			}
-			toast.success(status === "APPROVED" ? "Report approved!" : "Revision request sent.")
+			toast.success(status === "APPROVED" ? "Report approved, deal is closed!" : "Revision request sent.")
 			setReport(saved)
 			setReportStatus(status)
 			onClose()
@@ -973,7 +1005,7 @@ export function DealReportModal({
 			<div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg flex flex-col max-h-[90vh]">
 				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0 bg-neutral-50 rounded-t-[21px]">
 					<div className="flex items-center gap-3">
-						<p className="text-lg font-black text-black">📝 Deliverables Report</p>
+						<p className="text-lg font-black text-black">Deliverables Report</p>
 						{report && (
 							<span className={clsx("px-2 py-0.5 border-2 rounded-full text-[9px] font-black uppercase tracking-wide", STATUS_BADGES[reportStatus]?.color)}>
 								{STATUS_BADGES[reportStatus]?.label}
@@ -1216,7 +1248,7 @@ export function DealReportModal({
 							</Field>
 						</div>
 
-						{role === "HOST" && (
+						{role === "HOST" && reportStatus !== "APPROVED" && (
 							<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-3 shrink-0 bg-neutral-50 rounded-b-[21px]">
 								{isEditing ? (
 									<>
@@ -1233,7 +1265,7 @@ export function DealReportModal({
 											type="button"
 											onClick={handleSubmit}
 											disabled={!isValid || saving}
-											className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#10B981] hover:bg-[#059669] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+											className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#FFC940] hover:bg-[#ffbe1a] text-black font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
 										>
 											<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
 												<polyline points="20 6 9 17 4 12" />
@@ -1294,7 +1326,7 @@ export function DealReportModal({
 										<button
 											type="button"
 											onClick={() => setShowRevisionInput(true)}
-											className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-neutral-50 text-[#EE2C2C] font-black text-xs border-[2.5px] border-[#EE2C2C] shadow-[2.5px_2.5px_0px_0px_#EE2C2C] hover:shadow-[1px_1px_0px_0px_#EE2C2C] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none"
+											className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none"
 										>
 											<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
 												<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -1306,7 +1338,7 @@ export function DealReportModal({
 											type="button"
 											onClick={() => handleBrandAction("APPROVED")}
 											disabled={saving}
-											className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#10B981] hover:bg-[#059669] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+											className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#FFC940] hover:bg-[#ffbe1a] text-black font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
 										>
 											<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
 												<polyline points="20 6 9 17 4 12" />

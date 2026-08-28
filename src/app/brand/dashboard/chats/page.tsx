@@ -17,6 +17,7 @@ import {
 	acceptSponsorshipChatRequest,
 	getSponsorshipDeal,
 	getSponsorshipDealReport,
+	isReportApproved,
 	type SponsorshipChatThread,
 	type SponsorshipChatMessage,
 	type SponsorshipDeal,
@@ -335,12 +336,23 @@ export default function BrandChatsPage() {
 
 											<div className="flex-1 min-w-0">
 												<div className="flex items-center justify-between gap-2">
-													<div className="flex items-center gap-1.5 min-w-0">
-														<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
-														{t.isDealLocked && (
-															<span className="shrink-0 text-xs" title="Deal Locked">🔒</span>
-														)}
-													</div>
+													{(() => {
+														const isThreadClosed = t.isDealClosed || (!!t.lastMessagePreview && (t.lastMessagePreview.toLowerCase().includes("approved the deliverables report") || t.lastMessagePreview.toLowerCase().includes("report approved") || t.lastMessagePreview.toLowerCase().includes("deal is closed")))
+														return (
+															<div className="flex items-center gap-1.5 min-w-0">
+																<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
+																{isThreadClosed ? (
+																	<span className="shrink-0 inline-flex items-center justify-center size-4 rounded-full bg-[#10B981] text-white" title="Deal Closed">
+																		<svg className="size-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+																			<polyline points="20 6 9 17 4 12" />
+																		</svg>
+																	</span>
+																) : t.isDealLocked ? (
+																	<span className="shrink-0 text-xs" title="Deal Locked">🔒</span>
+																) : null}
+															</div>
+														)
+													})()}
 													<span className="text-[10px] font-semibold text-black/30 shrink-0">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
 												</div>
 												<div className="flex items-center justify-between gap-2 mt-0.5">
@@ -525,6 +537,24 @@ function BrandChatThreadPanel({
 		}
 	}, [deal])
 
+	useEffect(() => {
+		if ((isReportApproved(report) || thread.isDealClosed) && !localStorage.getItem(`confetti-report-fired-${thread.id}`)) {
+			localStorage.setItem(`confetti-report-fired-${thread.id}`, "true")
+			const canvas = document.getElementById("chat-confetti-canvas") as HTMLCanvasElement | null
+			if (canvas) {
+				const myConfetti = confetti.create(canvas, {
+					resize: true,
+					useWorker: true
+				})
+				myConfetti({
+					particleCount: 150,
+					spread: 80,
+					origin: { y: 0.6 }
+				})
+			}
+		}
+	}, [report, thread.isDealClosed, thread.id])
+
 	async function handleSend() {
 		if (!input.trim()) return
 		if (editingMessageId) {
@@ -671,14 +701,7 @@ function BrandChatThreadPanel({
 						)}
 					</div>
 					<div className="min-w-0 flex-1">
-						<div className="flex items-center gap-1.5">
-							<p className="text-xs sm:text-sm font-black text-black truncate leading-tight">{thread.counterpartName}</p>
-							{((deal && deal.status === "APPROVED") || thread.isDealLocked) && (
-								<span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-									🔒 Locked
-								</span>
-							)}
-						</div>
+						<p className="text-xs sm:text-sm font-black text-black truncate leading-tight">{thread.counterpartName}</p>
 						<p className="text-[10px] sm:text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
 					</div>
 				</div>
@@ -702,6 +725,7 @@ function BrandChatThreadPanel({
 					onView={() => setShowDealModal(true)}
 					onReport={() => setShowReportModal(true)}
 					hasReport={!!report}
+					report={report}
 					isCampaign={!!thread.campaignId}
 				/>
 			)}
