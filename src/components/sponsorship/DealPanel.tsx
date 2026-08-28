@@ -172,10 +172,21 @@ export function DealBanner({
 		<div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-neutral-50 flex items-center justify-between gap-3 shrink-0">
 			<div className="min-w-0 flex items-center gap-2">
 				<span className={clsx(
-					"px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+					"px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] inline-flex items-center gap-1.5",
 					isClosed ? "bg-black text-white" : STATUS_COLOR[deal.status]
 				)}>
-					{isClosed ? "Closed" : STATUS_LABEL[deal.status]}
+					{isClosed ? (
+						<>
+							<span className="inline-flex items-center justify-center size-3.5 rounded-full bg-[#10B981] text-white shrink-0">
+								<svg className="size-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+									<polyline points="20 6 9 17 4 12" />
+								</svg>
+							</span>
+							<span>Closed</span>
+						</>
+					) : (
+						STATUS_LABEL[deal.status]
+					)}
 				</span>
 				{deal.status === "APPROVED" && (
 					<span className={clsx("px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]", PAYMENT_STATUS_COLOR[getDealPaymentDisplayStatus(deal)])}>

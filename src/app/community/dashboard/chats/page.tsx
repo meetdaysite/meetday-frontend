@@ -344,9 +344,23 @@ export default function CommunityChatsPage() {
 
 											<div className="flex-1 min-w-0">
 												<div className="flex items-center justify-between gap-2">
-													<div className="flex items-center gap-1.5 min-w-0">
-														<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
-													</div>
+													{(() => {
+														const isThreadClosed = t.isDealClosed || (!!t.lastMessagePreview && (t.lastMessagePreview.toLowerCase().includes("approved the deliverables report") || t.lastMessagePreview.toLowerCase().includes("report approved") || t.lastMessagePreview.toLowerCase().includes("deal is closed")))
+														return (
+															<div className="flex items-center gap-1.5 min-w-0">
+																<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
+																{isThreadClosed ? (
+																	<span className="shrink-0 inline-flex items-center justify-center size-4 rounded-full bg-[#10B981] text-white" title="Deal Closed">
+																		<svg className="size-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+																			<polyline points="20 6 9 17 4 12" />
+																		</svg>
+																	</span>
+																) : t.isDealLocked ? (
+																	<span className="shrink-0 text-xs" title="Deal Locked">🔒</span>
+																) : null}
+															</div>
+														)
+													})()}
 													<span className="text-[10px] font-semibold text-black/30 shrink-0">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
 												</div>
 												<div className="flex items-center justify-between gap-2 mt-0.5">
