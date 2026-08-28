@@ -180,6 +180,37 @@ export function CommunityProfileDetailsPanel({
 					</div>
 				)}
 
+				{/* Brands Worked With */}
+				{community.brandsWorkedWith && community.brandsWorkedWith.filter((b) => b.logoUrl || b.brandName).length > 0 && (
+					<div className="flex flex-col gap-3 mt-2">
+						<span className="text-xs font-bold text-black/50">Brands Worked With</span>
+						<div className="flex flex-wrap gap-3">
+							{community.brandsWorkedWith
+								.filter((b) => b.logoUrl || b.brandName)
+								.map((brand, i) => (
+									<div
+										key={i}
+										className="flex flex-col items-center gap-1.5 p-3 bg-slate-50 rounded-2xl border border-black/5 w-20"
+									>
+										<div className="size-12 rounded-xl border border-black/10 overflow-hidden bg-white flex items-center justify-center shrink-0">
+											{brand.logoUrl ? (
+												// eslint-disable-next-line @next/next/no-img-element
+												<img src={brand.logoUrl} alt={brand.brandName || "Brand logo"} className="size-full object-cover" />
+											) : (
+												<Icon as={UploadSvg} size="sm" color="muted" />
+											)}
+										</div>
+										{brand.brandName && (
+											<span className="text-[10px] font-bold text-black/70 text-center truncate w-full">
+												{brand.brandName}
+											</span>
+										)}
+									</div>
+								))}
+						</div>
+					</div>
+				)}
+
 				{/* Statistics / Numbers Grid */}
 				<div className="grid grid-cols-2 gap-4">
 					<div className="p-3.5 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-1">

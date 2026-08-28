@@ -31,6 +31,12 @@ async function uploadPastEventImageAndGetKey(file: File): Promise<string> {
 	return key
 }
 
+async function uploadBrandLogoAndGetKey(file: File): Promise<string> {
+	const { url, key } = await getUploadUrl({ context: "COMMUNITY_BRAND_LOGO_MEDIA", contentType: file.type })
+	await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
+	return key
+}
+
 // One past-event entry being edited in the form. Images can be a mix of already-uploaded
 // keys (editing an existing profile) and newly picked local files (uploaded on submit).
 type PastEventDraft = {
@@ -40,6 +46,17 @@ type PastEventDraft = {
 }
 
 const emptyPastEventDraft = (): PastEventDraft => ({ name: "", description: "", images: [] })
+
+// One "brand worked with" entry being edited — logo can be an already-uploaded key
+// (editing an existing profile) or a newly picked local file (uploaded on submit).
+type BrandWorkedWithDraft = {
+	brandName: string
+	logoKey?: string
+	logoUrl?: string
+	logoFile?: File
+}
+
+const emptyBrandWorkedWithDraft = (): BrandWorkedWithDraft => ({ brandName: "" })
 
 interface ActivateCommunityModalProps {
 	hostId: string
@@ -89,6 +106,7 @@ export function ActivateCommunityModal({
 	const [secondaryImageRemoved, setSecondaryImageRemoved] = useState(false)
 	const secondaryImageInputRef = useRef<HTMLInputElement>(null)
 	const [pastEvents, setPastEvents] = useState<PastEventDraft[]>([])
+	const [brandsWorkedWith, setBrandsWorkedWith] = useState<BrandWorkedWithDraft[]>([])
 	const [submitting, setSubmitting] = useState(false)
 
 	const logoInputRef = useRef<HTMLInputElement>(null)
@@ -120,6 +138,13 @@ export function ActivateCommunityModal({
 							name: e.name ?? "",
 							description: e.description ?? "",
 							images: e.imageKeys.map((key, i) => ({ key, url: e.imageUrls[i] ?? "" })),
+						})),
+					)
+					setBrandsWorkedWith(
+						(existing.brandsWorkedWith ?? []).map((b) => ({
+							brandName: b.brandName ?? "",
+							logoKey: b.logoKey ?? undefined,
+							logoUrl: b.logoUrl ?? undefined,
 						})),
 					)
 					setInstagram(profileInstagram)
@@ -232,6 +257,28 @@ export function ActivateCommunityModal({
 		)
 	}
 
+	function addBrandWorkedWith() {
+		setBrandsWorkedWith((prev) => [...prev, emptyBrandWorkedWithDraft()])
+	}
+
+	function removeBrandWorkedWith(index: number) {
+		setBrandsWorkedWith((prev) => prev.filter((_, i) => i !== index))
+	}
+
+	function updateBrandWorkedWithName(index: number, value: string) {
+		setBrandsWorkedWith((prev) => prev.map((b, i) => (i === index ? { ...b, brandName: value } : b)))
+	}
+
+	function updateBrandWorkedWithLogo(index: number, file: File) {
+		if (!file.type.startsWith("image/")) {
+			toast.error("Only image files are accepted.")
+			return
+		}
+		setBrandsWorkedWith((prev) =>
+			prev.map((b, i) => (i === index ? { ...b, logoFile: file, logoUrl: URL.createObjectURL(file) } : b)),
+		)
+	}
+
 	const handleActivationSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		if (submitting) return
@@ -288,6 +335,15 @@ export function ActivateCommunityModal({
 				})),
 			)
 
+			const brandsWorkedWithPayload = await Promise.all(
+				brandsWorkedWith
+					.filter((b) => b.brandName.trim() || b.logoFile || b.logoKey)
+					.map(async (b) => ({
+						brandName: b.brandName.trim() || undefined,
+						logoKey: b.logoFile ? await uploadBrandLogoAndGetKey(b.logoFile) : b.logoKey,
+					})),
+			)
+
 			const saved = await activateHostCommunityProfile({
 				name: communityName.trim(),
 				about: aboutCommunity.trim(),
@@ -298,6 +354,7 @@ export function ActivateCommunityModal({
 				experiencesPerYear: experiencesPerYear.trim(),
 				categoryIds,
 				pastEvents: pastEventsPayload,
+				brandsWorkedWith: brandsWorkedWithPayload,
 			})
 
 			try {
@@ -579,6 +636,71 @@ export function ActivateCommunityModal({
 						className="bg-[#FFC940] border-2 border-black text-black text-xs font-bold py-2 px-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all self-start"
 					>
 						+ Add Showcase
+					</Button>
+				</div>
+
+				{/* Brands Worked With */}
+				<div className="flex flex-col gap-3">
+					<div className="flex items-center justify-between">
+						<label className="text-xs font-bold text-black">Brands You&apos;ve Worked With (Optional)</label>
+						<span className="text-[10px] text-black/40">Add brand name + logo</span>
+					</div>
+					{brandsWorkedWith.map((brand, i) => (
+						<div key={i} className="flex items-center gap-3 p-3 rounded-xl border-2 border-black/10 bg-slate-50/50">
+							<div className={clsx(
+								"size-14 rounded-xl bg-white flex items-center justify-center overflow-hidden shrink-0",
+								inline ? "border border-dashed border-black/20" : "border-2 border-dashed border-black/30"
+							)}>
+								{brand.logoUrl ? (
+									// eslint-disable-next-line @next/next/no-img-element
+									<img src={brand.logoUrl} alt={brand.brandName || "Brand logo"} className="size-full object-cover" />
+								) : (
+									<Icon as={UploadSvg} size="sm" color="muted" />
+								)}
+							</div>
+							<input
+								type="text"
+								value={brand.brandName}
+								onChange={(e) => updateBrandWorkedWithName(i, e.target.value)}
+								placeholder="Brand name"
+								className={clsx(
+									"flex-1 h-10 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors",
+									inline ? "border border-black/15 focus:border-black/35" : "border-2 border-black"
+								)}
+							/>
+							<label className="shrink-0 cursor-pointer">
+								<input
+									type="file"
+									accept="image/*"
+									className="hidden"
+									onChange={(e) => {
+										const file = e.target.files?.[0]
+										e.target.value = ""
+										if (file) updateBrandWorkedWithLogo(i, file)
+									}}
+								/>
+								<span className="inline-flex items-center bg-white border-2 border-black text-black text-[10px] font-bold py-1.5 px-3 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all">
+									{brand.logoUrl ? "Change Logo" : "Upload Logo"}
+								</span>
+							</label>
+							<button
+								type="button"
+								onClick={() => removeBrandWorkedWith(i)}
+								className="text-black/40 hover:text-red-600 text-xs font-bold transition-colors shrink-0"
+							>
+								Remove
+							</button>
+						</div>
+					))}
+					<Button
+						type="button"
+						variant="secondary"
+						size="sm"
+						radius="md"
+						onClick={addBrandWorkedWith}
+						className="bg-[#FFC940] border-2 border-black text-black text-xs font-bold py-2 px-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all self-start"
+					>
+						+ Add More
 					</Button>
 				</div>
 
