@@ -1093,6 +1093,7 @@ export type HostCommunityProfilePayload = {
 	categoryIds: string[]
 	secondaryImageKey?: string | null
 	pastEvents?: PastEventPayload[]
+	brandsWorkedWith?: BrandWorkedWithPayload[]
 }
 
 export type PastEventPayload = {
@@ -1106,6 +1107,17 @@ export type PastEvent = {
 	description: string | null
 	imageKeys: string[]
 	imageUrls: string[]
+}
+
+export type BrandWorkedWithPayload = {
+	brandName?: string
+	logoKey?: string
+}
+
+export type BrandWorkedWith = {
+	brandName: string | null
+	logoKey: string | null
+	logoUrl: string | null
 }
 
 export type HostCommunityProfile = {
@@ -1122,6 +1134,7 @@ export type HostCommunityProfile = {
 	experiencesPerYear: string
 	categories: Category[]
 	pastEvents?: PastEvent[]
+	brandsWorkedWith?: BrandWorkedWith[]
 	approvalStatus: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED"
 	adminRejectionRemark: string | null
 	pendingRevision?: Record<string, unknown> | null
@@ -1880,7 +1893,7 @@ export async function getCommunityAnnouncements(
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
-	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "SPONSORSHIP_DEAL_REPORT_MEDIA"
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "SPONSORSHIP_DEAL_REPORT_MEDIA" | "COMMUNITY_BRAND_LOGO_MEDIA"
 	contentType: string
 	resourceId?: string
 	mediaType?: string
