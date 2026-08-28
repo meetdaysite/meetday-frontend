@@ -62,6 +62,11 @@ export async function uploadSponsorshipDealReportImage(file: File, interestId: s
 	return key
 }
 
+// Presigned URLs keep the object key (with its extension) before the query string.
+export function isPdfMediaUrl(url: string): boolean {
+	return url.split("?")[0].toLowerCase().endsWith(".pdf")
+}
+
 export function storageUrl(key: string): string {
 	if (!key) return ""
 	if (key.startsWith("http")) return key

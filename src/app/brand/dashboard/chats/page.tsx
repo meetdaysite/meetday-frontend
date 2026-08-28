@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import { useBrandStore } from "@/store/brandStore"
-import { uploadSponsorshipChatImage } from "@/lib/uploadMedia"
+import { uploadSponsorshipChatImage, isPdfMediaUrl } from "@/lib/uploadMedia"
 import {
 	getMySponsorshipChats,
 	getSponsorshipChatMessages,
@@ -17,6 +17,7 @@ import {
 	acceptSponsorshipChatRequest,
 	getSponsorshipDeal,
 	getSponsorshipDealReport,
+	isReportApproved,
 	type SponsorshipChatThread,
 	type SponsorshipChatMessage,
 	type SponsorshipDeal,
@@ -31,6 +32,7 @@ import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { useNotificationStore } from "@/store/notificationStore"
 import { LinkifiedText } from "@/components/ui/LinkifiedText"
+import { SystemMessageBubble } from "@/components/chat/SystemMessageBubble"
 import confetti from "canvas-confetti"
 
 const POLL_MS = 4000
@@ -334,12 +336,23 @@ export default function BrandChatsPage() {
 
 											<div className="flex-1 min-w-0">
 												<div className="flex items-center justify-between gap-2">
-													<div className="flex items-center gap-1.5 min-w-0">
-														<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
-														{t.isDealLocked && (
-															<span className="shrink-0 text-xs" title="Deal Locked">🔒</span>
-														)}
-													</div>
+													{(() => {
+														const isThreadClosed = t.isDealClosed || (!!t.lastMessagePreview && (t.lastMessagePreview.toLowerCase().includes("approved the deliverables report") || t.lastMessagePreview.toLowerCase().includes("report approved") || t.lastMessagePreview.toLowerCase().includes("deal is closed")))
+														return (
+															<div className="flex items-center gap-1.5 min-w-0">
+																<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
+																{isThreadClosed ? (
+																	<span className="shrink-0 inline-flex items-center justify-center size-4 rounded-full bg-[#10B981] text-white" title="Deal Closed">
+																		<svg className="size-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+																			<polyline points="20 6 9 17 4 12" />
+																		</svg>
+																	</span>
+																) : t.isDealLocked ? (
+																	<span className="shrink-0 text-xs" title="Deal Locked">🔒</span>
+																) : null}
+															</div>
+														)
+													})()}
 													<span className="text-[10px] font-semibold text-black/30 shrink-0">{timeAgo(t.lastMessageAt ?? t.createdAt)}</span>
 												</div>
 												<div className="flex items-center justify-between gap-2 mt-0.5">
@@ -524,6 +537,24 @@ function BrandChatThreadPanel({
 		}
 	}, [deal])
 
+	useEffect(() => {
+		if ((isReportApproved(report) || thread.isDealClosed) && !localStorage.getItem(`confetti-report-fired-${thread.id}`)) {
+			localStorage.setItem(`confetti-report-fired-${thread.id}`, "true")
+			const canvas = document.getElementById("chat-confetti-canvas") as HTMLCanvasElement | null
+			if (canvas) {
+				const myConfetti = confetti.create(canvas, {
+					resize: true,
+					useWorker: true
+				})
+				myConfetti({
+					particleCount: 150,
+					spread: 80,
+					origin: { y: 0.6 }
+				})
+			}
+		}
+	}, [report, thread.isDealClosed, thread.id])
+
 	async function handleSend() {
 		if (!input.trim()) return
 		if (editingMessageId) {
@@ -607,8 +638,8 @@ function BrandChatThreadPanel({
 		const file = e.target.files?.[0]
 		e.target.value = ""
 		if (!file) return
-		if (!file.type.startsWith("image/")) {
-			toast.error("Only image files can be sent.")
+		if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
+			toast.error("Only image or PDF files can be sent.")
 			return
 		}
 		setUploadingImage(true)
@@ -618,7 +649,7 @@ function BrandChatThreadPanel({
 			setMessages(prev => [...prev, msg])
 			setReplyingTo(null)
 		} catch {
-			toast.error("Failed to send image.")
+			toast.error("Failed to send file.")
 		} finally {
 			setUploadingImage(false)
 		}
@@ -632,7 +663,7 @@ function BrandChatThreadPanel({
 
 	function replySnippet(replyTo: SponsorshipChatMessage["replyTo"]) {
 		if (!replyTo) return ""
-		return replyTo.content?.trim() ? replyTo.content : replyTo.hasMedia ? "\ud83d\udcf7 Photo" : ""
+		return replyTo.content?.trim() ? replyTo.content : replyTo.hasMedia ? "📄 Attachment" : ""
 	}
 
 	function replyLabel(senderType: SponsorshipChatMessage["senderType"]) {
@@ -670,21 +701,18 @@ function BrandChatThreadPanel({
 						)}
 					</div>
 					<div className="min-w-0 flex-1">
-						<div className="flex items-center gap-1.5">
-							<p className="text-xs sm:text-sm font-black text-black truncate leading-tight">{thread.counterpartName}</p>
-							{((deal && deal.status === "APPROVED") || thread.isDealLocked) && (
-								<span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[8px] sm:text-[9px] font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-									🔒 Locked
-								</span>
-							)}
-						</div>
+						<p className="text-xs sm:text-sm font-black text-black truncate leading-tight">{thread.counterpartName}</p>
 						<p className="text-[10px] sm:text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
 					</div>
 				</div>
 				{thread.chatStatus === "REQUESTED" && !!thread.campaignId && (
-					<Button size="sm" onClick={() => onAccept(thread.id)}>
-						Accept
-					</Button>
+					<button
+						type="button"
+						onClick={() => onAccept(thread.id)}
+						className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer select-none"
+					>
+						Accept Request
+					</button>
 				)}
 			</div>
 
@@ -697,6 +725,7 @@ function BrandChatThreadPanel({
 					onView={() => setShowDealModal(true)}
 					onReport={() => setShowReportModal(true)}
 					hasReport={!!report}
+					report={report}
 					isCampaign={!!thread.campaignId}
 				/>
 			)}
@@ -727,21 +756,7 @@ function BrandChatThreadPanel({
 				) : (
 					messages.map(m => {
 						if (m.messageType === "SYSTEM") {
-							const formatSystemMessage = (content: string) => {
-								const lower = content.toLowerCase()
-								if (lower.includes("created") || lower.includes("proposal") || lower.includes("shared")) {
-									return "📄 A deal proposal was shared for approval."
-								}
-								if (lower.includes("approved") || lower.includes("locked") || lower.includes("accepted")) {
-									return "🔒 The deal is locked!"
-								}
-								return content
-							}
-							return (
-								<div key={m.id} className="self-center max-w-[90%] px-3 py-1.5 rounded-full bg-neutral-100 text-black/50 text-[11px] font-bold text-center">
-									{formatSystemMessage(m.content ?? "")}
-								</div>
-							)
+							return <SystemMessageBubble key={m.id} content={m.content ?? ""} />
 						}
 						const isMine = m.senderType === "BRAND"
 						const isDeleted = !!m.deletedAt
@@ -817,7 +832,7 @@ function BrandChatThreadPanel({
 													</p>
 													{m.replyTo.hasMedia && (
 														<p className={clsx("text-xs font-semibold flex items-center gap-1 my-0.5", m.senderType === "BRAND" ? "text-white/90" : "text-black/70")}>
-															📷 Photo
+														📄 Attachment
 														</p>
 													)}
 													{m.replyTo.content && (
@@ -828,13 +843,24 @@ function BrandChatThreadPanel({
 												</button>
 											)}
 											{m.mediaUrl && (
-												/* eslint-disable-next-line @next/next/no-img-element */
-												<img
-													src={m.mediaUrl}
-													alt="Shared image"
-													onClick={() => setViewingImage(m.mediaUrl!)}
-													className="max-w-[220px] max-h-[220px] rounded-xl border border-black/15 object-cover cursor-pointer mb-1 shadow-sm"
-												/>
+												isPdfMediaUrl(m.mediaUrl) ? (
+													<a
+														href={m.mediaUrl}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border-[3px] border-black bg-white hover:bg-neutral-50 mb-1 text-sm font-bold text-black"
+													>
+														📄 View PDF
+													</a>
+												) : (
+													/* eslint-disable-next-line @next/next/no-img-element */
+													<img
+														src={m.mediaUrl}
+														alt="Shared image"
+														onClick={() => setViewingImage(m.mediaUrl!)}
+														className="max-w-[220px] max-h-[220px] rounded-2xl border-[3px] border-black object-cover cursor-pointer mb-1"
+													/>
+												)
 											)}
 											{m.content && (
 												<div className="px-1 py-0.5">
@@ -885,7 +911,7 @@ function BrandChatThreadPanel({
 						<div className="px-3 pt-2 flex items-center justify-between gap-2 border-b border-black/10 pb-2">
 							<div className="min-w-0 pl-2 border-l-2 border-[#EE2C2C]">
 								<p className="text-[10px] font-black uppercase text-black/40">Replying to {replyLabel(replyingTo.senderType)}</p>
-								<p className="text-[11px] font-semibold text-black/60 truncate">{replyingTo.content?.trim() ? replyingTo.content : (replyingTo.mediaUrl ? "Photo" : "")}</p>
+							<p className="text-[11px] font-semibold text-black/50 truncate">{replyingTo.content?.trim() ? replyingTo.content : (replyingTo.mediaUrl ? "Attachment" : "")}</p>
 							</div>
 							<button type="button" onClick={handleReplyCancel} className="text-[10px] font-bold text-[#EE2C2C] shrink-0">Cancel</button>
 						</div>
@@ -898,13 +924,13 @@ function BrandChatThreadPanel({
 							onSelect={handleMentionSelect}
 							onClose={() => setIsMentionOpen(false)}
 						/>
-						<input type="file" accept="image/*" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
+						<input type="file" accept="image/*,application/pdf" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
 						<button
 							type="button"
 							onClick={() => fileInputRef.current?.click()}
 							disabled={uploadingImage || !!editingMessageId}
 							className="shrink-0 size-9 rounded-xl border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50"
-							aria-label="Attach image"
+							aria-label="Attach image or PDF"
 						>
 							<Icon as={GallerySvg} size="sm" />
 						</button>
