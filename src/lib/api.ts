@@ -763,6 +763,7 @@ export type SponsorshipChatThread = {
 	sponsorshipProposalId?: string | null
 	campaignId?: string | null
 	isDealLocked?: boolean
+	isDealClosed?: boolean
 }
 
 export type SponsorshipChatReplyTo = {
@@ -948,12 +949,24 @@ export type SponsorshipDealReport = {
 	id: string
 	sponsorshipDealId: string
 	summary: string
+	status?: string
 	proofKeys: string[]
 	proofUrls: string[]
 	notes: string | null
 	submittedById: string
 	submittedAt: string
 	updatedAt: string
+}
+
+export function isReportApproved(report?: SponsorshipDealReport | null): boolean {
+	if (!report) return false
+	if (report.status === "APPROVED") return true
+	try {
+		const parsed = JSON.parse(report.summary)
+		return parsed.status === "APPROVED"
+	} catch {
+		return false
+	}
 }
 
 export type SponsorshipDealReportPayload = {
