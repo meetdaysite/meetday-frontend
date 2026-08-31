@@ -14,6 +14,8 @@ import {
 	type HostCommunityProfile,
 } from "@/lib/api"
 import UploadSvg from "@/icons/outlined/upload.svg"
+import PenSvg from "@/icons/outlined/pen.svg"
+import CloseSvg from "@/icons/outlined/close.svg"
 import clsx from "clsx"
 
 // Re-exported so existing imports elsewhere (ActivatedCommunity) keep working.
@@ -639,36 +641,18 @@ export function ActivateCommunityModal({
 					</Button>
 				</div>
 
-				{/* Brands Worked With */}
+				{/* Associated Brands */}
 				<div className="flex flex-col gap-3">
 					<div className="flex items-center justify-between">
-						<label className="text-xs font-bold text-black">Brands You&apos;ve Worked With (Optional)</label>
+						<label className="text-xs font-bold text-black">Associated Brands</label>
 						<span className="text-[10px] text-black/40">Add brand name + logo</span>
 					</div>
 					{brandsWorkedWith.map((brand, i) => (
-						<div key={i} className="flex items-center gap-3 p-3 rounded-xl border-2 border-black/10 bg-slate-50/50">
-							<div className={clsx(
-								"size-14 rounded-xl bg-white flex items-center justify-center overflow-hidden shrink-0",
-								inline ? "border border-dashed border-black/20" : "border-2 border-dashed border-black/30"
+						<div key={i} className="relative flex items-center gap-3 p-3 pr-10 rounded-xl border-2 border-black/10 bg-slate-50/50">
+							<label className={clsx(
+								"group relative size-14 rounded-xl bg-white flex items-center justify-center overflow-hidden shrink-0 cursor-pointer transition-all",
+								inline ? "border border-dashed border-black/20 hover:border-black/40" : "border-2 border-dashed border-black/30 hover:border-black"
 							)}>
-								{brand.logoUrl ? (
-									// eslint-disable-next-line @next/next/no-img-element
-									<img src={brand.logoUrl} alt={brand.brandName || "Brand logo"} className="size-full object-cover" />
-								) : (
-									<Icon as={UploadSvg} size="sm" color="muted" />
-								)}
-							</div>
-							<input
-								type="text"
-								value={brand.brandName}
-								onChange={(e) => updateBrandWorkedWithName(i, e.target.value)}
-								placeholder="Brand name"
-								className={clsx(
-									"flex-1 h-10 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors",
-									inline ? "border border-black/15 focus:border-black/35" : "border-2 border-black"
-								)}
-							/>
-							<label className="shrink-0 cursor-pointer">
 								<input
 									type="file"
 									accept="image/*"
@@ -679,16 +663,39 @@ export function ActivateCommunityModal({
 										if (file) updateBrandWorkedWithLogo(i, file)
 									}}
 								/>
-								<span className="inline-flex items-center bg-white border-2 border-black text-black text-[10px] font-bold py-1.5 px-3 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all">
-									{brand.logoUrl ? "Change Logo" : "Upload Logo"}
-								</span>
+								{brand.logoUrl ? (
+									<>
+										{/* eslint-disable-next-line @next/next/no-img-element */}
+										<img src={brand.logoUrl} alt={brand.brandName || "Brand logo"} className="size-full object-cover" />
+										<div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+											<div className="size-6 rounded-full bg-white text-black flex items-center justify-center shadow-md">
+												<Icon as={PenSvg} size="xs" color="inherit" />
+											</div>
+										</div>
+									</>
+								) : (
+									<div className="flex flex-col items-center justify-center gap-0.5 text-black/40 group-hover:text-black transition-colors">
+										<Icon as={UploadSvg} size="sm" color="inherit" />
+									</div>
+								)}
 							</label>
+							<input
+								type="text"
+								value={brand.brandName}
+								onChange={(e) => updateBrandWorkedWithName(i, e.target.value)}
+								placeholder="Brand name"
+								className={clsx(
+									"flex-1 h-10 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors",
+									inline ? "border border-black/15 focus:border-black/35" : "border-2 border-black"
+								)}
+							/>
 							<button
 								type="button"
 								onClick={() => removeBrandWorkedWith(i)}
-								className="text-black/40 hover:text-red-600 text-xs font-bold transition-colors shrink-0"
+								aria-label="Remove brand"
+								className="absolute top-2.5 right-2.5 size-6 rounded-full bg-black/5 text-black/40 hover:bg-red-50 hover:text-red-600 flex items-center justify-center transition-colors cursor-pointer"
 							>
-								Remove
+								<Icon as={CloseSvg} size="xs" color="inherit" />
 							</button>
 						</div>
 					))}
@@ -700,7 +707,7 @@ export function ActivateCommunityModal({
 						onClick={addBrandWorkedWith}
 						className="bg-[#FFC940] border-2 border-black text-black text-xs font-bold py-2 px-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all self-start"
 					>
-						+ Add More
+						+ Add
 					</Button>
 				</div>
 

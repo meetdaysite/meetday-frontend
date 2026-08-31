@@ -4,7 +4,7 @@ import { Icon } from "@/components/ui/Icon"
 import type { HostCommunityProfile } from "@/lib/api"
 import UploadSvg from "@/icons/outlined/upload.svg"
 import clsx from "clsx"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 
 interface CommunityProfileDetailsPanelProps {
@@ -45,7 +45,49 @@ export function CommunityProfileDetailsPanel({
 	hideStatus = false,
 }: CommunityProfileDetailsPanelProps) {
 	const statusConfig = STATUS_CONFIG[community.approvalStatus]
-	const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null)
+	const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null)
+
+	const allExperienceImages = (community.pastEvents || []).flatMap((event, eventIdx) => {
+		const urls = event.imageUrls || []
+		return urls.map((url, imgIdx) => ({
+			url,
+			eventNumber: eventIdx + 1,
+			name: event.name,
+			description: event.description,
+			imgIdx,
+			totalImages: urls.length,
+		}))
+	})
+
+	const currentExp =
+		selectedExperienceIndex !== null && allExperienceImages[selectedExperienceIndex]
+			? allExperienceImages[selectedExperienceIndex]
+			: null
+
+	const handlePrevExperience = (e?: React.MouseEvent) => {
+		e?.stopPropagation()
+		if (selectedExperienceIndex !== null && allExperienceImages.length > 0) {
+			setSelectedExperienceIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : allExperienceImages.length - 1))
+		}
+	}
+
+	const handleNextExperience = (e?: React.MouseEvent) => {
+		e?.stopPropagation()
+		if (selectedExperienceIndex !== null && allExperienceImages.length > 0) {
+			setSelectedExperienceIndex((prev) => (prev !== null && prev < allExperienceImages.length - 1 ? prev + 1 : 0))
+		}
+	}
+
+	useEffect(() => {
+		if (selectedExperienceIndex === null) return
+		function handleKeyDown(e: KeyboardEvent) {
+			if (e.key === "ArrowLeft") handlePrevExperience()
+			if (e.key === "ArrowRight") handleNextExperience()
+			if (e.key === "Escape") setSelectedExperienceIndex(null)
+		}
+		window.addEventListener("keydown", handleKeyDown)
+		return () => window.removeEventListener("keydown", handleKeyDown)
+	}, [selectedExperienceIndex, allExperienceImages.length])
 
 	return (
 		<div className="w-full h-full flex flex-col bg-white p-6 overflow-y-auto animate-in fade-in duration-150">
@@ -157,20 +199,23 @@ export function CommunityProfileDetailsPanel({
 										)}
 										{hasImages && (
 											<div className="flex flex-wrap gap-3 mt-1">
-												{event.imageUrls.slice(0, 2).map((url, j) => (
-													<div 
-														key={j}
-														onClick={() => setEnlargedImageUrl(url)}
-														className="relative w-[calc(50%-6px)] aspect-[4/5] rounded-xl border border-black/10 overflow-hidden bg-white cursor-pointer hover:opacity-90 transition-opacity shrink-0"
-													>
-														{/* eslint-disable-next-line @next/next/no-img-element */}
-														<img 
-															src={url} 
-															alt={event.name || "Past Experience Image"} 
-															className="w-full h-full object-cover" 
-														/>
-													</div>
-												))}
+												{event.imageUrls.slice(0, 2).map((url, j) => {
+													const matchIdx = allExperienceImages.findIndex((img) => img.url === url)
+													return (
+														<div 
+															key={j}
+															onClick={() => setSelectedExperienceIndex(matchIdx >= 0 ? matchIdx : 0)}
+															className="relative w-[calc(50%-6px)] aspect-[4/5] rounded-xl border border-black/10 overflow-hidden bg-white cursor-pointer hover:opacity-90 transition-opacity shrink-0"
+														>
+															{/* eslint-disable-next-line @next/next/no-img-element */}
+															<img 
+																src={url} 
+																alt={event.name || "Past Experience Image"} 
+																className="w-full h-full object-cover" 
+															/>
+														</div>
+													)
+												})}
 											</div>
 										)}
 									</div>
@@ -180,30 +225,36 @@ export function CommunityProfileDetailsPanel({
 					</div>
 				)}
 
-				{/* Brands Worked With */}
+				{/* Associated Brands */}
 				{community.brandsWorkedWith && community.brandsWorkedWith.filter((b) => b.logoUrl || b.brandName).length > 0 && (
-					<div className="flex flex-col gap-3 mt-2">
-						<span className="text-xs font-bold text-black/50">Brands Worked With</span>
-						<div className="flex flex-wrap gap-3">
+					<div className="flex flex-col gap-2 mt-2">
+						<span className="text-xs font-bold text-black/50">Associated Brands</span>
+						<div className="flex flex-wrap gap-2.5">
 							{community.brandsWorkedWith
 								.filter((b) => b.logoUrl || b.brandName)
 								.map((brand, i) => (
 									<div
 										key={i}
-										className="flex flex-col items-center gap-1.5 p-3 bg-slate-50 rounded-2xl border border-black/5 w-20"
+										className="group relative"
+										title={brand.brandName || "Brand"}
 									>
-										<div className="size-12 rounded-xl border border-black/10 overflow-hidden bg-white flex items-center justify-center shrink-0">
+										<div className="size-12 aspect-square rounded-xl border border-black/10 overflow-hidden bg-white flex items-center justify-center shadow-sm hover:border-black/30 hover:scale-105 transition-all cursor-pointer">
 											{brand.logoUrl ? (
 												// eslint-disable-next-line @next/next/no-img-element
 												<img src={brand.logoUrl} alt={brand.brandName || "Brand logo"} className="size-full object-cover" />
 											) : (
-												<Icon as={UploadSvg} size="sm" color="muted" />
+												<span className="text-xs font-bold text-black/60">
+													{(brand.brandName || "B").charAt(0).toUpperCase()}
+												</span>
 											)}
 										</div>
 										{brand.brandName && (
-											<span className="text-[10px] font-bold text-black/70 text-center truncate w-full">
-												{brand.brandName}
-											</span>
+											<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none">
+												<span className="px-2.5 py-1 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap shadow-md">
+													{brand.brandName}
+												</span>
+												<div className="w-2 h-2 bg-black rotate-45 -mt-1" />
+											</div>
 										)}
 									</div>
 								))}
@@ -306,32 +357,90 @@ export function CommunityProfileDetailsPanel({
 				)}
 			</div>
 
-			{/* Zoomed Event Image Modal */}
-			{enlargedImageUrl && (
+			{/* Experience Detail Popup Modal - Enriched, Extra Large, Dynamic Image-Fitted Border */}
+			{currentExp && (
 				<div 
-					onClick={() => setEnlargedImageUrl(null)}
-					className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150 cursor-zoom-out"
+					onClick={() => setSelectedExperienceIndex(null)}
+					className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 md:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200 cursor-zoom-out"
 				>
 					<div 
 						onClick={(e) => e.stopPropagation()}
-						className="relative max-w-xl w-full bg-white border-[3px] border-black rounded-[28px] p-5 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-3 items-start animate-in zoom-in-95 duration-150 cursor-default"
+						className="relative max-w-[96vw] xl:max-w-7xl 2xl:max-w-[1500px] w-full bg-white border-[3px] border-black rounded-[28px] p-4 sm:p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-4 max-h-[97vh] overflow-hidden animate-in zoom-in-95 duration-150 cursor-default"
 					>
-						<button
-							onClick={() => setEnlargedImageUrl(null)}
-							className="absolute top-4 right-4 z-10 size-8 bg-white hover:bg-black/5 border-2 border-black rounded-full flex items-center justify-center text-black font-extrabold text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all active:translate-y-[1px]"
-							aria-label="Close enlarged image"
-						>
-							✕
-						</button>
-						<span className="text-xs font-bold text-black/50 uppercase tracking-wider">Event Image Preview</span>
-						<div className="relative w-full aspect-[16/10] rounded-[20px] border-2 border-black overflow-hidden bg-slate-50">
-							<Image
-								src={enlargedImageUrl}
-								alt="Enlarged Event Image"
-								fill
-								className="object-cover"
-								unoptimized
-							/>
+						{/* Top Header with title and controls */}
+						<div className="flex items-center justify-between gap-4 w-full shrink-0">
+							<div className="flex flex-col gap-0.5 min-w-0">
+								<span className="text-[10px] sm:text-xs font-black text-[#EE2C2C] uppercase tracking-wider">
+									Experience #{currentExp.eventNumber}
+								</span>
+								<h3 className="text-xl sm:text-2xl font-heading font-black text-black truncate">
+									{currentExp.name || `Experience #${currentExp.eventNumber}`}
+								</h3>
+							</div>
+
+							<div className="flex items-center gap-3 shrink-0">
+								{allExperienceImages.length > 1 && (
+									<span className="px-3 py-1 bg-black text-white text-xs font-black rounded-full border border-black select-none">
+										{(selectedExperienceIndex ?? 0) + 1} / {allExperienceImages.length}
+									</span>
+								)}
+								<button
+									type="button"
+									onClick={() => setSelectedExperienceIndex(null)}
+									className="size-9 rounded-full bg-white hover:bg-neutral-100 border-[2.5px] border-black flex items-center justify-center text-black font-black text-base shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer select-none active:scale-95"
+									aria-label="Close details"
+								>
+									✕
+								</button>
+							</div>
+						</div>
+
+						{/* Description box if present */}
+						{currentExp.description && (
+							<div className="bg-[#FFC940] text-black p-3.5 sm:p-4 rounded-[18px] border-2 border-black font-semibold text-xs sm:text-sm leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-left shrink-0 max-h-28 overflow-y-auto">
+								<p className="whitespace-pre-wrap">{currentExp.description}</p>
+							</div>
+						)}
+
+						{/* Image Area: border fits tightly around the image while arrows stay pinned to sides */}
+						<div className="relative flex-1 min-h-[400px] max-h-[78vh] w-full flex items-center justify-center p-2">
+							{/* Card containing only the image - sizes dynamically to image dimensions */}
+							<div className="relative inline-flex items-center justify-center max-w-full max-h-[76vh] rounded-[22px] border-[3px] border-black overflow-hidden bg-slate-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+								{/* eslint-disable-next-line @next/next/no-img-element */}
+								<img 
+									src={currentExp.url} 
+									alt={currentExp.name || "Experience Image"} 
+									className="max-h-[76vh] max-w-full w-auto h-auto object-contain block select-none" 
+								/>
+							</div>
+
+							{/* Previous Image Button (Left Arrow) - Stays pinned at left side of popup */}
+							{allExperienceImages.length > 1 && (
+								<button
+									type="button"
+									onClick={handlePrevExperience}
+									aria-label="Previous image"
+									className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 size-10 sm:size-12 rounded-full bg-white hover:bg-[#FFC940] text-black border-[2.5px] border-black flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer select-none"
+								>
+									<svg className="size-5 sm:size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+										<polyline points="15 18 9 12 15 6" />
+									</svg>
+								</button>
+							)}
+
+							{/* Next Image Button (Right Arrow) - Stays pinned at right side of popup */}
+							{allExperienceImages.length > 1 && (
+								<button
+									type="button"
+									onClick={handleNextExperience}
+									aria-label="Next image"
+									className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 size-10 sm:size-12 rounded-full bg-white hover:bg-[#FFC940] text-black border-[2.5px] border-black flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer select-none"
+								>
+									<svg className="size-5 sm:size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+										<polyline points="9 18 15 12 9 6" />
+									</svg>
+								</button>
+							)}
 						</div>
 					</div>
 				</div>
