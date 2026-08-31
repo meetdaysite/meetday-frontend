@@ -328,6 +328,16 @@ export async function registerBrand(payload: BrandRegisterPayload): Promise<void
 	await apiClient.post("/auth/register", payload)
 }
 
+// Called right after Firebase signup, before showing the onboarding form — if this email has a
+// pending team invite, the UI can skip the full form and show a simple "join <accountName>" step.
+export async function checkPendingInvite(accountType: "HOST" | "BRAND"): Promise<{ matched: boolean; accountName?: string }> {
+	const { data } = await apiClient.get<{ success: boolean; data: { matched: boolean; accountName?: string } }>(
+		"/auth/pending-invite",
+		{ params: { accountType } },
+	)
+	return data.data
+}
+
 // ─── Attendee registration ────────────────────────────────────────────────────
 
 export type AttendeeInterest = {

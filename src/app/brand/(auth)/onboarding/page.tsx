@@ -11,6 +11,7 @@ import {
 	updateBrandProfile,
 	getCategories,
 	getUploadUrl,
+	checkPendingInvite,
 	type Category,
 	type CompanyType,
 } from "@/lib/api"
@@ -98,6 +99,48 @@ export default function OnboardingPage() {
 			router.replace("/brand/signup")
 		}
 	}, [sessionHydrated, phone, sessionEmail, router])
+
+	// If this email already has a pending team invite, skip the full onboarding form entirely
+	// and offer a simple "join <accountName>" step instead.
+	const [pendingInvite, setPendingInvite] = useState<{ matched: boolean; accountName?: string } | null>(null)
+	const [checkingInvite, setCheckingInvite] = useState(true)
+	const [joining, setJoining] = useState(false)
+
+	useEffect(() => {
+		if (!sessionHydrated || (!phone && !sessionEmail)) return
+		// eslint-disable-next-line react-hooks/set-state-in-effect
+		setCheckingInvite(true)
+		checkPendingInvite("BRAND")
+		.then(setPendingInvite)
+		.catch(() => setPendingInvite({ matched: false }))
+		.finally(() => setCheckingInvite(false))
+	}, [sessionHydrated, phone, sessionEmail])
+
+	async function handleJoin() {
+		if (joining) return
+		setJoining(true)
+		try {
+			try {
+				await registerBrand({
+					firstName: "Brand",
+					lastName: "Member",
+					email: sessionEmail || "",
+					phone: phone || undefined,
+					accountType: "BRAND",
+				})
+			} catch (e) {
+				if (!(e instanceof ApiError && e.statusCode === 409)) throw e
+			}
+			const profile = await getBrandProfile()
+			setProfile(profile)
+			clearSession()
+			router.push(redirectTo || "/brand/dashboard")
+		} catch (e) {
+			toast.error(getApiErrorMessage(e))
+		} finally {
+			setJoining(false)
+		}
+	}
 
 	const [brandName, setBrandName] = useState("")
 	const [brandNameError, setBrandNameError] = useState<string | null>(null)
@@ -192,6 +235,41 @@ export default function OnboardingPage() {
 		} finally {
 			setLoadingMessage(null)
 		}
+	}
+
+	if (checkingInvite) {
+		return (
+			<AuthShell>
+				<div className="flex flex-1 items-center justify-center py-20">
+					<p className="text-sm font-semibold text-black/50">Checking your invite…</p>
+				</div>
+			</AuthShell>
+		)
+	}
+
+	if (pendingInvite?.matched) {
+		return (
+			<AuthShell>
+				<div className="flex flex-col flex-grow items-center justify-center gap-6 py-10 text-center">
+					<h2 className="font-heading text-3xl sm:text-4xl font-black text-black tracking-tight">
+						You&apos;ve been invited!
+					</h2>
+					<p className="text-sm font-semibold text-black/60 max-w-md">
+						Join <span className="font-bold text-black">{pendingInvite.accountName || "the team"}</span> on Meetday with full access to their brand dashboard.
+					</p>
+					<Button variant="primary" size="lg" radius="pill" onClick={handleJoin} disabled={joining}>
+						{joining ? "Joining…" : `Join ${pendingInvite.accountName || "the team"}`}
+					</Button>
+					<button
+						type="button"
+						onClick={() => setPendingInvite({ matched: false })}
+						className="text-xs font-bold text-black/40 hover:text-black transition-colors"
+					>
+						Set up a new brand instead
+					</button>
+				</div>
+			</AuthShell>
+		)
 	}
 
 	return (
