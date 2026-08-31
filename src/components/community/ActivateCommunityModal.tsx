@@ -641,10 +641,10 @@ export function ActivateCommunityModal({
 					</Button>
 				</div>
 
-				{/* Brands Worked With */}
+				{/* Associated Brands */}
 				<div className="flex flex-col gap-3">
 					<div className="flex items-center justify-between">
-						<label className="text-xs font-bold text-black">Brands You&apos;ve Worked With</label>
+						<label className="text-xs font-bold text-black">Associated Brands</label>
 						<span className="text-[10px] text-black/40">Add brand name + logo</span>
 					</div>
 					{brandsWorkedWith.map((brand, i) => (
