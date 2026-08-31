@@ -255,6 +255,7 @@ export type BrandCommunity = {
 	secondaryImageKey?: string | null
 	secondaryImageUrl?: string | null
 	pastEvents?: PastEvent[]
+	brandsWorkedWith?: BrandWorkedWith[]
 }
 
 export async function getBrandCommunities(): Promise<{ communities: BrandCommunity[]; total: number }> {

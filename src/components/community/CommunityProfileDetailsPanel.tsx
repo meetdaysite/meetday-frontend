@@ -182,28 +182,34 @@ export function CommunityProfileDetailsPanel({
 
 				{/* Brands Worked With */}
 				{community.brandsWorkedWith && community.brandsWorkedWith.filter((b) => b.logoUrl || b.brandName).length > 0 && (
-					<div className="flex flex-col gap-3 mt-2">
+					<div className="flex flex-col gap-2 mt-2">
 						<span className="text-xs font-bold text-black/50">Brands Worked With</span>
-						<div className="flex flex-wrap gap-3">
+						<div className="flex flex-wrap gap-2.5">
 							{community.brandsWorkedWith
 								.filter((b) => b.logoUrl || b.brandName)
 								.map((brand, i) => (
 									<div
 										key={i}
-										className="flex flex-col items-center gap-1.5 p-3 bg-slate-50 rounded-2xl border border-black/5 w-20"
+										className="group relative"
+										title={brand.brandName || "Brand"}
 									>
-										<div className="size-12 rounded-xl border border-black/10 overflow-hidden bg-white flex items-center justify-center shrink-0">
+										<div className="size-12 aspect-square rounded-xl border border-black/10 overflow-hidden bg-white flex items-center justify-center shadow-sm hover:border-black/30 hover:scale-105 transition-all cursor-pointer">
 											{brand.logoUrl ? (
 												// eslint-disable-next-line @next/next/no-img-element
 												<img src={brand.logoUrl} alt={brand.brandName || "Brand logo"} className="size-full object-cover" />
 											) : (
-												<Icon as={UploadSvg} size="sm" color="muted" />
+												<span className="text-xs font-bold text-black/60">
+													{(brand.brandName || "B").charAt(0).toUpperCase()}
+												</span>
 											)}
 										</div>
 										{brand.brandName && (
-											<span className="text-[10px] font-bold text-black/70 text-center truncate w-full">
-												{brand.brandName}
-											</span>
+											<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none">
+												<span className="px-2.5 py-1 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap shadow-md">
+													{brand.brandName}
+												</span>
+												<div className="w-2 h-2 bg-black rotate-45 -mt-1" />
+											</div>
 										)}
 									</div>
 								))}

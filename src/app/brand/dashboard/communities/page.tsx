@@ -441,6 +441,43 @@ export default function BrandCommunitiesPage() {
 										</div>
 									</div>
 
+									{/* Brands Worked With */}
+									{selectedCommunity.brandsWorkedWith && selectedCommunity.brandsWorkedWith.filter((b) => b.logoUrl || b.brandName).length > 0 && (
+										<div className="flex flex-col gap-2 w-full border-t border-black/10 pt-4">
+											<span className="text-xs font-bold text-black/50">Brands Worked With</span>
+											<div className="flex flex-wrap gap-2.5">
+												{selectedCommunity.brandsWorkedWith
+													.filter((b) => b.logoUrl || b.brandName)
+													.map((brand, idx) => (
+														<div
+															key={idx}
+															className="group relative"
+															title={brand.brandName || "Brand"}
+														>
+															<div className="size-12 aspect-square rounded-xl border-2 border-black bg-white overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex items-center justify-center cursor-pointer">
+																{brand.logoUrl ? (
+																	// eslint-disable-next-line @next/next/no-img-element
+																	<img src={brand.logoUrl} alt={brand.brandName || "Brand logo"} className="size-full object-cover" />
+																) : (
+																	<span className="text-xs font-black text-black">
+																		{(brand.brandName || "B").charAt(0).toUpperCase()}
+																	</span>
+																)}
+															</div>
+															{brand.brandName && (
+																<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none">
+																	<span className="px-2.5 py-1 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap shadow-md">
+																		{brand.brandName}
+																	</span>
+																	<div className="w-2 h-2 bg-black rotate-45 -mt-1" />
+																</div>
+															)}
+														</div>
+													))}
+											</div>
+										</div>
+									)}
+
 								</div>
 
 								{/* Poster (Secondary Image) beside the details card */}
