@@ -576,7 +576,7 @@ function BrandChatThreadPanel({
 		}
 		setSending(true)
 		try {
-			const msg = await sendSponsorshipChatMessage(thread.id, { content: input.trim(), replyToId: replyingTo?.id })
+			const msg = await sendSponsorshipChatMessage(thread.id, { content: input.trim(), replyToId: replyingTo?.id, asRole: "BRAND" })
 			setMessages(prev => [...prev, msg])
 			setInput("")
 			setReplyingTo(null)
@@ -645,7 +645,7 @@ function BrandChatThreadPanel({
 		setUploadingImage(true)
 		try {
 			const mediaKey = await uploadSponsorshipChatImage(file, thread.id)
-			const msg = await sendSponsorshipChatMessage(thread.id, { mediaKey, replyToId: replyingTo?.id })
+			const msg = await sendSponsorshipChatMessage(thread.id, { mediaKey, replyToId: replyingTo?.id, asRole: "BRAND" })
 			setMessages(prev => [...prev, msg])
 			setReplyingTo(null)
 		} catch {

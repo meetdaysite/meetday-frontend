@@ -818,7 +818,7 @@ export async function getSponsorshipChatMessages(
 
 export async function sendSponsorshipChatMessage(
 	interestId: string,
-	payload: { content?: string; mediaKey?: string; replyToId?: string; messageType?: "TEXT" | "SYSTEM" },
+	payload: { content?: string; mediaKey?: string; replyToId?: string; messageType?: "TEXT" | "SYSTEM"; asRole?: "HOST" | "BRAND" },
 ): Promise<SponsorshipChatMessage> {
 	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipChatMessage }>(
 		`/sponsorships/chats/${interestId}/messages`,
