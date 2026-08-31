@@ -8,12 +8,13 @@ import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
 import { NotificationSoundToggle } from "@/components/ui/NotificationSoundToggle"
 import { useHostStore } from "@/store/hostStore"
 import { useAuthStore } from "@/store/authStore"
-import { getHostCommunityProfile, type HostCommunityProfile } from "@/lib/api"
+import { getHostCommunityProfile, type HostCommunityProfile, getHostTeamMembers, inviteHostTeamMember } from "@/lib/api"
 import { HostDetailsPrompt } from "@/components/community/HostDetailsPrompt"
 import { ActivateCommunityModal } from "@/components/community/ActivateCommunityModal"
 import { CommunityProfileDetailsPanel } from "@/components/community/CommunityProfileDetailsPanel"
 import { VerificationsDetailsPanel } from "@/components/community/VerificationsDetailsPanel"
 import { EditProfilePanel } from "@/components/community/EditProfilePanel"
+import { TeamMembersModal } from "@/components/team/TeamMembersModal"
 import clsx from "clsx"
 
 import UserSvg from "@/icons/outlined/user.svg"
@@ -43,6 +44,7 @@ export default function ProfilePage() {
 	const [isEditingVerifications, setIsEditingVerifications] = useState(false)
 
 	const [showEditProfileModal, setShowEditProfileModal] = useState(false)
+	const [showTeamMembersModal, setShowTeamMembersModal] = useState(false)
 
 	// Fetch community profile status from the backend on mount
 	const [communityLoading, setCommunityLoading] = useState(true)
@@ -246,6 +248,23 @@ export default function ProfilePage() {
 
 						<NotificationSoundToggle />
 
+						{/* Team Members */}
+						<div
+							onClick={() => setShowTeamMembersModal(true)}
+							className="flex items-center justify-between py-4 border-b border-black/10 cursor-pointer hover:bg-black/[0.01]"
+						>
+							<span className="font-heading font-black text-base text-black">Team Members</span>
+							<div className="flex items-center gap-3">
+								<button
+									type="button"
+									className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+								>
+									MANAGE
+								</button>
+								<span className="text-black/50 font-black text-lg">&gt;</span>
+							</div>
+						</div>
+
 						{/* Profile Actions */}
 						<div className="flex items-center justify-between py-4">
 							<span className="font-heading font-black text-base text-black">Profile Actions</span>
@@ -358,6 +377,14 @@ export default function ProfilePage() {
 					router.replace("/")
 					await signOut()
 				}}
+			/>
+
+			<TeamMembersModal
+				open={showTeamMembersModal}
+				onClose={() => setShowTeamMembersModal(false)}
+				accountLabel={profile?.communityName || "your community"}
+				listMembers={getHostTeamMembers}
+				inviteMember={inviteHostTeamMember}
 			/>
 
 		</div>

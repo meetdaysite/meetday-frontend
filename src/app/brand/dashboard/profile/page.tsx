@@ -14,7 +14,8 @@ import GlobeSvg from "@/icons/outlined/globe.svg"
 import { EditBrandProfilePanel } from "@/components/brand/EditBrandProfilePanel"
 import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
 import { NotificationSoundToggle } from "@/components/ui/NotificationSoundToggle"
-import { getBrandProfile } from "@/lib/api"
+import { getBrandProfile, getBrandTeamMembers, inviteBrandTeamMember } from "@/lib/api"
+import { TeamMembersModal } from "@/components/team/TeamMembersModal"
 
 export default function BrandProfilePage() {
 	const { profile, clearProfile, setProfile } = useBrandStore()
@@ -22,6 +23,7 @@ export default function BrandProfilePage() {
 	const router = useRouter()
 	const [showEditPanel, setShowEditPanel] = useState(false)
 	const [showDeleteModal, setShowDeleteModal] = useState(false)
+	const [showTeamMembersModal, setShowTeamMembersModal] = useState(false)
 
 	useEffect(() => {
 		getBrandProfile()
@@ -153,6 +155,23 @@ export default function BrandProfilePage() {
 
 					<NotificationSoundToggle />
 
+					{/* Team Members */}
+					<div
+						onClick={() => setShowTeamMembersModal(true)}
+						className="flex items-center justify-between py-4 border-b border-black/10 cursor-pointer hover:bg-black/[0.01]"
+					>
+						<span className="font-heading font-black text-base text-black">Team Members</span>
+						<div className="flex items-center gap-3">
+							<button
+								type="button"
+								className="bg-[#EE2C2C] text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+							>
+								MANAGE
+							</button>
+							<span className="text-black/50 font-black text-lg">&gt;</span>
+						</div>
+					</div>
+
 					{/* Sign Out */}
 					<div className="flex items-center justify-between py-4">
 						<span className="font-heading font-black text-base text-black">Profile Actions</span>
@@ -209,6 +228,14 @@ export default function BrandProfilePage() {
 					router.replace("/")
 					await signOut()
 				}}
+			/>
+
+			<TeamMembersModal
+				open={showTeamMembersModal}
+				onClose={() => setShowTeamMembersModal(false)}
+				accountLabel={profile?.brandName || "your brand"}
+				listMembers={getBrandTeamMembers}
+				inviteMember={inviteBrandTeamMember}
 			/>
 		</div>
 	)

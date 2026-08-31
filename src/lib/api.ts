@@ -235,6 +235,26 @@ export async function updateBrandProfile(payload: UpdateBrandProfilePayload): Pr
 	return data.data
 }
 
+// ─── Team members (shared shape for both Brand and Host/Community accounts) ───
+
+export type TeamMember = {
+	id: string
+	name: string | null
+	email: string
+	role: "OWNER" | "MEMBER"
+	status: "PENDING" | "ACTIVE"
+}
+
+export async function getBrandTeamMembers(): Promise<TeamMember[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: TeamMember[] }>("/brands/members")
+	return data.data
+}
+
+export async function inviteBrandTeamMember(email: string): Promise<TeamMember> {
+	const { data } = await apiClient.post<{ success: boolean; data: TeamMember }>("/brands/members", { email })
+	return data.data
+}
+
 export type BrandCommunity = {
 	id: string
 	hostProfileId: string
@@ -1175,6 +1195,16 @@ export async function activateHostCommunityProfile(
 
 export async function deactivateHostCommunityProfile(): Promise<void> {
 	await apiClient.delete("/hosts/community")
+}
+
+export async function getHostTeamMembers(): Promise<TeamMember[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: TeamMember[] }>("/hosts/community/members")
+	return data.data
+}
+
+export async function inviteHostTeamMember(email: string): Promise<TeamMember> {
+	const { data } = await apiClient.post<{ success: boolean; data: TeamMember }>("/hosts/community/members", { email })
+	return data.data
 }
 
 // ─── Scanner sessions ─────────────────────────────────────────────────────────
