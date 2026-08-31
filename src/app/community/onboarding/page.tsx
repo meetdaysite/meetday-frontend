@@ -15,6 +15,7 @@ import {
 	verifyBankAccount,
 	getCategories,
 	getHostProfile,
+	checkPendingInvite,
 	type Category,
 	type BankKycResult,
 	type RegisterPayload,
@@ -1233,6 +1234,53 @@ export default function OnboardingPage() {
 		}
 	}, [sessionHydrated, phone, sessionEmail, router])
 
+	// If this email already has a pending team invite, skip the full onboarding wizard
+	// entirely and offer a simple "join <accountName>" step instead.
+	const [pendingInvite, setPendingInvite] = useState<{ matched: boolean; accountName?: string } | null>(null)
+	const [checkingInvite, setCheckingInvite] = useState(true)
+	const [joining, setJoining] = useState(false)
+
+	useEffect(() => {
+		if (!sessionHydrated || (!phone && !sessionEmail)) return
+		// eslint-disable-next-line react-hooks/set-state-in-effect
+		setCheckingInvite(true)
+		checkPendingInvite("HOST")
+		.then(setPendingInvite)
+		.catch(() => setPendingInvite({ matched: false }))
+		.finally(() => setCheckingInvite(false))
+	}, [sessionHydrated, phone, sessionEmail])
+
+	async function handleJoin() {
+		if (joining) return
+		setJoining(true)
+		try {
+			try {
+				await registerHost({
+					firstName: "Community",
+					lastName: "Member",
+					email: sessionEmail || "",
+					phone: phone || undefined,
+					accountType: "HOST",
+					hostType: "INDIVIDUAL",
+					categoryIds: [],
+					yearsOfExperience: 0,
+					totalEventsPreviouslyHosted: 0,
+					operatingCities: [],
+				})
+			} catch (e) {
+				if (!(e instanceof ApiError && e.statusCode === 409)) throw e
+			}
+			const profile = await getHostProfile()
+			setProfile(profile)
+			clearSession()
+			router.push("/community/dashboard")
+		} catch (e) {
+			toast.error(getApiErrorMessage(e))
+		} finally {
+			setJoining(false)
+		}
+	}
+
 	// Fetch categories on mount (public endpoint)
 	useEffect(() => {
 		let cancelled = false
@@ -1361,6 +1409,41 @@ export default function OnboardingPage() {
 		<StepOne key={0} />,
 		<StepTwo key={1} isEmailReadOnly={isEmailReadOnly} />,
 	]
+
+	if (checkingInvite) {
+		return (
+			<AuthShell>
+				<div className="flex flex-1 items-center justify-center py-20">
+					<p className="text-sm font-semibold text-black/50">Checking your invite…</p>
+				</div>
+			</AuthShell>
+		)
+	}
+
+	if (pendingInvite?.matched) {
+		return (
+			<AuthShell>
+				<div className="flex flex-col flex-grow items-center justify-center gap-6 py-10 text-center">
+					<h2 className="font-heading text-3xl sm:text-4xl font-black text-black tracking-tight">
+						You&apos;ve been invited!
+					</h2>
+					<p className="text-sm font-semibold text-black/60 max-w-md">
+						Join <span className="font-bold text-black">{pendingInvite.accountName || "the community"}</span> on Meetday with full access to their dashboard.
+					</p>
+					<Button variant="primary" size="lg" radius="pill" onClick={handleJoin} disabled={joining}>
+						{joining ? "Joining…" : `Join ${pendingInvite.accountName || "the community"}`}
+					</Button>
+					<button
+						type="button"
+						onClick={() => setPendingInvite({ matched: false })}
+						className="text-xs font-bold text-black/40 hover:text-black transition-colors"
+					>
+						Set up a new community instead
+					</button>
+				</div>
+			</AuthShell>
+		)
+	}
 
 	return (
 		<AuthShell>
