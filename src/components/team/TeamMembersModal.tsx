@@ -4,24 +4,40 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { Button } from "@/components/ui/Button"
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
+import { Switch } from "@/components/ui/Switch"
 import CloseSvg from "@/icons/outlined/close.svg"
 import UserSvg from "@/icons/outlined/user.svg"
+import TrashSvg from "@/icons/outlined/trash-bin.svg"
 import { getApiErrorMessage } from "@/lib/errors"
-import type { TeamMember } from "@/lib/api"
+import type { TeamMember, TeamMembersList } from "@/lib/api"
+
+const EMPTY_LIST: TeamMembersList = { members: [], viewerCanManage: false, viewerIsOwner: false }
 
 interface TeamMembersModalProps {
 	open: boolean
 	onClose: () => void
 	accountLabel: string
-	listMembers: () => Promise<TeamMember[]>
+	listMembers: () => Promise<TeamMembersList>
 	inviteMember: (email: string) => Promise<TeamMember>
+	removeMember: (memberId: string) => Promise<void>
+	setMemberPermission: (memberId: string, canManageMembers: boolean) => Promise<void>
 }
 
-export function TeamMembersModal({ open, onClose, accountLabel, listMembers, inviteMember }: TeamMembersModalProps) {
-	const [members, setMembers] = useState<TeamMember[]>([])
+export function TeamMembersModal({
+	open,
+	onClose,
+	accountLabel,
+	listMembers,
+	inviteMember,
+	removeMember,
+	setMemberPermission,
+}: TeamMembersModalProps) {
+	const [list, setList] = useState<TeamMembersList>(EMPTY_LIST)
 	const [loading, setLoading] = useState(true)
 	const [email, setEmail] = useState("")
 	const [inviting, setInviting] = useState(false)
+	const [memberToRemove, setMemberToRemove] = useState<TeamMember | null>(null)
 
 	useEffect(() => {
 		if (!open) return
@@ -29,7 +45,7 @@ export function TeamMembersModal({ open, onClose, accountLabel, listMembers, inv
 		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setLoading(true)
 		listMembers()
-			.then(setMembers)
+			.then(setList)
 			.catch((err) => toast.error(getApiErrorMessage(err)))
 			.finally(() => setLoading(false))
 		return () => {
@@ -40,6 +56,8 @@ export function TeamMembersModal({ open, onClose, accountLabel, listMembers, inv
 
 	if (!open) return null
 
+	const { members, viewerCanManage, viewerIsOwner } = list
+
 	async function handleInvite(e: React.FormEvent) {
 		e.preventDefault()
 		if (!email.trim() || inviting) return
@@ -49,11 +67,34 @@ export function TeamMembersModal({ open, onClose, accountLabel, listMembers, inv
 			toast.success(`Invite sent to ${email.trim()}`)
 			setEmail("")
 			const refreshed = await listMembers()
-			setMembers(refreshed)
+			setList(refreshed)
 		} catch (err) {
 			toast.error(getApiErrorMessage(err))
 		} finally {
 			setInviting(false)
+		}
+	}
+
+	async function handleRemove() {
+		if (!memberToRemove) return
+		try {
+			await removeMember(memberToRemove.id)
+			toast.success(`Removed ${memberToRemove.email}`)
+			setMemberToRemove(null)
+			const refreshed = await listMembers()
+			setList(refreshed)
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
+		}
+	}
+
+	async function handleTogglePermission(member: TeamMember, canManageMembers: boolean) {
+		try {
+			await setMemberPermission(member.id, canManageMembers)
+			const refreshed = await listMembers()
+			setList(refreshed)
+		} catch (err) {
+			toast.error(getApiErrorMessage(err))
 		}
 	}
 
@@ -83,20 +124,24 @@ export function TeamMembersModal({ open, onClose, accountLabel, listMembers, inv
 						Anyone you add gets full access to {accountLabel}&apos;s dashboard. Everyone can see the full members list below.
 					</p>
 
-					<form onSubmit={handleInvite} className="flex items-center gap-2">
-						<input
-							type="email"
-							required
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							placeholder="teammate@example.com"
-							disabled={inviting}
-							className="flex-1 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-sm text-text-primary placeholder:text-text-muted outline-none transition-colors hover:border-border-strong focus:border-border-focused disabled:opacity-50"
-						/>
-						<Button type="submit" variant="primary" size="md" radius="pill" disabled={inviting}>
-							{inviting ? "Sending…" : "Invite"}
-						</Button>
-					</form>
+					{viewerCanManage ? (
+						<form onSubmit={handleInvite} className="flex items-center gap-2">
+							<input
+								type="email"
+								required
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+								placeholder="teammate@example.com"
+								disabled={inviting}
+								className="flex-1 h-10 px-4 rounded-input border border-border-default bg-surface-canvas text-sm text-text-primary placeholder:text-text-muted outline-none transition-colors hover:border-border-strong focus:border-border-focused disabled:opacity-50"
+							/>
+							<Button type="submit" variant="primary" size="md" radius="pill" disabled={inviting}>
+								{inviting ? "Sending…" : "Invite"}
+							</Button>
+						</form>
+					) : (
+						<p className="text-caption text-text-tertiary -mt-1">You don&apos;t have permission to add members.</p>
+					)}
 
 					<div className="flex flex-col gap-2">
 						{loading ? (
@@ -117,6 +162,15 @@ export function TeamMembersModal({ open, onClose, accountLabel, listMembers, inv
 											{member.name || "Pending signup"}
 										</p>
 										<p className="text-caption text-text-tertiary truncate">{member.email}</p>
+										{viewerIsOwner && member.role === "MEMBER" && (
+											<div className="mt-1.5">
+												<Switch
+													checked={member.canManageMembers}
+													onChange={(checked) => handleTogglePermission(member, checked)}
+													label="Can add/remove members"
+												/>
+											</div>
+										)}
 									</div>
 									<div className="flex flex-col items-end gap-1 shrink-0">
 										<span className="text-[10px] font-black uppercase tracking-wider text-text-tertiary">
@@ -128,12 +182,32 @@ export function TeamMembersModal({ open, onClose, accountLabel, listMembers, inv
 											</span>
 										)}
 									</div>
+									{viewerCanManage && member.role === "MEMBER" && (
+										<button
+											type="button"
+											onClick={() => setMemberToRemove(member)}
+											className="flex items-center justify-center size-8 rounded-full bg-surface-hover hover:bg-red-50 border border-border-default transition-colors shrink-0"
+											aria-label={`Remove ${member.email}`}
+										>
+											<Icon as={TrashSvg} size="sm" color="secondary" />
+										</button>
+									)}
 								</div>
 							))
 						)}
 					</div>
 				</div>
 			</div>
+
+			<ConfirmDialog
+				open={!!memberToRemove}
+				title="Remove this member?"
+				description={`${memberToRemove?.email} will lose access to ${accountLabel}'s dashboard immediately. If their invite is still pending, this email will no longer be able to join using the invite link.`}
+				confirmLabel="Remove"
+				destructive
+				onClose={() => setMemberToRemove(null)}
+				onConfirm={handleRemove}
+			/>
 		</div>
 	)
 }

@@ -8,7 +8,7 @@ import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
 import { NotificationSoundToggle } from "@/components/ui/NotificationSoundToggle"
 import { useHostStore } from "@/store/hostStore"
 import { useAuthStore } from "@/store/authStore"
-import { getHostCommunityProfile, type HostCommunityProfile, getHostTeamMembers, inviteHostTeamMember } from "@/lib/api"
+import { getHostCommunityProfile, type HostCommunityProfile, getHostTeamMembers, inviteHostTeamMember, removeHostTeamMember, setHostMemberPermission } from "@/lib/api"
 import { HostDetailsPrompt } from "@/components/community/HostDetailsPrompt"
 import { ActivateCommunityModal } from "@/components/community/ActivateCommunityModal"
 import { CommunityProfileDetailsPanel } from "@/components/community/CommunityProfileDetailsPanel"
@@ -385,6 +385,8 @@ export default function ProfilePage() {
 				accountLabel={profile?.communityName || "your community"}
 				listMembers={getHostTeamMembers}
 				inviteMember={inviteHostTeamMember}
+				removeMember={removeHostTeamMember}
+				setMemberPermission={setHostMemberPermission}
 			/>
 
 		</div>

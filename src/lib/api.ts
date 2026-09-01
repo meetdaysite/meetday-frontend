@@ -243,16 +243,31 @@ export type TeamMember = {
 	email: string
 	role: "OWNER" | "MEMBER"
 	status: "PENDING" | "ACTIVE"
+	canManageMembers: boolean
 }
 
-export async function getBrandTeamMembers(): Promise<TeamMember[]> {
-	const { data } = await apiClient.get<{ success: boolean; data: TeamMember[] }>("/brands/members")
+export type TeamMembersList = {
+	members: TeamMember[]
+	viewerCanManage: boolean
+	viewerIsOwner: boolean
+}
+
+export async function getBrandTeamMembers(): Promise<TeamMembersList> {
+	const { data } = await apiClient.get<{ success: boolean; data: TeamMembersList }>("/brands/members")
 	return data.data
 }
 
 export async function inviteBrandTeamMember(email: string): Promise<TeamMember> {
 	const { data } = await apiClient.post<{ success: boolean; data: TeamMember }>("/brands/members", { email })
 	return data.data
+}
+
+export async function removeBrandTeamMember(memberId: string): Promise<void> {
+	await apiClient.delete(`/brands/members/${memberId}`)
+}
+
+export async function setBrandMemberPermission(memberId: string, canManageMembers: boolean): Promise<void> {
+	await apiClient.patch(`/brands/members/${memberId}/permission`, { canManageMembers })
 }
 
 export type BrandCommunity = {
@@ -350,11 +365,15 @@ export async function registerBrand(payload: BrandRegisterPayload): Promise<void
 
 // Called right after Firebase signup, before showing the onboarding form — if this email has a
 // pending team invite, the UI can skip the full form and show a simple "join <accountName>" step.
-export async function checkPendingInvite(accountType: "HOST" | "BRAND"): Promise<{ matched: boolean; accountName?: string }> {
-	const { data } = await apiClient.get<{ success: boolean; data: { matched: boolean; accountName?: string } }>(
-		"/auth/pending-invite",
-		{ params: { accountType } },
-	)
+// `hostType` (HOST invites only) lets the community onboarding wizard skip the "Individual vs
+// Business" step too, since it's inherited from the community being joined.
+export async function checkPendingInvite(
+	accountType: "HOST" | "BRAND",
+): Promise<{ matched: boolean; accountName?: string; hostType?: "INDIVIDUAL" | "BUSINESS" }> {
+	const { data } = await apiClient.get<{
+		success: boolean
+		data: { matched: boolean; accountName?: string; hostType?: "INDIVIDUAL" | "BUSINESS" }
+	}>("/auth/pending-invite", { params: { accountType } })
 	return data.data
 }
 
@@ -1208,14 +1227,22 @@ export async function deactivateHostCommunityProfile(): Promise<void> {
 	await apiClient.delete("/hosts/community")
 }
 
-export async function getHostTeamMembers(): Promise<TeamMember[]> {
-	const { data } = await apiClient.get<{ success: boolean; data: TeamMember[] }>("/hosts/community/members")
+export async function getHostTeamMembers(): Promise<TeamMembersList> {
+	const { data } = await apiClient.get<{ success: boolean; data: TeamMembersList }>("/hosts/community/members")
 	return data.data
 }
 
 export async function inviteHostTeamMember(email: string): Promise<TeamMember> {
 	const { data } = await apiClient.post<{ success: boolean; data: TeamMember }>("/hosts/community/members", { email })
 	return data.data
+}
+
+export async function removeHostTeamMember(memberId: string): Promise<void> {
+	await apiClient.delete(`/hosts/community/members/${memberId}`)
+}
+
+export async function setHostMemberPermission(memberId: string, canManageMembers: boolean): Promise<void> {
+	await apiClient.patch(`/hosts/community/members/${memberId}/permission`, { canManageMembers })
 }
 
 // ─── Scanner sessions ─────────────────────────────────────────────────────────

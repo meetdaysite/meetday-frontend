@@ -14,7 +14,7 @@ import GlobeSvg from "@/icons/outlined/globe.svg"
 import { EditBrandProfilePanel } from "@/components/brand/EditBrandProfilePanel"
 import { DeleteAccountModal } from "@/components/ui/DeleteAccountModal"
 import { NotificationSoundToggle } from "@/components/ui/NotificationSoundToggle"
-import { getBrandProfile, getBrandTeamMembers, inviteBrandTeamMember } from "@/lib/api"
+import { getBrandProfile, getBrandTeamMembers, inviteBrandTeamMember, removeBrandTeamMember, setBrandMemberPermission } from "@/lib/api"
 import { TeamMembersModal } from "@/components/team/TeamMembersModal"
 
 export default function BrandProfilePage() {
@@ -236,6 +236,8 @@ export default function BrandProfilePage() {
 				accountLabel={profile?.brandName || "your brand"}
 				listMembers={getBrandTeamMembers}
 				inviteMember={inviteBrandTeamMember}
+				removeMember={removeBrandTeamMember}
+				setMemberPermission={setBrandMemberPermission}
 			/>
 		</div>
 	)
