@@ -36,6 +36,13 @@ const formatHref = (url: string) => {
 	return `https://${trimmed}`
 }
 
+function formatExternalUrl(url?: string | null) {
+	if (!url) return null
+	const trimmed = url.trim()
+	if (!trimmed) return null
+	return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+}
+
 export function CommunityProfileDetailsPanel({
 	community,
 	operatingCities,
@@ -232,32 +239,50 @@ export function CommunityProfileDetailsPanel({
 						<div className="flex flex-wrap gap-2.5">
 							{community.brandsWorkedWith
 								.filter((b) => b.logoUrl || b.brandName)
-								.map((brand, i) => (
-									<div
-										key={i}
-										className="group relative"
-										title={brand.brandName || "Brand"}
-									>
-										<div className="size-12 aspect-square rounded-xl border border-black/10 overflow-hidden bg-white flex items-center justify-center shadow-sm hover:border-black/30 hover:scale-105 transition-all cursor-pointer">
-											{brand.logoUrl ? (
-												// eslint-disable-next-line @next/next/no-img-element
-												<img src={brand.logoUrl} alt={brand.brandName || "Brand logo"} className="size-full object-cover" />
-											) : (
-												<span className="text-xs font-bold text-black/60">
-													{(brand.brandName || "B").charAt(0).toUpperCase()}
-												</span>
+								.map((brand, i) => {
+									const href = formatExternalUrl(brand.url)
+									const content = (
+										<div
+											className="group relative"
+											title={brand.brandName || (href ? brand.url ?? undefined : "Brand")}
+										>
+											<div className="size-12 aspect-square rounded-xl border border-black/10 overflow-hidden bg-white flex items-center justify-center shadow-sm hover:border-black/30 hover:scale-115 transition-transform duration-200 cursor-pointer">
+												{brand.logoUrl ? (
+													// eslint-disable-next-line @next/next/no-img-element
+													<img src={brand.logoUrl} alt={brand.brandName || "Brand logo"} className="size-full object-cover" />
+												) : (
+													<span className="text-xs font-bold text-black/60">
+														{(brand.brandName || "B").charAt(0).toUpperCase()}
+													</span>
+												)}
+											</div>
+											{(brand.brandName || brand.url) && (
+												<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none">
+													<span className="px-2.5 py-1 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap shadow-md">
+														{brand.brandName || brand.url}
+													</span>
+													<div className="w-2 h-2 bg-black rotate-45 -mt-1" />
+												</div>
 											)}
 										</div>
-										{brand.brandName && (
-											<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none">
-												<span className="px-2.5 py-1 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap shadow-md">
-													{brand.brandName}
-												</span>
-												<div className="w-2 h-2 bg-black rotate-45 -mt-1" />
-											</div>
-										)}
-									</div>
-								))}
+									)
+
+									return href ? (
+										<a
+											key={i}
+											href={href}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="inline-block"
+										>
+											{content}
+										</a>
+									) : (
+										<div key={i} className="inline-block">
+											{content}
+										</div>
+									)
+								})}
 						</div>
 					</div>
 				)}

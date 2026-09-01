@@ -53,12 +53,13 @@ const emptyPastEventDraft = (): PastEventDraft => ({ name: "", description: "", 
 // (editing an existing profile) or a newly picked local file (uploaded on submit).
 type BrandWorkedWithDraft = {
 	brandName: string
+	url?: string
 	logoKey?: string
 	logoUrl?: string
 	logoFile?: File
 }
 
-const emptyBrandWorkedWithDraft = (): BrandWorkedWithDraft => ({ brandName: "" })
+const emptyBrandWorkedWithDraft = (): BrandWorkedWithDraft => ({ brandName: "", url: "" })
 
 interface ActivateCommunityModalProps {
 	hostId: string
@@ -145,6 +146,7 @@ export function ActivateCommunityModal({
 					setBrandsWorkedWith(
 						(existing.brandsWorkedWith ?? []).map((b) => ({
 							brandName: b.brandName ?? "",
+							url: b.url ?? "",
 							logoKey: b.logoKey ?? undefined,
 							logoUrl: b.logoUrl ?? undefined,
 						})),
@@ -271,6 +273,10 @@ export function ActivateCommunityModal({
 		setBrandsWorkedWith((prev) => prev.map((b, i) => (i === index ? { ...b, brandName: value } : b)))
 	}
 
+	function updateBrandWorkedWithUrl(index: number, value: string) {
+		setBrandsWorkedWith((prev) => prev.map((b, i) => (i === index ? { ...b, url: value } : b)))
+	}
+
 	function updateBrandWorkedWithLogo(index: number, file: File) {
 		if (!file.type.startsWith("image/")) {
 			toast.error("Only image files are accepted.")
@@ -339,9 +345,10 @@ export function ActivateCommunityModal({
 
 			const brandsWorkedWithPayload = await Promise.all(
 				brandsWorkedWith
-					.filter((b) => b.brandName.trim() || b.logoFile || b.logoKey)
+					.filter((b) => b.brandName.trim() || b.url?.trim() || b.logoFile || b.logoKey)
 					.map(async (b) => ({
 						brandName: b.brandName.trim() || undefined,
+						url: b.url?.trim() || undefined,
 						logoKey: b.logoFile ? await uploadBrandLogoAndGetKey(b.logoFile) : b.logoKey,
 					})),
 			)
@@ -645,12 +652,12 @@ export function ActivateCommunityModal({
 				<div className="flex flex-col gap-3">
 					<div className="flex items-center justify-between">
 						<label className="text-xs font-bold text-black">Associated Brands</label>
-						<span className="text-[10px] text-black/40">Add brand name + logo</span>
+						<span className="text-[10px] text-black/40">Logo + brand name & URL (optional)</span>
 					</div>
 					{brandsWorkedWith.map((brand, i) => (
 						<div key={i} className="relative flex items-center gap-3 p-3 pr-10 rounded-xl border-2 border-black/10 bg-slate-50/50">
 							<label className={clsx(
-								"group relative size-14 rounded-xl bg-white flex items-center justify-center overflow-hidden shrink-0 cursor-pointer transition-all",
+								"group relative size-15 rounded-xl bg-white flex items-center justify-center overflow-hidden shrink-0 cursor-pointer transition-all",
 								inline ? "border border-dashed border-black/20 hover:border-black/40" : "border-2 border-dashed border-black/30 hover:border-black"
 							)}>
 								<input
@@ -679,16 +686,28 @@ export function ActivateCommunityModal({
 									</div>
 								)}
 							</label>
-							<input
-								type="text"
-								value={brand.brandName}
-								onChange={(e) => updateBrandWorkedWithName(i, e.target.value)}
-								placeholder="Brand name"
-								className={clsx(
-									"flex-1 h-10 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors",
-									inline ? "border border-black/15 focus:border-black/35" : "border-2 border-black"
-								)}
-							/>
+							<div className="flex-1 flex flex-col gap-1.5 min-w-0">
+								<input
+									type="text"
+									value={brand.brandName}
+									onChange={(e) => updateBrandWorkedWithName(i, e.target.value)}
+									placeholder="Brand name (optional)"
+									className={clsx(
+										"w-full h-8 px-3 rounded-lg bg-white text-black outline-none text-xs font-medium transition-colors",
+										inline ? "border border-black/15 focus:border-black/35" : "border-2 border-black"
+									)}
+								/>
+								<input
+									type="url"
+									value={brand.url ?? ""}
+									onChange={(e) => updateBrandWorkedWithUrl(i, e.target.value)}
+									placeholder="Website URL (optional)"
+									className={clsx(
+										"w-full h-6.5 px-2.5 rounded-lg bg-white text-black outline-none text-[11px] transition-colors",
+										inline ? "border border-black/10 focus:border-black/30" : "border border-black/30 focus:border-black"
+									)}
+								/>
+							</div>
 							<button
 								type="button"
 								onClick={() => removeBrandWorkedWith(i)}

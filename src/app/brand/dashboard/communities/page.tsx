@@ -13,6 +13,13 @@ import {
 import { getApiErrorMessage } from "@/lib/errors"
 import clsx from "clsx"
 
+function formatExternalUrl(url?: string | null) {
+	if (!url) return null
+	const trimmed = url.trim()
+	if (!trimmed) return null
+	return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+}
+
 export function CommunityCard({ community, onClick }: { community: BrandCommunity; onClick?: () => void }) {
 	return (
 		<div
@@ -472,32 +479,50 @@ export default function BrandCommunitiesPage() {
 											<div className="flex flex-wrap gap-2.5">
 												{selectedCommunity.brandsWorkedWith
 													.filter((b) => b.logoUrl || b.brandName)
-													.map((brand, idx) => (
-														<div
-															key={idx}
-															className="group relative"
-															title={brand.brandName || "Brand"}
-														>
-															<div className="size-12 aspect-square rounded-xl border-2 border-black bg-white overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex items-center justify-center cursor-pointer">
-																{brand.logoUrl ? (
-																	// eslint-disable-next-line @next/next/no-img-element
-																	<img src={brand.logoUrl} alt={brand.brandName || "Brand logo"} className="size-full object-cover" />
-																) : (
-																	<span className="text-xs font-black text-black">
-																		{(brand.brandName || "B").charAt(0).toUpperCase()}
-																	</span>
+													.map((brand, idx) => {
+														const href = formatExternalUrl(brand.url)
+														const content = (
+															<div
+																className="group relative"
+																title={brand.brandName || (href ? brand.url ?? undefined : "Brand")}
+															>
+																<div className="size-12 aspect-square rounded-xl border-2 border-black bg-white overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:scale-115 transition-all duration-200 flex items-center justify-center cursor-pointer">
+																	{brand.logoUrl ? (
+																		// eslint-disable-next-line @next/next/no-img-element
+																		<img src={brand.logoUrl} alt={brand.brandName || "Brand logo"} className="size-full object-cover" />
+																	) : (
+																		<span className="text-xs font-black text-black">
+																			{(brand.brandName || "B").charAt(0).toUpperCase()}
+																		</span>
+																	)}
+																</div>
+																{(brand.brandName || brand.url) && (
+																	<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none">
+																		<span className="px-2.5 py-1 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap shadow-md">
+																			{brand.brandName || brand.url}
+																		</span>
+																		<div className="w-2 h-2 bg-black rotate-45 -mt-1" />
+																	</div>
 																)}
 															</div>
-															{brand.brandName && (
-																<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-30 pointer-events-none">
-																	<span className="px-2.5 py-1 bg-black text-white text-[11px] font-bold rounded-lg whitespace-nowrap shadow-md">
-																		{brand.brandName}
-																	</span>
-																	<div className="w-2 h-2 bg-black rotate-45 -mt-1" />
-																</div>
-															)}
-														</div>
-													))}
+														)
+
+														return href ? (
+															<a
+																key={idx}
+																href={href}
+																target="_blank"
+																rel="noopener noreferrer"
+																className="inline-block"
+															>
+																{content}
+															</a>
+														) : (
+															<div key={idx} className="inline-block">
+																{content}
+															</div>
+														)
+													})}
 											</div>
 										</div>
 									)}
