@@ -1136,12 +1136,14 @@ export type PastEvent = {
 export type BrandWorkedWithPayload = {
 	brandName?: string
 	logoKey?: string
+	url?: string
 }
 
 export type BrandWorkedWith = {
 	brandName: string | null
 	logoKey: string | null
 	logoUrl: string | null
+	url?: string | null
 }
 
 export type HostCommunityProfile = {
