@@ -8,6 +8,7 @@ import { Tabs } from "@/components/ui/Tabs"
 import clsx from "clsx"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { Icon } from "@/components/ui/Icon"
+import { GenerateProposalPdfPanel } from "@/components/sponsorship/GenerateProposalPdfPanel"
 import { useHostStore } from "@/store/hostStore"
 import {
     getCategories,
@@ -198,6 +199,7 @@ export default function ProposalPage() {
     // Project Details / Proposal Upload states
     const [showProjectModal, setShowProjectModal] = useState(false)
     const [showProposalForm, setShowProposalForm] = useState(false)
+    const [showPdfGenerator, setShowPdfGenerator] = useState(false)
     const [isEditingInPlace, setIsEditingInPlace] = useState(false)
     const [projName, setProjName] = useState("")
     const [projAbout, setProjAbout] = useState("")
@@ -1577,7 +1579,6 @@ export default function ProposalPage() {
                         /* Proposal section always available; community profile is optional. */
                         <div className="flex flex-col gap-8">
                             {showProposalForm ? (
-                                /* Render the inline Create Proposal Form exactly like the user's mockup! */
                                 <div className="animate-in fade-in duration-150 flex flex-col gap-6">
                                     <div className="flex justify-between items-center shrink-0">
                                         <div className="flex flex-col gap-1">
@@ -2114,6 +2115,8 @@ export default function ProposalPage() {
                                         )}
                                     </form>
                                 </div>
+                            ) : showPdfGenerator ? (
+                                <GenerateProposalPdfPanel onClose={() => setShowPdfGenerator(false)} />
                             ) : (
                                 <>
                                     {/* Header */}
@@ -2127,16 +2130,24 @@ export default function ProposalPage() {
                                             </p>
                                         </div>
                                         {proposals.length > 0 && (
-                                            <button
-                                                onClick={() => openProposalForm()}
-                                                title={!isCommunityApproved ? "Your community profile must be admin-approved first" : undefined}
-                                                className={clsx(
-                                                    "text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer",
-                                                    isCommunityApproved ? "bg-[#EE2C2C]" : "bg-black/30",
-                                                )}
-                                            >
-                                                {isCommunityApproved ? "+ CREATE NEW" : "PENDING APPROVAL"}
-                                            </button>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => setShowPdfGenerator(true)}
+                                                    className="text-black text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer bg-white"
+                                                >
+                                                    Generate Proposal PDF
+                                                </button>
+                                                <button
+                                                    onClick={() => openProposalForm()}
+                                                    title={!isCommunityApproved ? "Your community profile must be admin-approved first" : undefined}
+                                                    className={clsx(
+                                                        "text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer",
+                                                        isCommunityApproved ? "bg-[#EE2C2C]" : "bg-black/30",
+                                                    )}
+                                                >
+                                                    {isCommunityApproved ? "+ CREATE NEW" : "PENDING APPROVAL"}
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
 

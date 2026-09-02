@@ -1116,6 +1116,27 @@ export async function getSponsorshipDealReportPdfUrl(interestId: string): Promis
 	return data.data.url
 }
 
+export type GenerateProposalPdfPayload = {
+	sponsorName: string
+	eventTitle: string
+	deliverables: string
+	timeline: string
+	pricingTiers?: { name: string; price: string }[]
+	terms: string
+	contactName: string
+	contactEmail: string
+	contactPhone?: string
+}
+
+// Stateless — returns the raw PDF bytes to download, not a persisted/presigned URL like the
+// invoice/report PDFs above.
+export async function generateProposalPdf(payload: GenerateProposalPdfPayload): Promise<Blob> {
+	const { data } = await apiClient.post(`/sponsorships/proposals/generate-pdf`, payload, {
+		responseType: "blob",
+	})
+	return data as Blob
+}
+
 // ─── "Talk to Meetday" general support chat — one thread per user, separate from TriChat ──
 
 export type MeetdayChatMessage = {
