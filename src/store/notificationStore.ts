@@ -162,10 +162,15 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 		try {
 			await markNotificationRead(id)
 		} catch {
-			set((s) => ({
-				notifications: s.notifications.map((n) => (n.id === id ? { ...n, isRead: false } : n)),
-				unreadCount: s.unreadCount + 1,
-			}))
+			// Retry once before giving up — a transient failure here otherwise permanently
+			// stuck this notification as unread (nothing else ever retries it), which showed
+			// up as a badge that never clears even after the user has viewed everything.
+			try {
+				await markNotificationRead(id)
+			} catch {
+				// Still failed — leave it marked read locally anyway. A stale "read" badge that
+				// undercounts is far less disruptive than a ghost badge that overcounts forever.
+			}
 		}
 	},
 
