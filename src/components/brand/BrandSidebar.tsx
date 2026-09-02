@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import { useBrandStore } from "@/store/brandStore"
@@ -27,7 +27,7 @@ import LockFillSvg from "@/icons/filled/lock.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
-type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; exact?: boolean }
+type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; exact?: boolean; chatType?: "sponsorship" | "campaign" }
 
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
@@ -38,7 +38,8 @@ const PRIMARY_NAV: NavItem[] = [
 ]
 
 const SECONDARY_NAV: NavItem[] = [
-	{ label: "Chats", href: "/brand/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
+	{ label: "Sponsorship Chats", href: "/brand/dashboard/chats?type=sponsorship", chatType: "sponsorship", outlined: ChatOutSvg, filled: ChatFillSvg },
+	{ label: "Campaign Chats", href: "/brand/dashboard/chats?type=campaign", chatType: "campaign", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Billing", href: "/brand/dashboard/billing", outlined: DollarSvg, filled: DollarSvg },
 	{ label: "Support Chat", href: "/brand/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/brand/dashboard/notifications", outlined: BellSvg, filled: BellSvg },
@@ -66,11 +67,13 @@ interface BrandSidebarProps {
 
 function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSignOut: () => void }) {
 	const pathname = usePathname()
+	const searchParams = useSearchParams()
 	const { profile } = useBrandStore()
 	const { toasts, removeToast } = useToastStore()
 	const brandName = profile?.brandName || "Brand"
 	const avatarUrl = profile?.logoUrl
-	const [unreadChatsCount, setUnreadChatsCount] = useState(0)
+	const [unreadSponsorshipChatsCount, setUnreadSponsorshipChatsCount] = useState(0)
+	const [unreadCampaignChatsCount, setUnreadCampaignChatsCount] = useState(0)
 	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
 
 	const { notifications, init: initNotifs } = useNotificationStore()
@@ -88,23 +91,43 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 				getMySponsorshipChats("REQUESTED", "BRAND").catch(() => []),
 			]).then(([accepted, requested]) => {
 				const all = [...accepted, ...requested]
-				const threadCount = all.reduce((sum, t) => {
-					const notifCount = notifications.filter(n => {
-						if (n.isRead) return false
-						const m = n.metadata || {}
-						const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
-						return tId === t.id
-					}).length
-					return sum + Math.max(t.unreadCount || 0, notifCount)
-				}, 0)
 
-				const standaloneChatNotifs = notifications.filter(n => {
+				const countForThreads = (list: typeof all) => {
+					return list.reduce((sum, t) => {
+						const notifCount = notifications.filter(n => {
+							if (n.isRead) return false
+							const m = n.metadata || {}
+							const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+							return tId === t.id
+						}).length
+						return sum + Math.max(t.unreadCount || 0, notifCount)
+					}, 0)
+				}
+
+				const sponsorshipThreads = all.filter(t => !t.campaignId)
+				const campaignThreads = all.filter(t => !!t.campaignId)
+
+				const sponsorshipThreadCount = countForThreads(sponsorshipThreads)
+				const campaignThreadCount = countForThreads(campaignThreads)
+
+				const standaloneSponsorshipNotifs = notifications.filter(n => {
 					if (n.isRead) return false
 					const m = n.metadata || {}
 					const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
 					if (tId && all.some(t => t.id === tId)) return false
-					const isChatType = n.type === "chat_message" || n.type === "sponsorship_chat_message" || n.type === "sponsorship_chat_request" || n.type === "sponsorship_interest" || n.type === "host_interested_in_campaign" || n.type === "host_interest_confirmed"
-					return isChatType || !!tId
+					const isCampaignNotif = n.type === "host_interested_in_campaign" || n.type === "host_interest_confirmed" || !!m.campaignId
+					if (isCampaignNotif) return false
+					const isSponsorshipChatType = n.type === "chat_message" || n.type === "sponsorship_chat_message" || n.type === "sponsorship_chat_request" || n.type === "sponsorship_interest" || n.type === "sponsorship_deal_locked" || n.type === "sponsorship_deal_changes_requested"
+					return isSponsorshipChatType || !!tId
+				}).length
+
+				const standaloneCampaignNotifs = notifications.filter(n => {
+					if (n.isRead) return false
+					const m = n.metadata || {}
+					const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+					if (tId && all.some(t => t.id === tId)) return false
+					const isCampaignNotif = n.type === "host_interested_in_campaign" || n.type === "host_interest_confirmed" || !!m.campaignId
+					return isCampaignNotif
 				}).length
 
 				const supportUnread = notifications.filter(n => 
@@ -119,7 +142,8 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 					!n.metadata?.sponsorshipInterestId
 				).length
 
-				setUnreadChatsCount(threadCount + standaloneChatNotifs)
+				setUnreadSponsorshipChatsCount(sponsorshipThreadCount + standaloneSponsorshipNotifs)
+				setUnreadCampaignChatsCount(campaignThreadCount + standaloneCampaignNotifs)
 				setUnreadSupportCount(supportUnread)
 			}).catch(() => {})
 		}
@@ -206,8 +230,24 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 
 			{/* Navigation Bottom Items */}
 			<div className="px-4 pb-4 flex flex-col gap-1 mt-auto shrink-0">
-				{SECONDARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled }) => {
-					const isActive = pathname.startsWith(href)
+				{SECONDARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled, chatType }) => {
+					let isActive = false
+					if (chatType === "campaign") {
+						isActive = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") === "campaign"
+					} else if (chatType === "sponsorship") {
+						isActive = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") !== "campaign"
+					} else {
+						isActive = pathname.startsWith(href)
+					}
+
+					const badgeCount = chatType === "sponsorship"
+						? unreadSponsorshipChatsCount
+						: chatType === "campaign"
+						? unreadCampaignChatsCount
+						: label === "Support Chat"
+						? unreadSupportCount
+						: 0
+
 					return (
 						<Link
 							key={href}
@@ -225,15 +265,10 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 								size="md"
 								className="text-white shrink-0"
 							/>
-							<span className="flex-1">{label}</span>
-							{label === "Chats" && unreadChatsCount > 0 && (
+							<span className="flex-1 whitespace-nowrap">{label}</span>
+							{badgeCount > 0 && (
 								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-									{unreadChatsCount > 9 ? "9+" : unreadChatsCount}
-								</span>
-							)}
-							{label === "Support Chat" && unreadSupportCount > 0 && (
-								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-									{unreadSupportCount > 9 ? "9+" : unreadSupportCount}
+									{badgeCount > 9 ? "9+" : badgeCount}
 								</span>
 							)}
 						</Link>

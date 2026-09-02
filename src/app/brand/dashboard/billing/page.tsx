@@ -29,7 +29,7 @@ function BreakdownModal({ row, onClose }: { row: SponsorshipDealBillingRow; onCl
 					<button onClick={onClose} className="text-xl font-black text-black/40 hover:text-black" aria-label="Close">×</button>
 				</div>
 				<div className="px-6 py-4 flex flex-col gap-2 text-sm">
-					<div className="flex justify-between"><span className="text-black/50 font-semibold">Sponsorship Amount</span><span className="font-bold">{formatAmount(row.sponsorshipAmount)}</span></div>
+					<div className="flex justify-between"><span className="text-black/50 font-semibold">Deal Amount</span><span className="font-bold">{formatAmount(row.sponsorshipAmount)}</span></div>
 					{row.transactionFeeAmount != null && <div className="flex justify-between"><span className="text-black/50 font-semibold">Transaction Fee (3%)</span><span className="font-bold">{formatAmount(row.transactionFeeAmount)}</span></div>}
 					{row.taxAmount != null && <div className="flex justify-between"><span className="text-black/50 font-semibold">GST</span><span className="font-bold">{formatAmount(row.taxAmount)}</span></div>}
 					<div className="flex justify-between pt-2 border-t-2 border-black/10 mt-1"><span className="font-black">Total Amount</span><span className="font-black">{formatAmount(row.totalAmount)}</span></div>
@@ -42,6 +42,7 @@ function BreakdownModal({ row, onClose }: { row: SponsorshipDealBillingRow; onCl
 export default function BrandBillingPage() {
 	const router = useRouter()
 	const [rows, setRows] = useState<(SponsorshipDealBillingRow & { communityLogo?: string | null })[]>([])
+	const [activeTab, setActiveTab] = useState<"sponsorship" | "campaign">("sponsorship")
 	const [loading, setLoading] = useState(true)
 	const [payingId, setPayingId] = useState<string | null>(null)
 	const [breakdownRow, setBreakdownRow] = useState<SponsorshipDealBillingRow | null>(null)
@@ -56,8 +57,10 @@ export default function BrandBillingPage() {
 			.then(([billing, chats]) => {
 				const mapped = billing.map((b) => {
 					const chat = chats.find((c) => c.id === b.sponsorshipInterestId)
+					const isCampaign = Boolean(b.isCampaign || b.campaignId || chat?.campaignId)
 					return {
 						...b,
+						isCampaign,
 						communityLogo: chat ? chat.counterpartAvatarUrl : null,
 					}
 				})
@@ -95,6 +98,10 @@ export default function BrandBillingPage() {
 		}
 	}
 
+	const sponsorshipRows = rows.filter((r) => !r.isCampaign)
+	const campaignRows = rows.filter((r) => r.isCampaign)
+	const currentRows = activeTab === "sponsorship" ? sponsorshipRows : campaignRows
+
 	return (
 		<div className="flex flex-col min-h-full bg-white">
 			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
@@ -106,20 +113,59 @@ export default function BrandBillingPage() {
 			<div className="px-4 lg:px-6 py-8 flex-1 flex flex-col gap-6 max-w-5xl mx-auto w-full">
 				<div>
 					<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">Billing</h1>
-					<p className="text-sm font-semibold text-black/50 mt-1.5">Payments for all your locked sponsorship deals</p>
+					<p className="text-sm font-semibold text-black/50 mt-1.5">Payments for all your locked sponsorship &amp; campaign deals</p>
+				</div>
+
+				{/* Tab Selector */}
+				<div className="flex items-center gap-3 border-b-2 border-black/10 pb-1">
+					<button
+						type="button"
+						onClick={() => setActiveTab("sponsorship")}
+						className={clsx(
+							"flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all border-[2.5px] border-black cursor-pointer select-none",
+							activeTab === "sponsorship"
+								? "bg-[#FFC940] text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+								: "bg-white text-black/60 hover:text-black hover:bg-neutral-50 shadow-none border-black/20"
+						)}
+					>
+						<span>🤝 Sponsorship Deals</span>
+						<span className="px-2 py-0.5 rounded-full text-xs font-black bg-black text-white">
+							{sponsorshipRows.length}
+						</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => setActiveTab("campaign")}
+						className={clsx(
+							"flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all border-[2.5px] border-black cursor-pointer select-none",
+							activeTab === "campaign"
+								? "bg-[#FFC940] text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+								: "bg-white text-black/60 hover:text-black hover:bg-neutral-50 shadow-none border-black/20"
+						)}
+					>
+						<span>🚀 Campaign Deals</span>
+						<span className="px-2 py-0.5 rounded-full text-xs font-black bg-black text-white">
+							{campaignRows.length}
+						</span>
+					</button>
 				</div>
 
 				{loading ? (
 					<div className="flex flex-col gap-3">
 						{[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-2xl" />)}
 					</div>
-				) : rows.length === 0 ? (
-					<div className="rounded-2xl border-[3px] border-dashed border-black/20 p-8 text-center">
-						<p className="text-sm font-bold text-black/50">No locked deals yet — once a deal is locked, it&apos;ll show up here for payment.</p>
+				) : currentRows.length === 0 ? (
+					<div className="rounded-2xl border-[3px] border-dashed border-black/20 p-8 text-center bg-neutral-50/50">
+						<p className="text-sm font-bold text-black/50">
+							{activeTab === "sponsorship"
+								? "No locked sponsorship deals yet — once a sponsorship deal is locked, it'll show up here for payment."
+								: "No locked campaign deals yet — once a campaign deal is locked, it'll show up here for payment."}
+						</p>
 					</div>
 				) : (
 					<div className="flex flex-col gap-3">
-						{rows.map((row) => {
+						{currentRows.map((row) => {
 							const displayStatus = getDealPaymentDisplayStatus(row)
 							return (
 								<div 
@@ -127,7 +173,7 @@ export default function BrandBillingPage() {
 									onClick={(e) => {
 										const target = e.target as HTMLElement
 										if (target.closest("button") || target.closest("a")) return
-										router.push(`/brand/dashboard/chats?interestId=${row.sponsorshipInterestId}`)
+										router.push(`/brand/dashboard/chats?type=${row.isCampaign ? "campaign" : "sponsorship"}&interestId=${row.sponsorshipInterestId}`)
 									}}
 									className="bg-white border-[3px] border-black rounded-[20px] p-4 grid grid-cols-1 md:grid-cols-[1.8fr_1fr_1fr_1.2fr_1.8fr] items-center gap-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all cursor-pointer"
 								>
@@ -144,7 +190,12 @@ export default function BrandBillingPage() {
 											)}
 										</div>
 										<div className="min-w-0">
-											<p className="font-black text-black text-sm truncate">{row.communityName}</p>
+											<div className="flex items-center gap-1.5">
+												<p className="font-black text-black text-sm truncate">{row.communityName}</p>
+												<span className={clsx("text-[9px] font-black uppercase px-1.5 py-0.2 rounded-full border border-black shrink-0", row.isCampaign ? "bg-blue-100 text-blue-800" : "bg-amber-100 text-amber-800")}>
+													{row.isCampaign ? "Campaign" : "Sponsorship"}
+												</span>
+											</div>
 											<p className="text-xs font-semibold text-black/50 truncate">{row.proposalName}</p>
 										</div>
 									</div>

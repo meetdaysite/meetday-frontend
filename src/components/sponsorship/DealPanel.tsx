@@ -20,6 +20,7 @@ import {
 	upsertSponsorshipDealReport,
 	getSponsorshipProposalDetail,
 	getHostCommunityProfile,
+	getCampaignDetail,
 	getPublishedCampaignDetail,
 	// getCategories, // Sponsorship Category editing is commented out in the Lock the Deal form
 	sendSponsorshipChatMessage,
@@ -149,7 +150,11 @@ export function DealBanner({
 			<div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-[#FFFBEB] flex items-center justify-between gap-3 shrink-0">
 				<div className="flex items-center gap-2">
 					<span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
-					<p className="text-xs font-bold text-black/60">Once terms are agreed, submit the final details here.</p>
+					<p className="text-xs font-bold text-black/60">
+						{isCampaign
+							? "Once terms are agreed with the community, lock the campaign deal here."
+							: "Once terms are agreed, submit the final details here."}
+					</p>
 				</div>
 				<button
 					type="button"
@@ -261,8 +266,6 @@ export function DealBanner({
 	)
 }
 
-
-
 const EMPTY_FORM: SponsorshipDealPayload = {
 	projectName: "",
 	startDate: "",
@@ -273,9 +276,10 @@ const EMPTY_FORM: SponsorshipDealPayload = {
 	deliverables: "",
 	sponsorshipCategory: "",
 	barterElements: "",
+	additionalNotes: "",
 }
 
-// Host-only form to lock a new deal, or edit an existing (not-yet-approved) one.
+// Form to lock a new deal or edit an existing one. (Host locks proposal deals; Brand locks campaign deals)
 export function DealFormModal({
 	interestId,
 	proposalId,
@@ -303,20 +307,20 @@ export function DealFormModal({
 					endDate: deal.endDate ?? "",
 					sponsorshipCategory: deal.sponsorshipCategory ?? "",
 					barterElements: deal.barterElements ?? "",
+					additionalNotes: (deal as any).additionalNotes ?? (deal as any).otherTerms ?? "",
 				}
 			: EMPTY_FORM,
 	)
+	const [campaignData, setCampaignData] = useState<{
+		goal?: string
+		locations?: string[]
+		audience?: string[]
+	} | null>(null)
 	const [saving, setSaving] = useState(false)
-	// const [allCategories, setAllCategories] = useState<{ id: string; name: string }[]>([]) // Sponsorship Category editing is commented out below
 
-	// useEffect(() => {
-	// 	// Load all categories for the dropdown selection
-	// 	getCategories().then(setAllCategories).catch(() => [])
-	// }, [])
+	const isCampaignDeal = !!campaignId
 
 	useEffect(() => {
-		if (deal) return
-
 		if (proposalId) {
 			Promise.all([
 				getSponsorshipProposalDetail(proposalId).catch(() => null),
@@ -329,73 +333,76 @@ export function DealFormModal({
 					}
 					setForm((f) => ({
 						...f,
-						projectName: proposal.name || "",
-						startDate: proposal.eventDate ? proposal.eventDate.slice(0, 10) : "",
-						endDate: proposal.eventEndDate ? proposal.eventEndDate.slice(0, 10) : "",
-						venue: proposal.venue || "",
-						sponsorshipCategory: resolvedCategory,
+						projectName: f.projectName || proposal.name || "",
+						startDate: f.startDate || (proposal.eventDate ? proposal.eventDate.slice(0, 10) : ""),
+						endDate: f.endDate || (proposal.eventEndDate ? proposal.eventEndDate.slice(0, 10) : ""),
+						venue: f.venue || proposal.venue || "",
+						sponsorshipCategory: f.sponsorshipCategory || resolvedCategory,
 					}))
 				}
 			})
 		} else if (campaignId) {
-			console.log("[DealFormModal] Fetching campaign detail for campaignId:", campaignId)
 			Promise.all([
-				getPublishedCampaignDetail(campaignId).catch((err) => { console.error("[DealFormModal] getPublishedCampaignDetail failed:", err?.response?.status, err?.message); return null }),
-				getHostCommunityProfile().catch((err) => { console.error("[DealFormModal] getHostCommunityProfile failed:", err?.message); return null }),
+				getCampaignDetail(campaignId)
+					.catch(() => getPublishedCampaignDetail(campaignId))
+					.catch(() => null),
+				getHostCommunityProfile().catch(() => null),
 			]).then(([campaign, community]) => {
-				console.log("[DealFormModal] campaign:", campaign, "community:", community)
 				if (campaign) {
+					setCampaignData({
+						goal: campaign.goal,
+						locations: campaign.locations,
+						audience: campaign.audience,
+					})
 					let resolvedCategory = ""
 					if (community?.categories?.length) {
 						resolvedCategory = community.categories.map((c: any) => c.name).join(", ")
 					}
 					setForm((f) => ({
 						...f,
-						projectName: campaign.name || "",
-						startDate: campaign.startDate ? campaign.startDate.slice(0, 10) : "",
-						endDate: campaign.endDate ? campaign.endDate.slice(0, 10) : "",
-						venue: campaign.locations?.length ? campaign.locations.join(", ") : "",
-						sponsorshipCategory: resolvedCategory,
+						projectName: campaign.name || f.projectName || "",
+						startDate: campaign.startDate ? campaign.startDate.slice(0, 10) : f.startDate,
+						endDate: campaign.endDate ? campaign.endDate.slice(0, 10) : f.endDate,
+						venue: campaign.locations?.length ? campaign.locations.join(", ") : f.venue,
+						sponsorshipCategory: f.sponsorshipCategory || resolvedCategory,
+						barterElements: f.barterElements || campaign.barterElements || "",
+						sponsorshipAmount: f.sponsorshipAmount || campaign.budgetAmount || 0,
 					}))
 				}
 			})
 		}
-	}, [proposalId, campaignId, deal])
+	}, [proposalId, campaignId])
 
-	// const formCategories = form.sponsorshipCategory ? form.sponsorshipCategory.split(", ").filter(Boolean) : []
-
-	// const addCategory = (name: string) => {
-	// 	if (!formCategories.includes(name)) {
-	// 		const updated = [...formCategories, name].join(", ")
-	// 		setForm(f => ({ ...f, sponsorshipCategory: updated }))
-	// 	}
-	// }
-
-	// const removeCategory = (name: string) => {
-	// 	const updated = formCategories.filter(c => c !== name).join(", ")
-	// 	setForm(f => ({ ...f, sponsorshipCategory: updated }))
-	// }
-
-	// const availableToAdd = allCategories.filter(c => !formCategories.includes(c.name))
-
-	const isValid = form.projectName.trim() && form.startDate && form.endDate?.trim() && form.venue.trim() && form.deliverables.trim()
+	const isValid =
+		form.projectName.trim() &&
+		form.startDate &&
+		form.endDate?.trim() &&
+		form.venue.trim() &&
+		form.deliverables.trim()
 
 	async function handleSubmit() {
 		if (!isValid) return
 		setSaving(true)
 		try {
+			const rawAmount = Number(form.sponsorshipAmount)
+			const sponsorshipAmount = isNaN(rawAmount) || rawAmount < 0 ? 0 : rawAmount
 			const payload: SponsorshipDealPayload = {
 				...form,
+				sponsorshipAmount,
 				startDate: new Date(form.startDate).toISOString(),
 				endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
 			}
-			const saved = deal ? await updateSponsorshipDeal(interestId, payload) : await createSponsorshipDeal(interestId, payload)
+			const saved = deal
+				? await updateSponsorshipDeal(interestId, payload)
+				: await createSponsorshipDeal(interestId, payload)
 
-			toast.success(deal ? "Deal updated." : "Deal locked — waiting on brand approval.")
+			toast.success(deal ? "Deal updated." : "Deal locked — waiting for approval.")
 			onSaved(saved)
 			onClose()
-		} catch {
-			toast.error("Failed to save the deal.")
+		} catch (err: any) {
+			const serverMsg = err?.response?.data?.message
+			const msg = Array.isArray(serverMsg) ? serverMsg.join(", ") : (serverMsg || "Failed to save the deal.")
+			toast.error(msg)
 		} finally {
 			setSaving(false)
 		}
@@ -405,128 +412,158 @@ export function DealFormModal({
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
 			<div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg flex flex-col max-h-[90vh]">
 				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0">
-					<p className="text-lg font-black text-black">{deal ? "Edit Deal" : "🔒 Lock the Deal"}</p>
+					<p className="text-lg font-black text-black">
+						{deal ? (isCampaignDeal ? "Edit Campaign Deal" : "Edit Deal") : (isCampaignDeal ? "🔒 Lock Campaign Deal" : "🔒 Lock the Deal")}
+					</p>
 					<button onClick={onClose} className="text-xl font-black text-black/40 hover:text-black" aria-label="Close">×</button>
 				</div>
 
-				<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3">
-					<Field label="Project Name">
-						<input value={form.projectName} disabled readOnly title="Edit this in the proposal to update it here" className={`${inputClass} bg-neutral-100 text-black/50 cursor-not-allowed`} placeholder="Summer Music Fest" />
-					</Field>
-					<div className="grid grid-cols-2 gap-3">
-						<Field label="Start Date">
-							<input type="date" value={form.startDate} onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))} className={inputClass} />
-						</Field>
-						<Field label="End Date">
-							<input type="date" value={form.endDate} onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))} className={inputClass} />
-						</Field>
-					</div>
-
-					<div className="grid grid-cols-12 gap-3">
-						<div className="col-span-4">
-							<Field label="Time">
-								<input value={form.time} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} className={inputClass} placeholder="6:00 PM" />
-							</Field>
-						</div>
-						<div className="col-span-8">
-							<Field label="Venue">
-								<input
-									value={form.venue}
-									readOnly
-									title="Click to open in Google Maps · Edit this in the proposal to update it"
-									onClick={(e) => {
-										e.currentTarget.blur()
-										if (form.venue.trim()) {
-											window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(form.venue)}`, "_blank", "noopener,noreferrer")
-										}
-									}}
-									className={`${inputClass} bg-neutral-100 text-black/50 cursor-pointer hover:bg-neutral-200`}
-									placeholder="Phoenix Marketcity, Bengaluru"
-								/>
-							</Field>
-						</div>
-					</div>
-
-					{/* Sponsorship Category editing removed from this form — categories are managed on the host community profile
-					<Field label="Sponsorship Category">
-						<div className="flex flex-col gap-2">
-							<div className="flex flex-wrap gap-1.5 items-center p-2.5 border-[3px] border-black rounded-xl bg-white min-h-[42px]">
-								{formCategories.map(cat => (
-									<span key={cat} className="flex items-center gap-1 px-2 py-0.5 bg-[#FFC940] text-black border border-black rounded-md text-xs font-bold shrink-0">
-										{cat}
-										<button type="button" onClick={() => removeCategory(cat)} className="hover:text-red-500 font-black ml-0.5">×</button>
-									</span>
-								))}
-								{availableToAdd.length > 0 && (
-									<select
-										onChange={e => {
-											if (e.target.value) {
-												addCategory(e.target.value)
-												e.target.value = ""
-											}
-										}}
-										className="text-xs font-bold bg-neutral-100 border border-black/15 rounded px-1.5 py-0.5 cursor-pointer outline-none hover:bg-neutral-200"
-									>
-										<option value="">+ Add</option>
-										{availableToAdd.map(c => (
-											<option key={c.id} value={c.name}>{c.name}</option>
-										))}
-									</select>
-								)}
-							</div>
-							<div className="flex gap-2">
-								<input
-									type="text"
-									id="custom-category-input"
-									placeholder="Or type custom category..."
-									onKeyDown={e => {
-										if (e.key === "Enter") {
-											e.preventDefault()
-											const val = e.currentTarget.value.trim()
-											if (val) {
-												addCategory(val)
-												e.currentTarget.value = ""
-											}
-										}
-									}}
-									className="flex-1 rounded-xl border-[3px] border-black bg-white px-3 py-1 text-xs font-semibold outline-none focus:bg-neutral-50"
-								/>
-								<button
-									type="button"
-									onClick={() => {
-										const inputEl = document.getElementById("custom-category-input") as HTMLInputElement
-										const val = inputEl?.value.trim()
-										if (val) {
-											addCategory(val)
-											inputEl.value = ""
-										}
-									}}
-									className="px-3 py-1 bg-black text-white rounded-xl text-xs font-bold hover:bg-neutral-800 border-[3px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
-								>
-									Add
-								</button>
+				<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3.5">
+					{isCampaignDeal && (
+						<div className="p-3 bg-amber-50 border-2 border-amber-300 rounded-xl text-xs font-semibold text-amber-900 flex items-start gap-2.5">
+							<span className="text-base shrink-0">ℹ️</span>
+							<div>
+								<p className="font-bold text-black">Autofilled Campaign Details</p>
+								<p className="text-[11px] text-black/70 mt-0.5">
+									Campaign Name, Goals, City, Audience, and Dates are read-only and autofilled from the campaign. If changes are needed, please edit the campaign directly.
+								</p>
 							</div>
 						</div>
-					</Field>
-					*/}
+					)}
 
-					<div className="grid grid-cols-2 gap-3">
-						<Field label="Sponsorship Amount (₹)">
+					<Field label={isCampaignDeal ? "Campaign Name" : "Project Name"}>
+						<input
+							value={form.projectName}
+							disabled
+							readOnly
+							title="Autofilled from details"
+							className={`${inputClass} bg-neutral-100 text-black/60 cursor-not-allowed`}
+							placeholder={isCampaignDeal ? "Campaign Name" : "Summer Music Fest"}
+						/>
+					</Field>
+
+					{isCampaignDeal && campaignData?.goal && (
+						<Field label="Campaign Goals">
 							<input
-								type="number"
-								min={0}
-								value={form.sponsorshipAmount === 0 ? "" : form.sponsorshipAmount}
-								onChange={e => setForm(f => ({ ...f, sponsorshipAmount: e.target.value === "" ? 0 : Number(e.target.value) }))}
-								placeholder="0"
-								className={inputClass}
+								value={campaignData.goal}
+								disabled
+								readOnly
+								title="Autofilled from campaign"
+								className={`${inputClass} bg-neutral-100 text-black/60 cursor-not-allowed`}
+								placeholder="Campaign Goals"
 							/>
 						</Field>
-						<Field label="Barter Elements">
-							<input value={form.barterElements} onChange={e => setForm(f => ({ ...f, barterElements: e.target.value }))} className={inputClass} placeholder="Gifting, Free drinks" />
+					)}
+
+					<div className="grid grid-cols-2 gap-3">
+						<Field label="City / Region">
+							<input
+								value={form.venue}
+								disabled={isCampaignDeal}
+								readOnly={isCampaignDeal}
+								onChange={(e) => setForm((f) => ({ ...f, venue: e.target.value }))}
+								className={clsx(inputClass, isCampaignDeal && "bg-neutral-100 text-black/60 cursor-not-allowed")}
+								placeholder="e.g. Bengaluru, Mumbai"
+							/>
+						</Field>
+						{isCampaignDeal ? (
+							<Field label="Target Audience">
+								<input
+									value={campaignData?.audience?.length ? campaignData.audience.join(", ") : "All"}
+									disabled
+									readOnly
+									className={`${inputClass} bg-neutral-100 text-black/60 cursor-not-allowed`}
+									placeholder="e.g. Students, Tech Enthusiasts"
+								/>
+							</Field>
+						) : (
+							<Field label="Time">
+								<input
+									value={form.time}
+									onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
+									className={inputClass}
+									placeholder="6:00 PM"
+								/>
+							</Field>
+						)}
+					</div>
+
+					<div className="grid grid-cols-2 gap-3">
+						<Field label="Start Date">
+							<input
+								type="date"
+								value={form.startDate}
+								disabled={isCampaignDeal}
+								readOnly={isCampaignDeal}
+								onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
+								className={clsx(inputClass, isCampaignDeal && "bg-neutral-100 text-black/60 cursor-not-allowed")}
+							/>
+						</Field>
+						<Field label="End Date">
+							<input
+								type="date"
+								value={form.endDate}
+								disabled={isCampaignDeal}
+								readOnly={isCampaignDeal}
+								onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
+								className={clsx(inputClass, isCampaignDeal && "bg-neutral-100 text-black/60 cursor-not-allowed")}
+							/>
 						</Field>
 					</div>
-					<Field label="Deliverables">
-						<textarea value={form.deliverables} onChange={e => setForm(f => ({ ...f, deliverables: e.target.value }))} rows={4} className={inputClass} placeholder="Logo on stage backdrop, 2 Instagram posts, on-site booth…" />
+
+					<div className="pt-2 border-t border-black/10">
+						<p className="text-xs font-black uppercase tracking-wider text-black mb-2">Final Deal Agreement</p>
+						<div className="grid grid-cols-2 gap-3">
+							<Field label="Cash Amount (₹)">
+								<input
+									type="number"
+									min={0}
+									value={form.sponsorshipAmount === 0 ? "" : form.sponsorshipAmount}
+									onChange={(e) =>
+										setForm((f) => ({
+											...f,
+											sponsorshipAmount: e.target.value === "" ? 0 : Number(e.target.value),
+										}))
+									}
+									placeholder="0"
+									className={inputClass}
+								/>
+							</Field>
+							<Field label="Barter Elements">
+								<input
+									value={form.barterElements}
+									onChange={(e) => setForm((f) => ({ ...f, barterElements: e.target.value }))}
+									className={inputClass}
+									placeholder="Gifting, Free drinks, Vouchers"
+								/>
+							</Field>
+						</div>
+					</div>
+
+					<Field label="Key Deliverables">
+						<textarea
+							value={form.deliverables}
+							onChange={(e) => setForm((f) => ({ ...f, deliverables: e.target.value }))}
+							rows={4}
+							className={inputClass}
+							placeholder="Enter agreed key deliverables (e.g. 2 dedicated workshops, logo on event stage backdrop, 3 Instagram stories)…"
+						/>
+					</Field>
+
+					<Field label="Other Information / Remarks (Optional)">
+						<textarea
+							value={form.additionalNotes ?? ""}
+							onChange={(e) =>
+								setForm((f) => ({
+									...f,
+									additionalNotes: e.target.value,
+									otherTerms: e.target.value,
+								}))
+							}
+							rows={2}
+							className={inputClass}
+							placeholder="Any other terms, special requirements, or notes agreed upon…"
+						/>
 					</Field>
 				</div>
 
@@ -556,18 +593,21 @@ export function DealFormModal({
 	)
 }
 
-
-// Read-only detail view for both sides. Brand gets Approve / Request Changes actions here.
+// Read-only detail view for both sides. The reviewing party gets Approve / Request Changes actions here.
 export function DealDetailsModal({
 	interestId,
 	deal,
 	role,
+	isCampaign = false,
+	campaignId,
 	onClose,
 	onUpdated,
 }: {
 	interestId: string
 	deal: SponsorshipDeal
 	role: "HOST" | "BRAND"
+	isCampaign?: boolean
+	campaignId?: string
 	onClose: () => void
 	onUpdated: (deal: SponsorshipDeal) => void
 }) {
@@ -575,6 +615,35 @@ export function DealDetailsModal({
 	const [note, setNote] = useState("")
 	const [busy, setBusy] = useState(false)
 	const [paying, setPaying] = useState(false)
+	const [campaignData, setCampaignData] = useState<{
+		goal?: string
+		locations?: string[]
+		audience?: string[]
+	} | null>(null)
+
+	// In Campaign deals, Community (HOST) approves / requests changes.
+	// In Proposal deals, Brand (BRAND) approves / requests changes.
+	const canApproveOrRequestChanges = isCampaign ? role === "HOST" : role === "BRAND"
+
+	useEffect(() => {
+		if (campaignId || isCampaign) {
+			const cId = campaignId || (deal as any).campaignId
+			if (cId) {
+				getCampaignDetail(cId)
+					.catch(() => getPublishedCampaignDetail(cId))
+					.then((c) => {
+						if (c) {
+							setCampaignData({
+								goal: c.goal,
+								locations: c.locations,
+								audience: c.audience,
+							})
+						}
+					})
+					.catch(() => {})
+			}
+		}
+	}, [campaignId, isCampaign, deal])
 
 	async function handlePayNow() {
 		setPaying(true)
@@ -593,18 +662,18 @@ export function DealDetailsModal({
 			const updated = await approveSponsorshipDeal(interestId)
 
 			toast.success("🎉 Deal approved and locked!")
-			
+
 			// Trigger confetti locally in the chat canvas
 			const canvas = document.getElementById("chat-confetti-canvas") as HTMLCanvasElement | null
 			if (canvas) {
 				const myConfetti = confetti.create(canvas, {
 					resize: true,
-					useWorker: true
+					useWorker: true,
 				})
 				myConfetti({
 					particleCount: 150,
 					spread: 80,
-					origin: { y: 0.6 }
+					origin: { y: 0.6 },
 				})
 			}
 
@@ -636,7 +705,9 @@ export function DealDetailsModal({
 			<div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg flex flex-col max-h-[90vh]">
 				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0">
 					<div className="flex items-center gap-2">
-						<p className="text-lg font-black text-black">Deal Details</p>
+						<p className="text-lg font-black text-black">
+							{isCampaign ? "Campaign Deal Details" : "Deal Details"}
+						</p>
 						<span className={clsx("px-2 py-0.5 rounded-full text-[10px] font-black uppercase", STATUS_COLOR[deal.status])}>
 							{STATUS_LABEL[deal.status]}
 						</span>
@@ -645,18 +716,26 @@ export function DealDetailsModal({
 				</div>
 
 				<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3 text-sm">
-					<Row label="Project Name" value={deal.projectName} />
+					<Row label={isCampaign ? "Campaign Name" : "Project Name"} value={deal.projectName} />
+					{campaignData?.goal && <Row label="Campaign Goals" value={campaignData.goal} />}
 					<div className="grid grid-cols-2 gap-3">
 						<Row label="Start Date" value={deal.startDate ? new Date(deal.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "—"} />
 						<Row label="End Date" value={deal.endDate ? (deal.endDate.includes("-") ? new Date(deal.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : deal.endDate) : "—"} />
 					</div>
-					{deal.time && <Row label="Time" value={deal.time} />}
 					<div className="grid grid-cols-2 gap-3">
-						<Row label="Sponsorship Amount" value={formatAmount(deal.sponsorshipAmount)} />
+						<Row label={isCampaign ? "City / Region" : "Venue"} value={deal.venue || "—"} />
+						{isCampaign && campaignData?.audience?.length ? (
+							<Row label="Target Audience" value={campaignData.audience.join(", ")} />
+						) : deal.time ? (
+							<Row label="Time" value={deal.time} />
+						) : null}
+					</div>
+					<div className="grid grid-cols-2 gap-3">
+						<Row label="Cash Amount" value={formatAmount(deal.sponsorshipAmount)} />
 						{deal.barterElements && <Row label="Barter Elements" value={deal.barterElements} />}
 					</div>
-					<Row label="Venue" value={deal.venue} />
-					<Row label="Deliverables" value={deal.deliverables} multiline />
+					<Row label="Key Deliverables" value={deal.deliverables} multiline />
+					{(deal as any).additionalNotes && <Row label="Other Information" value={(deal as any).additionalNotes} multiline />}
 					{deal.changeRequestNote && (
 						<div className="rounded-xl border-[3px] border-[#EE2C2C] bg-[#EE2C2C]/5 p-3">
 							<p className="text-[10px] font-black uppercase text-[#EE2C2C] mb-1">Changes Requested</p>
@@ -665,7 +744,7 @@ export function DealDetailsModal({
 					)}
 					<p className="text-[11px] font-semibold text-black/30">Version {deal.version}</p>
 
-					{deal.status === "APPROVED" && (() => {
+					{deal.status === "APPROVED" && Number(deal.sponsorshipAmount) > 0 && (() => {
 						const displayStatus = getDealPaymentDisplayStatus(deal)
 						return (
 							<div className={clsx(
@@ -714,15 +793,15 @@ export function DealDetailsModal({
 						)
 					})()}
 
-					{role === "BRAND" && deal.status !== "APPROVED" && requestingChanges && (
+					{canApproveOrRequestChanges && deal.status !== "APPROVED" && requestingChanges && (
 						<div className="pt-2 border-t border-black/10">
 							<label className="text-[11px] font-black uppercase text-black/40 mb-1 block">What needs to change? (optional)</label>
-							<textarea value={note} onChange={e => setNote(e.target.value)} rows={2} className={inputClass} placeholder="e.g. Can we revisit the final amount?" />
+							<textarea value={note} onChange={e => setNote(e.target.value)} rows={2} className={inputClass} placeholder="e.g. Can we revisit the key deliverables or final amount?" />
 						</div>
 					)}
 				</div>
 
-				{role === "BRAND" && deal.status !== "APPROVED" && (
+				{canApproveOrRequestChanges && deal.status !== "APPROVED" && (
 					<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-3 shrink-0 bg-neutral-50 rounded-b-[21px]">
 						{requestingChanges ? (
 							<>

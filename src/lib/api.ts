@@ -620,6 +620,7 @@ export type SponsorshipProposalPayload = {
 	docType?: string
 	docSize?: number
 	sponsorTiers?: SponsorTier[]
+	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
 }
 
 export type SponsorshipProposal = {
@@ -645,6 +646,7 @@ export type SponsorshipProposal = {
 	docSize: number | null
 	videoUrl: string | null
 	sponsorTiers: SponsorTier[]
+	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
 	status: SponsorshipStatus
 	pendingRevision: (SponsorshipProposalPayload & { imageUrl?: string | null; docUrl?: string | null }) | null
 	adminRejectionRemark: string | null
@@ -931,6 +933,8 @@ export type SponsorshipDeal = {
 	paymentExpiresAt: string | null
 	razorpayOrderId: string | null
 	paidAt: string | null
+	additionalNotes?: string | null
+	otherTerms?: string | null
 	invoicePdfKey: string | null
 	createdAt: string
 	updatedAt: string
@@ -946,6 +950,8 @@ export type SponsorshipDealPayload = {
 	deliverables: string
 	sponsorshipCategory?: string
 	barterElements?: string
+	additionalNotes?: string
+	otherTerms?: string
 }
 
 export async function getSponsorshipDeal(interestId: string): Promise<SponsorshipDeal | null> {
@@ -1086,6 +1092,9 @@ export type SponsorshipDealBillingRow = {
 	approvedAt: string | null
 	razorpayPaymentId: string | null
 	invoicePdfKey: string | null
+	isCampaign?: boolean
+	campaignId?: string | null
+	sponsorshipProposalId?: string | null
 }
 
 export async function getSponsorshipBilling(): Promise<SponsorshipDealBillingRow[]> {

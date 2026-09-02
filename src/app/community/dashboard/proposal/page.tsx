@@ -71,6 +71,7 @@ export interface StoredProposal {
     status?: "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED"
     adminRejectionRemark?: string | null
     sponsorPrices?: SponsorPrice[]
+    sponsorshipType?: "CASH" | "BARTER" | "BOTH"
     pendingRevision?: {
         name: string
         about: string
@@ -92,6 +93,7 @@ export interface StoredProposal {
         docSize: number
         uploadedAt: string
         sponsorPrices?: SponsorPrice[]
+        sponsorshipType?: "CASH" | "BARTER" | "BOTH"
     }
 }
 
@@ -119,6 +121,7 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
         uploadedAt: p.updatedAt,
         status: p.status,
         adminRejectionRemark: p.adminRejectionRemark,
+        sponsorshipType: p.sponsorshipType || "CASH",
         sponsorPrices: (p.sponsorTiers || []).map((t) => ({ name: t.name, price: t.price })),
         pendingRevision: p.pendingRevision
             ? {
@@ -141,6 +144,7 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
                 docType: (p.pendingRevision.docType as string) || p.docType || "",
                 docSize: (p.pendingRevision.docSize as number) || p.docSize || 0,
                 uploadedAt: p.updatedAt,
+                sponsorshipType: p.pendingRevision.sponsorshipType || p.sponsorshipType || "CASH",
                 sponsorPrices: ((p.pendingRevision.sponsorTiers as { name: string; price: string }[]) || (p.sponsorTiers || [])).map((t) => ({ name: t.name, price: t.price })),
             }
             : undefined,
@@ -211,6 +215,7 @@ export default function ProposalPage() {
     const [projVideoUrl, setProjVideoUrl] = useState("")
     const [projDoc, setProjDoc] = useState<File | null>(null)
     const [sponsorPrices, setSponsorPrices] = useState<SponsorPrice[]>([{ name: "", price: "" }])
+    const [projSponsorshipType, setProjSponsorshipType] = useState<"CASH" | "BARTER" | "BOTH">("CASH")
     const [proposalCopilotOpen, setProposalCopilotOpen] = useState(false)
     const [proposalCopilotPrompt, setProposalCopilotPrompt] = useState("")
     const [proposalCopilotLoading, setProposalCopilotLoading] = useState(false)
@@ -331,6 +336,7 @@ export default function ProposalPage() {
                 docType: selectedProposal.pendingRevision.docType || selectedProposal.docType,
                 docSize: selectedProposal.pendingRevision.docSize || selectedProposal.docSize,
                 uploadedAt: selectedProposal.pendingRevision.uploadedAt,
+                sponsorshipType: selectedProposal.pendingRevision.sponsorshipType || selectedProposal.sponsorshipType || "CASH",
                 sponsorPrices: selectedProposal.pendingRevision.sponsorPrices || selectedProposal.sponsorPrices || [],
                 isRevision: true,
             }
@@ -355,6 +361,7 @@ export default function ProposalPage() {
             docType: selectedProposal.docType,
             docSize: selectedProposal.docSize,
             uploadedAt: selectedProposal.uploadedAt,
+            sponsorshipType: selectedProposal.sponsorshipType || "CASH",
             sponsorPrices: selectedProposal.sponsorPrices || [],
             isRevision: false,
         }
@@ -566,6 +573,7 @@ export default function ProposalPage() {
             setProjGuestCount(data.guestCount)
             setProjVideoUrl(data.videoUrl || "")
             setProjDoc(null)
+            setProjSponsorshipType(data.sponsorshipType || "CASH")
             setSponsorPrices(data.sponsorPrices && data.sponsorPrices.length > 0 ? data.sponsorPrices : [{ name: "", price: "" }])
             setSelectedProposal(p)
         } else {
@@ -580,6 +588,7 @@ export default function ProposalPage() {
             setProjAgeGroup("")
             setProjGuestCount("")
             setProjDoc(null)
+            setProjSponsorshipType("CASH")
             setSponsorPrices([{ name: "", price: "" }])
             setSelectedProposal(null)
         }
@@ -734,14 +743,16 @@ export default function ProposalPage() {
             toast.error("Number of Guests is required.")
             return
         }
-        if (sponsorPrices.length === 0) {
-            toast.error("At least one Sponsor Price entry is required.")
-            return
-        }
-        for (const sp of sponsorPrices) {
-            if (!sp.name.trim() || !sp.price.trim()) {
-                toast.error("All Sponsor Price names and prices must be filled out.")
+        if (projSponsorshipType !== "BARTER") {
+            if (sponsorPrices.length === 0) {
+                toast.error("At least one Sponsor Price entry is required.")
                 return
+            }
+            for (const sp of sponsorPrices) {
+                if (!sp.name.trim() || !sp.price.trim()) {
+                    toast.error("All Sponsor Price names and prices must be filled out.")
+                    return
+                }
             }
         }
         if (!projDoc && !selectedProposal) {
@@ -765,7 +776,8 @@ export default function ProposalPage() {
                 venueCities: filledVenueIdx.map((idx) => projVenueCities[idx]?.trim() || ""),
                 audienceProfile: projAudience,
                 ageGroup: projAgeGroup, guestCount: projGuestCount,
-                sponsorTiers: sponsorPrices,
+                sponsorshipType: projSponsorshipType,
+                sponsorTiers: projSponsorshipType === "BARTER" ? [] : sponsorPrices,
                 ...(projVideoUrl.trim() && { videoUrl: projVideoUrl.trim() }),
             }
 
@@ -1461,27 +1473,66 @@ export default function ProposalPage() {
                                     </div>
                                 </div>
 
-                                {/* Below Top Row: About Project */}
-                                <div className="bg-surface-card border border-border-default rounded-action p-5">
-                                    <h4 className="text-sm font-bold text-text-primary mb-2">About the Project</h4>
-                                    <p className="text-body-sm text-text-secondary leading-relaxed whitespace-pre-wrap break-words">{displayDetails?.about}</p>
+                                {/* Below Top Row: About Project & Sponsorship */}
+                                <div className="flex flex-col gap-4">
+                                    <div className="bg-surface-card border border-border-default rounded-action p-5">
+                                        <h4 className="text-sm font-bold text-text-primary mb-2">About the Project</h4>
+                                        <p className="text-body-sm text-text-secondary leading-relaxed whitespace-pre-wrap break-words">{displayDetails?.about}</p>
+                                    </div>
+
+                                    {displayDetails?.sponsorshipType === "BARTER" ? (
+                                        <div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-2">
+                                            <div className="flex items-center gap-2">
+                                                <h4 className="text-sm font-bold text-text-primary">Sponsorship Type</h4>
+                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] uppercase">
+                                                    🎁 Barter Only
+                                                </span>
+                                            </div>
+                                            <p className="text-body-sm text-text-secondary">Open to product, service, or venue barter collaborations.</p>
+                                        </div>
+                                    ) : displayDetails?.sponsorshipType === "BOTH" ? (
+                                        <div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-3">
+                                            <div className="flex items-center justify-between flex-wrap gap-2">
+                                                <h4 className="text-sm font-bold text-text-primary">Sponsor Pricing Tiers &amp; Barter</h4>
+                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] uppercase">
+                                                    💰 Cash &amp; 🎁 Barter
+                                                </span>
+                                            </div>
+                                            {displayDetails?.sponsorPrices && displayDetails.sponsorPrices.length > 0 && (
+                                                <div className="flex flex-wrap gap-3">
+                                                    {displayDetails.sponsorPrices.map((sp: any, idx: number) => (
+                                                        <div key={idx} className="flex gap-2 text-sm border border-border-default/45 rounded-xl px-4 py-2 bg-surface-card-muted">
+                                                            <span className="text-text-secondary font-medium">{sp.name}:</span>
+                                                            <span className="text-text-brand font-semibold">
+                                                                {sp.price?.toString().startsWith("₹") ? sp.price : `₹${sp.price}`}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : displayDetails?.sponsorPrices && displayDetails.sponsorPrices.length > 0 ? (
+                                        <div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-3">
+                                            <div className="flex items-center justify-between flex-wrap gap-2">
+                                                <h4 className="text-sm font-bold text-text-primary">Sponsor Pricing Tiers</h4>
+                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] uppercase">
+                                                    💰 Cash Only
+                                                </span>
+                                            </div>
+                                            <div className="flex flex-wrap gap-3">
+                                                {displayDetails.sponsorPrices.map((sp: any, idx: number) => (
+                                                    <div key={idx} className="flex gap-2 text-sm border border-border-default/45 rounded-xl px-4 py-2 bg-surface-card-muted">
+                                                        <span className="text-text-secondary font-medium">{sp.name}:</span>
+                                                        <span className="text-text-brand font-semibold">
+                                                            {sp.price?.toString().startsWith("₹") ? sp.price : `₹${sp.price}`}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : null}
                                 </div>
 
-                                {displayDetails?.sponsorPrices && displayDetails.sponsorPrices.length > 0 && (
-                                    <div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-3">
-                                        <h4 className="text-sm font-bold text-text-primary">Sponsor Pricing Tiers</h4>
-                                        <div className="flex flex-wrap gap-3">
-                                            {displayDetails.sponsorPrices.map((sp: any, idx: number) => (
-                                                <div key={idx} className="flex gap-2 text-sm border border-border-default/45 rounded-xl px-4 py-2 bg-surface-card-muted">
-                                                    <span className="text-text-secondary font-medium">{sp.name}:</span>
-                                                    <span className="text-text-brand font-semibold">
-                                                        {sp.price?.toString().startsWith("₹") ? sp.price : `₹${sp.price}`}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
                                 {/* Bottom - PDF Preview */}
                                 <div className="flex flex-col gap-3">
                                     <h4 className="text-sm font-bold text-text-primary">Document Preview</h4>
@@ -1974,59 +2025,93 @@ export default function ProposalPage() {
                                             </div>
                                         </div>
 
-                                        {/* Sponsor pricing slots */}
-                                        <div className="flex flex-col gap-3">
-                                            <div className="flex justify-between items-center">
-                                                <label className="text-xs font-bold text-black">Sponsorship Slots *</label>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setSponsorPrices([...sponsorPrices, { name: "", price: "" }])}
-                                                    className="text-xs font-bold text-black hover:underline"
-                                                >
-                                                    + Add Slot
-                                                </button>
+                                        {/* Sponsorship Type */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-xs font-bold text-black">Sponsorship Type *</label>
+                                            <div className="flex gap-3">
+                                                {(["CASH", "BARTER", "BOTH"] as const).map((o) => {
+                                                    const isSelected = projSponsorshipType === o
+                                                    return (
+                                                        <button
+                                                            key={o}
+                                                            type="button"
+                                                            onClick={() => setProjSponsorshipType(o)}
+                                                            className={clsx(
+                                                                "flex-1 py-2.5 rounded-xl text-xs font-black border transition-all select-none cursor-pointer",
+                                                                isSelected
+                                                                    ? "bg-[#EE2C2C] text-white border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+                                                                    : "bg-slate-50 text-black/60 border-black/15 hover:border-black/30"
+                                                            )}
+                                                        >
+                                                            {o === "CASH" ? "Cash" : o === "BARTER" ? "Barter" : "Both"}
+                                                        </button>
+                                                    )
+                                                })}
                                             </div>
-                                            {sponsorPrices.map((sp, idx) => (
-                                                <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center p-3 sm:p-0 bg-slate-100/50 sm:bg-transparent rounded-xl border border-black/5 sm:border-0 relative">
-                                                    <input
-                                                        type="text"
-                                                        required
-                                                        placeholder="Slot Name (e.g., Title Sponsor)"
-                                                        value={sp.name}
-                                                        onChange={(e) => {
-                                                            const updated = [...sponsorPrices]
-                                                            updated[idx].name = e.target.value
-                                                            setSponsorPrices(updated)
-                                                        }}
-                                                        className="w-full sm:flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
-                                                    />
-                                                    <div className="relative w-full sm:flex-1">
-                                                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-black/40 select-none">₹</span>
+                                            <span className="text-[10px] text-black/40">
+                                                {projSponsorshipType === "BARTER"
+                                                    ? "Barter selected — brands can collaborate through product or service barter without fixed pricing tiers."
+                                                    : projSponsorshipType === "BOTH"
+                                                    ? "Both selected — define your cash pricing slots while also being open to barter."
+                                                    : "Cash selected — define your cash pricing slots for brands."}
+                                            </span>
+                                        </div>
+
+                                        {/* Sponsor pricing slots - shown for CASH and BOTH */}
+                                        {projSponsorshipType !== "BARTER" && (
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex justify-between items-center">
+                                                    <label className="text-xs font-bold text-black">Sponsorship Slots *</label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSponsorPrices([...sponsorPrices, { name: "", price: "" }])}
+                                                        className="text-xs font-bold text-black hover:underline"
+                                                    >
+                                                        + Add Slot
+                                                    </button>
+                                                </div>
+                                                {sponsorPrices.map((sp, idx) => (
+                                                    <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center p-3 sm:p-0 bg-slate-100/50 sm:bg-transparent rounded-xl border border-black/5 sm:border-0 relative">
                                                         <input
                                                             type="text"
                                                             required
-                                                            placeholder="Price (e.g., 50,000)"
-                                                            value={sp.price}
+                                                            placeholder="Slot Name (e.g., Title Sponsor)"
+                                                            value={sp.name}
                                                             onChange={(e) => {
                                                                 const updated = [...sponsorPrices]
-                                                                updated[idx].price = e.target.value
+                                                                updated[idx].name = e.target.value
                                                                 setSponsorPrices(updated)
                                                             }}
-                                                            className="w-full h-10 pl-8 pr-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                            className="w-full sm:flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
                                                         />
+                                                        <div className="relative w-full sm:flex-1">
+                                                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-black/40 select-none">₹</span>
+                                                            <input
+                                                                type="text"
+                                                                required
+                                                                placeholder="Price (e.g., 50,000)"
+                                                                value={sp.price}
+                                                                onChange={(e) => {
+                                                                    const updated = [...sponsorPrices]
+                                                                    updated[idx].price = e.target.value
+                                                                    setSponsorPrices(updated)
+                                                                }}
+                                                                className="w-full h-10 pl-8 pr-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                            />
+                                                        </div>
+                                                        {sponsorPrices.length > 1 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setSponsorPrices(sponsorPrices.filter((_, i) => i !== idx))}
+                                                                className="absolute top-2 right-2 sm:relative sm:top-0 sm:right-0 text-red-500 hover:text-red-700 font-bold text-lg p-1"
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        )}
                                                     </div>
-                                                    {sponsorPrices.length > 1 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setSponsorPrices(sponsorPrices.filter((_, i) => i !== idx))}
-                                                            className="absolute top-2 right-2 sm:relative sm:top-0 sm:right-0 text-red-500 hover:text-red-700 font-bold text-lg p-1"
-                                                        >
-                                                            ✕
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </form>
                                 </div>
                             ) : (
@@ -2233,6 +2318,12 @@ export default function ProposalPage() {
                                                                             </span>
                                                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
                                                                                 {cardData.guestCount} Guests
+                                                                            </span>
+                                                                            <span className={clsx(
+                                                                                "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+                                                                                cardData.sponsorshipType === "BARTER" ? "bg-[#FFC940] text-black" : cardData.sponsorshipType === "BOTH" ? "bg-[#FFC940] text-black" : "bg-emerald-100 text-emerald-900"
+                                                                            )}>
+                                                                                {cardData.sponsorshipType === "BARTER" ? "🎁 Barter" : cardData.sponsorshipType === "BOTH" ? "💰 Both (Cash & Barter)" : "💰 Cash"}
                                                                             </span>
                                                                         </div>
                                                                     </div>

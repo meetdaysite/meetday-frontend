@@ -290,10 +290,48 @@ export default function ProposalDetailPage() {
 									</div>
 								)}
 
-								{/* Sponsorship Tiers */}
-								{proposal.sponsorTiers?.length > 0 && (
+								{/* Sponsorship Type & Tiers */}
+								{proposal.sponsorshipType === "BARTER" ? (
+									<div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-2">
+										<div className="flex items-center gap-2">
+											<h4 className="text-sm font-bold text-text-primary">Sponsorship Type</h4>
+											<span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] uppercase">
+												🎁 Barter Only
+											</span>
+										</div>
+										<p className="text-body-sm text-text-secondary">This community is open to product, service, or venue barter collaborations.</p>
+									</div>
+								) : proposal.sponsorshipType === "BOTH" ? (
 									<div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-3">
-										<h4 className="text-sm font-bold text-text-primary">Sponsor Pricing Tiers</h4>
+										<div className="flex items-center justify-between flex-wrap gap-2">
+											<h4 className="text-sm font-bold text-text-primary">Sponsor Pricing Tiers &amp; Barter</h4>
+											<span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] uppercase">
+												💰 Cash &amp; 🎁 Barter
+											</span>
+										</div>
+										{proposal.sponsorTiers?.length > 0 && (
+											<div className="flex flex-wrap gap-3">
+												{proposal.sponsorTiers.map((tier, idx) => (
+													<div key={idx} className="flex flex-col gap-1 border border-border-default/45 rounded-xl px-4 py-2 bg-surface-card-muted">
+														<div className="flex gap-2 text-sm">
+															<span className="text-text-secondary font-medium">{tier.name}:</span>
+															<span className="text-text-brand font-semibold">
+																{tier.price?.toString().startsWith("₹") ? tier.price : `₹${tier.price}`}
+															</span>
+														</div>
+													</div>
+												))}
+											</div>
+										)}
+									</div>
+								) : proposal.sponsorTiers?.length > 0 ? (
+									<div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-3">
+										<div className="flex items-center justify-between flex-wrap gap-2">
+											<h4 className="text-sm font-bold text-text-primary">Sponsor Pricing Tiers</h4>
+											<span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] uppercase">
+												💰 Cash Only
+											</span>
+										</div>
 										<div className="flex flex-wrap gap-3">
 											{proposal.sponsorTiers.map((tier, idx) => (
 												<div key={idx} className="flex flex-col gap-1 border border-border-default/45 rounded-xl px-4 py-2 bg-surface-card-muted">
@@ -307,7 +345,7 @@ export default function ProposalDetailPage() {
 											))}
 										</div>
 									</div>
-								)}
+								) : null}
 
 								{/* Document Preview */}
 								{proposal.docUrl && (
