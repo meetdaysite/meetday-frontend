@@ -814,6 +814,7 @@ export type SponsorshipChatThread = {
 	hasUnreadMention?: boolean
 	sponsorshipProposalId?: string | null
 	campaignId?: string | null
+	isCampaign?: boolean
 	isDealLocked?: boolean
 	isDealClosed?: boolean
 }
@@ -1004,8 +1005,18 @@ export async function requestSponsorshipDealChanges(
 export type SponsorshipDealReport = {
 	id: string
 	sponsorshipDealId: string
-	summary: string
+	projectName?: string
+	eventDate?: string
+	venue?: string
+	time?: string | null
+	guestCount?: string | null
+	ageRange?: string | null
+	deliverables?: any
+	videoLinks?: string[]
+	socialLinks?: string[]
 	status?: string
+	revisionNote?: string | null
+	summary: string
 	proofKeys: string[]
 	proofUrls: string[]
 	notes: string | null
@@ -1026,6 +1037,17 @@ export function isReportApproved(report?: SponsorshipDealReport | null): boolean
 }
 
 export type SponsorshipDealReportPayload = {
+	projectName?: string
+	eventDate?: string
+	venue?: string
+	time?: string
+	guestCount?: string
+	ageRange?: string
+	deliverables?: any
+	videoLinks?: string[]
+	socialLinks?: string[]
+	status?: string
+	revisionNote?: string
 	summary: string
 	proofKeys?: string[]
 	notes?: string

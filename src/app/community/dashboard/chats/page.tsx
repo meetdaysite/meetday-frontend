@@ -761,7 +761,7 @@ function ChatThreadPanel({
 				) : (
 					messages.map(m => {
 						if (m.messageType === "SYSTEM") {
-							return <SystemMessageBubble key={m.id} content={m.content ?? ""} isCampaign={thread.isCampaign} />
+							return <SystemMessageBubble key={m.id} content={m.content ?? ""} isCampaign={!!thread.campaignId} />
 						}
 						const isMine = m.senderType === "HOST"
 						const isDeleted = !!m.deletedAt
