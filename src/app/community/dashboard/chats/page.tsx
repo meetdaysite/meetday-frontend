@@ -63,19 +63,30 @@ function CommunityChatsContent() {
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 	const { notifications, markRead } = useNotificationStore()
 
-	useEffect(() => {
-		const typeParam = searchParams.get("type")
-		if (typeParam === "campaign") {
-			setDealType("CAMPAIGN")
-		} else if (typeParam === "sponsorship") {
-			setDealType("SPONSORSHIP")
-		}
-	}, [searchParams])
+	const prevTypeRef = useRef<string | null>(searchParams.get("type"))
+	const prevInterestIdRef = useRef<string | null>(searchParams.get("interestId"))
 
 	useEffect(() => {
-		const interestId = searchParams.get("interestId")
-		if (interestId) {
-			setSelectedId(interestId)
+		const typeParam = searchParams.get("type")
+		const interestIdParam = searchParams.get("interestId")
+
+		if (typeParam === "campaign") {
+			setDealType("CAMPAIGN")
+		} else {
+			setDealType("SPONSORSHIP")
+		}
+
+		if (prevTypeRef.current !== typeParam) {
+			prevTypeRef.current = typeParam
+			// When switching chat type without a specific interestId in URL, clear selectedId
+			if (!interestIdParam) {
+				setSelectedId(null)
+			}
+		}
+
+		if (interestIdParam && prevInterestIdRef.current !== interestIdParam) {
+			prevInterestIdRef.current = interestIdParam
+			setSelectedId(interestIdParam)
 		}
 	}, [searchParams])
 
@@ -90,25 +101,26 @@ function CommunityChatsContent() {
 		})
 	}, [segment, acceptedThreads, requestedThreads, dealType])
 
-	// Auto-align dealType and segment if a specific interestId was provided
+	// Auto-align dealType and segment only if a specific interestId was provided via URL
 	useEffect(() => {
-		if (selectedId && (acceptedThreads.length > 0 || requestedThreads.length > 0)) {
+		const interestIdParam = searchParams.get("interestId")
+		if (interestIdParam && (acceptedThreads.length > 0 || requestedThreads.length > 0)) {
 			const all = [...acceptedThreads, ...requestedThreads]
-			const match = all.find(t => t.id === selectedId)
+			const match = all.find(t => t.id === interestIdParam)
 			if (match) {
 				if (match.campaignId && dealType !== "CAMPAIGN") {
 					setDealType("CAMPAIGN")
 				} else if (!match.campaignId && dealType !== "SPONSORSHIP") {
 					setDealType("SPONSORSHIP")
 				}
-				if (requestedThreads.some(t => t.id === selectedId) && segment !== "REQUESTED") {
+				if (requestedThreads.some(t => t.id === interestIdParam) && segment !== "REQUESTED") {
 					setSegment("REQUESTED")
-				} else if (acceptedThreads.some(t => t.id === selectedId) && segment !== "ACCEPTED") {
+				} else if (acceptedThreads.some(t => t.id === interestIdParam) && segment !== "ACCEPTED") {
 					setSegment("ACCEPTED")
 				}
 			}
 		}
-	}, [selectedId, acceptedThreads, requestedThreads, dealType, segment])
+	}, [searchParams, acceptedThreads, requestedThreads, dealType, segment])
 
 	const getThreadUnreadCount = useCallback((threadId: string) => {
 		return notifications.filter(n => {

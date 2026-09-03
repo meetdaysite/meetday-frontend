@@ -63,19 +63,30 @@ function BrandChatsContent() {
 	const [selectedId, setSelectedId] = useState<string | null>(null)
 	const { notifications, markRead } = useNotificationStore()
 
-	useEffect(() => {
-		const typeParam = searchParams.get("type")
-		if (typeParam === "campaign") {
-			setDealType("CAMPAIGN")
-		} else if (typeParam === "sponsorship") {
-			setDealType("SPONSORSHIP")
-		}
-	}, [searchParams])
+	const prevTypeRef = useRef<string | null>(searchParams.get("type"))
+	const prevInterestIdRef = useRef<string | null>(searchParams.get("interestId"))
 
 	useEffect(() => {
-		const interestId = searchParams.get("interestId")
-		if (interestId) {
-			setSelectedId(interestId)
+		const typeParam = searchParams.get("type")
+		const interestIdParam = searchParams.get("interestId")
+
+		if (typeParam === "campaign") {
+			setDealType("CAMPAIGN")
+		} else {
+			setDealType("SPONSORSHIP")
+		}
+
+		if (prevTypeRef.current !== typeParam) {
+			prevTypeRef.current = typeParam
+			// When switching chat type without a specific interestId in URL, clear selectedId
+			if (!interestIdParam) {
+				setSelectedId(null)
+			}
+		}
+
+		if (interestIdParam && prevInterestIdRef.current !== interestIdParam) {
+			prevInterestIdRef.current = interestIdParam
+			setSelectedId(interestIdParam)
 		}
 	}, [searchParams])
 
@@ -90,25 +101,26 @@ function BrandChatsContent() {
 		})
 	}, [tab, acceptedThreads, requestedThreads, dealType])
 
-	// Auto-align dealType and tab if a specific interestId was provided
+	// Auto-align dealType and tab only if a specific interestId was provided via URL
 	useEffect(() => {
-		if (selectedId && (acceptedThreads.length > 0 || requestedThreads.length > 0)) {
+		const interestIdParam = searchParams.get("interestId")
+		if (interestIdParam && (acceptedThreads.length > 0 || requestedThreads.length > 0)) {
 			const all = [...acceptedThreads, ...requestedThreads]
-			const match = all.find(t => t.id === selectedId)
+			const match = all.find(t => t.id === interestIdParam)
 			if (match) {
 				if (match.campaignId && dealType !== "CAMPAIGN") {
 					setDealType("CAMPAIGN")
 				} else if (!match.campaignId && dealType !== "SPONSORSHIP") {
 					setDealType("SPONSORSHIP")
 				}
-				if (requestedThreads.some(t => t.id === selectedId) && tab !== "REQUESTED") {
+				if (requestedThreads.some(t => t.id === interestIdParam) && tab !== "REQUESTED") {
 					setTab("REQUESTED")
-				} else if (acceptedThreads.some(t => t.id === selectedId) && tab !== "ACCEPTED") {
+				} else if (acceptedThreads.some(t => t.id === interestIdParam) && tab !== "ACCEPTED") {
 					setTab("ACCEPTED")
 				}
 			}
 		}
-	}, [selectedId, acceptedThreads, requestedThreads, dealType, tab])
+	}, [searchParams, acceptedThreads, requestedThreads, dealType, tab])
 
 	const getThreadUnreadCount = useCallback((threadId: string) => {
 		return notifications.filter(n => {
