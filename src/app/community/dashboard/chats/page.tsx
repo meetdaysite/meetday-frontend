@@ -31,6 +31,7 @@ import { useChatTyping } from "@/hooks/useChatTyping"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { useNotificationStore } from "@/store/notificationStore"
+import { playMessageChime } from "@/lib/notificationSound"
 import { LinkifiedText } from "@/components/ui/LinkifiedText"
 import { SystemMessageBubble } from "@/components/chat/SystemMessageBubble"
 import confetti from "canvas-confetti"
@@ -61,7 +62,7 @@ function CommunityChatsContent() {
 	const [requestedThreads, setRequestedThreads] = useState<SponsorshipChatThread[]>([])
 	const [loadingThreads, setLoadingThreads] = useState(true)
 	const [selectedId, setSelectedId] = useState<string | null>(null)
-	const { notifications, markRead } = useNotificationStore()
+	const { notifications, markRead, markThreadRead } = useNotificationStore()
 
 	const prevTypeRef = useRef<string | null>(searchParams.get("type"))
 	const prevInterestIdRef = useRef<string | null>(searchParams.get("interestId"))
@@ -172,7 +173,7 @@ function CommunityChatsContent() {
 		return () => clearInterval(interval)
 	}, [loadThreads])
 
-	// Clear unread counts in memory instantly when opened
+	// Clear unread counts in memory instantly when opened and mark thread read in database
 	useEffect(() => {
 		if (selectedId) {
 			setAcceptedThreads(prev =>
@@ -181,17 +182,9 @@ function CommunityChatsContent() {
 			setRequestedThreads(prev =>
 				prev.map(t => (t.id === selectedId ? { ...t, unreadCount: 0 } : t))
 			)
-			const unreadChatNotifs = notifications.filter(n => {
-				if (n.isRead) return false
-				const m = n.metadata || {}
-				const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
-				return tId === selectedId
-			})
-			unreadChatNotifs.forEach(n => {
-				markRead(n.id).catch(() => {})
-			})
+			markThreadRead(selectedId)
 		}
-	}, [selectedId, notifications, markRead])
+	}, [selectedId, markThreadRead])
 
 	function handleSegmentChange(seg: Segment) {
 		setSegment(seg)
@@ -530,17 +523,27 @@ function ChatThreadPanel({
 	}, [deal])
 
 	const loadSeq = useRef(0)
+	const prevMsgCountRef = useRef(0)
 
 	const load = useCallback(async () => {
 		const seq = ++loadSeq.current
 		try {
 			const [res, dealRes, reportRes] = await Promise.all([
-				getSponsorshipChatMessages(thread.id),
+				getSponsorshipChatMessages(thread.id, "HOST"),
 				thread.chatStatus === "ACCEPTED" ? getSponsorshipDeal(thread.id) : Promise.resolve(null),
 				thread.chatStatus === "ACCEPTED" ? getSponsorshipDealReport(thread.id).catch(() => null) : Promise.resolve(null),
 			])
 			// Discard a stale, out-of-order response so it can't revert the view to older data.
 			if (seq !== loadSeq.current) return
+
+			if (prevMsgCountRef.current > 0 && res.messages.length > prevMsgCountRef.current) {
+				const newest = res.messages[res.messages.length - 1]
+				if (newest && newest.senderType !== "HOST") {
+					playMessageChime()
+				}
+			}
+			prevMsgCountRef.current = res.messages.length
+
 			setMessages(res.messages)
 			setDeal(dealRes)
 			setReport(reportRes)

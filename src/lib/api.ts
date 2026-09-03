@@ -862,12 +862,17 @@ export async function getMySponsorshipChats(
 
 export async function getSponsorshipChatMessages(
 	interestId: string,
+	role?: "HOST" | "BRAND",
 ): Promise<{ messages: SponsorshipChatMessage[]; chatStatus: SponsorshipChatStatus; unreadCount: number; firstUnreadMessageId: string | null }> {
 	const { data } = await apiClient.get<{
 		success: boolean
 		data: { messages: SponsorshipChatMessage[]; chatStatus: SponsorshipChatStatus; unreadCount: number; firstUnreadMessageId: string | null }
-	}>(`/sponsorships/chats/${interestId}/messages`)
+	}>(`/sponsorships/chats/${interestId}/messages`, { params: role ? { role } : undefined })
 	return data.data
+}
+
+export async function markThreadNotificationsRead(threadId: string): Promise<void> {
+	await apiClient.patch("/notifications/read-by-thread", { threadId }).catch(() => {})
 }
 
 export async function sendSponsorshipChatMessage(

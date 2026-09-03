@@ -96,11 +96,40 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 			]).then(([accepted, requested]) => {
 				const all = [...accepted, ...requested]
 
+				const isChatNotification = (n: (typeof notifications)[0]) => {
+					if (
+						n.type === "campaign_approved" ||
+						n.type === "campaign_rejected" ||
+						n.type === "sponsorship_approved" ||
+						n.type === "sponsorship_rejected" ||
+						n.type === "proposal_approved" ||
+						n.type === "proposal_rejected" ||
+						n.type === "host_approved" ||
+						n.type === "host_rejected" ||
+						n.type === "brand_approved" ||
+						n.type === "brand_rejected" ||
+						n.type === "event_approved" ||
+						n.type === "event_rejected"
+					) {
+						return false
+					}
+					return (
+						n.type.startsWith("sponsorship_") ||
+						n.type === "chat_message" ||
+						n.type === "meetday_chat_message" ||
+						n.type === "brand_interested_in_sponsorship" ||
+						n.type === "sponsorship_interest" ||
+						n.type === "sponsorship_interest_created" ||
+						n.type === "host_interested_in_campaign" ||
+						n.type === "host_interest_confirmed"
+					)
+				}
+
 				const countForThreads = (list: typeof all) => {
 					return list.reduce((sum, t) => {
 						const notifCount = notifications.filter(n => {
-							if (n.isRead) return false
-							const m = n.metadata || {}
+							if (n.isRead || !isChatNotification(n)) return false
+							const m = (n.metadata as any) || {}
 							const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
 							return tId === t.id
 						}).length
@@ -115,22 +144,21 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 				const campaignThreadCount = countForThreads(campaignThreads)
 
 				const standaloneSponsorshipNotifs = notifications.filter(n => {
-					if (n.isRead) return false
-					const m = n.metadata || {}
+					if (n.isRead || !isChatNotification(n)) return false
+					const m = (n.metadata as any) || {}
 					const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
 					if (tId && all.some(t => t.id === tId)) return false
-					const isCampaignNotif = n.type === "host_interested_in_campaign" || n.type === "host_interest_confirmed" || !!m.campaignId
+					const isCampaignNotif = n.type === "host_interested_in_campaign" || n.type === "host_interest_confirmed"
 					if (isCampaignNotif) return false
-					const isSponsorshipChatType = n.type === "chat_message" || n.type === "sponsorship_chat_message" || n.type === "sponsorship_chat_request" || n.type === "sponsorship_interest" || n.type === "sponsorship_deal_locked" || n.type === "sponsorship_deal_changes_requested"
-					return isSponsorshipChatType || !!tId
+					return true
 				}).length
 
 				const standaloneCampaignNotifs = notifications.filter(n => {
-					if (n.isRead) return false
-					const m = n.metadata || {}
+					if (n.isRead || !isChatNotification(n)) return false
+					const m = (n.metadata as any) || {}
 					const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
 					if (tId && all.some(t => t.id === tId)) return false
-					const isCampaignNotif = n.type === "host_interested_in_campaign" || n.type === "host_interest_confirmed" || !!m.campaignId
+					const isCampaignNotif = n.type === "host_interested_in_campaign" || n.type === "host_interest_confirmed"
 					return isCampaignNotif
 				}).length
 

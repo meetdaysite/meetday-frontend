@@ -8,6 +8,7 @@ import {
 	getUnreadCount,
 	markNotificationRead,
 	markAllNotificationsRead,
+	markThreadNotificationsRead,
 } from "@/lib/api"
 import type { Notification } from "@/types/notification"
 
@@ -18,7 +19,17 @@ const CHAT_MESSAGE_NOTIFICATION_TYPES = new Set([
 	"sponsorship_chat_request",
 	"sponsorship_chat_accepted",
 	"sponsorship_interest_created",
-	"brand_interested_in_sponsorship"
+	"sponsorship_interest",
+	"brand_interested_in_sponsorship",
+	"host_interested_in_campaign",
+	"host_interest_confirmed",
+	"sponsorship_deal_submitted",
+	"sponsorship_deal_updated",
+	"sponsorship_deal_locked",
+	"sponsorship_deal_changes_requested",
+	"sponsorship_deal_report_submitted",
+	"sponsorship_deal_report_reviewed",
+	"chat_message",
 ])
 
 type NotificationStore = {
@@ -33,6 +44,7 @@ type NotificationStore = {
 	init: () => Promise<void>
 	loadMore: () => Promise<void>
 	markRead: (id: string) => Promise<void>
+	markThreadRead: (threadId: string) => Promise<void>
 	markAllRead: () => Promise<void>
 	refreshUnreadCount: () => Promise<void>
 	reset: () => void
@@ -162,15 +174,43 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 		try {
 			await markNotificationRead(id)
 		} catch {
-			// Retry once before giving up — a transient failure here otherwise permanently
-			// stuck this notification as unread (nothing else ever retries it), which showed
-			// up as a badge that never clears even after the user has viewed everything.
 			try {
 				await markNotificationRead(id)
 			} catch {
-				// Still failed — leave it marked read locally anyway. A stale "read" badge that
-				// undercounts is far less disruptive than a ghost badge that overcounts forever.
+				// Still failed
 			}
+		}
+	},
+
+	markThreadRead: async (threadId: string) => {
+		if (!threadId) return
+		let countMarked = 0
+		set((s) => {
+			const updated = s.notifications.map((n) => {
+				const m = (n.metadata as any) || {}
+				const tId =
+					m.sponsorshipInterestId ||
+					m.threadId ||
+					m.interestId ||
+					m.chatId ||
+					m.thread_id ||
+					m.interest_id ||
+					m.chat_id
+				if (tId === threadId && !n.isRead) {
+					countMarked++
+					return { ...n, isRead: true }
+				}
+				return n
+			})
+			return {
+				notifications: updated,
+				unreadCount: Math.max(0, s.unreadCount - countMarked),
+			}
+		})
+		try {
+			await markThreadNotificationsRead(threadId)
+		} catch {
+			// non-critical fallback
 		}
 	},
 
