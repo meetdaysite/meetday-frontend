@@ -2139,12 +2139,6 @@ export default function ProposalPage() {
                                         {proposals.length > 0 && (
                                             <div className="flex items-center gap-2">
                                                 <button
-                                                    onClick={() => setShowPdfGenerator(true)}
-                                                    className="text-black text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer bg-white"
-                                                >
-                                                    Generate Proposal PDF
-                                                </button>
-                                                <button
                                                     onClick={() => openProposalForm()}
                                                     title={!isCommunityApproved ? "Your community profile must be admin-approved first" : undefined}
                                                     className={clsx(
