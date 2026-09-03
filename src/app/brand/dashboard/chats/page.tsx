@@ -477,11 +477,13 @@ function BrandChatThreadPanel({
 	const load = useCallback(async () => {
 		const seq = ++loadSeq.current
 		try {
-			const [res, dealRes, reportRes] = await Promise.all([
+			const [res, dealRes] = await Promise.all([
 				getSponsorshipChatMessages(thread.id, "BRAND"),
 				thread.chatStatus === "ACCEPTED" ? getSponsorshipDeal(thread.id) : Promise.resolve(null),
-				thread.chatStatus === "ACCEPTED" ? getSponsorshipDealReport(thread.id).catch(() => null) : Promise.resolve(null),
 			])
+			// Only a locked deal can have a report — avoids a guaranteed 404 on every poll
+			// cycle for accepted-but-not-yet-dealed threads.
+			const reportRes = dealRes ? await getSponsorshipDealReport(thread.id).catch(() => null) : null
 			// Discard a stale, out-of-order response so it can't revert the view to older data.
 			if (seq !== loadSeq.current) return
 
