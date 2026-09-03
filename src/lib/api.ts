@@ -235,6 +235,41 @@ export async function updateBrandProfile(payload: UpdateBrandProfilePayload): Pr
 	return data.data
 }
 
+// ─── Team members (shared shape for both Brand and Host/Community accounts) ───
+
+export type TeamMember = {
+	id: string
+	name: string | null
+	email: string
+	role: "OWNER" | "MEMBER"
+	status: "PENDING" | "ACTIVE"
+	canManageMembers: boolean
+}
+
+export type TeamMembersList = {
+	members: TeamMember[]
+	viewerCanManage: boolean
+	viewerIsOwner: boolean
+}
+
+export async function getBrandTeamMembers(): Promise<TeamMembersList> {
+	const { data } = await apiClient.get<{ success: boolean; data: TeamMembersList }>("/brands/members")
+	return data.data
+}
+
+export async function inviteBrandTeamMember(email: string): Promise<TeamMember> {
+	const { data } = await apiClient.post<{ success: boolean; data: TeamMember }>("/brands/members", { email })
+	return data.data
+}
+
+export async function removeBrandTeamMember(memberId: string): Promise<void> {
+	await apiClient.delete(`/brands/members/${memberId}`)
+}
+
+export async function setBrandMemberPermission(memberId: string, canManageMembers: boolean): Promise<void> {
+	await apiClient.patch(`/brands/members/${memberId}/permission`, { canManageMembers })
+}
+
 export type BrandCommunity = {
 	id: string
 	hostProfileId: string
@@ -315,6 +350,7 @@ export type BrandRegisterPayload = {
 	phone?: string
 	accountType: "BRAND"
 	brandName?: string
+	gender?: string
 	categoryIds?: string[]
 	socialLinks?: {
 		instagram?: string
@@ -330,11 +366,15 @@ export async function registerBrand(payload: BrandRegisterPayload): Promise<void
 
 // Called right after Firebase signup, before showing the onboarding form — if this email has a
 // pending team invite, the UI can skip the full form and show a simple "join <accountName>" step.
-export async function checkPendingInvite(accountType: "HOST" | "BRAND"): Promise<{ matched: boolean; accountName?: string }> {
-	const { data } = await apiClient.get<{ success: boolean; data: { matched: boolean; accountName?: string } }>(
-		"/auth/pending-invite",
-		{ params: { accountType } },
-	)
+// `hostType` (HOST invites only) lets the community onboarding wizard skip the "Individual vs
+// Business" step too, since it's inherited from the community being joined.
+export async function checkPendingInvite(
+	accountType: "HOST" | "BRAND",
+): Promise<{ matched: boolean; accountName?: string; hostType?: "INDIVIDUAL" | "BUSINESS" }> {
+	const { data } = await apiClient.get<{
+		success: boolean
+		data: { matched: boolean; accountName?: string; hostType?: "INDIVIDUAL" | "BUSINESS" }
+	}>("/auth/pending-invite", { params: { accountType } })
 	return data.data
 }
 
@@ -581,6 +621,7 @@ export type SponsorshipProposalPayload = {
 	docType?: string
 	docSize?: number
 	sponsorTiers?: SponsorTier[]
+	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
 }
 
 export type SponsorshipProposal = {
@@ -606,6 +647,7 @@ export type SponsorshipProposal = {
 	docSize: number | null
 	videoUrl: string | null
 	sponsorTiers: SponsorTier[]
+	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
 	status: SponsorshipStatus
 	pendingRevision: (SponsorshipProposalPayload & { imageUrl?: string | null; docUrl?: string | null }) | null
 	adminRejectionRemark: string | null
@@ -773,6 +815,7 @@ export type SponsorshipChatThread = {
 	hasUnreadMention?: boolean
 	sponsorshipProposalId?: string | null
 	campaignId?: string | null
+	isCampaign?: boolean
 	isDealLocked?: boolean
 	isDealClosed?: boolean
 }
@@ -819,12 +862,17 @@ export async function getMySponsorshipChats(
 
 export async function getSponsorshipChatMessages(
 	interestId: string,
+	role?: "HOST" | "BRAND",
 ): Promise<{ messages: SponsorshipChatMessage[]; chatStatus: SponsorshipChatStatus; unreadCount: number; firstUnreadMessageId: string | null }> {
 	const { data } = await apiClient.get<{
 		success: boolean
 		data: { messages: SponsorshipChatMessage[]; chatStatus: SponsorshipChatStatus; unreadCount: number; firstUnreadMessageId: string | null }
-	}>(`/sponsorships/chats/${interestId}/messages`)
+	}>(`/sponsorships/chats/${interestId}/messages`, { params: role ? { role } : undefined })
 	return data.data
+}
+
+export async function markThreadNotificationsRead(threadId: string): Promise<void> {
+	await apiClient.patch("/notifications/read-by-thread", { threadId }).catch(() => {})
 }
 
 export async function sendSponsorshipChatMessage(
@@ -892,6 +940,8 @@ export type SponsorshipDeal = {
 	paymentExpiresAt: string | null
 	razorpayOrderId: string | null
 	paidAt: string | null
+	additionalNotes?: string | null
+	otherTerms?: string | null
 	invoicePdfKey: string | null
 	createdAt: string
 	updatedAt: string
@@ -907,6 +957,8 @@ export type SponsorshipDealPayload = {
 	deliverables: string
 	sponsorshipCategory?: string
 	barterElements?: string
+	additionalNotes?: string
+	otherTerms?: string
 }
 
 export async function getSponsorshipDeal(interestId: string): Promise<SponsorshipDeal | null> {
@@ -959,8 +1011,18 @@ export async function requestSponsorshipDealChanges(
 export type SponsorshipDealReport = {
 	id: string
 	sponsorshipDealId: string
-	summary: string
+	projectName?: string
+	eventDate?: string
+	venue?: string
+	time?: string | null
+	guestCount?: string | null
+	ageRange?: string | null
+	deliverables?: any
+	videoLinks?: string[]
+	socialLinks?: string[]
 	status?: string
+	revisionNote?: string | null
+	summary: string
 	proofKeys: string[]
 	proofUrls: string[]
 	notes: string | null
@@ -981,6 +1043,17 @@ export function isReportApproved(report?: SponsorshipDealReport | null): boolean
 }
 
 export type SponsorshipDealReportPayload = {
+	projectName?: string
+	eventDate?: string
+	venue?: string
+	time?: string
+	guestCount?: string
+	ageRange?: string
+	deliverables?: any
+	videoLinks?: string[]
+	socialLinks?: string[]
+	status?: string
+	revisionNote?: string
 	summary: string
 	proofKeys?: string[]
 	notes?: string
@@ -1047,6 +1120,9 @@ export type SponsorshipDealBillingRow = {
 	approvedAt: string | null
 	razorpayPaymentId: string | null
 	invoicePdfKey: string | null
+	isCampaign?: boolean
+	campaignId?: string | null
+	sponsorshipProposalId?: string | null
 }
 
 export async function getSponsorshipBilling(): Promise<SponsorshipDealBillingRow[]> {
@@ -1066,6 +1142,27 @@ export async function getSponsorshipDealReportPdfUrl(interestId: string): Promis
 		`/sponsorships/chats/${interestId}/deal/report/pdf`,
 	)
 	return data.data.url
+}
+
+export type GenerateProposalPdfPayload = {
+	sponsorName: string
+	eventTitle: string
+	deliverables: string
+	timeline: string
+	pricingTiers?: { name: string; price: string }[]
+	terms: string
+	contactName: string
+	contactEmail: string
+	contactPhone?: string
+}
+
+// Stateless — returns the raw PDF bytes to download, not a persisted/presigned URL like the
+// invoice/report PDFs above.
+export async function generateProposalPdf(payload: GenerateProposalPdfPayload): Promise<Blob> {
+	const { data } = await apiClient.post(`/sponsorships/proposals/generate-pdf`, payload, {
+		responseType: "blob",
+	})
+	return data as Blob
 }
 
 // ─── "Talk to Meetday" general support chat — one thread per user, separate from TriChat ──
@@ -1188,6 +1285,24 @@ export async function activateHostCommunityProfile(
 
 export async function deactivateHostCommunityProfile(): Promise<void> {
 	await apiClient.delete("/hosts/community")
+}
+
+export async function getHostTeamMembers(): Promise<TeamMembersList> {
+	const { data } = await apiClient.get<{ success: boolean; data: TeamMembersList }>("/hosts/community/members")
+	return data.data
+}
+
+export async function inviteHostTeamMember(email: string): Promise<TeamMember> {
+	const { data } = await apiClient.post<{ success: boolean; data: TeamMember }>("/hosts/community/members", { email })
+	return data.data
+}
+
+export async function removeHostTeamMember(memberId: string): Promise<void> {
+	await apiClient.delete(`/hosts/community/members/${memberId}`)
+}
+
+export async function setHostMemberPermission(memberId: string, canManageMembers: boolean): Promise<void> {
+	await apiClient.patch(`/hosts/community/members/${memberId}/permission`, { canManageMembers })
 }
 
 // ─── Scanner sessions ─────────────────────────────────────────────────────────
@@ -2287,6 +2402,7 @@ export async function extractCampaignCopilotDocument(file: File): Promise<string
 	)
 	return data.data.text
 }
+
 // ─── Host communities â€“ overview ─────────────────────────────────────────────
 
 export type HostCommunityOverviewCommunity = {

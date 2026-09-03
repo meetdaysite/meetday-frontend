@@ -1107,7 +1107,7 @@ function StepOne() {
 	)
 }
 
-function StepTwo({ isEmailReadOnly }: { isEmailReadOnly: boolean }) {
+function StepTwo({ isEmailReadOnly, communityNameReadOnly }: { isEmailReadOnly: boolean; communityNameReadOnly?: boolean }) {
 	const {
 		register,
 		control,
@@ -1142,11 +1142,12 @@ function StepTwo({ isEmailReadOnly }: { isEmailReadOnly: boolean }) {
 			<TextField
 				label="Community name"
 				placeholder="e.g. Bangalore Founders Circle"
-				hint="The community or experience you run — shown to brands later"
+				hint={communityNameReadOnly ? "The community you're joining" : "The community or experience you run — shown to brands later"}
 				{...register("communityName")}
 				error={!!errors.communityName}
 				helperText={errors.communityName?.message}
 				size="md"
+				disabled={communityNameReadOnly}
 			/>
 			<TextField
 				label="Phone number"
@@ -1236,9 +1237,12 @@ export default function OnboardingPage() {
 
 	// If this email already has a pending team invite, skip the full onboarding wizard
 	// entirely and offer a simple "join <accountName>" step instead.
-	const [pendingInvite, setPendingInvite] = useState<{ matched: boolean; accountName?: string } | null>(null)
+	const [pendingInvite, setPendingInvite] = useState<{ matched: boolean; accountName?: string; hostType?: "INDIVIDUAL" | "BUSINESS" } | null>(null)
 	const [checkingInvite, setCheckingInvite] = useState(true)
 	const [joining, setJoining] = useState(false)
+	// Once they hit "Continue" on the invite screen, show a short name/phone/gender form
+	// (community name + email are already known, so those two fields are locked read-only).
+	const [showJoinForm, setShowJoinForm] = useState(false)
 
 	useEffect(() => {
 		if (!sessionHydrated || (!phone && !sessionEmail)) return
@@ -1250,18 +1254,19 @@ export default function OnboardingPage() {
 		.finally(() => setCheckingInvite(false))
 	}, [sessionHydrated, phone, sessionEmail])
 
-	async function handleJoin() {
+	async function handleJoin(values: { firstName: string; lastName: string; phone?: string; gender?: string }) {
 		if (joining) return
 		setJoining(true)
 		try {
 			try {
 				await registerHost({
-					firstName: "Community",
-					lastName: "Member",
+					firstName: values.firstName,
+					lastName: values.lastName,
 					email: sessionEmail || "",
-					phone: phone || undefined,
+					phone: phone || (values.phone ? `+91${values.phone}` : undefined),
 					accountType: "HOST",
-					hostType: "INDIVIDUAL",
+					hostType: pendingInvite?.hostType ?? "INDIVIDUAL",
+					gender: values.gender || undefined,
 					categoryIds: [],
 					yearsOfExperience: 0,
 					totalEventsPreviouslyHosted: 0,
@@ -1332,7 +1337,22 @@ export default function OnboardingPage() {
 		},
 	})
 
-	const { handleSubmit, trigger, getValues } = methods
+	const { handleSubmit, trigger, getValues, setValue } = methods
+
+	// Once a pending invite is confirmed, prefill the locked community name field so the
+	// join-form (StepTwo, minus the accountType step) shows the right value.
+	useEffect(() => {
+		if (pendingInvite?.matched && pendingInvite.accountName) {
+			setValue("communityName", pendingInvite.accountName)
+		}
+	}, [pendingInvite, setValue])
+
+	async function handleJoinFormSubmit() {
+		const valid = await trigger(["firstName", "lastName", "phone", "communityName", "email"])
+		if (!valid) return
+		const values = getValues()
+		await handleJoin({ firstName: values.firstName, lastName: values.lastName, phone: values.phone, gender: values.gender })
+	}
 	// Commented out original step configs
 	/*
 	const TOTAL = STEP_PANEL_CONFIGS.length
@@ -1421,24 +1441,56 @@ export default function OnboardingPage() {
 	}
 
 	if (pendingInvite?.matched) {
+		if (!showJoinForm) {
+			return (
+				<AuthShell>
+					<div className="flex flex-col flex-grow items-center justify-center gap-6 py-10 text-center">
+						<h2 className="font-heading text-3xl sm:text-4xl font-black text-black tracking-tight">
+							You&apos;ve been invited!
+						</h2>
+						<p className="text-sm font-semibold text-black/60 max-w-md">
+							Join <span className="font-bold text-black">{pendingInvite.accountName || "the community"}</span> on Meetday with full access to their dashboard.
+						</p>
+						<Button variant="primary" size="lg" radius="pill" onClick={() => setShowJoinForm(true)}>
+							Continue
+						</Button>
+						<button
+							type="button"
+							onClick={() => setPendingInvite({ matched: false })}
+							className="text-xs font-bold text-black/40 hover:text-black transition-colors"
+						>
+							Set up a new community instead
+						</button>
+					</div>
+				</AuthShell>
+			)
+		}
+
 		return (
 			<AuthShell>
-				<div className="flex flex-col flex-grow items-center justify-center gap-6 py-10 text-center">
-					<h2 className="font-heading text-3xl sm:text-4xl font-black text-black tracking-tight">
-						You&apos;ve been invited!
-					</h2>
-					<p className="text-sm font-semibold text-black/60 max-w-md">
-						Join <span className="font-bold text-black">{pendingInvite.accountName || "the community"}</span> on Meetday with full access to their dashboard.
-					</p>
-					<Button variant="primary" size="lg" radius="pill" onClick={handleJoin} disabled={joining}>
+				<div className="flex flex-col flex-grow items-center justify-center gap-6 py-10 px-4">
+					<div className="text-center">
+						<h2 className="font-heading text-2xl sm:text-3xl font-black text-black tracking-tight">
+							A few details about you
+						</h2>
+						<p className="text-sm font-semibold text-black/60 mt-2">
+							Joining <span className="font-bold text-black">{pendingInvite.accountName || "the community"}</span>
+						</p>
+					</div>
+					<div className="w-full max-w-sm">
+						<FormProvider {...methods}>
+							<StepTwo isEmailReadOnly={isEmailReadOnly} communityNameReadOnly />
+						</FormProvider>
+					</div>
+					<Button variant="primary" size="lg" radius="pill" onClick={handleJoinFormSubmit} disabled={joining}>
 						{joining ? "Joining…" : `Join ${pendingInvite.accountName || "the community"}`}
 					</Button>
 					<button
 						type="button"
-						onClick={() => setPendingInvite({ matched: false })}
+						onClick={() => setShowJoinForm(false)}
 						className="text-xs font-bold text-black/40 hover:text-black transition-colors"
 					>
-						Set up a new community instead
+						Back
 					</button>
 				</div>
 			</AuthShell>

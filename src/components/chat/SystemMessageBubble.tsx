@@ -1,8 +1,9 @@
 import React from "react"
 import clsx from "clsx"
 
-export function SystemMessageBubble({ content }: { content: string }) {
+export function SystemMessageBubble({ content, isCampaign }: { content: string; isCampaign?: boolean }) {
 	const lower = content.toLowerCase()
+	const effectiveIsCampaign = isCampaign ?? (lower.includes("campaign") && !lower.includes("sponsorship proposal"))
 
 	// 1. Report Approved / Deal Closed (Check first so "report approved" isn't shadowed by generic "approved")
 	if (
@@ -94,6 +95,7 @@ export function SystemMessageBubble({ content }: { content: string }) {
 	if (
 		lower.includes("created") ||
 		lower.includes("proposal") ||
+		lower.includes("campaign") ||
 		lower.includes("shared") ||
 		lower.includes("deal terms")
 	) {
@@ -108,7 +110,7 @@ export function SystemMessageBubble({ content }: { content: string }) {
 					</svg>
 				</div>
 				<span className="leading-snug">
-					A new <strong className="font-black">deal proposal</strong> was shared for approval.
+					A new <strong className="font-black">{effectiveIsCampaign ? "campaign deal" : "deal proposal"}</strong> was shared for approval.
 				</span>
 			</div>
 		)
@@ -125,7 +127,7 @@ export function SystemMessageBubble({ content }: { content: string }) {
 					</svg>
 				</div>
 				<span className="leading-snug">
-					<strong className="font-black">Changes were requested</strong> on the proposal.
+					<strong className="font-black">Changes were requested</strong> on the {effectiveIsCampaign ? "campaign deal" : "proposal"}.
 				</span>
 			</div>
 		)

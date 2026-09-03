@@ -202,6 +202,12 @@ function ProposalCard({
 							{proposal.guestCount} Guests
 						</span>
 					)}
+					<span className={clsx(
+						"inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+						proposal.sponsorshipType === "BARTER" ? "bg-[#FFC940] text-black" : proposal.sponsorshipType === "BOTH" ? "bg-[#FFC940] text-black" : "bg-emerald-100 text-emerald-900"
+					)}>
+						{proposal.sponsorshipType === "BARTER" ? "🎁 Barter" : proposal.sponsorshipType === "BOTH" ? "💰 Both (Cash & Barter)" : "💰 Cash"}
+					</span>
 				</div>
 			</div>
 		</button>

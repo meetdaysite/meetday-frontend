@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useState, useEffect } from "react"
 import clsx from "clsx"
 import { toast } from "sonner"
@@ -38,8 +38,17 @@ const NAV_ITEMS_TOP = [
 	{ label: "My Experiences", href: "/community/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg, disabled: true },
 ]
 
-const NAV_ITEMS_BOTTOM = [
-	{ label: "Chats", href: "/community/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
+type BottomNavItem = {
+	label: string
+	href: string
+	outlined: SvgIcon
+	filled: SvgIcon
+	chatType?: "sponsorship" | "campaign"
+}
+
+const NAV_ITEMS_BOTTOM: BottomNavItem[] = [
+	{ label: "Sponsorship Chats", href: "/community/dashboard/chats?type=sponsorship", chatType: "sponsorship", outlined: ChatOutSvg, filled: ChatFillSvg },
+	{ label: "Campaign Chats", href: "/community/dashboard/chats?type=campaign", chatType: "campaign", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Support Chat", href: "/community/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/community/dashboard/messages", outlined: BellSvg, filled: BellFillSvg },
 ]
@@ -51,6 +60,7 @@ interface SidebarProps {
 
 function SidebarContent({ onClose }: { onClose: () => void }) {
 	const pathname = usePathname()
+	const searchParams = useSearchParams()
 	const router = useRouter()
 	const { profile } = useHostStore()
 	const { toasts, removeToast } = useToastStore()
@@ -59,7 +69,8 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const [community, setCommunity] = useState<any>(null)
 	const [proposals, setProposals] = useState<any[]>([])
 	const [dismissedList, setDismissedList] = useState<any[]>([])
-	const [unreadChatsCount, setUnreadChatsCount] = useState(0)
+	const [unreadSponsorshipChatsCount, setUnreadSponsorshipChatsCount] = useState(0)
+	const [unreadCampaignChatsCount, setUnreadCampaignChatsCount] = useState(0)
 	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
 	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
 	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
@@ -84,23 +95,71 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 				getMySponsorshipChats("REQUESTED", "HOST").catch(err => { console.error("requested error:", err); return [] }),
 			]).then(([accepted, requested]) => {
 				const all = [...accepted, ...requested]
-				const threadCount = all.reduce((sum, t) => {
-					const notifCount = notifications.filter(n => {
-						if (n.isRead) return false
-						const m = n.metadata || {}
-						const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
-						return tId === t.id
-					}).length
-					return sum + Math.max(t.unreadCount || 0, notifCount)
-				}, 0)
 
-				const standaloneChatNotifs = notifications.filter(n => {
-					if (n.isRead) return false
-					const m = n.metadata || {}
+				const isChatNotification = (n: (typeof notifications)[0]) => {
+					if (
+						n.type === "campaign_approved" ||
+						n.type === "campaign_rejected" ||
+						n.type === "sponsorship_approved" ||
+						n.type === "sponsorship_rejected" ||
+						n.type === "proposal_approved" ||
+						n.type === "proposal_rejected" ||
+						n.type === "host_approved" ||
+						n.type === "host_rejected" ||
+						n.type === "brand_approved" ||
+						n.type === "brand_rejected" ||
+						n.type === "event_approved" ||
+						n.type === "event_rejected"
+					) {
+						return false
+					}
+					return (
+						n.type.startsWith("sponsorship_") ||
+						n.type === "chat_message" ||
+						n.type === "meetday_chat_message" ||
+						n.type === "brand_interested_in_sponsorship" ||
+						n.type === "sponsorship_interest" ||
+						n.type === "sponsorship_interest_created" ||
+						n.type === "host_interested_in_campaign" ||
+						n.type === "host_interest_confirmed"
+					)
+				}
+
+				const countForThreads = (list: typeof all) => {
+					return list.reduce((sum, t) => {
+						const notifCount = notifications.filter(n => {
+							if (n.isRead || !isChatNotification(n)) return false
+							const m = (n.metadata as any) || {}
+							const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+							return tId === t.id
+						}).length
+						return sum + Math.max(t.unreadCount || 0, notifCount)
+					}, 0)
+				}
+
+				const sponsorshipThreads = all.filter(t => !t.campaignId)
+				const campaignThreads = all.filter(t => !!t.campaignId)
+
+				const sponsorshipThreadCount = countForThreads(sponsorshipThreads)
+				const campaignThreadCount = countForThreads(campaignThreads)
+
+				const standaloneSponsorshipNotifs = notifications.filter(n => {
+					if (n.isRead || !isChatNotification(n)) return false
+					const m = (n.metadata as any) || {}
 					const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
 					if (tId && all.some(t => t.id === tId)) return false
-					const isChatType = n.type === "chat_message" || n.type === "sponsorship_chat_message" || n.type === "sponsorship_chat_request" || n.type === "sponsorship_interest" || n.type === "host_interested_in_campaign" || n.type === "host_interest_confirmed"
-					return isChatType || !!tId
+					const isCampaignNotif = n.type === "host_interested_in_campaign" || n.type === "host_interest_confirmed"
+					if (isCampaignNotif) return false
+					return true
+				}).length
+
+				const standaloneCampaignNotifs = notifications.filter(n => {
+					if (n.isRead || !isChatNotification(n)) return false
+					const m = (n.metadata as any) || {}
+					const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
+					if (tId && all.some(t => t.id === tId)) return false
+					const isCampaignNotif = n.type === "host_interested_in_campaign" || n.type === "host_interest_confirmed"
+					return isCampaignNotif
 				}).length
 
 				const supportUnread = notifications.filter(n => 
@@ -115,7 +174,8 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 					!n.metadata?.sponsorshipInterestId
 				).length
 
-				setUnreadChatsCount(threadCount + standaloneChatNotifs)
+				setUnreadSponsorshipChatsCount(sponsorshipThreadCount + standaloneSponsorshipNotifs)
+				setUnreadCampaignChatsCount(campaignThreadCount + standaloneCampaignNotifs)
 				setUnreadSupportCount(supportUnread)
 			}).catch(err => console.error("Promise.all error:", err))
 		}
@@ -364,9 +424,25 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 
 			{/* Navigation Bottom Items */}
 			<div className="px-4 pb-4 flex flex-col gap-1 mt-auto shrink-0">
-				{NAV_ITEMS_BOTTOM.map(({ label, href, outlined: Outlined, filled: Filled }) => {
-					const isActive = pathname.startsWith(href)
+				{NAV_ITEMS_BOTTOM.map(({ label, href, outlined: Outlined, filled: Filled, chatType }) => {
+					let isActive = false
+					if (chatType === "campaign") {
+						isActive = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") === "campaign"
+					} else if (chatType === "sponsorship") {
+						isActive = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") !== "campaign"
+					} else {
+						isActive = pathname.startsWith(href)
+					}
+
 					const isNotifications = label === "Notifications"
+					const badgeCount = chatType === "sponsorship"
+						? unreadSponsorshipChatsCount
+						: chatType === "campaign"
+						? unreadCampaignChatsCount
+						: label === "Support Chat"
+						? unreadSupportCount
+						: 0
+
 					return (
 						<Link
 							key={href}
@@ -389,15 +465,10 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 									<span className="absolute -top-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full ring-2 ring-[#EE2C2C] bg-[#FFC940]" />
 								)}
 							</div>
-							<span className="flex-1">{label}</span>
-							{label === "Chats" && unreadChatsCount > 0 && (
+							<span className="flex-1 whitespace-nowrap">{label}</span>
+							{badgeCount > 0 && (
 								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-									{unreadChatsCount > 9 ? "9+" : unreadChatsCount}
-								</span>
-							)}
-							{label === "Support Chat" && unreadSupportCount > 0 && (
-								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-									{unreadSupportCount > 9 ? "9+" : unreadSupportCount}
+									{badgeCount > 9 ? "9+" : badgeCount}
 								</span>
 							)}
 						</Link>

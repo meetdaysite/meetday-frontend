@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback, useMemo, Fragment } from "react"
+import { useEffect, useRef, useState, useCallback, useMemo, Fragment, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import clsx from "clsx"
 import { toast } from "sonner"
@@ -31,6 +31,7 @@ import { useChatTyping } from "@/hooks/useChatTyping"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 import { useNotificationStore } from "@/store/notificationStore"
+import { playMessageChime } from "@/lib/notificationSound"
 import { LinkifiedText } from "@/components/ui/LinkifiedText"
 import { SystemMessageBubble } from "@/components/chat/SystemMessageBubble"
 import confetti from "canvas-confetti"
@@ -50,22 +51,43 @@ function timeAgo(iso: string | null) {
 	return `${Math.floor(hours / 24)}d`
 }
 
-export default function CommunityChatsPage() {
+function CommunityChatsContent() {
 	const { profile } = useHostStore()
 	const ownName = profile?.displayName || "You"
+	const searchParams = useSearchParams()
+	const initialType = searchParams.get("type") === "campaign" ? "CAMPAIGN" : "SPONSORSHIP"
+	const [dealType, setDealType] = useState<"SPONSORSHIP" | "CAMPAIGN">(initialType)
 	const [segment, setSegment] = useState<Segment>("ACCEPTED")
-	const [dealType, setDealType] = useState<"SPONSORSHIP" | "CAMPAIGN">("SPONSORSHIP")
 	const [acceptedThreads, setAcceptedThreads] = useState<SponsorshipChatThread[]>([])
 	const [requestedThreads, setRequestedThreads] = useState<SponsorshipChatThread[]>([])
 	const [loadingThreads, setLoadingThreads] = useState(true)
 	const [selectedId, setSelectedId] = useState<string | null>(null)
-	const searchParams = useSearchParams()
-	const { notifications, markRead } = useNotificationStore()
+	const { notifications, markRead, markThreadRead } = useNotificationStore()
+
+	const prevTypeRef = useRef<string | null>(searchParams.get("type"))
+	const prevInterestIdRef = useRef<string | null>(searchParams.get("interestId"))
 
 	useEffect(() => {
-		const interestId = searchParams.get("interestId")
-		if (interestId) {
-			setSelectedId(interestId)
+		const typeParam = searchParams.get("type")
+		const interestIdParam = searchParams.get("interestId")
+
+		if (typeParam === "campaign") {
+			setDealType("CAMPAIGN")
+		} else {
+			setDealType("SPONSORSHIP")
+		}
+
+		if (prevTypeRef.current !== typeParam) {
+			prevTypeRef.current = typeParam
+			// When switching chat type without a specific interestId in URL, clear selectedId
+			if (!interestIdParam) {
+				setSelectedId(null)
+			}
+		}
+
+		if (interestIdParam && prevInterestIdRef.current !== interestIdParam) {
+			prevInterestIdRef.current = interestIdParam
+			setSelectedId(interestIdParam)
 		}
 	}, [searchParams])
 
@@ -80,22 +102,33 @@ export default function CommunityChatsPage() {
 		})
 	}, [segment, acceptedThreads, requestedThreads, dealType])
 
+	// Auto-align dealType and segment only if a specific interestId was provided via URL
+	useEffect(() => {
+		const interestIdParam = searchParams.get("interestId")
+		if (interestIdParam && (acceptedThreads.length > 0 || requestedThreads.length > 0)) {
+			const all = [...acceptedThreads, ...requestedThreads]
+			const match = all.find(t => t.id === interestIdParam)
+			if (match) {
+				if (match.campaignId && dealType !== "CAMPAIGN") {
+					setDealType("CAMPAIGN")
+				} else if (!match.campaignId && dealType !== "SPONSORSHIP") {
+					setDealType("SPONSORSHIP")
+				}
+				if (requestedThreads.some(t => t.id === interestIdParam) && segment !== "REQUESTED") {
+					setSegment("REQUESTED")
+				} else if (acceptedThreads.some(t => t.id === interestIdParam) && segment !== "ACCEPTED") {
+					setSegment("ACCEPTED")
+				}
+			}
+		}
+	}, [searchParams, acceptedThreads, requestedThreads, dealType, segment])
+
 	const getThreadUnreadCount = useCallback((threadId: string) => {
 		return notifications.filter(n => {
 			if (n.isRead) return false
 			const m = n.metadata || {}
 			const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
 			return tId === threadId
-		}).length
-	}, [notifications])
-
-	const getMeetdayUnreadCount = useCallback(() => {
-		return notifications.filter(n => {
-			if (n.isRead) return false
-			if (n.title !== "Meetday") return false
-			const m = n.metadata || {}
-			const hasThread = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
-			return !hasThread
 		}).length
 	}, [notifications])
 
@@ -109,8 +142,7 @@ export default function CommunityChatsPage() {
 				getMySponsorshipChats("REQUESTED", "HOST").catch(() => []),
 			])
 			// A newer loadThreads() call already resolved and updated state — discard this
-			// stale response instead of letting it overwrite fresher data (was causing threads
-			// to flicker in and out of the list during active back-and-forth chatting).
+			// stale response instead of letting it overwrite fresher data.
 			if (seq !== loadThreadsSeq.current) return
 
 			const sortedAccepted = [...acceptedData].sort((a, b) => {
@@ -136,45 +168,23 @@ export default function CommunityChatsPage() {
 
 	useEffect(() => {
 		// Fetch immediately, then poll — intentional fetch-on-mount + interval pattern.
-		// Deliberately NOT depending on `notifications` (it gets a new array reference on every
-		// poll/websocket event, which was re-triggering this effect on every chat message and
-		// firing overlapping fetches).
-		// eslint-disable-next-line react-hooks/set-state-in-effect
 		loadThreads()
 		const interval = setInterval(() => loadThreads(), POLL_MS * 2)
 		return () => clearInterval(interval)
 	}, [loadThreads])
 
-	// Clear unread counts in memory instantly when opened
+	// Clear unread counts in memory instantly when opened and mark thread read in database
 	useEffect(() => {
 		if (selectedId) {
-			// eslint-disable-next-line react-hooks/set-state-in-effect
 			setAcceptedThreads(prev =>
 				prev.map(t => (t.id === selectedId ? { ...t, unreadCount: 0 } : t))
 			)
 			setRequestedThreads(prev =>
 				prev.map(t => (t.id === selectedId ? { ...t, unreadCount: 0 } : t))
 			)
-			const unreadChatNotifs = notifications.filter(n => {
-				if (n.isRead) return false
-				const m = n.metadata || {}
-				const tId = m.threadId || m.thread_id || m.interestId || m.interest_id || m.chatId || m.chat_id || m.sponsorshipInterestId
-				return tId === selectedId
-			})
-			unreadChatNotifs.forEach(n => {
-				markRead(n.id).catch(() => {})
-			})
+			markThreadRead(selectedId)
 		}
-	}, [selectedId, notifications, markRead])
-
-	useEffect(() => {
-		if (segment === "MEETDAY") {
-			const unreadSupportNotifs = notifications.filter(n => !n.isRead && n.title === "Meetday")
-			unreadSupportNotifs.forEach(n => {
-				markRead(n.id).catch(() => {})
-			})
-		}
-	}, [segment, notifications, markRead])
+	}, [selectedId, markThreadRead])
 
 	function handleSegmentChange(seg: Segment) {
 		setSegment(seg)
@@ -184,28 +194,17 @@ export default function CommunityChatsPage() {
 
 	const selectedThread = threads.find(t => t.id === selectedId) ?? null
 
-	const unreadAcceptedCount = acceptedThreads.reduce((sum, t) => {
-		return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
-	}, 0)
-	const unreadRequestedCount = requestedThreads.reduce((sum, t) => {
-		return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
-	}, 0)
-
-	const sponsorshipUnreadCount = useMemo(() => {
-		const all = [...acceptedThreads, ...requestedThreads]
-		return all.reduce((sum, t) => {
-			if (t.campaignId) return sum
+	const unreadAcceptedCount = acceptedThreads
+		.filter(t => (dealType === "SPONSORSHIP" ? !t.campaignId : !!t.campaignId))
+		.reduce((sum, t) => {
 			return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
 		}, 0)
-	}, [acceptedThreads, requestedThreads, selectedId, getThreadUnreadCount])
 
-	const campaignUnreadCount = useMemo(() => {
-		const all = [...acceptedThreads, ...requestedThreads]
-		return all.reduce((sum, t) => {
-			if (!t.campaignId) return sum
+	const unreadRequestedCount = requestedThreads
+		.filter(t => (dealType === "SPONSORSHIP" ? !t.campaignId : !!t.campaignId))
+		.reduce((sum, t) => {
 			return sum + (selectedId === t.id ? 0 : Math.max(t.unreadCount || 0, getThreadUnreadCount(t.id)))
 		}, 0)
-	}, [acceptedThreads, requestedThreads, selectedId, getThreadUnreadCount])
 
 	async function handleAccept(interestId: string) {
 		try {
@@ -229,46 +228,23 @@ export default function CommunityChatsPage() {
 
 			<div className="flex-1 min-h-0 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-6xl w-full mx-auto flex flex-col gap-4">
 				<div>
-					<h1 className="text-2xl sm:text-3xl font-heading font-black text-black">Chats</h1>
-					<p className="text-xs sm:text-sm font-semibold text-black/50 mt-1">Talk to brands interested in your proposals.</p>
+					<h1 className="text-2xl sm:text-3xl font-heading font-black text-black">
+						{dealType === "CAMPAIGN" ? "Campaign Chats" : "Sponsorship Chats"}
+					</h1>
+					<p className="text-xs sm:text-sm font-semibold text-black/50 mt-1">
+						{dealType === "CAMPAIGN"
+							? "Talk to brands about campaigns you've applied to."
+							: "Talk to brands interested in your proposals."}
+					</p>
 				</div>
 
 				<div className="h-[calc(100vh-240px)] border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row bg-white">
 					{/* Thread list */}
 					<div className={clsx(
-						"w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col",
+						"w-full sm:w-80 md:w-80 shrink-0 sm:min-w-[320px] sm:max-w-[320px] border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col",
 						selectedId ? "hidden sm:flex" : "flex"
 					)}>
-						{/* Sponsorship vs Campaign deals Tab selectors */}
-						<div className="flex border-b-[3px] border-black bg-neutral-50 divide-x-[3px] divide-black shrink-0">
-							{(["SPONSORSHIP", "CAMPAIGN"] as const).map(dt => {
-								const tabUnread = dt === "SPONSORSHIP" ? sponsorshipUnreadCount : campaignUnreadCount
-								return (
-									<button
-										key={dt}
-										onClick={() => {
-											setDealType(dt)
-											setSelectedId(null)
-										}}
-										className={clsx(
-											"flex-grow py-2 text-[10px] font-black uppercase tracking-wider text-center transition-colors select-none flex items-center justify-center gap-1.5",
-											dealType === dt ? "bg-black text-[#FFC940]" : "bg-white text-black/50 hover:bg-neutral-100"
-										)}
-									>
-										<span>{dt === "SPONSORSHIP" ? "Sponsorships" : "Campaigns"}</span>
-										{tabUnread > 0 && (
-											<span className={clsx(
-												"min-w-[14px] h-[14px] px-1 rounded-full text-[8px] font-black flex items-center justify-center border border-transparent",
-												dealType === dt ? "bg-[#FFC940] text-black" : "bg-[#EE2C2C] text-white"
-											)}>
-												{tabUnread}
-											</span>
-										)}
-									</button>
-								)
-							})}
-						</div>
-
+						{/* Segregation Tabs (Accepted vs Requests) */}
 						<div className="flex border-b-[3px] border-black shrink-0">
 							{(["ACCEPTED", "REQUESTED"] as Segment[]).map(seg => {
 								const isReq = seg === "REQUESTED"
@@ -300,7 +276,9 @@ export default function CommunityChatsPage() {
 								<p className="text-xs font-semibold text-black/40 text-center py-8">Loading…</p>
 							) : threads.length === 0 ? (
 								<p className="text-xs font-semibold text-black/40 text-center py-8 px-4">
-									{segment === "REQUESTED" ? "No pending requests yet." : "No accepted chats yet."}
+									{segment === "REQUESTED"
+										? (dealType === "SPONSORSHIP" ? "No pending sponsorship requests." : "No pending campaign requests.")
+										: (dealType === "SPONSORSHIP" ? "No accepted sponsorship chats yet." : "No accepted campaign chats yet.")}
 								</p>
 							) : (
 								threads.map(t => {
@@ -386,7 +364,7 @@ export default function CommunityChatsPage() {
 
 					{/* Thread detail */}
 					<div className={clsx(
-						"flex-1 min-h-0 flex flex-col",
+						"flex-1 min-w-0 min-h-0 flex flex-col",
 						selectedId ? "flex" : "hidden sm:flex"
 					)}>
 						{!selectedThread ? (
@@ -405,6 +383,14 @@ export default function CommunityChatsPage() {
 				</div>
 			</div>
 		</div>
+	)
+}
+
+export default function CommunityChatsPage() {
+	return (
+		<Suspense fallback={<div className="flex-1 flex items-center justify-center min-h-[400px] text-xs font-semibold text-black/40">Loading chats…</div>}>
+			<CommunityChatsContent />
+		</Suspense>
 	)
 }
 
@@ -537,17 +523,27 @@ function ChatThreadPanel({
 	}, [deal])
 
 	const loadSeq = useRef(0)
+	const prevMsgCountRef = useRef(0)
 
 	const load = useCallback(async () => {
 		const seq = ++loadSeq.current
 		try {
 			const [res, dealRes, reportRes] = await Promise.all([
-				getSponsorshipChatMessages(thread.id),
+				getSponsorshipChatMessages(thread.id, "HOST"),
 				thread.chatStatus === "ACCEPTED" ? getSponsorshipDeal(thread.id) : Promise.resolve(null),
 				thread.chatStatus === "ACCEPTED" ? getSponsorshipDealReport(thread.id).catch(() => null) : Promise.resolve(null),
 			])
 			// Discard a stale, out-of-order response so it can't revert the view to older data.
 			if (seq !== loadSeq.current) return
+
+			if (prevMsgCountRef.current > 0 && res.messages.length > prevMsgCountRef.current) {
+				const newest = res.messages[res.messages.length - 1]
+				if (newest && newest.senderType !== "HOST") {
+					playMessageChime()
+				}
+			}
+			prevMsgCountRef.current = res.messages.length
+
 			setMessages(res.messages)
 			setDeal(dealRes)
 			setReport(reportRes)
@@ -697,7 +693,7 @@ function ChatThreadPanel({
 	}
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col relative h-full bg-white">
+		<div className="flex-1 min-w-0 min-h-0 flex flex-col relative h-full bg-white">
 			<canvas id="chat-confetti-canvas" className="pointer-events-none absolute inset-0 w-full h-full z-30" />
 			<div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-white flex items-center justify-between shrink-0 gap-2">
 				<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -740,7 +736,7 @@ function ChatThreadPanel({
 				)}
 			</div>
 
-			{thread.chatStatus === "ACCEPTED" && !thread.campaignId && (
+			{thread.chatStatus === "ACCEPTED" && (
 				<DealBanner
 					deal={deal}
 					role="HOST"
@@ -780,7 +776,7 @@ function ChatThreadPanel({
 				) : (
 					messages.map(m => {
 						if (m.messageType === "SYSTEM") {
-							return <SystemMessageBubble key={m.id} content={m.content ?? ""} />
+							return <SystemMessageBubble key={m.id} content={m.content ?? ""} isCampaign={!!thread.campaignId} />
 						}
 						const isMine = m.senderType === "HOST"
 						const isDeleted = !!m.deletedAt
@@ -987,6 +983,8 @@ function ChatThreadPanel({
 					interestId={thread.id}
 					deal={deal}
 					role="HOST"
+					isCampaign={!!thread.campaignId}
+					campaignId={thread.campaignId ?? undefined}
 					onClose={() => setDealModal(null)}
 					onUpdated={setDeal}
 				/>
