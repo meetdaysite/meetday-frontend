@@ -1165,6 +1165,60 @@ export async function generateProposalPdf(payload: GenerateProposalPdfPayload): 
 	return data as Blob
 }
 
+// ─── AI-powered pitch-deck variant of the Generate Proposal PDF feature ───
+
+export type ExpandProposalDeckContentPayload = {
+	sponsorName: string
+	eventTitle: string
+	deliverables: string
+	timeline: string
+	pricingTiers?: { name: string; price: string }[]
+	terms?: string
+}
+
+export type ExpandProposalDeckContentResult = {
+	valueProposition: string
+	campaignOverview: string
+	audienceReach: string
+	deliverablesExpanded: string
+	timelineExpanded: string
+}
+
+// Sends the basic form inputs to the AI service (via the backend) and gets back expanded,
+// slide-ready copy for the host to review/edit before the final PDF export.
+export async function expandProposalDeckContent(
+	payload: ExpandProposalDeckContentPayload,
+): Promise<ExpandProposalDeckContentResult> {
+	const { data } = await apiClient.post<{ success: boolean; data: ExpandProposalDeckContentResult }>(
+		`/sponsorships/proposals/deck/expand-content`,
+		payload,
+	)
+	return data.data
+}
+
+export type GenerateProposalDeckPdfPayload = {
+	sponsorName: string
+	eventTitle: string
+	valueProposition: string
+	campaignOverview: string
+	audienceReach: string
+	deliverablesExpanded: string
+	timelineExpanded: string
+	pricingTiers?: { name: string; price: string }[]
+	terms: string
+	contactName: string
+	contactEmail: string
+	contactPhone?: string
+}
+
+// Renders the final 6-slide presentation-style PDF from the (possibly host-edited) AI content.
+export async function generateProposalDeckPdf(payload: GenerateProposalDeckPdfPayload): Promise<Blob> {
+	const { data } = await apiClient.post(`/sponsorships/proposals/deck/generate-pdf`, payload, {
+		responseType: "blob",
+	})
+	return data as Blob
+}
+
 // ─── "Talk to Meetday" general support chat — one thread per user, separate from TriChat ──
 
 export type MeetdayChatMessage = {
