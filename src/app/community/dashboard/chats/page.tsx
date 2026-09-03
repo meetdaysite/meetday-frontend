@@ -236,7 +236,7 @@ function CommunityChatsContent() {
 				<div className="h-[calc(100vh-240px)] border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row bg-white">
 					{/* Thread list */}
 					<div className={clsx(
-						"w-full sm:w-72 shrink-0 border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col",
+						"w-full sm:w-80 md:w-80 shrink-0 sm:min-w-[320px] sm:max-w-[320px] border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col",
 						selectedId ? "hidden sm:flex" : "flex"
 					)}>
 						{/* Segregation Tabs (Accepted vs Requests) */}
@@ -359,7 +359,7 @@ function CommunityChatsContent() {
 
 					{/* Thread detail */}
 					<div className={clsx(
-						"flex-1 min-h-0 flex flex-col",
+						"flex-1 min-w-0 min-h-0 flex flex-col",
 						selectedId ? "flex" : "hidden sm:flex"
 					)}>
 						{!selectedThread ? (
@@ -678,7 +678,7 @@ function ChatThreadPanel({
 	}
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col relative h-full bg-white">
+		<div className="flex-1 min-w-0 min-h-0 flex flex-col relative h-full bg-white">
 			<canvas id="chat-confetti-canvas" className="pointer-events-none absolute inset-0 w-full h-full z-30" />
 			<div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-white flex items-center justify-between shrink-0 gap-2">
 				<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -761,7 +761,7 @@ function ChatThreadPanel({
 				) : (
 					messages.map(m => {
 						if (m.messageType === "SYSTEM") {
-							return <SystemMessageBubble key={m.id} content={m.content ?? ""} />
+							return <SystemMessageBubble key={m.id} content={m.content ?? ""} isCampaign={thread.isCampaign} />
 						}
 						const isMine = m.senderType === "HOST"
 						const isDeleted = !!m.deletedAt

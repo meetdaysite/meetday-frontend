@@ -174,8 +174,8 @@ export function DealBanner({
 	const isClosed = isReportApproved(report)
 
 	return (
-		<div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-neutral-50 flex items-center justify-between gap-3 shrink-0">
-			<div className="min-w-0 flex items-center gap-2">
+		<div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-neutral-50 flex items-center justify-between gap-2 sm:gap-3 shrink-0 min-w-0">
+			<div className="min-w-0 flex-1 flex items-center gap-2 overflow-hidden">
 				<span className={clsx(
 					"px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] inline-flex items-center gap-1.5",
 					isClosed ? "bg-black text-white" : STATUS_COLOR[deal.status]
@@ -198,7 +198,7 @@ export function DealBanner({
 						{PAYMENT_STATUS_LABEL[getDealPaymentDisplayStatus(deal)]}
 					</span>
 				)}
-				<p className="text-xs font-black text-black truncate">
+				<p className="text-xs font-black text-black truncate min-w-0">
 					{deal.projectName} · {formatAmount(deal.sponsorshipAmount)}
 				</p>
 			</div>
@@ -913,27 +913,31 @@ export function DealReportModal({
 				setIsEditing(false)
 				try {
 					const data = JSON.parse(r.summary)
-					setProjectName(data.projectName || d?.projectName || "")
-					setDate(data.date || d?.startDate || "")
-					setVenue(data.venue || d?.venue || "")
-					setTime(data.time || d?.time || "")
-					setGuestCount(data.guestCount || "")
-					setAgeRange(data.ageRange || "")
-					setDeliverablesList(data.deliverables || [])
-					setVideoLinks(data.videoLinks || [])
-					setSocialLinks(data.socialLinks || [])
-					setReportStatus(data.status || "PENDING")
-					setRevisionNote(data.revisionNote || "")
+					setProjectName(data.projectName || r.projectName || d?.projectName || "")
+					setDate(data.date || r.eventDate || d?.startDate || "")
+					setVenue(data.venue || r.venue || d?.venue || "")
+					setTime(data.time || r.time || d?.time || "")
+					setGuestCount(data.guestCount || r.guestCount || "")
+					setAgeRange(data.ageRange || r.ageRange || "")
+					setDeliverablesList(data.deliverables || (Array.isArray(r.deliverables) ? r.deliverables : []))
+					setVideoLinks(data.videoLinks || r.videoLinks || [])
+					setSocialLinks(data.socialLinks || r.socialLinks || [])
+					setReportStatus((r.status || data.status || "PENDING") as "PENDING" | "APPROVED" | "REVISION_REQUESTED")
+					setRevisionNote(r.revisionNote || data.revisionNote || "")
 				} catch {
 					// Fallback to plain summary if not JSON
-					setProjectName(d?.projectName || "")
-					setDate(d?.startDate || "")
-					setVenue(d?.venue || "")
-					setTime(d?.time || "")
+					setProjectName(r.projectName || d?.projectName || "")
+					setDate(r.eventDate || d?.startDate || "")
+					setVenue(r.venue || d?.venue || "")
+					setTime(r.time || d?.time || "")
+					setGuestCount(r.guestCount || "")
+					setAgeRange(r.ageRange || "")
 					const items = d?.deliverables ? d.deliverables.split(/,|\n/).map(s => s.trim()).filter(Boolean) : []
 					setDeliverablesList(items.map(text => ({ text, checked: false })))
+					setReportStatus((r.status || "PENDING") as "PENDING" | "APPROVED" | "REVISION_REQUESTED")
+					setRevisionNote(r.revisionNote || "")
 				}
-				setImages(r.proofKeys.map((key, i) => ({ key, url: r.proofUrls[i] ?? "" })))
+				setImages((r.proofKeys || []).map((key, i) => ({ key, url: r.proofUrls?.[i] ?? "" })))
 			} else {
 				setIsEditing(true)
 				// Pre-populate from deal
@@ -1004,17 +1008,30 @@ export function DealReportModal({
 				deliverables: deliverablesList,
 				videoLinks: videoLinks.filter(Boolean),
 				socialLinks: socialLinks.filter(Boolean),
-				status: reportStatus || "PENDING",
+				status: "PENDING",
 				revisionNote: ""
 			})
 
 			const saved = await upsertSponsorshipDealReport(interestId, {
+				projectName: projectName.trim(),
+				eventDate: date.trim(),
+				venue: venue.trim(),
+				time: time.trim(),
+				guestCount: guestCount.trim(),
+				ageRange: ageRange.trim(),
+				deliverables: deliverablesList,
+				videoLinks: videoLinks.filter(Boolean),
+				socialLinks: socialLinks.filter(Boolean),
+				status: "PENDING",
+				revisionNote: "",
 				summary: summaryData,
 				notes: "",
 				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
 			})
-			toast.success(report ? "Report saved." : "Report submitted.")
+			toast.success(report ? "Report resubmitted for review." : "Report submitted for review.")
 			setReport(saved)
+			setReportStatus("PENDING")
+			setRevisionNote("")
 			setIsEditing(false)
 			onClose()
 		} catch {
@@ -1027,23 +1044,35 @@ export function DealReportModal({
 	async function handleBrandAction(status: "APPROVED" | "REVISION_REQUESTED") {
 		setSaving(true)
 		try {
+			const note = status === "REVISION_REQUESTED" ? revisionNote.trim() : ""
 			const summaryData = JSON.stringify({
-				projectName,
-				date,
-				venue,
-				time,
-				guestCount,
-				ageRange,
+				projectName: projectName.trim(),
+				date: date.trim(),
+				venue: venue.trim(),
+				time: time.trim(),
+				guestCount: guestCount.trim(),
+				ageRange: ageRange.trim(),
 				deliverables: deliverablesList,
-				videoLinks,
-				socialLinks,
+				videoLinks: videoLinks.filter(Boolean),
+				socialLinks: socialLinks.filter(Boolean),
 				status,
-				revisionNote: status === "REVISION_REQUESTED" ? revisionNote.trim() : ""
+				revisionNote: note
 			})
 
 			const saved = await upsertSponsorshipDealReport(interestId, {
+				projectName: projectName.trim(),
+				eventDate: date.trim(),
+				venue: venue.trim(),
+				time: time.trim(),
+				guestCount: guestCount.trim(),
+				ageRange: ageRange.trim(),
+				deliverables: deliverablesList,
+				videoLinks: videoLinks.filter(Boolean),
+				socialLinks: socialLinks.filter(Boolean),
+				status,
+				revisionNote: note,
 				summary: summaryData,
-				notes: status === "REVISION_REQUESTED" ? revisionNote.trim() : "",
+				notes: note,
 				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
 			})
 			if (status === "APPROVED") {
