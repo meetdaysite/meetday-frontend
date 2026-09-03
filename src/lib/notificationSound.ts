@@ -1,5 +1,5 @@
-// Notification sound for incoming chat messages and alerts — synthesizes a pleasant, crisp
-// two-tone chime via the Web Audio API with zero external audio assets, and speaks "Meetday" aloud.
+// "Meetday" spoken aloud as the new-message notification sound, via the browser's built-in
+// text-to-speech — no audio asset needed, avoids licensing concerns, keeps the bundle small.
 
 const MUTE_STORAGE_KEY = "meetday_notification_sound_muted"
 
@@ -22,73 +22,10 @@ export function setNotificationSoundMuted(muted: boolean) {
 	}
 }
 
-let audioCtx: AudioContext | null = null
-
-function getAudioContext(): AudioContext | null {
-	if (typeof window === "undefined") return null
-	const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-	if (!AudioContextClass) return null
-	if (!audioCtx) {
-		audioCtx = new AudioContextClass()
-	}
-	if (audioCtx.state === "suspended") {
-		audioCtx.resume().catch(() => {})
-	}
-	return audioCtx
-}
-
-// Auto-unlock AudioContext on first user interaction in browser
-if (typeof window !== "undefined") {
-	const unlock = () => {
-		if (audioCtx && audioCtx.state === "suspended") {
-			audioCtx.resume().catch(() => {})
-		}
-		window.removeEventListener("click", unlock)
-		window.removeEventListener("keydown", unlock)
-		window.removeEventListener("touchstart", unlock)
-	}
-	window.addEventListener("click", unlock, { once: true, passive: true })
-	window.addEventListener("keydown", unlock, { once: true, passive: true })
-	window.addEventListener("touchstart", unlock, { once: true, passive: true })
-}
-
-function playWebAudioChime() {
-	try {
-		const ctx = getAudioContext()
-		if (!ctx) return
-		const now = ctx.currentTime
-
-		// Primary bell oscillator (E6 -> G6 harmonic)
-		const osc1 = ctx.createOscillator()
-		const osc2 = ctx.createOscillator()
-		const gainNode = ctx.createGain()
-
-		osc1.type = "sine"
-		osc1.frequency.setValueAtTime(880, now) // A5
-		osc1.frequency.exponentialRampToValueAtTime(1318.5, now + 0.09) // E6
-
-		osc2.type = "triangle"
-		osc2.frequency.setValueAtTime(1760, now) // A6
-		osc2.frequency.exponentialRampToValueAtTime(2637, now + 0.09)
-
-		gainNode.gain.setValueAtTime(0.28, now)
-		gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.38)
-
-		osc1.connect(gainNode)
-		osc2.connect(gainNode)
-		gainNode.connect(ctx.destination)
-
-		osc1.start(now)
-		osc2.start(now)
-		osc1.stop(now + 0.38)
-		osc2.stop(now + 0.38)
-	} catch {
-		// AudioContext unsupported/blocked
-	}
-}
-
 let meetdayVoice: SpeechSynthesisVoice | null = null
 
+// Curated names known to be female voices across macOS/Windows/Chrome — used as a fallback when
+// a voice isn't explicitly tagged "female" in its name.
 const KNOWN_FEMALE_VOICE_NAMES = [
 	"Samantha", "Victoria", "Karen", "Moira", "Tessa", "Fiona", "Susan", "Allison", "Ava", "Kate", "Serena", "Zira", "Hazel",
 ]
@@ -97,6 +34,7 @@ function loadPreferredVoice() {
 	if (typeof window === "undefined" || !window.speechSynthesis) return
 	const voices = window.speechSynthesis.getVoices()
 	if (!voices.length) return
+	// Always prefer a clearly female-sounding voice, never a male one.
 	meetdayVoice =
 		voices.find(v => /female/i.test(v.name)) ??
 		voices.find(v => KNOWN_FEMALE_VOICE_NAMES.some(name => v.name.includes(name))) ??
@@ -107,31 +45,31 @@ function loadPreferredVoice() {
 
 if (typeof window !== "undefined" && window.speechSynthesis) {
 	loadPreferredVoice()
+	// Voice list loads asynchronously in some browsers (esp. Chrome) — refresh once it's ready.
 	window.speechSynthesis.onvoiceschanged = loadPreferredVoice
 }
 
-/** Plays a pleasant notification chime and speaks "Meetday" aloud. */
+/** Speaks "Meetday" aloud as the new-message notification sound. Silently no-ops if unsupported/blocked/muted. */
 export function playMessageChime() {
 	if (isNotificationSoundMuted()) return
-	// 1. Play crystal-clear Web Audio synthesized chime
-	playWebAudioChime()
-
-	// 2. Speak "Meetday" via SpeechSynthesis
-	if (typeof window !== "undefined" && window.speechSynthesis) {
-		try {
-			if (!meetdayVoice) loadPreferredVoice()
-			const synth = window.speechSynthesis
-			if (synth.speaking || synth.pending) synth.cancel()
-			const utterance = new SpeechSynthesisUtterance("Meetday")
-			if (meetdayVoice) utterance.voice = meetdayVoice
-			utterance.rate = 1.35
-			utterance.pitch = 1.3
-			utterance.volume = 0.85
-			synth.resume()
-			synth.speak(utterance)
-		} catch {
-			// Silently ignore TTS failure
-		}
+	if (typeof window === "undefined" || !window.speechSynthesis) return
+	try {
+		if (!meetdayVoice) loadPreferredVoice()
+		const synth = window.speechSynthesis
+		// Calling cancel() unconditionally right before speak() triggers a known Chrome bug where
+		// the next utterance silently stalls for several seconds instead of speaking immediately —
+		// only cancel when something is actually queued/speaking, so the common case (idle) speaks
+		// instantly with no delay.
+		if (synth.speaking || synth.pending) synth.cancel()
+		const utterance = new SpeechSynthesisUtterance("Meetday")
+		if (meetdayVoice) utterance.voice = meetdayVoice
+		utterance.rate = 1.35
+		utterance.pitch = 1.3
+		utterance.volume = 0.85
+		synth.resume()
+		synth.speak(utterance)
+	} catch {
+		// speechSynthesis unsupported/blocked — silently skip.
 	}
 }
 
