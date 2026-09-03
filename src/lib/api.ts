@@ -350,6 +350,7 @@ export type BrandRegisterPayload = {
 	phone?: string
 	accountType: "BRAND"
 	brandName?: string
+	gender?: string
 	categoryIds?: string[]
 	socialLinks?: {
 		instagram?: string

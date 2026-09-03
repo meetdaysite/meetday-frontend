@@ -21,6 +21,7 @@ import { useAuth } from "@/context/AuthContext"
 import { AuthShell } from "@/components/auth/AuthShell"
 import { Button } from "@/components/ui/Button"
 import { TextField } from "@/components/ui/TextField"
+import { Dropdown } from "@/components/ui/Dropdown"
 import { Icon } from "@/components/ui/Icon"
 import DangerTriangleSvg from "@/icons/outlined/danger-triangle.svg"
 
@@ -105,6 +106,14 @@ export default function OnboardingPage() {
 	const [pendingInvite, setPendingInvite] = useState<{ matched: boolean; accountName?: string } | null>(null)
 	const [checkingInvite, setCheckingInvite] = useState(true)
 	const [joining, setJoining] = useState(false)
+	// Once they hit "Continue" on the invite screen, show a short name/phone/gender form
+	// (brand name + email are already known, so those don't need to be re-collected here).
+	const [showJoinForm, setShowJoinForm] = useState(false)
+	const [joinFirstName, setJoinFirstName] = useState("")
+	const [joinLastName, setJoinLastName] = useState("")
+	const [joinPhone, setJoinPhone] = useState("")
+	const [joinGender, setJoinGender] = useState("")
+	const [joinErrors, setJoinErrors] = useState<{ firstName?: string; lastName?: string }>({})
 
 	useEffect(() => {
 		if (!sessionHydrated || (!phone && !sessionEmail)) return
@@ -118,15 +127,23 @@ export default function OnboardingPage() {
 
 	async function handleJoin() {
 		if (joining) return
+		const errors: { firstName?: string; lastName?: string } = {}
+		if (!joinFirstName.trim()) errors.firstName = "First name is required"
+		if (!joinLastName.trim()) errors.lastName = "Last name is required"
+		if (Object.keys(errors).length > 0) {
+			setJoinErrors(errors)
+			return
+		}
 		setJoining(true)
 		try {
 			try {
 				await registerBrand({
-					firstName: "Brand",
-					lastName: "Member",
+					firstName: joinFirstName.trim(),
+					lastName: joinLastName.trim(),
 					email: sessionEmail || "",
-					phone: phone || undefined,
+					phone: phone || (joinPhone ? `+91${joinPhone}` : undefined),
 					accountType: "BRAND",
+					gender: joinGender || undefined,
 				})
 			} catch (e) {
 				if (!(e instanceof ApiError && e.statusCode === 409)) throw e
@@ -248,24 +265,93 @@ export default function OnboardingPage() {
 	}
 
 	if (pendingInvite?.matched) {
+		if (!showJoinForm) {
+			return (
+				<AuthShell>
+					<div className="flex flex-col flex-grow items-center justify-center gap-6 py-10 text-center">
+						<h2 className="font-heading text-3xl sm:text-4xl font-black text-black tracking-tight">
+							You&apos;ve been invited!
+						</h2>
+						<p className="text-sm font-semibold text-black/60 max-w-md">
+							Join <span className="font-bold text-black">{pendingInvite.accountName || "the team"}</span> on Meetday with full access to their brand dashboard.
+						</p>
+						<Button variant="primary" size="lg" radius="pill" onClick={() => setShowJoinForm(true)}>
+							Continue
+						</Button>
+						<button
+							type="button"
+							onClick={() => setPendingInvite({ matched: false })}
+							className="text-xs font-bold text-black/40 hover:text-black transition-colors"
+						>
+							Set up a new brand instead
+						</button>
+					</div>
+				</AuthShell>
+			)
+		}
+
 		return (
 			<AuthShell>
-				<div className="flex flex-col flex-grow items-center justify-center gap-6 py-10 text-center">
-					<h2 className="font-heading text-3xl sm:text-4xl font-black text-black tracking-tight">
-						You&apos;ve been invited!
-					</h2>
-					<p className="text-sm font-semibold text-black/60 max-w-md">
-						Join <span className="font-bold text-black">{pendingInvite.accountName || "the team"}</span> on Meetday with full access to their brand dashboard.
-					</p>
+				<div className="flex flex-col flex-grow items-center justify-center gap-6 py-10 px-4">
+					<div className="text-center">
+						<h2 className="font-heading text-2xl sm:text-3xl font-black text-black tracking-tight">
+							A few details about you
+						</h2>
+						<p className="text-sm font-semibold text-black/60 mt-2">
+							Joining <span className="font-bold text-black">{pendingInvite.accountName || "the team"}</span>
+						</p>
+					</div>
+					<div className="w-full max-w-sm flex flex-col gap-4">
+						<TextField
+							label="First name"
+							placeholder="Enter your first name"
+							value={joinFirstName}
+							onChange={(e) => setJoinFirstName(e.target.value)}
+							error={!!joinErrors.firstName}
+							helperText={joinErrors.firstName}
+							size="md"
+						/>
+						<TextField
+							label="Last name"
+							placeholder="Enter your last name"
+							value={joinLastName}
+							onChange={(e) => setJoinLastName(e.target.value)}
+							error={!!joinErrors.lastName}
+							helperText={joinErrors.lastName}
+							size="md"
+						/>
+						{!phone && (
+							<TextField
+								label="Phone number"
+								placeholder="98765 43210"
+								value={joinPhone}
+								onChange={(e) => setJoinPhone(e.target.value)}
+								size="md"
+							/>
+						)}
+						<Dropdown
+							label="Gender"
+							placeholder="Select gender"
+							options={[
+								{ value: "MALE", label: "Male" },
+								{ value: "FEMALE", label: "Female" },
+								{ value: "NON_BINARY", label: "Non-binary" },
+								{ value: "PREFER_NOT_TO_SAY", label: "Prefer not to say" },
+							]}
+							value={joinGender}
+							onChange={setJoinGender}
+							size="md"
+						/>
+					</div>
 					<Button variant="primary" size="lg" radius="pill" onClick={handleJoin} disabled={joining}>
 						{joining ? "Joining…" : `Join ${pendingInvite.accountName || "the team"}`}
 					</Button>
 					<button
 						type="button"
-						onClick={() => setPendingInvite({ matched: false })}
+						onClick={() => setShowJoinForm(false)}
 						className="text-xs font-bold text-black/40 hover:text-black transition-colors"
 					>
-						Set up a new brand instead
+						Back
 					</button>
 				</div>
 			</AuthShell>
