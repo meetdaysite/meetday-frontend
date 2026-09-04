@@ -106,6 +106,10 @@ export function ProposalDeckBuilder({
 	}
 
 	async function handleGenerate() {
+		if (!content.eventName.trim() || !content.about.trim()) {
+			toast.error("Project Name and About are required — please fill them in above before generating.")
+			return
+		}
 		if (!contactName.trim() || !contactEmail.trim()) {
 			toast.error("Please provide a contact name and email — shown on the closing slide.")
 			return

@@ -2078,7 +2078,13 @@ export default function ProposalPage() {
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        onClick={() => setShowDeckBuilder(true)}
+                                                        onClick={() => {
+                                                            if (!projName.trim() || !projAbout.trim()) {
+                                                                toast.error("Please fill in the Project Name and About fields above first.")
+                                                                return
+                                                            }
+                                                            setShowDeckBuilder(true)
+                                                        }}
                                                         className="flex flex-col items-start gap-1 px-4 py-3 bg-[#EE2C2C] text-white border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
                                                     >
                                                         <span>✨ Create a Deck with Meetday</span>
