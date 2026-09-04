@@ -1144,12 +1144,13 @@ export async function getSponsorshipDealReportPdfUrl(interestId: string): Promis
 	return data.data.url
 }
 
-// ─── AI-powered sponsorship proposal pitch deck (replaces manual "Choose Document" upload) ───
+// ─── AI-powered sponsorship proposal pitch deck (alongside manual "Choose Document" upload) ───
 
-export type DeckSlideLayout = "COVER" | "VALUE_PROP" | "STAT_HIGHLIGHT" | "BULLET_LIST" | "PRICING_COMPARISON" | "CLOSING_CONTACT"
+export type DeckSlideLayout = "COVER" | "VALUE_PROP" | "STAT_HIGHLIGHT" | "BULLET_LIST" | "PAST_SPONSORS" | "PRICING_COMPARISON" | "CLOSING_CONTACT"
 
 export type DeckStat = { label: string; value: string }
 export type DeckPricingTier = { name: string; price: string }
+export type DeckPastSponsor = { name: string; logoKey?: string; projectReference?: string }
 
 export type DeckSlide = {
 	layout: DeckSlideLayout
@@ -1159,25 +1160,37 @@ export type DeckSlide = {
 	bullets?: string[]
 	stats?: DeckStat[]
 	pricingTiers?: DeckPricingTier[]
+	pastSponsors?: DeckPastSponsor[]
+	openToBarter?: boolean
+	sponsorshipDeadline?: string
 	contactName?: string
 	contactEmail?: string
 	contactPhone?: string
 }
 
 export type GenerateProposalDeckPlanPayload = {
-	eventName: string
-	about: string
-	venues?: string[]
-	eventDate?: string
-	audienceProfile?: string[]
-	ageGroup?: string
-	guestCount?: string
+	hostName: string
+	eventTitle: string
+	tagline?: string
+	aboutCommunity?: string
+	eventOverview?: string
+	sponsorROIPitch?: string
+	location?: string
+	heroMetricValue?: string
+	heroMetricLabel?: string
+	targetAudienceProfile?: string
+	pastSponsors?: DeckPastSponsor[]
 	sponsorTiers?: DeckPricingTier[]
+	openToBarter?: boolean
+	sponsorshipDeadline?: string
+	onsiteDeliverables?: string
+	digitalDeliverables?: string
+	customPerks?: string
 }
 
 // Not personalized to any one brand — this deck replaces the proposal's shared document, shown
-// to every interested brand. Cover/pricing/closing slides are assembled deterministically on the
-// backend; the AI writes and picks a layout for 2-3 middle content slides.
+// to every interested brand. Returns a fixed 10-slide array; the AI fills in fallback copy for
+// any optional narrative fields left empty, layout assignment per slide is deterministic.
 export async function generateProposalDeckPlan(payload: GenerateProposalDeckPlanPayload): Promise<{ slides: DeckSlide[] }> {
 	const { data } = await apiClient.post<{ slides: DeckSlide[] }>(`/sponsorships/proposals/deck/plan`, payload)
 	return data
@@ -1194,6 +1207,8 @@ export type FinalizeProposalDeckPayload = {
 	accentColor: string
 	primaryLogoKey?: string
 	secondaryLogoKey?: string
+	mediaKitUrl?: string
+	mediaAssetKeys?: string[]
 }
 
 export type FinalizeProposalDeckResult = { docKey: string; docName: string; docType: string; docSize: number }
