@@ -1211,7 +1211,7 @@ export type FinalizeProposalDeckPayload = {
 	mediaAssetKeys?: string[]
 }
 
-export type FinalizeProposalDeckResult = { docKey: string; docName: string; docType: string; docSize: number }
+export type FinalizeProposalDeckResult = { docKey: string; docName: string; docType: string; docSize: number; docUrl: string }
 
 // Renders the (host-edited) slide plan into a themed PDF and uploads it to storage — NOT a
 // direct download. The returned docKey/docName/docType/docSize get set straight into the

@@ -2055,6 +2055,16 @@ export default function ProposalPage() {
                                                             >
                                                                 Change Document
                                                             </button>
+                                                            {(generatedDeckDoc?.docUrl || (typeof selectedProposal?.docFile === "string" && selectedProposal.docFile)) && (
+                                                                <a
+                                                                    href={generatedDeckDoc?.docUrl || (selectedProposal?.docFile as string)}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="self-start px-4 py-2 bg-[#EE2C2C] text-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-[#D12525] transition-colors"
+                                                                >
+                                                                    Download
+                                                                </a>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
