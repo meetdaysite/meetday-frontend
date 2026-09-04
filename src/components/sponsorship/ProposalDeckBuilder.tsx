@@ -48,6 +48,11 @@ const FONT_OPTIONS: { value: DeckFontVibe; label: string }[] = [
 	{ value: "MINIMALIST", label: "Minimalist" },
 ]
 
+// Every image gets base64-inlined into the rendered PDF's HTML — an uncapped file size here
+// risks blowing Puppeteer's container memory once several logos/sponsor logos/media assets
+// are all embedded into one 10-slide document at once.
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
+
 async function uploadFileAndGetKey(file: File): Promise<string> {
 	const { url, key } = await getUploadUrl({ context: "SPONSORSHIP_MEDIA", contentType: file.type })
 	await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
@@ -174,6 +179,10 @@ export function ProposalDeckBuilder({
 		const file = e.target.files?.[0]
 		e.target.value = ""
 		if (!file || pastSponsorLogoTargetIdx === null) return
+		if (file.size > MAX_IMAGE_SIZE_BYTES) {
+			toast.error("Logo image must be 5MB or smaller.")
+			return
+		}
 		updatePastSponsor(pastSponsorLogoTargetIdx, { logoFile: file, logoPreview: URL.createObjectURL(file) })
 		setPastSponsorLogoTargetIdx(null)
 	}
@@ -182,6 +191,10 @@ export function ProposalDeckBuilder({
 		const file = e.target.files?.[0]
 		e.target.value = ""
 		if (!file) return
+		if (file.size > MAX_IMAGE_SIZE_BYTES) {
+			toast.error("Logo image must be 5MB or smaller.")
+			return
+		}
 		const previewUrl = URL.createObjectURL(file)
 		if (variant === "primary") {
 			setPrimaryLogoFile(file)
@@ -196,7 +209,11 @@ export function ProposalDeckBuilder({
 		const files = Array.from(e.target.files ?? [])
 		e.target.value = ""
 		if (!files.length) return
-		setMediaAssetFiles(prev => [...prev, ...files].slice(0, 10))
+		const oversized = files.filter(f => f.size > MAX_IMAGE_SIZE_BYTES)
+		if (oversized.length) {
+			toast.error("Each image must be 5MB or smaller — some were skipped.")
+		}
+		setMediaAssetFiles(prev => [...prev, ...files.filter(f => f.size <= MAX_IMAGE_SIZE_BYTES)].slice(0, 10))
 	}
 
 	async function handleGenerate() {
