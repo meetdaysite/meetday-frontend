@@ -126,9 +126,18 @@ export function ProposalDeckBuilder({
 	const [contactEmail, setContactEmail] = useState("")
 	const [contactPhone, setContactPhone] = useState("")
 
+	const [attemptedSubmit, setAttemptedSubmit] = useState(false)
 	const [generating, setGenerating] = useState(false)
 	const [finalizing, setFinalizing] = useState(false)
 	const [slides, setSlides] = useState<DeckSlide[]>([])
+
+	const hostNameError = attemptedSubmit && !hostName.trim() ? "Community/Host Name is required." : null
+	const eventTitleError = attemptedSubmit && !eventTitle.trim() ? "Event Title is required." : null
+	const primaryLogoError = attemptedSubmit && !primaryLogoFile ? "Primary logo (dark backgrounds) is required." : null
+	const secondaryLogoError = attemptedSubmit && !secondaryLogoFile ? "Secondary logo (light backgrounds) is required." : null
+	const contactEmailError = attemptedSubmit && !contactEmail.trim() ? "Contact email is required." : null
+	const taglineError = tagline.length > 80 ? "Tagline must be 80 characters or fewer." : null
+	const errorInputClass = "border-red-500 focus:border-red-500"
 
 	function updateSlide(idx: number, patch: Partial<DeckSlide>) {
 		setSlides(prev => prev.map((s, i) => (i === idx ? { ...s, ...patch } : s)))
@@ -191,12 +200,9 @@ export function ProposalDeckBuilder({
 	}
 
 	async function handleGenerate() {
-		if (!hostName.trim() || !eventTitle.trim()) {
-			toast.error("Community/Host Name and Event Title are required.")
-			return
-		}
-		if (!contactEmail.trim()) {
-			toast.error("Please provide a contact email — shown on the closing slide.")
+		setAttemptedSubmit(true)
+		if (!hostName.trim() || !eventTitle.trim() || !primaryLogoFile || !secondaryLogoFile || !contactEmail.trim()) {
+			toast.error("Please fill in all required fields, highlighted in red below.")
 			return
 		}
 		setGenerating(true)
@@ -232,7 +238,10 @@ export function ProposalDeckBuilder({
 			setStep("preview")
 		} catch (err) {
 			console.error(err)
-			toast.error("Failed to generate deck content. Please try again.")
+			const axiosErr = err as { response?: { data?: { message?: string | string[] } }; message?: string }
+			const serverMessage = axiosErr?.response?.data?.message
+			const detail = Array.isArray(serverMessage) ? serverMessage.join(", ") : serverMessage
+			toast.error(detail || axiosErr?.message || "Failed to generate deck content. Please try again.")
 		} finally {
 			setGenerating(false)
 		}
@@ -283,7 +292,10 @@ export function ProposalDeckBuilder({
 			onAttached(result)
 		} catch (err) {
 			console.error(err)
-			toast.error("Failed to generate the final deck. Please try again.")
+			const axiosErr = err as { response?: { data?: { message?: string | string[] } }; message?: string }
+			const serverMessage = axiosErr?.response?.data?.message
+			const detail = Array.isArray(serverMessage) ? serverMessage.join(", ") : serverMessage
+			toast.error(detail || axiosErr?.message || "Failed to generate the final deck. Please try again.")
 		} finally {
 			setFinalizing(false)
 		}
@@ -353,8 +365,9 @@ export function ProposalDeckBuilder({
 									type="text"
 									value={hostName}
 									onChange={e => setHostName(e.target.value)}
-									className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+									className={`h-10 px-4 rounded-xl border bg-slate-50 text-black outline-none hover:border-black/30 text-sm transition-colors ${hostNameError ? errorInputClass : "border-black/10 focus:border-black"}`}
 								/>
+								{hostNameError && <span className="text-[10px] font-semibold text-red-600">{hostNameError}</span>}
 							</div>
 							<div className="flex flex-col gap-1.5">
 								<label className="text-xs font-bold text-black">Event Title *</label>
@@ -363,8 +376,9 @@ export function ProposalDeckBuilder({
 									value={eventTitle}
 									onChange={e => onEventTitleChange(e.target.value)}
 									placeholder="e.g. Night Rituals — Kolkata Music Fest"
-									className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+									className={`h-10 px-4 rounded-xl border bg-slate-50 text-black outline-none hover:border-black/30 text-sm transition-colors ${eventTitleError ? errorInputClass : "border-black/10 focus:border-black"}`}
 								/>
+								{eventTitleError && <span className="text-[10px] font-semibold text-red-600">{eventTitleError}</span>}
 							</div>
 						</div>
 
@@ -387,8 +401,9 @@ export function ProposalDeckBuilder({
 								onChange={e => setTagline(e.target.value.slice(0, 80))}
 								maxLength={80}
 								placeholder="Leave empty to let AI write one"
-								className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+								className={`h-10 px-4 rounded-xl border bg-slate-50 text-black outline-none hover:border-black/30 text-sm transition-colors ${taglineError ? errorInputClass : "border-black/10 focus:border-black"}`}
 							/>
+							<span className={`text-[10px] font-semibold ${taglineError ? "text-red-600" : "text-black/40"}`}>{taglineError ?? `${tagline.length}/80 characters`}</span>
 						</div>
 
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -484,7 +499,7 @@ export function ProposalDeckBuilder({
 								<button
 									type="button"
 									onClick={() => primaryLogoInputRef.current?.click()}
-									className="flex items-center gap-3 px-3 py-2 bg-neutral-900 border border-black rounded-xl text-xs font-bold hover:bg-neutral-800 transition-colors"
+									className={`flex items-center gap-3 px-3 py-2 bg-neutral-900 border rounded-xl text-xs font-bold hover:bg-neutral-800 transition-colors ${primaryLogoError ? "border-red-500" : "border-black"}`}
 								>
 									{primaryLogoPreview ? (
 										// eslint-disable-next-line @next/next/no-img-element
@@ -494,6 +509,7 @@ export function ProposalDeckBuilder({
 									)}
 									<span className="text-white">Choose Logo</span>
 								</button>
+								{primaryLogoError && <span className="text-[10px] font-semibold text-red-600">{primaryLogoError}</span>}
 							</div>
 							<div className="flex flex-col gap-1.5">
 								<label className="text-xs font-bold text-black">Secondary Logo (Light Backgrounds) *</label>
@@ -501,7 +517,7 @@ export function ProposalDeckBuilder({
 								<button
 									type="button"
 									onClick={() => secondaryLogoInputRef.current?.click()}
-									className="flex items-center gap-3 px-3 py-2 bg-white border border-black rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors"
+									className={`flex items-center gap-3 px-3 py-2 bg-white border rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors ${secondaryLogoError ? "border-red-500" : "border-black"}`}
 								>
 									{secondaryLogoPreview ? (
 										// eslint-disable-next-line @next/next/no-img-element
@@ -511,6 +527,7 @@ export function ProposalDeckBuilder({
 									)}
 									<span className="text-black">Choose Logo</span>
 								</button>
+								{secondaryLogoError && <span className="text-[10px] font-semibold text-red-600">{secondaryLogoError}</span>}
 							</div>
 						</div>
 						<span className="text-[10px] text-black/40 -mt-2">
@@ -719,8 +736,9 @@ export function ProposalDeckBuilder({
 									value={contactEmail}
 									onChange={e => setContactEmail(e.target.value)}
 									placeholder="e.g. priya@example.com"
-									className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+									className={`h-10 px-4 rounded-xl border bg-slate-50 text-black outline-none hover:border-black/30 text-sm transition-colors ${contactEmailError ? errorInputClass : "border-black/10 focus:border-black"}`}
 								/>
+								{contactEmailError && <span className="text-[10px] font-semibold text-red-600">{contactEmailError}</span>}
 							</div>
 							<div className="flex flex-col gap-1.5">
 								<label className="text-xs font-bold text-black">Contact Phone</label>
