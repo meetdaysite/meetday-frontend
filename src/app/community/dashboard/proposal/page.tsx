@@ -1594,18 +1594,21 @@ export default function ProposalPage() {
                         <div className="flex flex-col gap-8">
                             {showProposalForm && showDeckBuilder ? (
                                 <ProposalDeckBuilder
-                                    content={{
-                                        eventName: projName,
-                                        about: projAbout,
-                                        venues: projVenues.map(v => v.trim()).filter(Boolean),
-                                        eventDate: projDate || undefined,
-                                        audienceProfile: projAudience,
-                                        ageGroup: projAgeGroup || undefined,
-                                        guestCount: projGuestCount || undefined,
-                                        sponsorTiers: projSponsorshipType === "BARTER"
-                                            ? []
-                                            : sponsorPrices.filter(sp => sp.name.trim() && sp.price.trim()),
-                                    }}
+                                    eventName={projName}
+                                    onEventNameChange={setProjName}
+                                    about={projAbout}
+                                    onAboutChange={setProjAbout}
+                                    eventDate={projDate || undefined}
+                                    onEventDateChange={setProjDate}
+                                    ageGroup={projAgeGroup || undefined}
+                                    onAgeGroupChange={setProjAgeGroup}
+                                    guestCount={projGuestCount || undefined}
+                                    onGuestCountChange={setProjGuestCount}
+                                    venues={projVenues.map(v => v.trim()).filter(Boolean)}
+                                    audienceProfile={projAudience}
+                                    sponsorTiers={projSponsorshipType === "BARTER"
+                                        ? []
+                                        : sponsorPrices.filter(sp => sp.name.trim() && sp.price.trim())}
                                     defaultContactName={community?.name || profile?.displayName || ""}
                                     onClose={() => setShowDeckBuilder(false)}
                                     onAttached={(result) => {
@@ -2078,13 +2081,7 @@ export default function ProposalPage() {
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        onClick={() => {
-                                                            if (!projName.trim() || !projAbout.trim()) {
-                                                                toast.error("Please fill in the Project Name and About fields above first.")
-                                                                return
-                                                            }
-                                                            setShowDeckBuilder(true)
-                                                        }}
+                                                        onClick={() => setShowDeckBuilder(true)}
                                                         className="flex flex-col items-start gap-1 px-4 py-3 bg-[#EE2C2C] text-white border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
                                                     >
                                                         <span>✨ Create a Deck with Meetday</span>

@@ -14,16 +14,19 @@ import {
 } from "@/lib/api"
 
 export type ProposalDeckBuilderProps = {
-	content: {
-		eventName: string
-		about: string
-		venues?: string[]
-		eventDate?: string
-		audienceProfile?: string[]
-		ageGroup?: string
-		guestCount?: string
-		sponsorTiers?: { name: string; price: string }[]
-	}
+	eventName: string
+	onEventNameChange: (value: string) => void
+	about: string
+	onAboutChange: (value: string) => void
+	eventDate?: string
+	onEventDateChange?: (value: string) => void
+	ageGroup?: string
+	onAgeGroupChange?: (value: string) => void
+	guestCount?: string
+	onGuestCountChange?: (value: string) => void
+	venues?: string[]
+	audienceProfile?: string[]
+	sponsorTiers?: { name: string; price: string }[]
 	defaultContactName?: string
 	defaultLogoUrl?: string | null
 	defaultSecondaryLogoUrl?: string | null
@@ -57,7 +60,19 @@ async function uploadLogoAndGetKey(file: File): Promise<string> {
 // info, AI plans the content slides; (2) review/edit the AI-written slide copy (design/layout is
 // locked, only the text is editable) then "Attach to Proposal" renders + uploads the final PDF.
 export function ProposalDeckBuilder({
-	content,
+	eventName,
+	onEventNameChange,
+	about,
+	onAboutChange,
+	eventDate,
+	onEventDateChange,
+	ageGroup,
+	onAgeGroupChange,
+	guestCount,
+	onGuestCountChange,
+	venues,
+	audienceProfile,
+	sponsorTiers,
 	defaultContactName,
 	defaultLogoUrl,
 	defaultSecondaryLogoUrl,
@@ -106,7 +121,7 @@ export function ProposalDeckBuilder({
 	}
 
 	async function handleGenerate() {
-		if (!content.eventName.trim() || !content.about.trim()) {
+		if (!eventName.trim() || !about.trim()) {
 			toast.error("Project Name and About are required — please fill them in above before generating.")
 			return
 		}
@@ -117,14 +132,14 @@ export function ProposalDeckBuilder({
 		setGenerating(true)
 		try {
 			const { slides: planSlides } = await generateProposalDeckPlan({
-				eventName: content.eventName,
-				about: content.about,
-				venues: content.venues,
-				eventDate: content.eventDate,
-				audienceProfile: content.audienceProfile,
-				ageGroup: content.ageGroup,
-				guestCount: content.guestCount,
-				sponsorTiers: content.sponsorTiers,
+				eventName,
+				about,
+				venues,
+				eventDate,
+				audienceProfile,
+				ageGroup,
+				guestCount,
+				sponsorTiers,
 			})
 			setSlides(
 				planSlides.map(s =>
@@ -225,6 +240,76 @@ export function ProposalDeckBuilder({
 
 			{step === "style" ? (
 				<div className="border-[3px] border-dashed border-black/30 rounded-[28px] p-6 bg-white flex flex-col gap-6 w-full">
+					<div className="flex flex-col gap-1.5">
+						<label className="text-xs font-bold text-black">Project / Event Name *</label>
+						<input
+							type="text"
+							value={eventName}
+							onChange={e => onEventNameChange(e.target.value)}
+							placeholder="e.g. Night Rituals — Kolkata Music Fest"
+							className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+						/>
+					</div>
+
+					<div className="flex flex-col gap-1.5">
+						<label className="text-xs font-bold text-black">About *</label>
+						<textarea
+							value={about}
+							onChange={e => onAboutChange(e.target.value)}
+							rows={3}
+							placeholder="What's this event/community about?"
+							className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
+						/>
+					</div>
+
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+						<div className="flex flex-col gap-1.5">
+							<label className="text-xs font-bold text-black">Event Date</label>
+							<input
+								type="date"
+								value={eventDate ?? ""}
+								onChange={e => onEventDateChange?.(e.target.value)}
+								className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+							/>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<label className="text-xs font-bold text-black">Age Group</label>
+							<input
+								type="text"
+								value={ageGroup ?? ""}
+								onChange={e => onAgeGroupChange?.(e.target.value)}
+								placeholder="e.g. 21-40"
+								className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+							/>
+						</div>
+						<div className="flex flex-col gap-1.5">
+							<label className="text-xs font-bold text-black">Guest Count</label>
+							<input
+								type="text"
+								value={guestCount ?? ""}
+								onChange={e => onGuestCountChange?.(e.target.value)}
+								placeholder="e.g. 150"
+								className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+							/>
+						</div>
+					</div>
+
+					{(venues?.length || audienceProfile?.length || sponsorTiers?.length) ? (
+						<div className="flex flex-wrap gap-1.5 -mt-2">
+							{venues?.filter(Boolean).map((v, i) => (
+								<span key={`v-${i}`} className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-black/60">📍 {v}</span>
+							))}
+							{audienceProfile?.map((a, i) => (
+								<span key={`a-${i}`} className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-black/60">{a}</span>
+							))}
+							{sponsorTiers?.filter(t => t.name && t.price).map((t, i) => (
+								<span key={`t-${i}`} className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-black/60">{t.name}: {t.price}</span>
+							))}
+						</div>
+					) : null}
+
+					<div className="border-t border-black/10 -mx-6" />
+
 					<div className="flex flex-col gap-2">
 						<label className="text-xs font-bold text-black">Theme</label>
 						<div className="grid grid-cols-3 gap-2">
