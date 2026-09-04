@@ -1192,8 +1192,8 @@ export type GenerateProposalDeckPlanPayload = {
 // to every interested brand. Returns a fixed 10-slide array; the AI fills in fallback copy for
 // any optional narrative fields left empty, layout assignment per slide is deterministic.
 export async function generateProposalDeckPlan(payload: GenerateProposalDeckPlanPayload): Promise<{ slides: DeckSlide[] }> {
-	const { data } = await apiClient.post<{ slides: DeckSlide[] }>(`/sponsorships/proposals/deck/plan`, payload)
-	return data
+	const { data } = await apiClient.post<{ success: boolean; data: { slides: DeckSlide[] } }>(`/sponsorships/proposals/deck/plan`, payload)
+	return data.data
 }
 
 export type DeckTheme = "LIGHT" | "DARK" | "AUTO"
@@ -1217,8 +1217,8 @@ export type FinalizeProposalDeckResult = { docKey: string; docName: string; docT
 // direct download. The returned docKey/docName/docType/docSize get set straight into the
 // sponsorship proposal form, exactly like a manual document upload would.
 export async function finalizeProposalDeck(payload: FinalizeProposalDeckPayload): Promise<FinalizeProposalDeckResult> {
-	const { data } = await apiClient.post<FinalizeProposalDeckResult>(`/sponsorships/proposals/deck/finalize`, payload)
-	return data
+	const { data } = await apiClient.post<{ success: boolean; data: FinalizeProposalDeckResult }>(`/sponsorships/proposals/deck/finalize`, payload)
+	return data.data
 }
 
 // ─── "Talk to Meetday" general support chat — one thread per user, separate from TriChat ──
