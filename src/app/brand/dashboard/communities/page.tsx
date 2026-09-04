@@ -752,37 +752,37 @@ export default function BrandCommunitiesPage() {
 					</div>
 				</div>
 			)}
-			{/* Experience Detail Popup Modal - Enriched, Extra Large, Dynamic Image-Fitted Border */}
+			{/* Experience Detail Popup Modal - Extra Large, Proportional, Adaptive Layout */}
 			{currentExp && (
 				<div 
 					onClick={() => setSelectedExperienceIndex(null)}
-					className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 md:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200 cursor-zoom-out"
+					className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-8 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 cursor-zoom-out"
 				>
 					<div 
 						onClick={(e) => e.stopPropagation()}
-						className="relative max-w-[96vw] xl:max-w-7xl 2xl:max-w-[1500px] w-full bg-white border-[3px] border-black rounded-[28px] p-4 sm:p-6 md:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-4 max-h-[97vh] overflow-hidden animate-in zoom-in-95 duration-150 cursor-default"
+						className="relative max-w-[96vw] xl:max-w-7xl 2xl:max-w-[1440px] w-full bg-white border-[3px] border-black rounded-[28px] sm:rounded-[32px] p-4 sm:p-6 md:p-7 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-4 max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-150 cursor-default"
 					>
 						{/* Top Header with title and controls */}
-						<div className="flex items-center justify-between gap-4 w-full shrink-0">
+						<div className="flex items-center justify-between gap-4 w-full shrink-0 border-b-2 border-black/15 pb-3.5">
 							<div className="flex flex-col gap-0.5 min-w-0">
-								<span className="text-[10px] sm:text-xs font-black text-[#EE2C2C] uppercase tracking-wider">
+								<span className="text-xs font-black text-[#EE2C2C] uppercase tracking-wider">
 									Experience #{currentExp.eventNumber}
 								</span>
-								<h3 className="text-xl sm:text-2xl font-heading font-black text-black truncate">
+								<h3 className="text-lg sm:text-2xl md:text-3xl font-heading font-black text-black truncate">
 									{currentExp.name || `Experience #${currentExp.eventNumber}`}
 								</h3>
 							</div>
 
 							<div className="flex items-center gap-3 shrink-0">
 								{flatExperienceImages.length > 1 && (
-									<span className="px-3 py-1 bg-black text-white text-xs font-black rounded-full border border-black select-none">
+									<span className="px-3.5 py-1.5 bg-black text-white text-xs sm:text-sm font-black rounded-full border border-black select-none">
 										{(selectedExperienceIndex ?? 0) + 1} / {flatExperienceImages.length}
 									</span>
 								)}
 								<button
 									type="button"
 									onClick={() => setSelectedExperienceIndex(null)}
-									className="size-9 rounded-full bg-white hover:bg-neutral-100 border-[2.5px] border-black flex items-center justify-center text-black font-black text-base shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer select-none active:scale-95"
+									className="size-10 sm:size-11 rounded-full bg-white hover:bg-neutral-100 border-[2.5px] border-black flex items-center justify-center text-black font-black text-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer select-none active:scale-95"
 									aria-label="Close details"
 								>
 									✕
@@ -790,53 +790,110 @@ export default function BrandCommunitiesPage() {
 							</div>
 						</div>
 
-						{/* Description box if present */}
-						{currentExp.description && (
-							<div className="bg-[#FFC940] text-black p-3.5 sm:p-4 rounded-[18px] border-2 border-black font-semibold text-xs sm:text-sm leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-left shrink-0 max-h-28 overflow-y-auto">
-								<p className="whitespace-pre-wrap">{currentExp.description}</p>
+						{/* Content Area: If description exists -> side-by-side grid; if no description -> full-width large hero image */}
+						{currentExp.description ? (
+							<div className="flex-1 min-h-0 p-2 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-stretch overflow-y-auto lg:overflow-visible">
+								{/* Left: Image Showcase */}
+								<div className="lg:col-span-7 xl:col-span-7 relative w-full h-[340px] sm:h-[420px] lg:h-full min-h-0 max-h-[66vh] rounded-[22px] sm:rounded-[24px] border-[3px] border-black bg-neutral-950/5 overflow-hidden flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] shrink-0">
+									{/* eslint-disable-next-line @next/next/no-img-element */}
+									<img 
+										src={currentExp.url} 
+										alt={currentExp.name || "Experience Image"} 
+										className="w-full h-full object-contain p-2.5 select-none" 
+									/>
+
+									{/* Navigation Arrows inside image container */}
+									{flatExperienceImages.length > 1 && (
+										<>
+											<button
+												type="button"
+												onClick={handlePrevExperience}
+												aria-label="Previous image"
+												className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-10 size-11 sm:size-12 rounded-full bg-white/95 hover:bg-[#FFC940] text-black border-[2.5px] border-black flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer select-none"
+											>
+												<svg className="size-5 sm:size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+													<polyline points="15 18 9 12 15 6" />
+												</svg>
+											</button>
+
+											<button
+												type="button"
+												onClick={handleNextExperience}
+												aria-label="Next image"
+												className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-10 size-11 sm:size-12 rounded-full bg-white/95 hover:bg-[#FFC940] text-black border-[2.5px] border-black flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer select-none"
+											>
+												<svg className="size-5 sm:size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+													<polyline points="9 18 15 12 9 6" />
+												</svg>
+											</button>
+
+											{/* Image Index Pill overlay */}
+											<div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs font-black px-3.5 py-1 rounded-full backdrop-blur-xs select-none pointer-events-none border border-white/20 shadow-xs">
+												Photo {currentExp.imgIdx + 1} of {currentExp.totalImages}
+											</div>
+										</>
+									)}
+								</div>
+
+								{/* Right: Description Column */}
+								<div className="lg:col-span-5 xl:col-span-5 flex flex-col min-h-0 h-full">
+									<div className="bg-[#FFC940] text-black p-5 sm:p-6 rounded-[22px] sm:rounded-[24px] border-[3px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex flex-col h-full min-h-0">
+										<p className="text-xs sm:text-sm font-black uppercase tracking-wider text-black/70 mb-2.5 shrink-0">
+											About This Experience
+										</p>
+										<div className="flex-1 min-h-0 overflow-y-auto pr-1">
+											<p className="whitespace-pre-wrap font-bold text-sm sm:text-base leading-relaxed text-black">
+												{currentExp.description}
+											</p>
+										</div>
+									</div>
+								</div>
+							</div>
+						) : (
+							/* Full-Width Hero Image when no description is present - Fluid and never clipped */
+							<div className="flex-1 min-h-0 w-full flex items-center justify-center p-2">
+								<div className="relative w-full h-full max-h-[66vh] md:max-h-[70vh] min-h-0 rounded-[22px] sm:rounded-[24px] border-[3px] border-black bg-neutral-950/5 overflow-hidden flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+									{/* eslint-disable-next-line @next/next/no-img-element */}
+									<img 
+										src={currentExp.url} 
+										alt={currentExp.name || "Experience Image"} 
+										className="w-full h-full max-h-[66vh] md:max-h-[70vh] object-contain p-2.5 sm:p-4 select-none" 
+									/>
+
+									{/* Navigation Arrows inside image container */}
+									{flatExperienceImages.length > 1 && (
+										<>
+											<button
+												type="button"
+												onClick={handlePrevExperience}
+												aria-label="Previous image"
+												className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-10 size-11 sm:size-12 rounded-full bg-white/95 hover:bg-[#FFC940] text-black border-[2.5px] border-black flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer select-none"
+											>
+												<svg className="size-5 sm:size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+													<polyline points="15 18 9 12 15 6" />
+												</svg>
+											</button>
+
+											<button
+												type="button"
+												onClick={handleNextExperience}
+												aria-label="Next image"
+												className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-10 size-11 sm:size-12 rounded-full bg-white/95 hover:bg-[#FFC940] text-black border-[2.5px] border-black flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer select-none"
+											>
+												<svg className="size-5 sm:size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+													<polyline points="9 18 15 12 9 6" />
+												</svg>
+											</button>
+
+											{/* Image Index Pill overlay */}
+											<div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs font-black px-3.5 py-1 rounded-full backdrop-blur-xs select-none pointer-events-none border border-white/20 shadow-xs">
+												Photo {currentExp.imgIdx + 1} of {currentExp.totalImages}
+											</div>
+										</>
+									)}
+								</div>
 							</div>
 						)}
-
-						{/* Image Area: border fits tightly around the image while arrows stay pinned to sides */}
-						<div className="relative flex-1 min-h-[400px] max-h-[78vh] w-full flex items-center justify-center p-2">
-							{/* Card containing only the image - sizes dynamically to image dimensions */}
-							<div className="relative inline-flex items-center justify-center max-w-full max-h-[76vh] rounded-[22px] border-[3px] border-black overflow-hidden bg-slate-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-								{/* eslint-disable-next-line @next/next/no-img-element */}
-								<img 
-									src={currentExp.url} 
-									alt={currentExp.name || "Experience Image"} 
-									className="max-h-[76vh] max-w-full w-auto h-auto object-contain block select-none" 
-								/>
-							</div>
-
-							{/* Previous Image Button (Left Arrow) - Stays pinned at left side of popup */}
-							{flatExperienceImages.length > 1 && (
-								<button
-									type="button"
-									onClick={handlePrevExperience}
-									aria-label="Previous image"
-									className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 size-10 sm:size-12 rounded-full bg-white hover:bg-[#FFC940] text-black border-[2.5px] border-black flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer select-none"
-								>
-									<svg className="size-5 sm:size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-										<polyline points="15 18 9 12 15 6" />
-									</svg>
-								</button>
-							)}
-
-							{/* Next Image Button (Right Arrow) - Stays pinned at right side of popup */}
-							{flatExperienceImages.length > 1 && (
-								<button
-									type="button"
-									onClick={handleNextExperience}
-									aria-label="Next image"
-									className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 size-10 sm:size-12 rounded-full bg-white hover:bg-[#FFC940] text-black border-[2.5px] border-black flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer select-none"
-								>
-									<svg className="size-5 sm:size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-										<polyline points="9 18 15 12 9 6" />
-									</svg>
-								</button>
-							)}
-						</div>
 					</div>
 				</div>
 			)}
