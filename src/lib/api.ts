@@ -1144,79 +1144,66 @@ export async function getSponsorshipDealReportPdfUrl(interestId: string): Promis
 	return data.data.url
 }
 
-export type GenerateProposalPdfPayload = {
-	sponsorName: string
-	eventTitle: string
-	deliverables: string
-	timeline: string
-	pricingTiers?: { name: string; price: string }[]
-	terms: string
-	contactName: string
-	contactEmail: string
+// ─── AI-powered sponsorship proposal pitch deck (replaces manual "Choose Document" upload) ───
+
+export type DeckSlideLayout = "COVER" | "VALUE_PROP" | "STAT_HIGHLIGHT" | "BULLET_LIST" | "PRICING_COMPARISON" | "CLOSING_CONTACT"
+
+export type DeckStat = { label: string; value: string }
+export type DeckPricingTier = { name: string; price: string }
+
+export type DeckSlide = {
+	layout: DeckSlideLayout
+	title: string
+	subtitle?: string
+	body?: string
+	bullets?: string[]
+	stats?: DeckStat[]
+	pricingTiers?: DeckPricingTier[]
+	contactName?: string
+	contactEmail?: string
 	contactPhone?: string
 }
 
-// Stateless — returns the raw PDF bytes to download, not a persisted/presigned URL like the
-// invoice/report PDFs above.
-export async function generateProposalPdf(payload: GenerateProposalPdfPayload): Promise<Blob> {
-	const { data } = await apiClient.post(`/sponsorships/proposals/generate-pdf`, payload, {
-		responseType: "blob",
-	})
-	return data as Blob
+export type GenerateProposalDeckPlanPayload = {
+	eventName: string
+	about: string
+	venues?: string[]
+	eventDate?: string
+	audienceProfile?: string[]
+	ageGroup?: string
+	guestCount?: string
+	sponsorTiers?: DeckPricingTier[]
 }
 
-// ─── AI-powered pitch-deck variant of the Generate Proposal PDF feature ───
-
-export type ExpandProposalDeckContentPayload = {
-	sponsorName: string
-	eventTitle: string
-	deliverables: string
-	timeline: string
-	pricingTiers?: { name: string; price: string }[]
-	terms?: string
+// Not personalized to any one brand — this deck replaces the proposal's shared document, shown
+// to every interested brand. Cover/pricing/closing slides are assembled deterministically on the
+// backend; the AI writes and picks a layout for 2-3 middle content slides.
+export async function generateProposalDeckPlan(payload: GenerateProposalDeckPlanPayload): Promise<{ slides: DeckSlide[] }> {
+	const { data } = await apiClient.post<{ slides: DeckSlide[] }>(`/sponsorships/proposals/deck/plan`, payload)
+	return data
 }
 
-export type ExpandProposalDeckContentResult = {
-	valueProposition: string
-	campaignOverview: string
-	audienceReach: string
-	deliverablesExpanded: string
-	timelineExpanded: string
+export type DeckTheme = "LIGHT" | "DARK" | "AUTO"
+export type DeckFontVibe = "MODERN_SANS" | "CLASSIC_SERIF" | "TECH_GEOMETRIC" | "MINIMALIST"
+
+export type FinalizeProposalDeckPayload = {
+	slides: DeckSlide[]
+	theme: DeckTheme
+	fontVibe: DeckFontVibe
+	primaryColor: string
+	accentColor: string
+	primaryLogoKey?: string
+	secondaryLogoKey?: string
 }
 
-// Sends the basic form inputs to the AI service (via the backend) and gets back expanded,
-// slide-ready copy for the host to review/edit before the final PDF export.
-export async function expandProposalDeckContent(
-	payload: ExpandProposalDeckContentPayload,
-): Promise<ExpandProposalDeckContentResult> {
-	const { data } = await apiClient.post<{ success: boolean; data: ExpandProposalDeckContentResult }>(
-		`/sponsorships/proposals/deck/expand-content`,
-		payload,
-	)
-	return data.data
-}
+export type FinalizeProposalDeckResult = { docKey: string; docName: string; docType: string; docSize: number }
 
-export type GenerateProposalDeckPdfPayload = {
-	sponsorName: string
-	eventTitle: string
-	valueProposition: string
-	campaignOverview: string
-	audienceReach: string
-	deliverablesExpanded: string
-	timelineExpanded: string
-	pricingTiers?: { name: string; price: string }[]
-	terms: string
-	contactName: string
-	contactEmail: string
-	contactPhone?: string
-}
-
-// Renders the final 6-slide presentation-style PDF from the (possibly host-edited) AI content.
-export async function generateProposalDeckPdf(payload: GenerateProposalDeckPdfPayload): Promise<Blob> {
-	const { data } = await apiClient.post(`/sponsorships/proposals/deck/generate-pdf`, payload, {
-		responseType: "blob",
-	})
-	return data as Blob
+// Renders the (host-edited) slide plan into a themed PDF and uploads it to storage — NOT a
+// direct download. The returned docKey/docName/docType/docSize get set straight into the
+// sponsorship proposal form, exactly like a manual document upload would.
+export async function finalizeProposalDeck(payload: FinalizeProposalDeckPayload): Promise<FinalizeProposalDeckResult> {
+	const { data } = await apiClient.post<FinalizeProposalDeckResult>(`/sponsorships/proposals/deck/finalize`, payload)
+	return data
 }
 
 // ─── "Talk to Meetday" general support chat — one thread per user, separate from TriChat ──

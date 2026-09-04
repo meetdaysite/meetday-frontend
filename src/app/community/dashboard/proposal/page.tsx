@@ -8,7 +8,7 @@ import { Tabs } from "@/components/ui/Tabs"
 import clsx from "clsx"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { Icon } from "@/components/ui/Icon"
-import { GenerateProposalPdfPanel } from "@/components/sponsorship/GenerateProposalPdfPanel"
+import { ProposalDeckBuilder } from "@/components/sponsorship/ProposalDeckBuilder"
 import { useHostStore } from "@/store/hostStore"
 import {
     getCategories,
@@ -29,6 +29,7 @@ import {
     type SponsorshipProposalPayload,
     type HostCommunityProfile,
     type HostCommunityProfilePayload,
+    type FinalizeProposalDeckResult,
 } from "@/lib/api"
 
 import { ActivateCommunityModal } from "@/components/community/ActivateCommunityModal"
@@ -199,7 +200,6 @@ export default function ProposalPage() {
     // Project Details / Proposal Upload states
     const [showProjectModal, setShowProjectModal] = useState(false)
     const [showProposalForm, setShowProposalForm] = useState(false)
-    const [showPdfGenerator, setShowPdfGenerator] = useState(false)
     const [isEditingInPlace, setIsEditingInPlace] = useState(false)
     const [projName, setProjName] = useState("")
     const [projAbout, setProjAbout] = useState("")
@@ -216,6 +216,8 @@ export default function ProposalPage() {
     const [projGuestCount, setProjGuestCount] = useState("")
     const [projVideoUrl, setProjVideoUrl] = useState("")
     const [projDoc, setProjDoc] = useState<File | null>(null)
+    const [generatedDeckDoc, setGeneratedDeckDoc] = useState<FinalizeProposalDeckResult | null>(null)
+    const [showDeckBuilder, setShowDeckBuilder] = useState(false)
     const [sponsorPrices, setSponsorPrices] = useState<SponsorPrice[]>([{ name: "", price: "" }])
     const [projSponsorshipType, setProjSponsorshipType] = useState<"CASH" | "BARTER" | "BOTH">("CASH")
     const [proposalCopilotOpen, setProposalCopilotOpen] = useState(false)
@@ -757,8 +759,8 @@ export default function ProposalPage() {
                 }
             }
         }
-        if (!projDoc && !selectedProposal) {
-            toast.error("Proposal Document file is required.")
+        if (!projDoc && !generatedDeckDoc && !selectedProposal) {
+            toast.error("A proposal document is required — generate one with AI above.")
             return
         }
 
@@ -787,7 +789,12 @@ export default function ProposalPage() {
                 payload.imageKey = await uploadFileAndGetKey(projImage, "SPONSORSHIP_MEDIA")
             }
             setUploadProgress(50)
-            if (projDoc) {
+            if (generatedDeckDoc) {
+                payload.docKey = generatedDeckDoc.docKey
+                payload.docName = generatedDeckDoc.docName
+                payload.docType = generatedDeckDoc.docType
+                payload.docSize = generatedDeckDoc.docSize
+            } else if (projDoc) {
                 payload.docKey = await uploadFileAndGetKey(projDoc, "SPONSORSHIP_DOCUMENT")
                 payload.docName = projDoc.name
                 payload.docType = projDoc.type
@@ -893,6 +900,7 @@ export default function ProposalPage() {
         setProjAgeGroup("")
         setProjGuestCount("")
         setProjDoc(null)
+        setGeneratedDeckDoc(null)
         setSponsorPrices([{ name: "", price: "" }])
         setShowProposalForm(false)
         setIsEditingInPlace(false)
@@ -912,6 +920,7 @@ export default function ProposalPage() {
         setProjAgeGroup(displayDetails.ageGroup)
         setProjGuestCount(displayDetails.guestCount)
         setProjDoc(null)
+        setGeneratedDeckDoc(null)
         setSponsorPrices(displayDetails.sponsorPrices && displayDetails.sponsorPrices.length > 0 ? displayDetails.sponsorPrices : [{ name: "", price: "" }])
 
         setIsEditingInPlace(true)
@@ -1583,7 +1592,28 @@ export default function ProposalPage() {
                     ) : (
                         /* Proposal section always available; community profile is optional. */
                         <div className="flex flex-col gap-8">
-                            {showProposalForm ? (
+                            {showProposalForm && showDeckBuilder ? (
+                                <ProposalDeckBuilder
+                                    content={{
+                                        eventName: projName,
+                                        about: projAbout,
+                                        venues: projVenues.map(v => v.trim()).filter(Boolean),
+                                        eventDate: projDate || undefined,
+                                        audienceProfile: projAudience,
+                                        ageGroup: projAgeGroup || undefined,
+                                        guestCount: projGuestCount || undefined,
+                                        sponsorTiers: projSponsorshipType === "BARTER"
+                                            ? []
+                                            : sponsorPrices.filter(sp => sp.name.trim() && sp.price.trim()),
+                                    }}
+                                    defaultContactName={community?.name || profile?.displayName || ""}
+                                    onClose={() => setShowDeckBuilder(false)}
+                                    onAttached={(result) => {
+                                        setGeneratedDeckDoc(result)
+                                        setShowDeckBuilder(false)
+                                    }}
+                                />
+                            ) : showProposalForm ? (
                                 <div className="animate-in fade-in duration-150 flex flex-col gap-6">
                                     <div className="flex justify-between items-center shrink-0">
                                         <div className="flex flex-col gap-1">
@@ -1999,36 +2029,37 @@ export default function ProposalPage() {
                                             <span className="text-[10px] text-black/40">Paste a YouTube, Vimeo, or any public video link for your proposal</span>
                                         </div>
 
-                                        {/* Document Upload */}
+                                        {/* Proposal Deck (AI-generated, replaces manual document upload) */}
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-xs font-bold text-black">Proposal Document *</label>
-                                            <div className="flex items-center gap-4">
-                                                <div className="size-16 rounded-xl bg-slate-50 border border-dashed border-black/10 flex items-center justify-center text-black/30">
-                                                    📄
+                                            <label className="text-xs font-bold text-black">Proposal Deck *</label>
+                                            {generatedDeckDoc || selectedProposal?.docName ? (
+                                                <div className="flex items-center gap-4">
+                                                    <div className="size-16 rounded-xl bg-slate-50 border border-dashed border-black/10 flex items-center justify-center text-black/30">
+                                                        📄
+                                                    </div>
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <span className="text-xs font-semibold text-black truncate max-w-xs">
+                                                            {generatedDeckDoc?.docName ?? selectedProposal?.docName}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowDeckBuilder(true)}
+                                                            className="self-start px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
+                                                        >
+                                                            Regenerate with AI
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div className="flex flex-col gap-1">
-                                                    <input
-                                                        ref={projDocInputRef}
-                                                        type="file"
-                                                        accept=".pdf,application/pdf"
-                                                        className="hidden"
-                                                        onChange={handleProjDocChange}
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => projDocInputRef.current?.click()}
-                                                        className="px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
-                                                    >
-                                                        Choose Document
-                                                    </button>
-                                                    <span className="text-[10px] text-black/40">PDF accepted. Max 10MB.</span>
-                                                    {projDoc ? (
-                                                        <span className="text-xs font-semibold text-black truncate max-w-xs">{projDoc.name}</span>
-                                                    ) : selectedProposal?.docName ? (
-                                                        <span className="text-xs font-semibold text-black truncate max-w-xs">{selectedProposal.docName}</span>
-                                                    ) : null}
-                                                </div>
-                                            </div>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowDeckBuilder(true)}
+                                                    className="self-start px-4 py-2.5 bg-[#EE2C2C] text-white border-2 border-black rounded-xl text-xs font-black uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+                                                >
+                                                    ✨ Generate Proposal Deck with AI
+                                                </button>
+                                            )}
+                                            <span className="text-[10px] text-black/40">AI builds a themed, brand-styled pitch deck from your proposal details — no manual PDF needed.</span>
                                         </div>
 
                                         {/* Sponsorship Type */}
@@ -2120,8 +2151,6 @@ export default function ProposalPage() {
                                         )}
                                     </form>
                                 </div>
-                            ) : showPdfGenerator ? (
-                                <GenerateProposalPdfPanel onClose={() => setShowPdfGenerator(false)} />
                             ) : (
                                 <>
                                     {/* Header */}
@@ -2136,12 +2165,6 @@ export default function ProposalPage() {
                                         </div>
                                         {proposals.length > 0 && (
                                             <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={() => setShowPdfGenerator(true)}
-                                                    className="text-black text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer bg-white"
-                                                >
-                                                    Generate Proposal PDF
-                                                </button>
                                                 <button
                                                     onClick={() => openProposalForm()}
                                                     title={!isCommunityApproved ? "Your community profile must be admin-approved first" : undefined}
