@@ -1609,6 +1609,7 @@ export default function ProposalPage() {
                                     defaultContactName={community?.name || profile?.displayName || ""}
                                     onClose={() => setShowDeckBuilder(false)}
                                     onAttached={(result) => {
+                                        setProjDoc(null)
                                         setGeneratedDeckDoc(result)
                                         setShowDeckBuilder(false)
                                     }}
@@ -2029,37 +2030,62 @@ export default function ProposalPage() {
                                             <span className="text-[10px] text-black/40">Paste a YouTube, Vimeo, or any public video link for your proposal</span>
                                         </div>
 
-                                        {/* Proposal Deck (AI-generated, replaces manual document upload) */}
+                                        {/* Proposal Deck — either a manually uploaded PDF, or one generated with Meetday AI */}
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-xs font-bold text-black">Proposal Deck *</label>
-                                            {generatedDeckDoc || selectedProposal?.docName ? (
+                                            {projDoc || generatedDeckDoc || selectedProposal?.docName ? (
                                                 <div className="flex items-center gap-4">
                                                     <div className="size-16 rounded-xl bg-slate-50 border border-dashed border-black/10 flex items-center justify-center text-black/30">
                                                         📄
                                                     </div>
                                                     <div className="flex flex-col gap-1.5">
                                                         <span className="text-xs font-semibold text-black truncate max-w-xs">
-                                                            {generatedDeckDoc?.docName ?? selectedProposal?.docName}
+                                                            {projDoc?.name ?? generatedDeckDoc?.docName ?? selectedProposal?.docName}
                                                         </span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowDeckBuilder(true)}
-                                                            className="self-start px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
-                                                        >
-                                                            Regenerate with AI
-                                                        </button>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setProjDoc(null)
+                                                                    setGeneratedDeckDoc(null)
+                                                                }}
+                                                                className="self-start px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
+                                                            >
+                                                                Change Document
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowDeckBuilder(true)}
-                                                    className="self-start px-4 py-2.5 bg-[#EE2C2C] text-white border-2 border-black rounded-xl text-xs font-black uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
-                                                >
-                                                    ✨ Generate Proposal Deck with AI
-                                                </button>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <input
+                                                        ref={projDocInputRef}
+                                                        type="file"
+                                                        accept=".pdf,application/pdf"
+                                                        className="hidden"
+                                                        onChange={(e) => {
+                                                            handleProjDocChange(e)
+                                                            setGeneratedDeckDoc(null)
+                                                        }}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => projDocInputRef.current?.click()}
+                                                        className="flex flex-col items-start gap-1 px-4 py-3 bg-white border-2 border-black rounded-xl text-xs font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+                                                    >
+                                                        <span>📄 Choose Document</span>
+                                                        <span className="text-[10px] font-semibold text-black/40 normal-case">Upload your own PDF. Max 10MB.</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowDeckBuilder(true)}
+                                                        className="flex flex-col items-start gap-1 px-4 py-3 bg-[#EE2C2C] text-white border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+                                                    >
+                                                        <span>✨ Create a Deck with Meetday</span>
+                                                        <span className="text-[10px] font-semibold text-white/70 normal-case">AI builds a themed pitch deck from your details.</span>
+                                                    </button>
+                                                </div>
                                             )}
-                                            <span className="text-[10px] text-black/40">AI builds a themed, brand-styled pitch deck from your proposal details — no manual PDF needed.</span>
                                         </div>
 
                                         {/* Sponsorship Type */}
