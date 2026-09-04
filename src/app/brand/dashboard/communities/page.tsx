@@ -85,10 +85,19 @@ function ProposalCard({
 					</div>
 				)}
 
-				{/* Status Badge */}
-				<span className="absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-green-400 text-black">
-					Published
-				</span>
+				{/* Sponsorship Type Badge(s) */}
+				<div className="absolute top-2 left-2 flex flex-wrap gap-1 z-10">
+					{(proposal.sponsorshipType === "CASH" || proposal.sponsorshipType === "BOTH" || !proposal.sponsorshipType) && (
+						<span className="text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-emerald-100 text-emerald-900">
+							Cash
+						</span>
+					)}
+					{(proposal.sponsorshipType === "BARTER" || proposal.sponsorshipType === "BOTH") && (
+						<span className="text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black">
+							Barter
+						</span>
+					)}
+				</div>
 			</div>
 
 			{/* Content & Footer info */}

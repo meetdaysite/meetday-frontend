@@ -336,10 +336,19 @@ export default function BrandDashboardWelcomePage() {
 													</div>
 												)}
 
-												{/* Status Badge */}
-												<span className="absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-green-400 text-black">
-													Published
-												</span>
+												{/* Sponsorship Type Badge(s) */}
+												<div className="absolute top-2 left-2 flex flex-wrap gap-1 z-10">
+													{(prop.sponsorshipType === "CASH" || prop.sponsorshipType === "BOTH" || !prop.sponsorshipType) && (
+														<span className="text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-emerald-100 text-emerald-900">
+															Cash
+														</span>
+													)}
+													{(prop.sponsorshipType === "BARTER" || prop.sponsorshipType === "BOTH") && (
+														<span className="text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black">
+															Barter
+														</span>
+													)}
+												</div>
 											</div>
 
 											{/* Content & Footer info */}
@@ -362,9 +371,11 @@ export default function BrandDashboardWelcomePage() {
 															{displayDate}
 														</span>
 													)}
-													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-														{prop.guestCount} Guests
-													</span>
+													{prop.guestCount && (
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+															{prop.guestCount} Guests
+														</span>
+													)}
 												</div>
 											</div>
 										</Link>
