@@ -875,7 +875,10 @@ export default function ProposalPage() {
         }
     }
 
+    const [isSubmittingForApproval, setIsSubmittingForApproval] = useState(false)
     const submitProposalForApproval = async (proposal: StoredProposal) => {
+        if (isSubmittingForApproval) return
+        setIsSubmittingForApproval(true)
         try {
             const saved = await submitSponsorshipProposal(proposal.id)
             const stored = mapApiProposalToStored(saved)
@@ -886,6 +889,8 @@ export default function ProposalPage() {
             console.error(err)
             const errMsg = err?.message || err?.response?.data?.message || "Failed to submit proposal."
             toast.error(errMsg)
+        } finally {
+            setIsSubmittingForApproval(false)
         }
     }
 
@@ -1304,26 +1309,18 @@ export default function ProposalPage() {
                                             Share
                                         </button>
                                     )}
+                                    {(selectedProposal.status === "DRAFT" || selectedProposal.status === "REJECTED") && (
                                     <button
                                         type="button"
-                                        className="bg-[#EE2C2C] text-white border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider select-none"
+                                        disabled={isSubmittingForApproval}
+                                        className="bg-[#6C32D1] text-white border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider select-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
                                         onClick={() => {
-                                            openProposalForm(selectedProposal)
+                                            submitProposalForApproval(selectedProposal)
+                                            setSelectedProposal(prev => prev ? { ...prev, status: "UNDER_REVIEW" } : null)
                                         }}
                                     >
-                                        Edit Details
+                                        {isSubmittingForApproval ? "Submitting…" : "Submit for Approval"}
                                     </button>
-                                    {(selectedProposal.status === "DRAFT" || selectedProposal.status === "REJECTED") && (
-                                        <button
-                                            type="button"
-                                            className="bg-[#6C32D1] text-white border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider select-none"
-                                            onClick={() => {
-                                                submitProposalForApproval(selectedProposal)
-                                                setSelectedProposal(prev => prev ? { ...prev, status: "UNDER_REVIEW" } : null)
-                                            }}
-                                        >
-                                            Submit for Approval
-                                        </button>
                                     )}
                                     <button
                                         type="button"
