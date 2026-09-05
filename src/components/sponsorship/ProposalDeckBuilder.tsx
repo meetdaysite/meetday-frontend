@@ -25,6 +25,8 @@ export type ProposalDeckBuilderProps = {
 	onEventOverviewChange: (value: string) => void
 	eventDate?: string
 	onEventDateChange?: (value: string) => void
+	eventEndDate?: string
+	onEventEndDateChange?: (value: string) => void
 	sponsorTiers?: { name: string; price: string }[]
 	openToBarter?: boolean
 	// Seed values only — these become independent local state within the deck builder.
@@ -54,9 +56,11 @@ const FONT_OPTIONS: { value: DeckFontVibe; label: string }[] = [
 // risks blowing Puppeteer's container memory once several logos/sponsor logos/media assets
 // are all embedded into one 10-slide document at once.
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
+// The media kit file is never embedded into the PDF (only linked), so it can be larger.
+const MAX_MEDIA_KIT_SIZE_BYTES = 20 * 1024 * 1024
 
-async function uploadFileAndGetKey(file: File): Promise<string> {
-	const { url, key } = await getUploadUrl({ context: "SPONSORSHIP_MEDIA", contentType: file.type })
+async function uploadFileAndGetKey(file: File, context: "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" = "SPONSORSHIP_MEDIA"): Promise<string> {
+	const { url, key } = await getUploadUrl({ context, contentType: file.type })
 	await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
 	return key
 }
@@ -77,6 +81,8 @@ export function ProposalDeckBuilder({
 	onEventOverviewChange,
 	eventDate,
 	onEventDateChange,
+	eventEndDate,
+	onEventEndDateChange,
 	sponsorTiers,
 	openToBarter,
 	defaultHostName,
@@ -106,10 +112,12 @@ export function ProposalDeckBuilder({
 	const [primaryLogoPreview, setPrimaryLogoPreview] = useState<string | null>(null)
 	const [secondaryLogoPreview, setSecondaryLogoPreview] = useState<string | null>(null)
 	const [mediaKitUrl, setMediaKitUrl] = useState("")
+	const [mediaKitFile, setMediaKitFile] = useState<File | null>(null)
 	const [mediaAssets, setMediaAssets] = useState<MediaAssetDraft[]>([])
 	const [viewingImagePreview, setViewingImagePreview] = useState<string | null>(null)
 	const primaryLogoInputRef = useRef<HTMLInputElement>(null)
 	const secondaryLogoInputRef = useRef<HTMLInputElement>(null)
+	const mediaKitFileInputRef = useRef<HTMLInputElement>(null)
 	const mediaAssetsInputRef = useRef<HTMLInputElement>(null)
 
 	// Narrative & Copy Prompts
@@ -220,6 +228,18 @@ export function ProposalDeckBuilder({
 		}
 	}
 
+	function handleMediaKitFilePick(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0]
+		e.target.value = ""
+		if (!file) return
+		if (file.size > MAX_MEDIA_KIT_SIZE_BYTES) {
+			toast.error("Media kit file must be 20MB or smaller.")
+			return
+		}
+		setMediaKitFile(file)
+		setMediaKitUrl("")
+	}
+
 	function handleMediaAssetsPick(e: React.ChangeEvent<HTMLInputElement>) {
 		const files = Array.from(e.target.files ?? [])
 		e.target.value = ""
@@ -253,6 +273,7 @@ export function ProposalDeckBuilder({
 				sponsorROIPitch: sponsorROIPitch.trim() || undefined,
 				location: location.trim() || undefined,
 				eventDate: eventDate || undefined,
+				eventEndDate: eventEndDate || undefined,
 				eventTime: eventTime.trim() || undefined,
 				heroMetricValue: heroMetricValue.trim() || undefined,
 				heroMetricLabel: heroMetricLabel.trim() || undefined,
@@ -299,10 +320,11 @@ export function ProposalDeckBuilder({
 	async function handleDone() {
 		setFinalizing(true)
 		try {
-			const [primaryLogoKey, secondaryLogoKey, mediaAssetKeys] = await Promise.all([
+			const [primaryLogoKey, secondaryLogoKey, mediaAssetKeys, mediaKitKey] = await Promise.all([
 				primaryLogoFile ? uploadFileAndGetKey(primaryLogoFile) : Promise.resolve(undefined),
 				secondaryLogoFile ? uploadFileAndGetKey(secondaryLogoFile) : Promise.resolve(undefined),
 				Promise.all(mediaAssets.map(m => uploadFileAndGetKey(m.file))),
+				mediaKitFile ? uploadFileAndGetKey(mediaKitFile, "SPONSORSHIP_DOCUMENT") : Promise.resolve(undefined),
 			])
 
 			const slidesWithSponsorLogos = await Promise.all(
@@ -329,7 +351,8 @@ export function ProposalDeckBuilder({
 				accentColors,
 				primaryLogoKey,
 				secondaryLogoKey,
-				mediaKitUrl: mediaKitUrl.trim() || undefined,
+				mediaKitUrl: mediaKitKey ? undefined : mediaKitUrl.trim() || undefined,
+				mediaKitKey,
 				mediaAssetKeys: mediaAssetKeys.length ? mediaAssetKeys : undefined,
 			})
 			setFinalizedResult(result)
@@ -475,13 +498,22 @@ export function ProposalDeckBuilder({
 							<span className={`text-[10px] font-semibold ${taglineError ? "text-red-600" : "text-black/40"}`}>{taglineError ?? `${tagline.length}/80 characters`}</span>
 						</div>
 
-						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+						<div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
 							<div className="flex flex-col gap-1.5">
 								<label className="text-xs font-bold text-black">Event Date</label>
 								<input
 									type="date"
 									value={eventDate ?? ""}
 									onChange={e => onEventDateChange?.(e.target.value)}
+									className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+								/>
+							</div>
+							<div className="flex flex-col gap-1.5">
+								<label className="text-xs font-bold text-black">Event End Date <span className="text-black/40 font-medium">(optional)</span></label>
+								<input
+									type="date"
+									value={eventEndDate ?? ""}
+									onChange={e => onEventEndDateChange?.(e.target.value)}
 									className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
 								/>
 							</div>
@@ -622,16 +654,34 @@ export function ProposalDeckBuilder({
 							If only one logo is provided, it&apos;s used for both with an automatic contrast backing.
 						</span>
 
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-							<div className="flex flex-col gap-1.5">
-								<label className="text-xs font-bold text-black">Brand Media Kit / Guidelines <span className="text-black/40 font-medium">(optional)</span></label>
+						<div className="flex flex-col gap-1.5">
+							<label className="text-xs font-bold text-black">Brand Media Kit / Guidelines <span className="text-black/40 font-medium">(optional — file upload or URL)</span></label>
+							<div className="flex items-center gap-2">
 								<input
 									type="url"
 									value={mediaKitUrl}
-									onChange={e => setMediaKitUrl(e.target.value)}
+									onChange={e => {
+										setMediaKitUrl(e.target.value)
+										setMediaKitFile(null)
+									}}
 									placeholder="Link to a doc, deck, or website"
-									className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+									className="h-10 flex-1 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
 								/>
+								<span className="text-[10px] font-bold text-black/30 shrink-0">OR</span>
+								<input
+									ref={mediaKitFileInputRef}
+									type="file"
+									accept=".pdf,.doc,.docx,.ppt,.pptx,application/pdf"
+									className="hidden"
+									onChange={handleMediaKitFilePick}
+								/>
+								<button
+									type="button"
+									onClick={() => mediaKitFileInputRef.current?.click()}
+									className="h-10 shrink-0 px-4 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
+								>
+									{mediaKitFile ? mediaKitFile.name : "Choose File"}
+								</button>
 							</div>
 						</div>
 

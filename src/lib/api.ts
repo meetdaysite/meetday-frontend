@@ -1177,6 +1177,7 @@ export type GenerateProposalDeckPlanPayload = {
 	sponsorROIPitch?: string
 	location?: string
 	eventDate?: string
+	eventEndDate?: string
 	eventTime?: string
 	heroMetricValue?: string
 	heroMetricLabel?: string
@@ -1210,6 +1211,7 @@ export type FinalizeProposalDeckPayload = {
 	primaryLogoKey?: string
 	secondaryLogoKey?: string
 	mediaKitUrl?: string
+	mediaKitKey?: string
 	mediaAssetKeys?: string[]
 }
 

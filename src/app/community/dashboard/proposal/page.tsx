@@ -1601,6 +1601,8 @@ export default function ProposalPage() {
                                     onEventOverviewChange={setProjAbout}
                                     eventDate={projDate || undefined}
                                     onEventDateChange={setProjDate}
+                                    eventEndDate={projEndDate || undefined}
+                                    onEventEndDateChange={setProjEndDate}
                                     sponsorTiers={projSponsorshipType === "BARTER"
                                         ? []
                                         : sponsorPrices.filter(sp => sp.name.trim() && sp.price.trim())}
