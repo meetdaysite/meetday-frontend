@@ -124,15 +124,14 @@ export function ProposalDeckBuilder({
 	const [pastSponsorLogoTargetIdx, setPastSponsorLogoTargetIdx] = useState<number | null>(null)
 
 	// Sponsorship Offerings & Pricing
+	const [pkgTiers, setPkgTiers] = useState<{ name: string; price: string }[]>(
+		sponsorTiers?.length ? sponsorTiers.map(t => ({ ...t })) : [{ name: "", price: "" }],
+	)
+	const [barterEnabled, setBarterEnabled] = useState(!!openToBarter)
 	const [sponsorshipDeadline, setSponsorshipDeadline] = useState("")
 	const [onsiteDeliverables, setOnsiteDeliverables] = useState("")
 	const [digitalDeliverables, setDigitalDeliverables] = useState("")
 	const [customPerks, setCustomPerks] = useState("")
-
-	// Contact (shown on the closing slide)
-	const [contactName, setContactName] = useState(defaultHostName ?? "")
-	const [contactEmail, setContactEmail] = useState("")
-	const [contactPhone, setContactPhone] = useState("")
 
 	const [attemptedSubmit, setAttemptedSubmit] = useState(false)
 	const [generating, setGenerating] = useState(false)
@@ -144,7 +143,6 @@ export function ProposalDeckBuilder({
 	const eventTitleError = attemptedSubmit && !eventTitle.trim() ? "Event Title is required." : null
 	const primaryLogoError = attemptedSubmit && !primaryLogoFile ? "Primary logo (dark backgrounds) is required." : null
 	const secondaryLogoError = attemptedSubmit && !secondaryLogoFile ? "Secondary logo (light backgrounds) is required." : null
-	const contactEmailError = attemptedSubmit && !contactEmail.trim() ? "Contact email is required." : null
 	const taglineError = tagline.length > 80 ? "Tagline must be 80 characters or fewer." : null
 	const errorInputClass = "border-red-500 focus:border-red-500"
 
@@ -164,6 +162,19 @@ export function ProposalDeckBuilder({
 				i === idx ? { ...s, stats: (s.stats ?? []).map((st, sti) => (sti === statIdx ? { ...st, ...patch } : st)) } : s,
 			),
 		)
+	}
+
+	function addPkgTier() {
+		if (pkgTiers.length >= 6) return
+		setPkgTiers(prev => [...prev, { name: "", price: "" }])
+	}
+
+	function updatePkgTier(idx: number, patch: Partial<{ name: string; price: string }>) {
+		setPkgTiers(prev => prev.map((t, i) => (i === idx ? { ...t, ...patch } : t)))
+	}
+
+	function removePkgTier(idx: number) {
+		setPkgTiers(prev => prev.filter((_, i) => i !== idx))
 	}
 
 	function addPastSponsor() {
@@ -227,7 +238,7 @@ export function ProposalDeckBuilder({
 
 	async function handleGenerate() {
 		setAttemptedSubmit(true)
-		if (!hostName.trim() || !eventTitle.trim() || !primaryLogoFile || !secondaryLogoFile || !contactEmail.trim()) {
+		if (!hostName.trim() || !eventTitle.trim() || !primaryLogoFile || !secondaryLogoFile) {
 			toast.error("Please fill in all required fields, highlighted in red below.")
 			return
 		}
@@ -249,20 +260,16 @@ export function ProposalDeckBuilder({
 				pastSponsors: pastSponsors
 					.filter(p => p.name.trim())
 					.map(p => ({ name: p.name.trim(), projectReference: p.projectReference.trim() || undefined })),
-				sponsorTiers,
-				openToBarter,
+				sponsorTiers: pkgTiers
+					.filter(t => t.name.trim() && t.price.trim())
+					.map(t => ({ name: t.name.trim(), price: t.price.trim() })),
+				openToBarter: barterEnabled,
 				sponsorshipDeadline: sponsorshipDeadline || undefined,
 				onsiteDeliverables: onsiteDeliverables.trim() || undefined,
 				digitalDeliverables: digitalDeliverables.trim() || undefined,
 				customPerks: customPerks.trim() || undefined,
 			})
-			setSlides(
-				planSlides.map(s =>
-					s.layout === "CLOSING_CONTACT"
-						? { ...s, contactName: contactName.trim(), contactEmail: contactEmail.trim(), contactPhone: contactPhone.trim() || undefined }
-						: s,
-				),
-			)
+			setSlides(planSlides)
 			setStep("preview")
 		} catch (err) {
 			console.error(err)
@@ -773,15 +780,59 @@ export function ProposalDeckBuilder({
 					{/* Sponsorship Offerings & Pricing */}
 					<div className="border-[3px] border-dashed border-black/30 rounded-[28px] p-6 bg-white flex flex-col gap-4 w-full">
 						<SectionLabel>Sponsorship Offerings & Pricing</SectionLabel>
-						{(sponsorTiers?.length || openToBarter !== undefined) && (
-							<div className="flex flex-wrap gap-1.5">
-								{sponsorTiers?.filter(t => t.name && t.price).map((t, i) => (
-									<span key={i} className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-black/60">{t.name}: {t.price}</span>
+
+						<div className="flex flex-col gap-1.5">
+							<label className="text-xs font-bold text-black">Package Tier Name & Pricing</label>
+							<div className="flex flex-col gap-2">
+								{pkgTiers.map((t, i) => (
+									<div key={i} className="flex items-center gap-2">
+										<input
+											type="text"
+											value={t.name}
+											onChange={e => updatePkgTier(i, { name: e.target.value })}
+											placeholder="e.g. Gold Sponsor"
+											className="h-10 flex-1 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+										/>
+										<input
+											type="text"
+											value={t.price}
+											onChange={e => updatePkgTier(i, { price: e.target.value })}
+											placeholder="e.g. ₹50,000"
+											className="h-10 w-36 shrink-0 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+										/>
+										{pkgTiers.length > 1 && (
+											<button
+												type="button"
+												onClick={() => removePkgTier(i)}
+												className="size-8 shrink-0 rounded-full bg-black text-white font-bold flex items-center justify-center hover:bg-red-600 transition-colors"
+												aria-label="Remove tier"
+											>
+												✕
+											</button>
+										)}
+									</div>
 								))}
-								{openToBarter && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-black/60">Open to Barter</span>}
+								{pkgTiers.length < 6 && (
+									<button
+										type="button"
+										onClick={addPkgTier}
+										className="self-start px-3 py-1.5 bg-white border border-black rounded-lg text-[10px] font-bold shadow-sm hover:bg-slate-50 transition-colors"
+									>
+										+ Add Tier
+									</button>
+								)}
 							</div>
-						)}
-						<span className="text-[10px] text-black/40 -mt-2">Package tiers & barter come from the Sponsorship Type section below — edit them there.</span>
+						</div>
+
+						<label className="flex items-center gap-2 cursor-pointer select-none">
+							<input
+								type="checkbox"
+								checked={barterEnabled}
+								onChange={e => setBarterEnabled(e.target.checked)}
+								className="size-4 accent-black"
+							/>
+							<span className="text-xs font-bold text-black">Open to Barter</span>
+						</label>
 
 						<div className="flex flex-col gap-1.5">
 							<label className="text-xs font-bold text-black">Sponsorship Deadline <span className="text-black/40 font-medium">(optional)</span></label>
@@ -822,41 +873,6 @@ export function ProposalDeckBuilder({
 								placeholder="Leave empty to let AI write this"
 								className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
 							/>
-						</div>
-
-						<div className="border-t border-black/10 -mx-6" />
-
-						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-							<div className="flex flex-col gap-1.5">
-								<label className="text-xs font-bold text-black">Contact Name</label>
-								<input
-									type="text"
-									value={contactName}
-									onChange={e => setContactName(e.target.value)}
-									className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
-								/>
-							</div>
-							<div className="flex flex-col gap-1.5">
-								<label className="text-xs font-bold text-black">Contact Email *</label>
-								<input
-									type="email"
-									value={contactEmail}
-									onChange={e => setContactEmail(e.target.value)}
-									placeholder="e.g. priya@example.com"
-									className={`h-10 px-4 rounded-xl border bg-slate-50 text-black outline-none hover:border-black/30 text-sm transition-colors ${contactEmailError ? errorInputClass : "border-black/10 focus:border-black"}`}
-								/>
-								{contactEmailError && <span className="text-[10px] font-semibold text-red-600">{contactEmailError}</span>}
-							</div>
-							<div className="flex flex-col gap-1.5">
-								<label className="text-xs font-bold text-black">Contact Phone</label>
-								<input
-									type="text"
-									value={contactPhone}
-									onChange={e => setContactPhone(e.target.value)}
-									placeholder="Optional"
-									className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
-								/>
-							</div>
 						</div>
 					</div>
 				</div>
@@ -951,9 +967,6 @@ export function ProposalDeckBuilder({
 												/>
 											))}
 										</div>
-									)}
-									{slide.layout === "CLOSING_CONTACT" && (
-										<span className="text-[10px] text-black/40">Contact info shown here comes from the fields you filled on the previous step.</span>
 									)}
 								</>
 							)}
