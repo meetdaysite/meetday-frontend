@@ -218,6 +218,7 @@ export default function ProposalPage() {
     const [projDoc, setProjDoc] = useState<File | null>(null)
     const [generatedDeckDoc, setGeneratedDeckDoc] = useState<FinalizeProposalDeckResult | null>(null)
     const [showDeckBuilder, setShowDeckBuilder] = useState(false)
+    const [viewDeckModalUrl, setViewDeckModalUrl] = useState<string | null>(null)
     const [sponsorPrices, setSponsorPrices] = useState<SponsorPrice[]>([{ name: "", price: "" }])
     const [projSponsorshipType, setProjSponsorshipType] = useState<"CASH" | "BARTER" | "BOTH">("CASH")
     const [proposalCopilotOpen, setProposalCopilotOpen] = useState(false)
@@ -2056,14 +2057,13 @@ export default function ProposalPage() {
                                                                 Change Document
                                                             </button>
                                                             {(generatedDeckDoc?.docUrl || (typeof selectedProposal?.docFile === "string" && selectedProposal.docFile)) && (
-                                                                <a
-                                                                    href={generatedDeckDoc?.docUrl || (selectedProposal?.docFile as string)}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setViewDeckModalUrl(generatedDeckDoc?.docUrl || (selectedProposal?.docFile as string))}
                                                                     className="self-start px-4 py-2 bg-[#EE2C2C] text-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-[#D12525] transition-colors"
                                                                 >
-                                                                    Download
-                                                                </a>
+                                                                    View
+                                                                </button>
                                                             )}
                                                         </div>
                                                     </div>
@@ -2515,6 +2515,34 @@ export default function ProposalPage() {
                         </div>
                     </div>
                 </>
+            )}
+
+            {/* View-only Proposal Deck PDF modal — no download affordance, per requirement */}
+            {viewDeckModalUrl && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 sm:p-8"
+                    onClick={() => setViewDeckModalUrl(null)}
+                >
+                    <div
+                        className="bg-white border-[3px] border-black rounded-[24px] overflow-hidden w-full max-w-3xl h-[85vh] flex flex-col"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-black/10 shrink-0">
+                            <h3 className="text-sm font-black text-black">Proposal Deck Preview</h3>
+                            <button
+                                type="button"
+                                onClick={() => setViewDeckModalUrl(null)}
+                                className="size-8 rounded-full bg-black text-white font-bold flex items-center justify-center hover:bg-black/80 transition-colors"
+                                aria-label="Close"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="flex-1 min-h-0">
+                            <PdfViewer url={viewDeckModalUrl} />
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     )

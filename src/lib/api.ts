@@ -1176,6 +1176,8 @@ export type GenerateProposalDeckPlanPayload = {
 	eventOverview?: string
 	sponsorROIPitch?: string
 	location?: string
+	eventDate?: string
+	eventTime?: string
 	heroMetricValue?: string
 	heroMetricLabel?: string
 	targetAudienceProfile?: string
@@ -1203,8 +1205,8 @@ export type FinalizeProposalDeckPayload = {
 	slides: DeckSlide[]
 	theme: DeckTheme
 	fontVibe: DeckFontVibe
-	primaryColor: string
-	accentColor: string
+	primaryColors: string[]
+	accentColors: string[]
 	primaryLogoKey?: string
 	secondaryLogoKey?: string
 	mediaKitUrl?: string

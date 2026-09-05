@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react"
 import { toast } from "@/lib/toast"
+import PdfViewer from "@/components/pdf/PdfViewer"
 import {
 	generateProposalDeckPlan,
 	finalizeProposalDeck,
@@ -14,6 +15,7 @@ import {
 } from "@/lib/api"
 
 type PastSponsorDraft = { name: string; projectReference: string; logoFile: File | null; logoPreview: string | null }
+type MediaAssetDraft = { file: File; preview: string }
 
 export type ProposalDeckBuilderProps = {
 	// Bound directly to the parent Create/Edit Proposal form's own fields.
@@ -85,7 +87,7 @@ export function ProposalDeckBuilder({
 	onClose,
 	onAttached,
 }: ProposalDeckBuilderProps) {
-	const [step, setStep] = useState<"form" | "preview">("form")
+	const [step, setStep] = useState<"form" | "preview" | "pdfPreview">("form")
 
 	// Host & Event Basics
 	const [hostName, setHostName] = useState(defaultHostName ?? "")
@@ -97,14 +99,15 @@ export function ProposalDeckBuilder({
 	// Design & Brand Identity Tokens
 	const [theme, setTheme] = useState<DeckTheme>("AUTO")
 	const [fontVibe, setFontVibe] = useState<DeckFontVibe>("MODERN_SANS")
-	const [primaryColor, setPrimaryColor] = useState("#EE2C2C")
-	const [accentColor, setAccentColor] = useState("#FFC940")
+	const [primaryColors, setPrimaryColors] = useState<string[]>(["#EE2C2C", "#111111"])
+	const [accentColors, setAccentColors] = useState<string[]>(["#FFC940", "#0EA5E9", "#22C55E"])
 	const [primaryLogoFile, setPrimaryLogoFile] = useState<File | null>(null)
 	const [secondaryLogoFile, setSecondaryLogoFile] = useState<File | null>(null)
 	const [primaryLogoPreview, setPrimaryLogoPreview] = useState<string | null>(null)
 	const [secondaryLogoPreview, setSecondaryLogoPreview] = useState<string | null>(null)
 	const [mediaKitUrl, setMediaKitUrl] = useState("")
-	const [mediaAssetFiles, setMediaAssetFiles] = useState<File[]>([])
+	const [mediaAssets, setMediaAssets] = useState<MediaAssetDraft[]>([])
+	const [viewingImagePreview, setViewingImagePreview] = useState<string | null>(null)
 	const primaryLogoInputRef = useRef<HTMLInputElement>(null)
 	const secondaryLogoInputRef = useRef<HTMLInputElement>(null)
 	const mediaAssetsInputRef = useRef<HTMLInputElement>(null)
@@ -135,6 +138,7 @@ export function ProposalDeckBuilder({
 	const [generating, setGenerating] = useState(false)
 	const [finalizing, setFinalizing] = useState(false)
 	const [slides, setSlides] = useState<DeckSlide[]>([])
+	const [finalizedResult, setFinalizedResult] = useState<FinalizeProposalDeckResult | null>(null)
 
 	const hostNameError = attemptedSubmit && !hostName.trim() ? "Community/Host Name is required." : null
 	const eventTitleError = attemptedSubmit && !eventTitle.trim() ? "Event Title is required." : null
@@ -213,7 +217,12 @@ export function ProposalDeckBuilder({
 		if (oversized.length) {
 			toast.error("Each image must be 5MB or smaller — some were skipped.")
 		}
-		setMediaAssetFiles(prev => [...prev, ...files.filter(f => f.size <= MAX_IMAGE_SIZE_BYTES)].slice(0, 10))
+		const accepted = files.filter(f => f.size <= MAX_IMAGE_SIZE_BYTES)
+		setMediaAssets(prev => [...prev, ...accepted.map(file => ({ file, preview: URL.createObjectURL(file) }))].slice(0, 10))
+	}
+
+	function removeMediaAsset(idx: number) {
+		setMediaAssets(prev => prev.filter((_, i) => i !== idx))
 	}
 
 	async function handleGenerate() {
@@ -232,6 +241,8 @@ export function ProposalDeckBuilder({
 				eventOverview: eventOverview.trim() || undefined,
 				sponsorROIPitch: sponsorROIPitch.trim() || undefined,
 				location: location.trim() || undefined,
+				eventDate: eventDate || undefined,
+				eventTime: eventTime.trim() || undefined,
 				heroMetricValue: heroMetricValue.trim() || undefined,
 				heroMetricLabel: heroMetricLabel.trim() || undefined,
 				targetAudienceProfile: targetAudienceProfile.trim() || undefined,
@@ -265,17 +276,26 @@ export function ProposalDeckBuilder({
 	}
 
 	function handleDiscard() {
+		if (step === "pdfPreview") {
+			// Discard the rendered PDF only — keep the edited slide text so they can tweak and retry.
+			setFinalizedResult(null)
+			setStep("preview")
+			return
+		}
 		setSlides([])
 		setStep("form")
 	}
 
-	async function handleUpload() {
+	// Renders the deck into an actual PDF and uploads it to storage, then shows it in an in-app,
+	// view-only preview — no direct download is ever exposed. "Upload" (the next step) simply
+	// attaches this already-rendered doc to the proposal, without re-rendering.
+	async function handleDone() {
 		setFinalizing(true)
 		try {
 			const [primaryLogoKey, secondaryLogoKey, mediaAssetKeys] = await Promise.all([
 				primaryLogoFile ? uploadFileAndGetKey(primaryLogoFile) : Promise.resolve(undefined),
 				secondaryLogoFile ? uploadFileAndGetKey(secondaryLogoFile) : Promise.resolve(undefined),
-				Promise.all(mediaAssetFiles.map(uploadFileAndGetKey)),
+				Promise.all(mediaAssets.map(m => uploadFileAndGetKey(m.file))),
 			])
 
 			const slidesWithSponsorLogos = await Promise.all(
@@ -298,15 +318,15 @@ export function ProposalDeckBuilder({
 				slides: slidesWithSponsorLogos,
 				theme,
 				fontVibe,
-				primaryColor,
-				accentColor,
+				primaryColors,
+				accentColors,
 				primaryLogoKey,
 				secondaryLogoKey,
 				mediaKitUrl: mediaKitUrl.trim() || undefined,
 				mediaAssetKeys: mediaAssetKeys.length ? mediaAssetKeys : undefined,
 			})
-			toast.success("Proposal deck generated and attached!")
-			onAttached(result)
+			setFinalizedResult(result)
+			setStep("pdfPreview")
 		} catch (err) {
 			console.error(err)
 			const axiosErr = err as { response?: { data?: { message?: string | string[] } }; message?: string }
@@ -318,6 +338,12 @@ export function ProposalDeckBuilder({
 		}
 	}
 
+	function handleConfirmUpload() {
+		if (!finalizedResult) return
+		toast.success("Proposal deck attached!")
+		onAttached(finalizedResult)
+	}
+
 	return (
 		<div className="animate-in fade-in duration-150 flex flex-col gap-6">
 			<input ref={pastSponsorLogoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePastSponsorLogoPick} />
@@ -326,17 +352,19 @@ export function ProposalDeckBuilder({
 				<div className="flex flex-col gap-1">
 					<div
 						className="flex items-center gap-2 cursor-pointer text-black/60 hover:text-black"
-						onClick={() => (step === "preview" ? setStep("form") : onClose())}
+						onClick={() => (step === "form" ? onClose() : step === "preview" ? setStep("form") : setStep("preview"))}
 					>
 						<span className="text-xl font-bold">←</span>
 						<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
-							{step === "form" ? "Create a Deck with Meetday" : "Review Slide Content"}
+							{step === "form" ? "Create a Deck with Meetday" : step === "preview" ? "Review Slide Content" : "Preview Proposal Deck"}
 						</h1>
 					</div>
 					<p className="text-sm font-semibold text-black/50 mt-1">
 						{step === "form"
 							? "Fill in your event and brand details — AI fills in the rest of the copy"
-							: "Edit the AI-written copy for each slide, then upload or discard"}
+							: step === "preview"
+								? "Edit the AI-written copy for each slide, then proceed to preview the final deck"
+								: "This is how your deck will look — upload it to attach it to your proposal"}
 					</p>
 				</div>
 				{step === "form" ? (
@@ -348,7 +376,7 @@ export function ProposalDeckBuilder({
 					>
 						{generating ? "Planning…" : "Generate with AI"}
 					</button>
-				) : (
+				) : step === "preview" ? (
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
@@ -360,11 +388,28 @@ export function ProposalDeckBuilder({
 						</button>
 						<button
 							type="button"
-							onClick={handleUpload}
+							onClick={handleDone}
 							disabled={finalizing}
 							className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50"
 						>
-							{finalizing ? "Uploading…" : "Upload"}
+							{finalizing ? "Generating…" : "Done"}
+						</button>
+					</div>
+				) : (
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={handleDiscard}
+							className="bg-white text-black text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+						>
+							Discard
+						</button>
+						<button
+							type="button"
+							onClick={handleConfirmUpload}
+							className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+						>
+							Upload
 						</button>
 					</div>
 				)}
@@ -492,21 +537,40 @@ export function ProposalDeckBuilder({
 							</select>
 						</div>
 
-						<div className="grid grid-cols-2 gap-4">
+						<div className="flex flex-col gap-3">
 							<div className="flex flex-col gap-1.5">
-								<label className="text-xs font-bold text-black">Primary Brand Color <span className="text-black/40 font-medium">(optional)</span></label>
-								<div className="flex items-center gap-2">
-									<input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="size-10 rounded-lg border border-black/10 cursor-pointer" />
-									<span className="text-xs font-semibold text-black/60">{primaryColor}</span>
+								<label className="text-xs font-bold text-black">Primary Brand Colors <span className="text-black/40 font-medium">(optional, up to 2)</span></label>
+								<div className="flex items-center gap-4">
+									{primaryColors.map((c, i) => (
+										<div key={i} className="flex items-center gap-2">
+											<input
+												type="color"
+												value={c}
+												onChange={e => setPrimaryColors(prev => prev.map((v, vi) => (vi === i ? e.target.value : v)))}
+												className="size-10 rounded-lg border border-black/10 cursor-pointer"
+											/>
+											<span className="text-xs font-semibold text-black/60">{c}</span>
+										</div>
+									))}
 								</div>
 							</div>
 							<div className="flex flex-col gap-1.5">
-								<label className="text-xs font-bold text-black">Accent / Highlight Color <span className="text-black/40 font-medium">(optional)</span></label>
-								<div className="flex items-center gap-2">
-									<input type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)} className="size-10 rounded-lg border border-black/10 cursor-pointer" />
-									<span className="text-xs font-semibold text-black/60">{accentColor}</span>
+								<label className="text-xs font-bold text-black">Accent / Highlight Colors <span className="text-black/40 font-medium">(optional, up to 3)</span></label>
+								<div className="flex items-center gap-4">
+									{accentColors.map((c, i) => (
+										<div key={i} className="flex items-center gap-2">
+											<input
+												type="color"
+												value={c}
+												onChange={e => setAccentColors(prev => prev.map((v, vi) => (vi === i ? e.target.value : v)))}
+												className="size-10 rounded-lg border border-black/10 cursor-pointer"
+											/>
+											<span className="text-xs font-semibold text-black/60">{c}</span>
+										</div>
+									))}
 								</div>
 							</div>
+							<span className="text-[10px] text-black/40">Colors are used across slide backgrounds, text, and accents for variety — not just one flat theme.</span>
 						</div>
 
 						<div className="grid grid-cols-2 gap-4">
@@ -562,16 +626,42 @@ export function ProposalDeckBuilder({
 									className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
 								/>
 							</div>
-							<div className="flex flex-col gap-1.5">
-								<label className="text-xs font-bold text-black">Brand Media Assets <span className="text-black/40 font-medium">(optional, up to 10 images)</span></label>
-								<input ref={mediaAssetsInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleMediaAssetsPick} />
-								<button
-									type="button"
-									onClick={() => mediaAssetsInputRef.current?.click()}
-									className="px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors self-start"
-								>
-									Choose Images ({mediaAssetFiles.length}/10)
-								</button>
+						</div>
+
+						<div className="flex flex-col gap-1.5">
+							<label className="text-xs font-bold text-black">Brand Media Assets <span className="text-black/40 font-medium">(optional, up to 10 images — original aspect ratio is preserved, not cropped)</span></label>
+							<input ref={mediaAssetsInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleMediaAssetsPick} />
+							<div className="flex flex-wrap gap-2">
+								{mediaAssets.map((asset, idx) => (
+									<div key={idx} className="relative size-16 shrink-0">
+										<button
+											type="button"
+											onClick={() => setViewingImagePreview(asset.preview)}
+											className="size-16 rounded-xl overflow-hidden border-2 border-black/15 hover:border-black transition-colors"
+										>
+											{/* eslint-disable-next-line @next/next/no-img-element */}
+											<img src={asset.preview} alt="" className="w-full h-full object-cover" />
+										</button>
+										<button
+											type="button"
+											onClick={() => removeMediaAsset(idx)}
+											className="absolute -top-1.5 -right-1.5 size-5 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center shadow-sm hover:bg-red-600 transition-colors"
+											aria-label="Remove image"
+										>
+											✕
+										</button>
+									</div>
+								))}
+								{mediaAssets.length < 10 && (
+									<button
+										type="button"
+										onClick={() => mediaAssetsInputRef.current?.click()}
+										className="size-16 shrink-0 rounded-xl border-2 border-dashed border-black/20 hover:border-black/40 flex items-center justify-center text-black/30 text-2xl font-black transition-colors"
+										aria-label="Add image"
+									>
+										+
+									</button>
+								)}
 							</div>
 						</div>
 					</div>
@@ -770,7 +860,7 @@ export function ProposalDeckBuilder({
 						</div>
 					</div>
 				</div>
-			) : (
+			) : step === "preview" ? (
 				<div className="flex flex-col gap-4">
 					{slides.map((slide, idx) => (
 						<div key={idx} className="border-[3px] border-dashed border-black/30 rounded-[24px] p-5 bg-white flex flex-col gap-3">
@@ -869,6 +959,27 @@ export function ProposalDeckBuilder({
 							)}
 						</div>
 					))}
+				</div>
+			) : (
+				<div className="border-[3px] border-black rounded-[24px] overflow-hidden bg-white h-[75vh]">
+					{finalizedResult && <PdfViewer url={finalizedResult.docUrl} />}
+				</div>
+			)}
+
+			{viewingImagePreview && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+					onClick={() => setViewingImagePreview(null)}
+				>
+					{/* eslint-disable-next-line @next/next/no-img-element */}
+					<img src={viewingImagePreview} alt="" className="max-w-full max-h-full rounded-xl object-contain" />
+					<button
+						type="button"
+						onClick={() => setViewingImagePreview(null)}
+						className="absolute top-6 right-6 size-9 rounded-full bg-white text-black font-bold flex items-center justify-center"
+					>
+						✕
+					</button>
 				</div>
 			)}
 		</div>
