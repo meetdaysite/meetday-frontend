@@ -700,6 +700,7 @@ export default function ProposalPage() {
 
     const handleProposalSubmit = async (e: React.FormEvent, forceStatus?: "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED") => {
         e.preventDefault()
+        if (isUploading) return
 
         if (!projName.trim()) {
             toast.error("Project Name is required.")
@@ -866,7 +867,10 @@ export default function ProposalPage() {
         }
     }
 
+    const [isSubmittingForApproval, setIsSubmittingForApproval] = useState(false)
     const submitProposalForApproval = async (proposal: StoredProposal) => {
+        if (isSubmittingForApproval) return
+        setIsSubmittingForApproval(true)
         try {
             const saved = await submitSponsorshipProposal(proposal.id)
             const stored = mapApiProposalToStored(saved)
@@ -877,6 +881,8 @@ export default function ProposalPage() {
             console.error(err)
             const errMsg = err?.message || err?.response?.data?.message || "Failed to submit proposal."
             toast.error(errMsg)
+        } finally {
+            setIsSubmittingForApproval(false)
         }
     }
 
@@ -1305,13 +1311,14 @@ export default function ProposalPage() {
                                     {(selectedProposal.status === "DRAFT" || selectedProposal.status === "REJECTED") && (
                                         <button
                                             type="button"
-                                            className="bg-[#6C32D1] text-white border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider select-none"
+                                            disabled={isSubmittingForApproval}
+                                            className="bg-[#6C32D1] text-white border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider select-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
                                             onClick={() => {
                                                 submitProposalForApproval(selectedProposal)
                                                 setSelectedProposal(prev => prev ? { ...prev, status: "UNDER_REVIEW" } : null)
                                             }}
                                         >
-                                            Submit for Approval
+                                            {isSubmittingForApproval ? "Submitting…" : "Submit for Approval"}
                                         </button>
                                     )}
                                     <button
@@ -1596,7 +1603,8 @@ export default function ProposalPage() {
                                             <button
                                                 type="button"
                                                 onClick={(e) => handleProposalSubmit(e, "DRAFT")}
-                                                className="px-4 py-2 bg-black/5 hover:bg-black/10 border border-black/10 text-xs font-bold rounded-lg text-black transition-colors"
+                                                disabled={isUploading}
+                                                className="px-4 py-2 bg-black/5 hover:bg-black/10 border border-black/10 text-xs font-bold rounded-lg text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 Save As Draft
                                             </button>
@@ -1606,9 +1614,10 @@ export default function ProposalPage() {
                                                     const nextStatus = selectedProposal ? selectedProposal.status : "UNDER_REVIEW"
                                                     handleProposalSubmit(e, nextStatus)
                                                 }}
-                                                className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+                                                disabled={isUploading}
+                                                className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
                                             >
-                                                SUBMIT
+                                                {isUploading ? "SUBMITTING…" : "SUBMIT"}
                                             </button>
                                         </div>
                                     </div>
