@@ -50,13 +50,13 @@ export default function PdfViewer({ url }: PdfViewerProps) {
                     }
                 >
                     {Array.from(new Array(numPages), (el, index) => (
-                        <div key={`page_${index + 1}`} className="shadow-[4px_4px_0px_0px_rgba(0,0,0,0.15)] border-[2px] border-black/30 rounded-xl overflow-hidden bg-white mx-4">
+                        <div key={`page_${index + 1}`} className="shadow-[4px_4px_0px_0px_rgba(0,0,0,0.15)] border-[2px] border-black/30 rounded-xl overflow-hidden bg-white mx-2 sm:mx-4 max-w-full">
                             <Page
                                 pageNumber={index + 1}
-                                width={containerWidth > 0 ? containerWidth - 48 : undefined}
+                                width={containerWidth > 0 ? Math.max(containerWidth - (containerWidth < 640 ? 20 : 48), 240) : undefined}
                                 renderTextLayer={false}
                                 renderAnnotationLayer={false}
-                                loading={<div className="h-[400px] w-full bg-slate-100 animate-pulse" />}
+                                loading={<div className="h-[300px] sm:h-[400px] w-full bg-slate-100 animate-pulse" />}
                             />
                         </div>
                     ))}

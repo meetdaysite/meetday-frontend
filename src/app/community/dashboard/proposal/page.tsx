@@ -1618,25 +1618,25 @@ export default function ProposalPage() {
                                     }}
                                 />
                             ) : showProposalForm ? (
-                                <div className="animate-in fade-in duration-150 flex flex-col gap-6">
-                                    <div className="flex justify-between items-center shrink-0">
+                                <div className="animate-in fade-in duration-150 flex flex-col gap-5 sm:gap-6">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 pb-2 border-b border-black/10 sm:border-0 sm:pb-0">
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2 cursor-pointer text-black/60 hover:text-black" onClick={resetProposalForm}>
                                                 <span className="text-xl font-bold">←</span>
-                                                <h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
+                                                <h1 className="text-xl sm:text-2xl md:text-3xl font-heading font-black tracking-tight text-black leading-tight">
                                                     {selectedProposal ? "Edit Proposal" : "Create Proposal"}
                                                 </h1>
                                             </div>
-                                            <p className="text-sm font-semibold text-black/50 mt-1">
+                                            <p className="text-xs sm:text-sm font-semibold text-black/50">
                                                 Provide details and upload your proposal document
                                             </p>
                                         </div>
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                                             <button
                                                 type="button"
                                                 onClick={(e) => handleProposalSubmit(e, "DRAFT")}
                                                 disabled={isUploading}
-                                                className="px-4 py-2 bg-black/5 hover:bg-black/10 border border-black/10 text-xs font-bold rounded-lg text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="flex-1 sm:flex-none px-4 py-2.5 bg-black/5 hover:bg-black/10 border border-black/10 text-xs font-bold rounded-lg text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-center"
                                             >
                                                 Save As Draft
                                             </button>
@@ -1647,7 +1647,7 @@ export default function ProposalPage() {
                                                     handleProposalSubmit(e, nextStatus)
                                                 }}
                                                 disabled={isUploading}
-                                                className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:hover:translate-x-0 disabled:hover:translate-y-0"
+                                                className="flex-1 sm:flex-none bg-[#EE2C2C] text-white text-[10px] sm:text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:hover:translate-x-0 disabled:hover:translate-y-0 text-center"
                                             >
                                                 {isUploading ? "SUBMITTING…" : "SUBMIT"}
                                             </button>
@@ -1655,17 +1655,17 @@ export default function ProposalPage() {
                                     </div>
 
                                     {/* Enclose the form in a neobrutalist dashed border box */}
-                                    <form onSubmit={handleProposalSubmit} className="border-[3px] border-dashed border-black/30 rounded-[28px] p-6 bg-white flex flex-col gap-6 w-full">
+                                    <form onSubmit={handleProposalSubmit} className="border-[3px] border-dashed border-black/30 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 bg-white flex flex-col gap-5 sm:gap-6 w-full">
                                         {/* AI assist */}
                                         {!selectedProposal && (
                                             <div className="w-full">
                                                 {!proposalCopilotOpen ? (
                                                     <div
                                                         onClick={() => setProposalCopilotOpen(true)}
-                                                        className="group border-[3px] border-black bg-purple-100 hover:bg-purple-200 p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer flex flex-col md:flex-row items-center justify-between gap-4 select-none"
+                                                        className="group border-[3px] border-black bg-purple-100 hover:bg-purple-200 p-4 sm:p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 select-none"
                                                     >
-                                                        <div className="flex items-center gap-4 text-left">
-                                                            <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-[#EE2C2C] text-white shrink-0 transition-transform duration-300 p-2" style={{ animation: 'aiIconPulse 2s ease-in-out infinite' }}>
+                                                        <div className="flex items-center gap-3.5 text-left">
+                                                            <div className="flex items-center justify-center size-11 sm:size-12 rounded-xl bg-[#EE2C2C] text-white shrink-0 transition-transform duration-300 p-2" style={{ animation: 'aiIconPulse 2s ease-in-out infinite' }}>
                                                                 <Icon as={AiAvatarSvg} size="2xl" color="inherit" className="w-full h-full" />
                                                             </div>
                                                             <div>
@@ -1677,30 +1677,30 @@ export default function ProposalPage() {
                                                                 </p>
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-center gap-2 bg-black text-white text-sm font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black group-hover:bg-[#EE2C2C] transition-colors duration-200 shrink-0">
+                                                        <div className="w-full sm:w-auto flex items-center justify-center gap-2 bg-black text-white text-xs sm:text-sm font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black group-hover:bg-[#EE2C2C] transition-colors duration-200 shrink-0">
                                                             <Icon as={MagicStickSvg} size="sm" color="inherit" />
                                                             Draft with AI
                                                         </div>
                                                     </div>
                                                 ) : proposalCopilotLoading ? (
-                                                    <div className="border-[3px] border-black bg-purple-100 p-8 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center justify-center gap-5 text-center min-h-[180px]">
-                                                        <div className="relative flex items-center justify-center h-16 w-16">
+                                                    <div className="border-[3px] border-black bg-purple-100 p-6 sm:p-8 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center justify-center gap-4 sm:gap-5 text-center min-h-[180px]">
+                                                        <div className="relative flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16">
                                                             <div className="absolute inset-0 rounded-full border-4 border-dashed border-[#EE2C2C]/40 animate-spin" style={{ animationDuration: '4s' }} />
-                                                            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-[#EE2C2C] text-white p-2">
+                                                            <div className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-[#EE2C2C] text-white p-2">
                                                                 <Icon as={AiAvatarSvg} size="xl" color="inherit" className="w-full h-full" />
                                                             </div>
                                                         </div>
                                                         <div className="flex flex-col gap-1.5">
-                                                            <h4 className="font-heading text-lg font-black text-black tracking-wide">
+                                                            <h4 className="font-heading text-base sm:text-lg font-black text-black tracking-wide">
                                                                 {loadingMessages[loadingMessageIndex]}
                                                             </h4>
-                                                            <p className="text-sm text-purple-700 font-bold tracking-tight">
+                                                            <p className="text-xs sm:text-sm text-purple-700 font-bold tracking-tight">
                                                                 Whipping up pricing tiers, target audiences, and descriptions...
                                                             </p>
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <div className="border-[3px] border-black bg-purple-100 p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-4">
+                                                    <div className="border-[3px] border-black bg-purple-100 p-4 sm:p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-4">
                                                         <div className="flex items-center gap-3">
                                                             <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[#EE2C2C] text-white shrink-0 p-1.5">
                                                                 <Icon as={AiAvatarSvg} size="xl" color="inherit" className="w-full h-full" />
@@ -1715,14 +1715,14 @@ export default function ProposalPage() {
                                                             </div>
                                                         </div>
                                                         <div className="flex flex-col gap-2">
-                                                            <label className="text-sm font-bold text-black">
+                                                            <label className="text-xs sm:text-sm font-bold text-black">
                                                                 Describe your project in a minimum of 20 words to continue
                                                             </label>
                                                             <textarea
                                                                 value={proposalCopilotPrompt}
                                                                 onChange={(e) => setProposalCopilotPrompt(e.target.value)}
                                                                 placeholder="e.g. We run a monthly rooftop networking meetup for startup founders in Bangalore, around 200 people attend each time."
-                                                                rows={10}
+                                                                rows={5}
                                                                 disabled={proposalCopilotLoading}
                                                                 className="px-4 py-2.5 rounded-xl border-2 border-black/30 bg-white/80 text-black outline-none focus:border-black text-sm transition-colors resize-none disabled:opacity-50"
                                                             />
@@ -1752,18 +1752,18 @@ export default function ProposalPage() {
                                                                     type="button"
                                                                     onClick={() => copilotDocInputRef.current?.click()}
                                                                     disabled={proposalCopilotLoading}
-                                                                    className="self-start flex items-center gap-2 bg-white text-purple-700 text-xs font-black px-3.5 py-2 rounded-lg border-2 border-purple-700 hover:bg-purple-700 hover:text-white transition-colors disabled:opacity-50"
+                                                                    className="self-start flex items-center gap-2 bg-white text-purple-700 text-xs font-black px-3.5 py-2 rounded-lg border-2 border-purple-700 hover:bg-purple-700 hover:text-white transition-colors disabled:opacity-50 text-left"
                                                                 >
                                                                     <Icon as={UploadSvg} size="sm" color="inherit" />
-                                                                    Upload a document for better output (PDF, Word, and Powerpoint)
+                                                                    Upload document for context (PDF, Word, PPT)
                                                                 </button>
                                                             )}
-                                                            <div className="flex justify-end gap-2 mt-1">
+                                                            <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-2 mt-1">
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => setProposalCopilotOpen(false)}
                                                                     disabled={proposalCopilotLoading}
-                                                                    className="px-3 py-2 text-sm font-black text-black/60 hover:text-black transition-colors disabled:opacity-50"
+                                                                    className="px-3 py-2 text-sm font-black text-black/60 hover:text-black transition-colors disabled:opacity-50 text-center"
                                                                 >
                                                                     Cancel
                                                                 </button>
@@ -1771,7 +1771,7 @@ export default function ProposalPage() {
                                                                     type="button"
                                                                     onClick={handleGenerateProposalDraft}
                                                                     disabled={proposalCopilotLoading || copilotDocUploading || proposalCopilotPrompt.trim().length < 20}
-                                                                    className="flex items-center gap-2 bg-black text-white text-sm font-black px-4 py-2.5 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#EE2C2C] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50 transition-all select-none"
+                                                                    className="flex items-center justify-center gap-2 bg-black text-white text-sm font-black px-4 py-2.5 rounded-lg border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#EE2C2C] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50 transition-all select-none text-center"
                                                                 >
                                                                     <Icon as={MagicStickSvg} size="sm" color="inherit" />
                                                                     Start Cooking
@@ -1804,7 +1804,7 @@ export default function ProposalPage() {
                                                 value={projAbout}
                                                 onChange={(e) => setProjAbout(e.target.value)}
                                                 placeholder="Describe your project's details, format, and goals..."
-                                                rows={15}
+                                                rows={8}
                                                 className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
                                             />
                                         </div>
@@ -1812,34 +1812,36 @@ export default function ProposalPage() {
                                         {/* Logo/Image Upload */}
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-xs font-bold text-black">Project Logo *</label>
-                                            <div className="flex items-center gap-4">
-                                                {projImagePreview ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img src={projImagePreview} alt="Preview" className="size-16 rounded-xl object-cover border border-black/10" />
-                                                ) : selectedProposal?.image ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img src={typeof selectedProposal.image === "string" ? selectedProposal.image : URL.createObjectURL(selectedProposal.image)} alt="Current" className="size-16 rounded-xl object-cover border border-black/10" />
-                                                ) : (
-                                                    <div className="size-16 rounded-xl bg-slate-50 border border-dashed border-black/10 flex items-center justify-center text-black/30 text-xs">
-                                                        No Image
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-0 bg-slate-50 sm:bg-transparent rounded-xl border border-black/10 sm:border-0">
+                                                <div className="flex items-center gap-3">
+                                                    {projImagePreview ? (
+                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                        <img src={projImagePreview} alt="Preview" className="size-16 rounded-xl object-cover border border-black/10 shrink-0" />
+                                                    ) : selectedProposal?.image ? (
+                                                        // eslint-disable-next-line @next/next/no-img-element
+                                                        <img src={typeof selectedProposal.image === "string" ? selectedProposal.image : URL.createObjectURL(selectedProposal.image)} alt="Current" className="size-16 rounded-xl object-cover border border-black/10 shrink-0" />
+                                                    ) : (
+                                                        <div className="size-16 rounded-xl bg-white sm:bg-slate-50 border border-dashed border-black/20 flex items-center justify-center text-black/30 text-xs shrink-0">
+                                                            No Image
+                                                        </div>
+                                                    )}
+                                                    <div className="flex flex-col gap-1">
+                                                        <input
+                                                            ref={projImageInputRef}
+                                                            type="file"
+                                                            accept="image/jpeg,image/jpg,image/png"
+                                                            className="hidden"
+                                                            onChange={handleProjImageChange}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => projImageInputRef.current?.click()}
+                                                            className="self-start px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
+                                                        >
+                                                            Choose Image
+                                                        </button>
+                                                        <span className="text-[10px] text-black/40">JPEG, JPG, PNG accepted (1:1, max 5MB).</span>
                                                     </div>
-                                                )}
-                                                <div className="flex flex-col gap-1">
-                                                    <input
-                                                        ref={projImageInputRef}
-                                                        type="file"
-                                                        accept="image/jpeg,image/jpg,image/png"
-                                                        className="hidden"
-                                                        onChange={handleProjImageChange}
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => projImageInputRef.current?.click()}
-                                                        className="px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
-                                                    >
-                                                        Choose Image
-                                                    </button>
-                                                    <span className="text-[10px] text-black/40">JPEG, JPG, PNG accepted (1:1 ratio, max 5MB).</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -1847,24 +1849,24 @@ export default function ProposalPage() {
                                         {/* Date */}
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className="flex flex-col gap-1.5">
-                                                <label className="text-xs font-bold text-black">Start Date *</label>
+                                                <label className="text-xs font-bold text-black">Event Start Date *</label>
                                                 <input
                                                     type="date"
                                                     required
                                                     value={projDate}
                                                     onChange={(e) => setProjDate(e.target.value)}
-                                                    className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                    className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors w-full"
                                                 />
                                             </div>
                                             <div className="flex flex-col gap-1.5">
-                                                <label className="text-xs font-bold text-black">End Date *</label>
+                                                <label className="text-xs font-bold text-black">Event End Date *</label>
                                                 <input
                                                     type="date"
                                                     required
                                                     min={projDate || undefined}
                                                     value={projEndDate}
                                                     onChange={(e) => setProjEndDate(e.target.value)}
-                                                    className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                    className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors w-full"
                                                 />
                                             </div>
                                         </div>
@@ -1886,7 +1888,7 @@ export default function ProposalPage() {
                                             </div>
                                             {projVenues.map((v, idx) => (
                                                 <div key={idx} className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center p-3 sm:p-0 bg-slate-100/50 sm:bg-transparent rounded-xl border border-black/5 sm:border-0 relative">
-                                                    <div className="w-full sm:flex-1">
+                                                    <div className="w-full sm:flex-1 min-w-0">
                                                         <AddressAutocompleteInput
                                                             value={v}
                                                             error={false}
@@ -1908,7 +1910,7 @@ export default function ProposalPage() {
                                                             placeholder="e.g. Palace of Fine Arts"
                                                         />
                                                     </div>
-                                                    <div className="w-full sm:w-40">
+                                                    <div className="w-full sm:w-40 min-w-0">
                                                         <input
                                                             type="text"
                                                             value={projVenueCities[idx] || ""}
@@ -1928,7 +1930,7 @@ export default function ProposalPage() {
                                                                 setProjVenues(projVenues.filter((_, i) => i !== idx))
                                                                 setProjVenueCities(projVenueCities.filter((_, i) => i !== idx))
                                                             }}
-                                                            className="absolute top-2 right-2 sm:relative sm:top-0 sm:right-0 text-red-500 hover:text-red-700 font-bold text-lg p-1"
+                                                            className="absolute top-2 right-2 sm:relative sm:top-0 sm:right-0 text-red-500 hover:text-red-700 font-bold text-lg p-1 shrink-0"
                                                         >
                                                             ✕
                                                         </button>
@@ -2022,9 +2024,9 @@ export default function ProposalPage() {
                                             </div>
                                         </div>
 
-                                        {/* Video URL (Optional) */}
+                                        {/* Video URL */}
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-xs font-bold text-black">Proposal Video Link <span className="text-black/40 font-medium">(optional)</span></label>
+                                            <label className="text-xs font-bold text-black">Proposal Video Link</label>
                                             <input
                                                 type="url"
                                                 value={projVideoUrl}
@@ -2039,35 +2041,38 @@ export default function ProposalPage() {
                                         <div className="flex flex-col gap-1.5">
                                             <label className="text-xs font-bold text-black">Proposal Deck *</label>
                                             {projDoc || generatedDeckDoc || selectedProposal?.docName ? (
-                                                <div className="flex items-center gap-4">
-                                                    <div className="size-16 rounded-xl bg-slate-50 border border-dashed border-black/10 flex items-center justify-center text-black/30">
-                                                        📄
+                                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3.5 bg-slate-50 border border-black/10 rounded-2xl w-full">
+                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                        <div className="size-12 sm:size-14 rounded-xl bg-white border border-dashed border-black/20 flex items-center justify-center text-xl shrink-0">
+                                                            📄
+                                                        </div>
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="text-xs font-bold text-black truncate max-w-full">
+                                                                {projDoc?.name ?? generatedDeckDoc?.docName ?? selectedProposal?.docName}
+                                                            </span>
+                                                            <span className="text-[10px] text-black/50 font-medium">Ready to submit with proposal</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <span className="text-xs font-semibold text-black truncate max-w-xs">
-                                                            {projDoc?.name ?? generatedDeckDoc?.docName ?? selectedProposal?.docName}
-                                                        </span>
-                                                        <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setProjDoc(null)
+                                                                setGeneratedDeckDoc(null)
+                                                            }}
+                                                            className="flex-1 sm:flex-none px-3.5 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-100 transition-colors text-center"
+                                                        >
+                                                            Change Document
+                                                        </button>
+                                                        {(generatedDeckDoc?.docUrl || (typeof selectedProposal?.docFile === "string" && selectedProposal.docFile)) && (
                                                             <button
                                                                 type="button"
-                                                                onClick={() => {
-                                                                    setProjDoc(null)
-                                                                    setGeneratedDeckDoc(null)
-                                                                }}
-                                                                className="self-start px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
+                                                                onClick={() => setViewDeckModalUrl(generatedDeckDoc?.docUrl || (selectedProposal?.docFile as string))}
+                                                                className="px-4 py-2 bg-[#EE2C2C] text-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-[#D12525] transition-colors"
                                                             >
-                                                                Change Document
+                                                                View
                                                             </button>
-                                                            {(generatedDeckDoc?.docUrl || (typeof selectedProposal?.docFile === "string" && selectedProposal.docFile)) && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setViewDeckModalUrl(generatedDeckDoc?.docUrl || (selectedProposal?.docFile as string))}
-                                                                    className="self-start px-4 py-2 bg-[#EE2C2C] text-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-[#D12525] transition-colors"
-                                                                >
-                                                                    View
-                                                                </button>
-                                                            )}
-                                                        </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ) : (
@@ -2085,18 +2090,18 @@ export default function ProposalPage() {
                                                     <button
                                                         type="button"
                                                         onClick={() => projDocInputRef.current?.click()}
-                                                        className="flex flex-col items-start gap-1 px-4 py-3 bg-white border-2 border-black rounded-xl text-xs font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+                                                        className="flex flex-col items-start gap-1 px-4 py-3.5 bg-white border-2 border-black rounded-2xl text-xs font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all text-left"
                                                     >
-                                                        <span>📄 Choose Document</span>
+                                                        <span className="text-xs font-black">📄 Choose Document</span>
                                                         <span className="text-[10px] font-semibold text-black/40 normal-case">Upload your own PDF. Max 10MB.</span>
                                                     </button>
                                                     <button
                                                         type="button"
                                                         onClick={() => setShowDeckBuilder(true)}
-                                                        className="flex flex-col items-start gap-1 px-4 py-3 bg-[#EE2C2C] text-white border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+                                                        className="flex flex-col items-start gap-1 px-4 py-3.5 bg-[#EE2C2C] text-white border-2 border-black rounded-2xl text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all text-left"
                                                     >
-                                                        <span>Create a Deck with Meetday</span>
-                                                        <span className="text-[10px] font-semibold text-white/70 normal-case">AI builds a themed pitch deck from your details.</span>
+                                                        <span className="text-xs font-black">Create a Deck with Meetday</span>
+                                                        <span className="text-[10px] font-semibold text-white/80 normal-case">AI builds a themed pitch deck from your details.</span>
                                                     </button>
                                                 </div>
                                             )}
@@ -2105,7 +2110,7 @@ export default function ProposalPage() {
                                         {/* Sponsorship Type */}
                                         <div className="flex flex-col gap-2">
                                             <label className="text-xs font-bold text-black">Sponsorship Type *</label>
-                                            <div className="flex gap-3">
+                                            <div className="grid grid-cols-3 gap-2">
                                                 {(["CASH", "BARTER", "BOTH"] as const).map((o) => {
                                                     const isSelected = projSponsorshipType === o
                                                     return (
@@ -2114,9 +2119,9 @@ export default function ProposalPage() {
                                                             type="button"
                                                             onClick={() => setProjSponsorshipType(o)}
                                                             className={clsx(
-                                                                "flex-1 py-2.5 rounded-xl text-xs font-black border transition-all select-none cursor-pointer",
+                                                                "py-2.5 rounded-xl text-xs font-black border transition-all select-none cursor-pointer text-center",
                                                                 isSelected
-                                                                    ? "bg-[#EE2C2C] text-white border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+                                                                    ? "bg-[#EE2C2C] text-white border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                                                                     : "bg-slate-50 text-black/60 border-black/15 hover:border-black/30"
                                                             )}
                                                         >
@@ -2161,30 +2166,33 @@ export default function ProposalPage() {
                                                             }}
                                                             className="w-full sm:flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
                                                         />
-                                                        <div className="relative w-full sm:flex-1">
-                                                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-black/40 select-none">₹</span>
-                                                            <input
-                                                                type="text"
-                                                                required
-                                                                placeholder="Price (e.g., 50,000)"
-                                                                value={sp.price}
-                                                                onChange={(e) => {
-                                                                    const updated = [...sponsorPrices]
-                                                                    updated[idx].price = e.target.value
-                                                                    setSponsorPrices(updated)
-                                                                }}
-                                                                className="w-full h-10 pl-8 pr-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
-                                                            />
+                                                        <div className="flex items-center gap-2 w-full sm:flex-1">
+                                                            <div className="relative flex-1">
+                                                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-black/40 select-none">₹</span>
+                                                                <input
+                                                                    type="text"
+                                                                    required
+                                                                    placeholder="Price (e.g., 50,000)"
+                                                                    value={sp.price}
+                                                                    onChange={(e) => {
+                                                                        const updated = [...sponsorPrices]
+                                                                        updated[idx].price = e.target.value
+                                                                        setSponsorPrices(updated)
+                                                                    }}
+                                                                    className="w-full h-10 pl-8 pr-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+                                                                />
+                                                            </div>
+                                                            {sponsorPrices.length > 1 && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setSponsorPrices(sponsorPrices.filter((_, i) => i !== idx))}
+                                                                    className="size-8 shrink-0 rounded-full bg-red-100 text-red-600 sm:bg-transparent sm:text-red-500 hover:text-red-700 font-bold text-base flex items-center justify-center p-1"
+                                                                    aria-label="Remove slot"
+                                                                >
+                                                                    ✕
+                                                                </button>
+                                                            )}
                                                         </div>
-                                                        {sponsorPrices.length > 1 && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setSponsorPrices(sponsorPrices.filter((_, i) => i !== idx))}
-                                                                className="absolute top-2 right-2 sm:relative sm:top-0 sm:right-0 text-red-500 hover:text-red-700 font-bold text-lg p-1"
-                                                            >
-                                                                ✕
-                                                            </button>
-                                                        )}
                                                     </div>
                                                 ))}
                                             </div>

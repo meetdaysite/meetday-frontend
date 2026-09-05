@@ -375,21 +375,21 @@ export function ProposalDeckBuilder({
 	}
 
 	return (
-		<div className="animate-in fade-in duration-150 flex flex-col gap-6">
+		<div className="animate-in fade-in duration-150 flex flex-col gap-5 sm:gap-6">
 			<input ref={pastSponsorLogoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePastSponsorLogoPick} />
 
-			<div className="flex justify-between items-center shrink-0">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 pb-2 border-b border-black/10 sm:border-0 sm:pb-0">
 				<div className="flex flex-col gap-1">
 					<div
 						className="flex items-center gap-2 cursor-pointer text-black/60 hover:text-black"
 						onClick={() => (step === "form" ? onClose() : step === "preview" ? setStep("form") : setStep("preview"))}
 					>
 						<span className="text-xl font-bold">←</span>
-						<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
+						<h1 className="text-xl sm:text-2xl md:text-3xl font-heading font-black tracking-tight text-black leading-tight">
 							{step === "form" ? "Create a Deck with Meetday" : step === "preview" ? "Review Slide Content" : "Preview Proposal Deck"}
 						</h1>
 					</div>
-					<p className="text-sm font-semibold text-black/50 mt-1">
+					<p className="text-xs sm:text-sm font-semibold text-black/50">
 						{step === "form"
 							? "Fill in your event and brand details — AI fills in the rest of the copy"
 							: step === "preview"
@@ -402,17 +402,17 @@ export function ProposalDeckBuilder({
 						type="button"
 						onClick={handleGenerate}
 						disabled={generating}
-						className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50"
+						className="w-full sm:w-auto bg-[#EE2C2C] text-white text-[10px] sm:text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50 text-center"
 					>
 						{generating ? "Planning…" : "Generate with AI"}
 					</button>
 				) : step === "preview" ? (
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 w-full sm:w-auto justify-end">
 						<button
 							type="button"
 							onClick={handleDiscard}
 							disabled={finalizing}
-							className="bg-white text-black text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50"
+							className="flex-1 sm:flex-none bg-white text-black text-[10px] sm:text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50 text-center"
 						>
 							Discard
 						</button>
@@ -420,24 +420,24 @@ export function ProposalDeckBuilder({
 							type="button"
 							onClick={handleDone}
 							disabled={finalizing}
-							className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50"
+							className="flex-1 sm:flex-none bg-[#EE2C2C] text-white text-[10px] sm:text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50 text-center"
 						>
 							{finalizing ? "Generating…" : "Done"}
 						</button>
 					</div>
 				) : (
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 w-full sm:w-auto justify-end">
 						<button
 							type="button"
 							onClick={handleDiscard}
-							className="bg-white text-black text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+							className="flex-1 sm:flex-none bg-white text-black text-[10px] sm:text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none text-center"
 						>
 							Discard
 						</button>
 						<button
 							type="button"
 							onClick={handleConfirmUpload}
-							className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none"
+							className="flex-1 sm:flex-none bg-[#EE2C2C] text-white text-[10px] sm:text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none text-center"
 						>
 							Upload
 						</button>
@@ -446,11 +446,11 @@ export function ProposalDeckBuilder({
 			</div>
 
 			{step === "form" ? (
-				<div className="flex flex-col gap-6">
+				<div className="flex flex-col gap-5 sm:gap-6">
 					{/* Host & Event Basics */}
-					<div className="border-[3px] border-dashed border-black/30 rounded-[28px] p-6 bg-white flex flex-col gap-4 w-full">
+					<div className="border-[3px] border-dashed border-black/30 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 bg-white flex flex-col gap-4 w-full">
 						<SectionLabel>Host & Event Basics</SectionLabel>
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
 							<div className="flex flex-col gap-1.5">
 								<label className="text-xs font-bold text-black">Community / Host Name *</label>
 								<input
@@ -475,7 +475,7 @@ export function ProposalDeckBuilder({
 						</div>
 
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-bold text-black">About the Community <span className="text-black/40 font-medium">(optional)</span></label>
+							<label className="text-xs font-bold text-black">About the Community</label>
 							<textarea
 								value={aboutCommunity}
 								onChange={e => setAboutCommunity(e.target.value)}
@@ -486,7 +486,7 @@ export function ProposalDeckBuilder({
 						</div>
 
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-bold text-black">Event Tagline / One-Liner <span className="text-black/40 font-medium">(optional, max 80 chars)</span></label>
+							<label className="text-xs font-bold text-black">Event Tagline / One-Liner <span className="text-black/40 font-medium">(max 80 chars)</span></label>
 							<input
 								type="text"
 								value={tagline}
@@ -498,23 +498,23 @@ export function ProposalDeckBuilder({
 							<span className={`text-[10px] font-semibold ${taglineError ? "text-red-600" : "text-black/40"}`}>{taglineError ?? `${tagline.length}/80 characters`}</span>
 						</div>
 
-						<div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 							<div className="flex flex-col gap-1.5">
-								<label className="text-xs font-bold text-black">Event Date</label>
+								<label className="text-xs font-bold text-black">Event Start Date</label>
 								<input
 									type="date"
 									value={eventDate ?? ""}
 									onChange={e => onEventDateChange?.(e.target.value)}
-									className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+									className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors w-full"
 								/>
 							</div>
 							<div className="flex flex-col gap-1.5">
-								<label className="text-xs font-bold text-black">Event End Date <span className="text-black/40 font-medium">(optional)</span></label>
+								<label className="text-xs font-bold text-black">Event End Date</label>
 								<input
 									type="date"
 									value={eventEndDate ?? ""}
 									onChange={e => onEventEndDateChange?.(e.target.value)}
-									className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+									className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors w-full"
 								/>
 							</div>
 							<div className="flex flex-col gap-1.5">
@@ -541,23 +541,28 @@ export function ProposalDeckBuilder({
 					</div>
 
 					{/* Design & Brand Identity Tokens */}
-					<div className="border-[3px] border-dashed border-black/30 rounded-[28px] p-6 bg-white flex flex-col gap-4 w-full">
+					<div className="border-[3px] border-dashed border-black/30 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 bg-white flex flex-col gap-4 w-full">
 						<SectionLabel>Design & Brand Identity Tokens</SectionLabel>
 
 						<div className="flex flex-col gap-2">
 							<label className="text-xs font-bold text-black">Deck Color Theme</label>
-							<div className="grid grid-cols-3 gap-2">
+							<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
 								{THEME_OPTIONS.map(opt => (
 									<button
 										key={opt.value}
 										type="button"
 										onClick={() => setTheme(opt.value)}
-										className={`flex flex-col items-start gap-0.5 p-3 rounded-xl border-2 text-left transition-all ${
-											theme === opt.value ? "border-black bg-[#FFC940]/20" : "border-black/10 hover:border-black/30"
+										className={`flex flex-col items-start gap-1 p-3 rounded-xl border-2 text-left transition-all ${
+											theme === opt.value ? "border-black bg-[#FFC940]/20 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" : "border-black/10 hover:border-black/30 bg-slate-50/50"
 										}`}
 									>
-										<span className="text-xs font-black text-black">{opt.label}</span>
-										<span className="text-[10px] text-black/50">{opt.hint}</span>
+										<div className="flex items-center justify-between w-full">
+											<span className="text-xs font-black text-black">{opt.label}</span>
+											{theme === opt.value && (
+												<span className="text-[8px] font-black uppercase tracking-wider bg-black text-white px-1.5 py-0.5 rounded">Selected</span>
+											)}
+										</div>
+										<span className="text-[10px] text-black/60 leading-tight">{opt.hint}</span>
 									</button>
 								))}
 							</div>
@@ -578,33 +583,33 @@ export function ProposalDeckBuilder({
 
 						<div className="flex flex-col gap-3">
 							<div className="flex flex-col gap-1.5">
-								<label className="text-xs font-bold text-black">Primary Brand Colors <span className="text-black/40 font-medium">(optional, up to 2)</span></label>
-								<div className="flex items-center gap-4">
+								<label className="text-xs font-bold text-black">Primary Brand Colors <span className="text-black/40 font-medium">(up to 2)</span></label>
+								<div className="flex flex-wrap items-center gap-3 sm:gap-4">
 									{primaryColors.map((c, i) => (
-										<div key={i} className="flex items-center gap-2">
+										<div key={i} className="flex items-center gap-2 bg-slate-50 px-2.5 py-1.5 rounded-xl border border-black/10">
 											<input
 												type="color"
 												value={c}
 												onChange={e => setPrimaryColors(prev => prev.map((v, vi) => (vi === i ? e.target.value : v)))}
-												className="size-10 rounded-lg border border-black/10 cursor-pointer"
+												className="size-9 rounded-lg border border-black/10 cursor-pointer"
 											/>
-											<span className="text-xs font-semibold text-black/60">{c}</span>
+											<span className="text-xs font-semibold text-black/70 uppercase">{c}</span>
 										</div>
 									))}
 								</div>
 							</div>
 							<div className="flex flex-col gap-1.5">
-								<label className="text-xs font-bold text-black">Accent / Highlight Colors <span className="text-black/40 font-medium">(optional, up to 3)</span></label>
-								<div className="flex items-center gap-4">
+								<label className="text-xs font-bold text-black">Accent / Highlight Colors <span className="text-black/40 font-medium">(up to 3)</span></label>
+								<div className="flex flex-wrap items-center gap-3 sm:gap-4">
 									{accentColors.map((c, i) => (
-										<div key={i} className="flex items-center gap-2">
+										<div key={i} className="flex items-center gap-2 bg-slate-50 px-2.5 py-1.5 rounded-xl border border-black/10">
 											<input
 												type="color"
 												value={c}
 												onChange={e => setAccentColors(prev => prev.map((v, vi) => (vi === i ? e.target.value : v)))}
-												className="size-10 rounded-lg border border-black/10 cursor-pointer"
+												className="size-9 rounded-lg border border-black/10 cursor-pointer"
 											/>
-											<span className="text-xs font-semibold text-black/60">{c}</span>
+											<span className="text-xs font-semibold text-black/70 uppercase">{c}</span>
 										</div>
 									))}
 								</div>
@@ -612,22 +617,25 @@ export function ProposalDeckBuilder({
 							<span className="text-[10px] text-black/40">Colors are used across slide backgrounds, text, and accents for variety — not just one flat theme.</span>
 						</div>
 
-						<div className="grid grid-cols-2 gap-4">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
 							<div className="flex flex-col gap-1.5">
 								<label className="text-xs font-bold text-black">Primary Logo (Dark Backgrounds) *</label>
 								<input ref={primaryLogoInputRef} type="file" accept="image/*,.svg" className="hidden" onChange={e => handleLogoPick(e, "primary")} />
 								<button
 									type="button"
 									onClick={() => primaryLogoInputRef.current?.click()}
-									className={`flex items-center gap-3 px-3 py-2 bg-neutral-900 border rounded-xl text-xs font-bold hover:bg-neutral-800 transition-colors ${primaryLogoError ? "border-red-500" : "border-black"}`}
+									className={`flex items-center justify-between gap-3 px-3.5 py-2.5 bg-neutral-900 border rounded-xl text-xs font-bold hover:bg-neutral-800 transition-colors w-full ${primaryLogoError ? "border-red-500" : "border-black"}`}
 								>
-									{primaryLogoPreview ? (
-										// eslint-disable-next-line @next/next/no-img-element
-										<img src={primaryLogoPreview} alt="Primary logo" className="size-8 rounded object-contain bg-white/10" />
-									) : (
-										<span className="size-8 rounded bg-white/10 flex items-center justify-center text-white/40 text-[10px]">Logo</span>
-									)}
-									<span className="text-white">Choose Logo</span>
+									<div className="flex items-center gap-2.5 min-w-0">
+										{primaryLogoPreview ? (
+											// eslint-disable-next-line @next/next/no-img-element
+											<img src={primaryLogoPreview} alt="Primary logo" className="size-8 rounded object-contain bg-white/10 shrink-0" />
+										) : (
+											<span className="size-8 rounded bg-white/10 flex items-center justify-center text-white/40 text-[10px] shrink-0">Logo</span>
+										)}
+										<span className="text-white truncate">{primaryLogoFile ? primaryLogoFile.name : "Choose Dark BG Logo"}</span>
+									</div>
+									<span className="text-[10px] font-black uppercase text-white/60 bg-white/10 px-2 py-1 rounded shrink-0">Browse</span>
 								</button>
 								{primaryLogoError && <span className="text-[10px] font-semibold text-red-600">{primaryLogoError}</span>}
 							</div>
@@ -637,15 +645,18 @@ export function ProposalDeckBuilder({
 								<button
 									type="button"
 									onClick={() => secondaryLogoInputRef.current?.click()}
-									className={`flex items-center gap-3 px-3 py-2 bg-white border rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors ${secondaryLogoError ? "border-red-500" : "border-black"}`}
+									className={`flex items-center justify-between gap-3 px-3.5 py-2.5 bg-white border rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors w-full ${secondaryLogoError ? "border-red-500" : "border-black"}`}
 								>
-									{secondaryLogoPreview ? (
-										// eslint-disable-next-line @next/next/no-img-element
-										<img src={secondaryLogoPreview} alt="Secondary logo" className="size-8 rounded object-contain" />
-									) : (
-										<span className="size-8 rounded bg-slate-100 flex items-center justify-center text-black/30 text-[10px]">Logo</span>
-									)}
-									<span className="text-black">Choose Logo</span>
+									<div className="flex items-center gap-2.5 min-w-0">
+										{secondaryLogoPreview ? (
+											// eslint-disable-next-line @next/next/no-img-element
+											<img src={secondaryLogoPreview} alt="Secondary logo" className="size-8 rounded object-contain shrink-0" />
+										) : (
+											<span className="size-8 rounded bg-slate-100 flex items-center justify-center text-black/30 text-[10px] shrink-0">Logo</span>
+										)}
+										<span className="text-black truncate">{secondaryLogoFile ? secondaryLogoFile.name : "Choose Light BG Logo"}</span>
+									</div>
+									<span className="text-[10px] font-black uppercase text-black/60 bg-black/5 px-2 py-1 rounded shrink-0">Browse</span>
 								</button>
 								{secondaryLogoError && <span className="text-[10px] font-semibold text-red-600">{secondaryLogoError}</span>}
 							</div>
@@ -655,8 +666,8 @@ export function ProposalDeckBuilder({
 						</span>
 
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-bold text-black">Brand Media Kit / Guidelines <span className="text-black/40 font-medium">(optional — file upload or URL)</span></label>
-							<div className="flex items-center gap-2">
+							<label className="text-xs font-bold text-black">Brand Media Kit / Guidelines <span className="text-black/40 font-medium">(file upload or URL)</span></label>
+							<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
 								<input
 									type="url"
 									value={mediaKitUrl}
@@ -665,9 +676,9 @@ export function ProposalDeckBuilder({
 										setMediaKitFile(null)
 									}}
 									placeholder="Link to a doc, deck, or website"
-									className="h-10 flex-1 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+									className="h-10 flex-1 min-w-0 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
 								/>
-								<span className="text-[10px] font-bold text-black/30 shrink-0">OR</span>
+								<span className="text-[10px] font-bold text-black/30 text-center sm:text-left shrink-0">OR</span>
 								<input
 									ref={mediaKitFileInputRef}
 									type="file"
@@ -678,23 +689,23 @@ export function ProposalDeckBuilder({
 								<button
 									type="button"
 									onClick={() => mediaKitFileInputRef.current?.click()}
-									className="h-10 shrink-0 px-4 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
+									className="h-10 shrink-0 px-4 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors truncate max-w-full"
 								>
-									{mediaKitFile ? mediaKitFile.name : "Choose File"}
+									{mediaKitFile ? `📎 ${mediaKitFile.name}` : "Choose File"}
 								</button>
 							</div>
 						</div>
 
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-bold text-black">Brand Media Assets <span className="text-black/40 font-medium">(optional, up to 10 images — original aspect ratio is preserved, not cropped)</span></label>
+							<label className="text-xs font-bold text-black">Brand Media Assets <span className="text-black/40 font-medium">(up to 10 images)</span></label>
 							<input ref={mediaAssetsInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleMediaAssetsPick} />
-							<div className="flex flex-wrap gap-2">
+							<div className="flex flex-wrap gap-2.5">
 								{mediaAssets.map((asset, idx) => (
-									<div key={idx} className="relative size-16 shrink-0">
+									<div key={idx} className="relative size-16 sm:size-20 shrink-0">
 										<button
 											type="button"
 											onClick={() => setViewingImagePreview(asset.preview)}
-											className="size-16 rounded-xl overflow-hidden border-2 border-black/15 hover:border-black transition-colors"
+											className="size-16 sm:size-20 rounded-xl overflow-hidden border-2 border-black/15 hover:border-black transition-colors"
 										>
 											{/* eslint-disable-next-line @next/next/no-img-element */}
 											<img src={asset.preview} alt="" className="w-full h-full object-cover" />
@@ -702,7 +713,7 @@ export function ProposalDeckBuilder({
 										<button
 											type="button"
 											onClick={() => removeMediaAsset(idx)}
-											className="absolute -top-1.5 -right-1.5 size-5 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center shadow-sm hover:bg-red-600 transition-colors"
+											className="absolute -top-1.5 -right-1.5 size-6 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center shadow-sm hover:bg-red-600 transition-colors"
 											aria-label="Remove image"
 										>
 											✕
@@ -713,7 +724,7 @@ export function ProposalDeckBuilder({
 									<button
 										type="button"
 										onClick={() => mediaAssetsInputRef.current?.click()}
-										className="size-16 shrink-0 rounded-xl border-2 border-dashed border-black/20 hover:border-black/40 flex items-center justify-center text-black/30 text-2xl font-black transition-colors"
+										className="size-16 sm:size-20 shrink-0 rounded-xl border-2 border-dashed border-black/20 hover:border-black/40 flex items-center justify-center text-black/30 text-2xl font-black transition-colors"
 										aria-label="Add image"
 									>
 										+
@@ -724,7 +735,7 @@ export function ProposalDeckBuilder({
 					</div>
 
 					{/* Narrative & Copy Prompts */}
-					<div className="border-[3px] border-dashed border-black/30 rounded-[28px] p-6 bg-white flex flex-col gap-4 w-full">
+					<div className="border-[3px] border-dashed border-black/30 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 bg-white flex flex-col gap-4 w-full">
 						<SectionLabel>Narrative & Copy Prompts</SectionLabel>
 						<div className="flex flex-col gap-1.5">
 							<label className="text-xs font-bold text-black">Event Overview <span className="text-black/40 font-medium">(2–3 sentences on theme and objective)</span></label>
@@ -737,7 +748,7 @@ export function ProposalDeckBuilder({
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-bold text-black">Sponsor ROI Pitch <span className="text-black/40 font-medium">(optional — 2–3 sentences on why a brand should sponsor)</span></label>
+							<label className="text-xs font-bold text-black">Sponsor ROI Pitch <span className="text-black/40 font-medium">(2–3 sentences on why a brand should sponsor)</span></label>
 							<textarea
 								value={sponsorROIPitch}
 								onChange={e => setSponsorROIPitch(e.target.value)}
@@ -749,25 +760,25 @@ export function ProposalDeckBuilder({
 					</div>
 
 					{/* Audience & Traction Data */}
-					<div className="border-[3px] border-dashed border-black/30 rounded-[28px] p-6 bg-white flex flex-col gap-4 w-full">
+					<div className="border-[3px] border-dashed border-black/30 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 bg-white flex flex-col gap-4 w-full">
 						<SectionLabel>Audience & Traction Data</SectionLabel>
-						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
 							<div className="flex flex-col gap-1.5">
 								<label className="text-xs font-bold text-black">Hero Audience Metric</label>
-								<div className="flex gap-2">
+								<div className="grid grid-cols-2 gap-2 sm:gap-3">
 									<input
 										type="text"
 										value={heroMetricValue}
 										onChange={e => setHeroMetricValue(e.target.value)}
 										placeholder="1,200"
-										className="w-1/2 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+										className="w-full h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
 									/>
 									<input
 										type="text"
 										value={heroMetricLabel}
 										onChange={e => setHeroMetricLabel(e.target.value)}
 										placeholder="Attendees"
-										className="w-1/2 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+										className="w-full h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
 									/>
 								</div>
 							</div>
@@ -784,43 +795,62 @@ export function ProposalDeckBuilder({
 						</div>
 
 						<div className="flex flex-col gap-2">
-							<label className="text-xs font-bold text-black">Past / Confirmed Brand Sponsors <span className="text-black/40 font-medium">(optional, up to 4)</span></label>
+							<label className="text-xs font-bold text-black">Past / Confirmed Brand Sponsors <span className="text-black/40 font-medium">(up to 4)</span></label>
 							{pastSponsors.map((sponsor, idx) => (
-								<div key={idx} className="flex items-center gap-2">
-									<button
-										type="button"
-										onClick={() => {
-											setPastSponsorLogoTargetIdx(idx)
-											pastSponsorLogoInputRef.current?.click()
-										}}
-										className="size-10 shrink-0 rounded-lg bg-slate-50 border border-dashed border-black/10 flex items-center justify-center overflow-hidden"
-									>
-										{sponsor.logoPreview ? (
-											// eslint-disable-next-line @next/next/no-img-element
-											<img src={sponsor.logoPreview} alt="" className="w-full h-full object-cover" />
-										) : (
-											<span className="text-black/30 text-[10px]">Logo</span>
-										)}
-									</button>
-									<input
-										type="text"
-										value={sponsor.name}
-										onChange={e => updatePastSponsor(idx, { name: e.target.value })}
-										placeholder="Brand name"
-										className="flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
-									/>
-									<input
-										type="text"
-										value={sponsor.projectReference}
-										onChange={e => updatePastSponsor(idx, { projectReference: e.target.value })}
-										placeholder="Project reference (optional)"
-										className="flex-1 h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
-									/>
-									<button type="button" onClick={() => removePastSponsor(idx)} className="text-red-500 hover:text-red-700 font-bold text-lg p-1 shrink-0">✕</button>
+								<div key={idx} className="flex flex-col sm:flex-row gap-2 sm:items-center p-3 sm:p-0 bg-slate-50 sm:bg-transparent rounded-xl border border-black/10 sm:border-0 relative">
+									<div className="flex items-center gap-2 flex-1 min-w-0">
+										<button
+											type="button"
+											onClick={() => {
+												setPastSponsorLogoTargetIdx(idx)
+												pastSponsorLogoInputRef.current?.click()
+											}}
+											className="size-10 shrink-0 rounded-lg bg-white border border-dashed border-black/20 flex items-center justify-center overflow-hidden hover:border-black/50 transition-colors"
+										>
+											{sponsor.logoPreview ? (
+												// eslint-disable-next-line @next/next/no-img-element
+												<img src={sponsor.logoPreview} alt="" className="w-full h-full object-cover" />
+											) : (
+												<span className="text-black/30 text-[10px] font-bold">Logo</span>
+											)}
+										</button>
+										<input
+											type="text"
+											value={sponsor.name}
+											onChange={e => updatePastSponsor(idx, { name: e.target.value })}
+											placeholder="Brand name *"
+											className="flex-1 min-w-0 h-10 px-4 rounded-xl border border-black/10 bg-white text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+										/>
+										<button
+											type="button"
+											onClick={() => removePastSponsor(idx)}
+											className="sm:hidden size-8 shrink-0 rounded-full bg-red-100 text-red-600 font-bold flex items-center justify-center hover:bg-red-200 transition-colors text-xs"
+											aria-label="Remove sponsor"
+										>
+											✕
+										</button>
+									</div>
+									<div className="flex items-center gap-2 flex-1 min-w-0">
+										<input
+											type="text"
+											value={sponsor.projectReference}
+											onChange={e => updatePastSponsor(idx, { projectReference: e.target.value })}
+											placeholder="Project reference"
+											className="flex-1 min-w-0 h-10 px-4 rounded-xl border border-black/10 bg-white text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+										/>
+										<button
+											type="button"
+											onClick={() => removePastSponsor(idx)}
+											className="hidden sm:flex text-red-500 hover:text-red-700 font-bold text-lg p-1 shrink-0"
+											aria-label="Remove sponsor"
+										>
+											✕
+										</button>
+									</div>
 								</div>
 							))}
 							{pastSponsors.length < 4 && (
-								<button type="button" onClick={addPastSponsor} className="self-start text-xs font-black text-[#EE2C2C] hover:underline">
+								<button type="button" onClick={addPastSponsor} className="self-start text-xs font-black text-[#EE2C2C] hover:underline mt-1">
 									+ Add sponsor
 								</button>
 							)}
@@ -828,45 +858,47 @@ export function ProposalDeckBuilder({
 					</div>
 
 					{/* Sponsorship Offerings & Pricing */}
-					<div className="border-[3px] border-dashed border-black/30 rounded-[28px] p-6 bg-white flex flex-col gap-4 w-full">
+					<div className="border-[3px] border-dashed border-black/30 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 bg-white flex flex-col gap-4 w-full">
 						<SectionLabel>Sponsorship Offerings & Pricing</SectionLabel>
 
 						<div className="flex flex-col gap-1.5">
 							<label className="text-xs font-bold text-black">Package Tier Name & Pricing</label>
 							<div className="flex flex-col gap-2">
 								{pkgTiers.map((t, i) => (
-									<div key={i} className="flex items-center gap-2">
+									<div key={i} className="flex flex-col sm:flex-row gap-2 sm:items-center p-3 sm:p-0 bg-slate-50 sm:bg-transparent rounded-xl border border-black/10 sm:border-0 relative">
 										<input
 											type="text"
 											value={t.name}
 											onChange={e => updatePkgTier(i, { name: e.target.value })}
 											placeholder="e.g. Gold Sponsor"
-											className="h-10 flex-1 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+											className="flex-1 min-w-0 h-10 px-4 rounded-xl border border-black/10 bg-white text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
 										/>
-										<input
-											type="text"
-											value={t.price}
-											onChange={e => updatePkgTier(i, { price: e.target.value })}
-											placeholder="e.g. ₹50,000"
-											className="h-10 w-36 shrink-0 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
-										/>
-										{pkgTiers.length > 1 && (
-											<button
-												type="button"
-												onClick={() => removePkgTier(i)}
-												className="size-8 shrink-0 rounded-full bg-black text-white font-bold flex items-center justify-center hover:bg-red-600 transition-colors"
-												aria-label="Remove tier"
-											>
-												✕
-											</button>
-										)}
+										<div className="flex items-center gap-2">
+											<input
+												type="text"
+												value={t.price}
+												onChange={e => updatePkgTier(i, { price: e.target.value })}
+												placeholder="e.g. ₹50,000"
+												className="flex-1 sm:w-36 sm:flex-none h-10 px-4 rounded-xl border border-black/10 bg-white text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
+											/>
+											{pkgTiers.length > 1 && (
+												<button
+													type="button"
+													onClick={() => removePkgTier(i)}
+													className="size-8 shrink-0 rounded-full bg-black text-white font-bold flex items-center justify-center hover:bg-red-600 transition-colors text-xs"
+													aria-label="Remove tier"
+												>
+													✕
+												</button>
+											)}
+										</div>
 									</div>
 								))}
 								{pkgTiers.length < 6 && (
 									<button
 										type="button"
 										onClick={addPkgTier}
-										className="self-start px-3 py-1.5 bg-white border border-black rounded-lg text-[10px] font-bold shadow-sm hover:bg-slate-50 transition-colors"
+										className="self-start px-3 py-1.5 bg-white border border-black rounded-lg text-[10px] font-bold shadow-sm hover:bg-slate-50 transition-colors mt-1"
 									>
 										+ Add Tier
 									</button>
@@ -885,17 +917,17 @@ export function ProposalDeckBuilder({
 						</label>
 
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-bold text-black">Sponsorship Deadline <span className="text-black/40 font-medium">(optional)</span></label>
+							<label className="text-xs font-bold text-black">Sponsorship Deadline</label>
 							<input
 								type="date"
 								value={sponsorshipDeadline}
 								onChange={e => setSponsorshipDeadline(e.target.value)}
-								className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors max-w-xs"
+								className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors w-full sm:max-w-xs"
 							/>
 						</div>
 
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-bold text-black">On-Site Visibility Deliverables <span className="text-black/40 font-medium">(optional)</span></label>
+							<label className="text-xs font-bold text-black">On-Site Visibility Deliverables</label>
 							<input
 								type="text"
 								value={onsiteDeliverables}
@@ -905,7 +937,7 @@ export function ProposalDeckBuilder({
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-bold text-black">Digital & Media Deliverables <span className="text-black/40 font-medium">(optional)</span></label>
+							<label className="text-xs font-bold text-black">Digital & Media Deliverables</label>
 							<input
 								type="text"
 								value={digitalDeliverables}
@@ -915,7 +947,7 @@ export function ProposalDeckBuilder({
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-bold text-black">Custom Perks Description <span className="text-black/40 font-medium">(optional)</span></label>
+							<label className="text-xs font-bold text-black">Custom Perks Description</label>
 							<textarea
 								value={customPerks}
 								onChange={e => setCustomPerks(e.target.value)}
@@ -929,15 +961,15 @@ export function ProposalDeckBuilder({
 			) : step === "preview" ? (
 				<div className="flex flex-col gap-4">
 					{slides.map((slide, idx) => (
-						<div key={idx} className="border-[3px] border-dashed border-black/30 rounded-[24px] p-5 bg-white flex flex-col gap-3">
-							<span className="self-start text-[10px] font-black uppercase tracking-wider text-black/40 bg-neutral-100 px-2.5 py-1 rounded-full">
-								{slide.layout.replace(/_/g, " ")}
+						<div key={idx} className="border-[3px] border-dashed border-black/30 rounded-2xl sm:rounded-[24px] p-4 sm:p-5 bg-white flex flex-col gap-3">
+							<span className="self-start text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-black/60 bg-neutral-100 px-2.5 py-1 rounded-full border border-black/10">
+								Slide {idx + 1}: {slide.layout.replace(/_/g, " ")}
 							</span>
 
 							{slide.layout === "PRICING_COMPARISON" ? (
-								<div className="flex flex-col gap-1">
+								<div className="flex flex-col gap-1.5">
 									<p className="text-sm font-black text-black">{slide.title}</p>
-									<div className="flex flex-wrap gap-2 mt-1">
+									<div className="flex flex-wrap gap-1.5 sm:gap-2 mt-1">
 										{(slide.pricingTiers ?? []).map((t, ti) => (
 											<span key={ti} className="text-xs font-bold px-3 py-1.5 rounded-full border border-black/15 bg-slate-50">
 												{t.name} — {t.price}
@@ -953,10 +985,10 @@ export function ProposalDeckBuilder({
 									/>
 								</div>
 							) : slide.layout === "PAST_SPONSORS" ? (
-								<div className="flex flex-col gap-1">
+								<div className="flex flex-col gap-1.5">
 									<p className="text-sm font-black text-black">{slide.title}</p>
 									{pastSponsors.filter(p => p.name.trim()).length ? (
-										<div className="flex flex-wrap gap-2 mt-1">
+										<div className="flex flex-wrap gap-1.5 sm:gap-2 mt-1">
 											{pastSponsors.filter(p => p.name.trim()).map((p, pi) => (
 												<span key={pi} className="text-xs font-bold px-3 py-1.5 rounded-full border border-black/15 bg-slate-50">{p.name}</span>
 											))}
@@ -970,14 +1002,14 @@ export function ProposalDeckBuilder({
 									<input
 										value={slide.title}
 										onChange={e => updateSlide(idx, { title: e.target.value })}
-										className="text-sm font-black text-black outline-none border-b border-transparent focus:border-black/30 pb-1"
+										className="text-sm font-black text-black outline-none border-b border-black/10 focus:border-black pb-1 bg-transparent"
 									/>
 									{slide.layout === "COVER" && (
 										<input
 											value={slide.subtitle ?? ""}
 											onChange={e => updateSlide(idx, { subtitle: e.target.value })}
 											placeholder="Tagline"
-											className="text-xs font-semibold text-black/60 outline-none border-b border-transparent focus:border-black/30 pb-1"
+											className="text-xs font-semibold text-black/60 outline-none border-b border-black/10 focus:border-black pb-1 bg-transparent"
 										/>
 									)}
 									{(slide.layout === "VALUE_PROP" || slide.layout === "STAT_HIGHLIGHT" || slide.layout === "CLOSING_CONTACT") && (
@@ -989,18 +1021,20 @@ export function ProposalDeckBuilder({
 										/>
 									)}
 									{slide.layout === "STAT_HIGHLIGHT" && (
-										<div className="flex flex-wrap gap-2">
+										<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 											{(slide.stats ?? []).map((s, si) => (
-												<div key={si} className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl border border-black/10 bg-slate-50">
+												<div key={si} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-black/10 bg-slate-50">
 													<input
 														value={s.value}
 														onChange={e => updateStat(idx, si, { value: e.target.value })}
-														className="w-16 text-xs font-black text-black outline-none bg-transparent"
+														className="w-20 text-xs font-black text-black outline-none bg-transparent"
+														placeholder="Value"
 													/>
 													<input
 														value={s.label}
 														onChange={e => updateStat(idx, si, { label: e.target.value })}
-														className="w-28 text-[11px] font-semibold text-black/60 outline-none bg-transparent"
+														className="flex-1 min-w-0 text-[11px] font-semibold text-black/60 outline-none bg-transparent"
+														placeholder="Label"
 													/>
 												</div>
 											))}
@@ -1024,7 +1058,7 @@ export function ProposalDeckBuilder({
 					))}
 				</div>
 			) : (
-				<div className="border-[3px] border-black rounded-[24px] overflow-hidden bg-white h-[75vh]">
+				<div className="border-[3px] border-black rounded-2xl sm:rounded-[24px] overflow-hidden bg-white h-[65vh] sm:h-[75vh]">
 					{finalizedResult && <PdfViewer url={finalizedResult.docUrl} />}
 				</div>
 			)}
@@ -1039,7 +1073,8 @@ export function ProposalDeckBuilder({
 					<button
 						type="button"
 						onClick={() => setViewingImagePreview(null)}
-						className="absolute top-6 right-6 size-9 rounded-full bg-white text-black font-bold flex items-center justify-center"
+						className="absolute top-4 sm:top-6 right-4 sm:right-6 size-9 rounded-full bg-white text-black font-bold flex items-center justify-center shadow-md"
+						aria-label="Close image preview"
 					>
 						✕
 					</button>
