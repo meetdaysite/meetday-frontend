@@ -169,10 +169,19 @@ function ProposalCard({
 					</div>
 				)}
 
-				{/* Status Badge */}
-				<span className="absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-green-400 text-black">
-					Published
-				</span>
+				{/* Sponsorship Type Badge(s) */}
+				<div className="absolute top-2 left-2 flex flex-wrap gap-1 z-10">
+					{(proposal.sponsorshipType === "CASH" || proposal.sponsorshipType === "BOTH" || !proposal.sponsorshipType) && (
+						<span className="text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-emerald-100 text-emerald-900">
+							Cash
+						</span>
+					)}
+					{(proposal.sponsorshipType === "BARTER" || proposal.sponsorshipType === "BOTH") && (
+						<span className="text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black">
+							Barter
+						</span>
+					)}
+				</div>
 			</div>
 
 			{/* Content & Footer info */}
@@ -202,12 +211,6 @@ function ProposalCard({
 							{proposal.guestCount} Guests
 						</span>
 					)}
-					<span className={clsx(
-						"inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
-						proposal.sponsorshipType === "BARTER" ? "bg-[#FFC940] text-black" : proposal.sponsorshipType === "BOTH" ? "bg-[#FFC940] text-black" : "bg-emerald-100 text-emerald-900"
-					)}>
-						{proposal.sponsorshipType === "BARTER" ? "🎁 Barter" : proposal.sponsorshipType === "BOTH" ? "💰 Both (Cash & Barter)" : "💰 Cash"}
-					</span>
 				</div>
 			</div>
 		</button>
