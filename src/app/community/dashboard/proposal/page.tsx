@@ -258,7 +258,7 @@ export default function ProposalPage() {
     const [docxRenderer, setDocxRenderer] = useState<any>(null)
     const [pptxViewerClass, setPptxViewerClass] = useState<any>(null)
 
-    const [activeTab, setActiveTab] = useState<"ALL" | "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED">("ALL")
+    const [activeTab, setActiveTab] = useState<"ALL" | "DRAFT" | "UNDER_REVIEW" | "REJECTED" | "PUBLISHED" | "COMPLETED">("ALL")
     const [loading, setLoading] = useState(true)
     const [isUploading, setIsUploading] = useState(false)
     const [uploadProgress, setUploadProgress] = useState(0)
@@ -283,6 +283,19 @@ export default function ProposalPage() {
     const logoInputRef = useRef<HTMLInputElement>(null)
 
     const [categories, setCategories] = useState<Category[]>([])
+
+    const isProposalCompleted = (p: { date?: string | null; endDate?: string | null }) => {
+        const raw = p.endDate || p.date
+        if (!raw) return false
+        try {
+            const d = new Date(raw)
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+            return d < today
+        } catch {
+            return false
+        }
+    }
 
     const isSplitLayout = showActivateModal || !!community
 
@@ -375,16 +388,20 @@ export default function ProposalPage() {
     const draftCount = useMemo(() => proposals.filter(p => p.status === "DRAFT").length, [proposals])
     const underReviewCount = useMemo(() => proposals.filter(p => p.status === "UNDER_REVIEW" || p.pendingRevision != null).length, [proposals])
     const rejectedCount = useMemo(() => proposals.filter(p => p.status === "REJECTED").length, [proposals])
-    const publishedCount = useMemo(() => proposals.filter(p => p.status === "PUBLISHED" || !p.status).length, [proposals])
+    const publishedCount = useMemo(() => proposals.filter(p => (p.status === "PUBLISHED" || !p.status) && !isProposalCompleted(p)).length, [proposals])
+    const completedCount = useMemo(() => proposals.filter(p => (p.status === "PUBLISHED" || !p.status) && isProposalCompleted(p)).length, [proposals])
     const allCount = proposals.length
 
     const filteredProposals = useMemo(() => {
         return proposals.filter(p => {
+            const isCompleted = isProposalCompleted(p)
             if (activeTab === "ALL") return true
             if (activeTab === "DRAFT") return p.status === "DRAFT"
             if (activeTab === "UNDER_REVIEW") return p.status === "UNDER_REVIEW" || p.pendingRevision != null
             if (activeTab === "REJECTED") return p.status === "REJECTED"
-            return p.status === "PUBLISHED" || !p.status
+            if (activeTab === "COMPLETED") return (p.status === "PUBLISHED" || !p.status) && isCompleted
+            if (activeTab === "PUBLISHED") return (p.status === "PUBLISHED" || !p.status) && !isCompleted
+            return true
         })
     }, [proposals, activeTab])
 
@@ -1274,11 +1291,15 @@ export default function ProposalPage() {
                                     </button>
                                     <div className="flex items-center gap-2">
                                         <h1 className="text-heading-sm font-semibold text-text-primary">{displayDetails?.name}</h1>
-                                        {displayDetails?.isRevision && (
+                                        {isProposalCompleted(selectedProposal) ? (
+                                            <span className="text-[9px] font-bold bg-neutral-900 text-white border border-neutral-700 px-2 py-0.5 rounded-badge uppercase tracking-wider">
+                                                Completed · Event Passed
+                                            </span>
+                                        ) : displayDetails?.isRevision ? (
                                             <span className="text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-badge uppercase tracking-wider">
                                                 Revision Under Review
                                             </span>
-                                        )}
+                                        ) : null}
                                     </div>
                                     <p className="text-caption text-text-tertiary">Project Overview & Details</p>
                                 </div>
@@ -1290,7 +1311,7 @@ export default function ProposalPage() {
                                         className="hidden"
                                         onChange={handleUpdateFile}
                                     />
-                                    {selectedProposal.status === "PUBLISHED" && (
+                                    {selectedProposal.status === "PUBLISHED" && !isProposalCompleted(selectedProposal) && (
                                         <button
                                             type="button"
                                             title="Share with brands"
@@ -2281,6 +2302,7 @@ export default function ProposalPage() {
                                                         { value: "DRAFT", label: `DRAFT (${draftCount})` },
                                                         { value: "UNDER_REVIEW", label: `UNDER REVIEW (${underReviewCount})` },
                                                         { value: "PUBLISHED", label: `PUBLISHED (${publishedCount})` },
+                                                        { value: "COMPLETED", label: `COMPLETED (${completedCount})` },
                                                         { value: "REJECTED", label: `REJECTED (${rejectedCount})` }
                                                     ].map((tab) => {
                                                         const isActive = activeTab === tab.value
@@ -2313,6 +2335,7 @@ export default function ProposalPage() {
                                                         {filteredProposals.map((p) => {
                                                             const isViewingRevision = p.pendingRevision != null;
                                                             const cardData = isViewingRevision ? p.pendingRevision! : p;
+                                                            const isCompleted = isProposalCompleted(p);
                                                             const imgUrl = typeof cardData.image === "string" ? cardData.image : cardData.image ? URL.createObjectURL(cardData.image) : null;
                                                             // Format date from YYYY-MM-DD to DD/MM/YYYY
                                                             const parts = cardData.date ? cardData.date.split("-") : [];
@@ -2346,23 +2369,20 @@ export default function ProposalPage() {
                                                                         <span
                                                                             className={clsx(
                                                                                 "absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
-                                                                                p.status === "DRAFT" && "bg-slate-100 text-black",
-                                                                                isViewingRevision && "bg-[#F5C343] text-black",
-                                                                                (!isViewingRevision && p.status === "UNDER_REVIEW") && "bg-[#F5C343] text-black",
-                                                                                p.status === "REJECTED" && "bg-[#EE2C2C] text-white",
-                                                                                (!isViewingRevision && (p.status === "PUBLISHED" || !p.status)) && "bg-green-400 text-black"
+                                                                                isCompleted && "bg-neutral-800 text-white",
+                                                                                !isCompleted && p.status === "DRAFT" && "bg-slate-100 text-black",
+                                                                                !isCompleted && isViewingRevision && "bg-[#F5C343] text-black",
+                                                                                !isCompleted && (!isViewingRevision && p.status === "UNDER_REVIEW") && "bg-[#F5C343] text-black",
+                                                                                !isCompleted && p.status === "REJECTED" && "bg-[#EE2C2C] text-white",
+                                                                                !isCompleted && (!isViewingRevision && (p.status === "PUBLISHED" || !p.status)) && "bg-green-400 text-black"
                                                                             )}
                                                                         >
-                                                                            {p.status === "DRAFT" && "Draft"}
-                                                                            {isViewingRevision && "Revision Under Review"}
-                                                                            {!isViewingRevision && p.status === "UNDER_REVIEW" && "Under Review"}
-                                                                            {p.status === "REJECTED" && "Rejected"}
-                                                                            {!isViewingRevision && (p.status === "PUBLISHED" || !p.status) && "Published"}
+                                                                            {isCompleted ? "Completed" : p.status === "DRAFT" ? "Draft" : isViewingRevision ? "Revision Under Review" : p.status === "UNDER_REVIEW" ? "Under Review" : p.status === "REJECTED" ? "Rejected" : "Published"}
                                                                         </span>
                                                                     </div>
 
                                                                     {/* Share button */}
-                                                                    {p.status === "PUBLISHED" && (
+                                                                    {p.status === "PUBLISHED" && !isCompleted && (
                                                                         <div className="absolute top-2 right-2 z-30" onClick={(e) => e.stopPropagation()}>
                                                                             <button
                                                                                 type="button"
