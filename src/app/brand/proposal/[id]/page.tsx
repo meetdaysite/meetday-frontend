@@ -167,7 +167,7 @@ export default function SharedProposalPage() {
 										<div className="flex items-center gap-2">
 											<h4 className="text-sm font-bold text-text-primary">Sponsorship Type</h4>
 											<span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] uppercase">
-												🎁 Barter Only
+												Barter
 											</span>
 										</div>
 										<p className="text-body-sm text-text-secondary">This community is open to product, service, or venue barter collaborations.</p>
@@ -176,9 +176,14 @@ export default function SharedProposalPage() {
 									<div className="bg-surface-card border border-border-default rounded-action p-5 flex flex-col gap-3">
 										<div className="flex items-center justify-between flex-wrap gap-2">
 											<h4 className="text-sm font-bold text-text-primary">Sponsor Pricing Tiers &amp; Barter</h4>
-											<span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] uppercase">
-												💰 Cash &amp; 🎁 Barter
-											</span>
+											<div className="flex items-center gap-1.5">
+												<span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] uppercase">
+													Cash
+												</span>
+												<span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] uppercase">
+													Barter
+												</span>
+											</div>
 										</div>
 										{proposal.sponsorTiers?.length > 0 && (
 											<div className="flex flex-wrap gap-3">
@@ -200,7 +205,7 @@ export default function SharedProposalPage() {
 										<div className="flex items-center justify-between flex-wrap gap-2">
 											<h4 className="text-sm font-bold text-text-primary">Sponsor Pricing Tiers</h4>
 											<span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] uppercase">
-												💰 Cash Only
+												Cash
 											</span>
 										</div>
 										<div className="flex flex-wrap gap-3">
