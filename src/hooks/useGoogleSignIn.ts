@@ -7,10 +7,11 @@ import { useAuth } from "@/context/AuthContext"
 import { useAuthSessionStore } from "@/store/authSessionStore"
 import { useHostStore } from "@/store/hostStore"
 import { useBrandStore } from "@/store/brandStore"
-import { getAuthMe, getHostProfile, getBrandProfile } from "@/lib/api"
+import { useSpaceStore } from "@/store/spaceStore"
+import { getAuthMe, getHostProfile, getBrandProfile, getSpaceProfile } from "@/lib/api"
 import { ApiError, getApiErrorMessage } from "@/lib/errors"
 
-type AppKind = "host" | "brand"
+type AppKind = "host" | "brand" | "spaces"
 
 // Interim login path while real SMS OTP delivery isn't wired up for production — reuses the
 // exact same post-auth resolution logic as the phone-OTP verify pages (checkPhone → getAuthMe →
@@ -30,6 +31,7 @@ export function useGoogleSignIn(
 	const setSession = useAuthSessionStore((s) => s.setSession)
 	const setHostProfile = useHostStore((s) => s.setProfile)
 	const setBrandProfile = useBrandStore((s) => s.setProfile)
+	const setSpaceProfile = useSpaceStore((s) => s.setProfile)
 	const router = useRouter()
 	const base = app === "host" ? "/community" : `/${app}`
 	const seamless = options?.seamless ?? false
@@ -47,12 +49,12 @@ export function useGoogleSignIn(
 				if (!(err instanceof ApiError && err.statusCode === 404)) throw err
 			}
 
-			const displayApp = app === "host" ? "community" : app
+			const displayApp = app === "host" ? "community" : app === "spaces" ? "space partner" : app
 
 			if (me) {
-				// One login can hold host, brand, and admin access at once — a different primary
+				// One login can hold host, brand, space, and admin access at once — a different primary
 				// `role` no longer means "wrong account", only the absence of this app's profile does.
-				const hasAccess = app === "host" ? me.hasHostAccess : me.hasBrandAccess
+				const hasAccess = app === "host" ? me.hasHostAccess : app === "spaces" ? me.hasSpaceAccess : me.hasBrandAccess
 
 				if (!hasAccess) {
 					if (intent === "login" && !seamless) {
@@ -74,8 +76,9 @@ export function useGoogleSignIn(
 					router.replace(`${base}/login`)
 					return
 				}
-				const profile = app === "host" ? await getHostProfile() : await getBrandProfile()
+				const profile = app === "host" ? await getHostProfile() : app === "spaces" ? await getSpaceProfile() : await getBrandProfile()
 				if (app === "host") setHostProfile(profile as Awaited<ReturnType<typeof getHostProfile>>)
+				else if (app === "spaces") setSpaceProfile(profile as Awaited<ReturnType<typeof getSpaceProfile>>)
 				else setBrandProfile(profile as Awaited<ReturnType<typeof getBrandProfile>>)
 				// A custom redirectTo (e.g. back to a shared link) does a hard navigation — a client-side
 				// router.push to a route the caller may already be sitting on can silently no-op, leaving

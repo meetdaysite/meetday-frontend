@@ -31,10 +31,11 @@ export type AuthMeData = {
 	avatarUrl: string | null
 	isActive: boolean
 	role: { name: string }
-	// One login can hold host, brand, and admin access at once — these report what this
+	// One login can hold host, brand, spaces, and admin access at once — these report what this
 	// identity actually has, independent of the single primary `role` above.
 	hasHostAccess: boolean
 	hasBrandAccess: boolean
+	hasSpaceAccess: boolean
 	adminRole: string | null
 	attendeeProfile: unknown | null
 	createdAt: string
@@ -400,6 +401,54 @@ export type AttendeeRegisterPayload = {
 
 export async function registerAttendee(payload: AttendeeRegisterPayload): Promise<void> {
 	await apiClient.post("/auth/register", { ...payload, accountType: "USER" })
+}
+
+// ─── Space Partner registration & profile ─────────────────────────────────────
+
+export type SpaceProfile = {
+	id: string
+	userId: string
+	businessName: string
+	operatingCities: string[]
+	phone: string | null
+	createdAt: string
+	updatedAt: string
+	user?: {
+		id: string
+		email: string | null
+		phone: string | null
+		firstName: string
+		lastName: string
+		avatarUrl: string | null
+	}
+}
+
+export type SpaceRegisterPayload = {
+	firstName: string
+	lastName: string
+	email: string
+	phone: string
+	accountType: "SPACE"
+	businessName: string
+	operatingCities: string[]
+}
+
+export async function registerSpace(payload: SpaceRegisterPayload): Promise<void> {
+	await apiClient.post("/auth/register", payload)
+}
+
+export async function getSpaceProfile(): Promise<SpaceProfile> {
+	const { data } = await apiClient.get<{ success: boolean; data: SpaceProfile }>("/spaces/me")
+	return data.data
+}
+
+export async function updateSpaceProfile(payload: {
+	businessName?: string
+	operatingCities?: string[]
+	phone?: string
+}): Promise<SpaceProfile> {
+	const { data } = await apiClient.patch<{ success: boolean; data: SpaceProfile }>("/spaces/me", payload)
+	return data.data
 }
 
 // ─── KYC ──────────────────────────────────────────────────────────────────────
