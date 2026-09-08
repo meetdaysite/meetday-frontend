@@ -1201,11 +1201,15 @@ export async function generateProposalDeckPlan(payload: GenerateProposalDeckPlan
 
 export type DeckTheme = "LIGHT" | "DARK" | "AUTO"
 export type DeckFontVibe = "MODERN_SANS" | "CLASSIC_SERIF" | "TECH_GEOMETRIC" | "MINIMALIST"
+// Purely a visual variant (card shapes/kicker/rule styling) — does not change slide layout
+// structure, so dynamic-length content (bullets/stats/sponsors/tiers) is unaffected either way.
+export type DeckLayoutStyle = "CLASSIC" | "EXECUTIVE"
 
 export type FinalizeProposalDeckPayload = {
 	slides: DeckSlide[]
 	theme: DeckTheme
 	fontVibe: DeckFontVibe
+	layoutStyle?: DeckLayoutStyle
 	primaryColors: string[]
 	accentColors: string[]
 	primaryLogoKey?: string

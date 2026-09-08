@@ -10,6 +10,7 @@ import {
 	type DeckSlide,
 	type DeckTheme,
 	type DeckFontVibe,
+	type DeckLayoutStyle,
 	type DeckStat,
 	type FinalizeProposalDeckResult,
 } from "@/lib/api"
@@ -50,6 +51,11 @@ const FONT_OPTIONS: { value: DeckFontVibe; label: string }[] = [
 	{ value: "CLASSIC_SERIF", label: "Classic Serif" },
 	{ value: "TECH_GEOMETRIC", label: "Tech / Geometric" },
 	{ value: "MINIMALIST", label: "Minimalist" },
+]
+
+const STYLE_OPTIONS: { value: DeckLayoutStyle; label: string; hint: string }[] = [
+	{ value: "CLASSIC", label: "Classic", hint: "Rounded cards, soft accent bar" },
+	{ value: "EXECUTIVE", label: "Executive", hint: "Squared cards, numbered stats, formal rules" },
 ]
 
 // Every image gets base64-inlined into the rendered PDF's HTML — an uncapped file size here
@@ -105,6 +111,7 @@ export function ProposalDeckBuilder({
 	// Design & Brand Identity Tokens
 	const [theme, setTheme] = useState<DeckTheme>("AUTO")
 	const [fontVibe, setFontVibe] = useState<DeckFontVibe>("MODERN_SANS")
+	const [layoutStyle, setLayoutStyle] = useState<DeckLayoutStyle>("CLASSIC")
 	const [primaryColors, setPrimaryColors] = useState<string[]>(["#EE2C2C", "#111111"])
 	const [accentColors, setAccentColors] = useState<string[]>(["#FFC940", "#0EA5E9", "#22C55E"])
 	const [primaryLogoFile, setPrimaryLogoFile] = useState<File | null>(null)
@@ -347,6 +354,7 @@ export function ProposalDeckBuilder({
 				slides: slidesWithSponsorLogos,
 				theme,
 				fontVibe,
+				layoutStyle,
 				primaryColors,
 				accentColors,
 				primaryLogoKey,
@@ -579,6 +587,30 @@ export function ProposalDeckBuilder({
 									<option key={opt.value} value={opt.value}>{opt.label}</option>
 								))}
 							</select>
+						</div>
+
+						<div className="flex flex-col gap-2">
+							<label className="text-xs font-bold text-black">Card Style</label>
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+								{STYLE_OPTIONS.map(opt => (
+									<button
+										key={opt.value}
+										type="button"
+										onClick={() => setLayoutStyle(opt.value)}
+										className={`flex flex-col items-start gap-1 p-3 rounded-xl border-2 text-left transition-all ${
+											layoutStyle === opt.value ? "border-black bg-[#FFC940]/20 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" : "border-black/10 hover:border-black/30 bg-slate-50/50"
+										}`}
+									>
+										<div className="flex items-center justify-between w-full">
+											<span className="text-xs font-black text-black">{opt.label}</span>
+											{layoutStyle === opt.value && (
+												<span className="text-[8px] font-black uppercase tracking-wider bg-black text-white px-1.5 py-0.5 rounded">Selected</span>
+											)}
+										</div>
+										<span className="text-[10px] text-black/60 leading-tight">{opt.hint}</span>
+									</button>
+								))}
+							</div>
 						</div>
 
 						<div className="flex flex-col gap-3">
