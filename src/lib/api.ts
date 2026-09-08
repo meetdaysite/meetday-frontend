@@ -100,6 +100,16 @@ export type HostProfile = {
 	panVerificationStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
 	panVerificationReference?: string
 	bankVerificationStatus: "NOT_SUBMITTED" | "PENDING" | "VERIFIED" | "FAILED"
+	// The host's own previously-submitted bank details — shown back so a pending/rejected
+	// submission can be reviewed and edited before resubmitting.
+	bankDetails?: {
+		status: string
+		accountHolderName: string | null
+		bankName: string | null
+		ifscCode: string | null
+		accountNumber: string | null
+		rejectionReason: string | null
+	} | null
 	approvalStatus: "PENDING" | "APPROVED" | "REJECTED"
 	approvedAt?: string | null
 	approvedBy?: string | null

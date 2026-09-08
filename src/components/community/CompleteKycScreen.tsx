@@ -43,6 +43,11 @@ function statusLabel(status: string) {
 	return status
 }
 
+function maskAccountNumber(accountNumber?: string | null) {
+	if (!accountNumber) return "—"
+	return "XXXX" + accountNumber.slice(-4)
+}
+
 function StatusBadge({ status }: { status: string }) {
 	const verified = status === "VERIFIED"
 	return (
@@ -65,10 +70,14 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 	const [panFailureReason, setPanFailureReason] = useState<string | null>(null)
 	const [panCooldown, setPanCooldown] = useState(0)
 	const [bankCooldown, setBankCooldown] = useState(0)
+	const [panEditing, setPanEditing] = useState(false)
+	const [bankEditing, setBankEditing] = useState(false)
 
 	const panVerified = profile.panVerificationStatus === "VERIFIED"
 	const panSubmitted = !!profile.pan && !!profile.legalName
+	const panPending = profile.panVerificationStatus === "PENDING"
 	const bankVerified = profile.bankVerificationStatus === "VERIFIED"
+	const bankPending = profile.bankVerificationStatus === "PENDING"
 
 	const panForm = useForm<PanFormValues>({
 		resolver: zodResolver(panSchema),
@@ -83,8 +92,25 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 
 	const bankForm = useForm<BankFormValues>({
 		resolver: zodResolver(bankSchema),
-		defaultValues: { accountHolderName: "", accountNumber: "", ifscCode: "", bankName: "" },
+		defaultValues: {
+			accountHolderName: profile.bankDetails?.accountHolderName ?? "",
+			accountNumber: profile.bankDetails?.accountNumber ?? "",
+			ifscCode: profile.bankDetails?.ifscCode ?? "",
+			bankName: profile.bankDetails?.bankName ?? "",
+		},
 	})
+	// Previously-submitted bank details were never re-synced here, so the form always showed
+	// blank fields on reload even though something had been submitted (bug) — mirror the PAN
+	// form's re-sync pattern above.
+	useEffect(() => {
+		bankForm.reset({
+			accountHolderName: profile.bankDetails?.accountHolderName ?? "",
+			accountNumber: profile.bankDetails?.accountNumber ?? "",
+			ifscCode: profile.bankDetails?.ifscCode ?? "",
+			bankName: profile.bankDetails?.bankName ?? "",
+		})
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [profile.bankDetails])
 
 	useEffect(() => {
 		if (panCooldown <= 0) return
@@ -133,6 +159,7 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 			toast.error(getApiErrorMessage(e))
 		} finally {
 			setPanLoading(false)
+			setPanEditing(false)
 		}
 	}
 
@@ -162,6 +189,7 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 			toast.error(getApiErrorMessage(e))
 		} finally {
 			setBankSubmitting(false)
+			setBankEditing(false)
 		}
 	}
 
@@ -186,6 +214,21 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 							<p className="text-label-md text-text-primary font-bold">PAN verification</p>
 							<StatusBadge status={profile.panVerificationStatus} />
 						</div>
+					) : panPending && !panEditing ? (
+						<div className="rounded-action border border-border-default bg-surface-card px-4 py-4 flex flex-col gap-3">
+							<div className="flex items-center justify-between">
+								<p className="text-label-md text-text-primary font-bold">PAN verification</p>
+								<StatusBadge status={profile.panVerificationStatus} />
+							</div>
+							<div className="text-body-sm text-text-secondary">
+								<p><span className="text-text-muted">PAN:</span> {profile.pan}</p>
+								<p><span className="text-text-muted">Legal name:</span> {profile.legalName}</p>
+							</div>
+							<p className="text-caption text-text-muted">Under review by our team. You can edit and resubmit if needed.</p>
+							<Button type="button" variant="secondary" size="sm" onClick={() => setPanEditing(true)} className="mt-1 self-start">
+								Edit
+							</Button>
+						</div>
 					) : (
 						<form
 							onSubmit={panForm.handleSubmit(onSubmitPan)}
@@ -195,6 +238,9 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 								<p className="text-label-md text-text-primary font-bold">PAN verification</p>
 								<StatusBadge status={profile.panVerificationStatus} />
 							</div>
+							{profile.panVerificationStatus === "FAILED" && profile.kycFailureReason && (
+								<p className="text-caption text-text-danger">{profile.kycFailureReason}</p>
+							)}
 							<TextField
 								label="PAN"
 								placeholder="Enter your PAN"
@@ -213,15 +259,21 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 								size="sm"
 							/>
 							{panFailureReason && <p className="text-caption text-text-danger">{panFailureReason}</p>}
-							<Button
-								type="submit"
-								variant="primary"
-								size="sm"
-								disabled={panLoading || panCooldown > 0}
-								className="mt-1"
-							>
-								{panLoading ? "Verifying…" : panCooldown > 0 ? `Try again in ${panCooldown}s` : "Verify PAN"}
-							</Button>
+							<div className="flex items-center gap-2 mt-1">
+								<Button
+									type="submit"
+									variant="primary"
+									size="sm"
+									disabled={panLoading || panCooldown > 0}
+								>
+									{panLoading ? "Submitting…" : panCooldown > 0 ? `Try again in ${panCooldown}s` : "Submit PAN"}
+								</Button>
+								{panPending && (
+									<Button type="button" variant="secondary" size="sm" onClick={() => setPanEditing(false)} disabled={panLoading}>
+										Cancel
+									</Button>
+								)}
+							</div>
 						</form>
 					)}
 
@@ -239,6 +291,23 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 								Submit your PAN details first to unlock bank account details.
 							</p>
 						</div>
+					) : bankPending && !bankEditing ? (
+						<div className="rounded-action border border-border-default bg-surface-card px-4 py-4 flex flex-col gap-3">
+							<div className="flex items-center justify-between">
+								<p className="text-label-md text-text-primary font-bold">Bank account verification</p>
+								<StatusBadge status={profile.bankVerificationStatus} />
+							</div>
+							<div className="text-body-sm text-text-secondary">
+								<p><span className="text-text-muted">Account holder:</span> {profile.bankDetails?.accountHolderName}</p>
+								<p><span className="text-text-muted">Bank:</span> {profile.bankDetails?.bankName}</p>
+								<p><span className="text-text-muted">Account:</span> {maskAccountNumber(profile.bankDetails?.accountNumber)}</p>
+								<p><span className="text-text-muted">IFSC:</span> {profile.bankDetails?.ifscCode}</p>
+							</div>
+							<p className="text-caption text-text-muted">Under review by our team. You can edit and resubmit if needed.</p>
+							<Button type="button" variant="secondary" size="sm" onClick={() => setBankEditing(true)} className="mt-1 self-start">
+								Edit
+							</Button>
+						</div>
 					) : (
 						<form
 							onSubmit={bankForm.handleSubmit(onSubmitBank)}
@@ -248,6 +317,9 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 								<p className="text-label-md text-text-primary font-bold">Bank account verification</p>
 								<StatusBadge status={profile.bankVerificationStatus} />
 							</div>
+							{profile.bankVerificationStatus === "FAILED" && (profile.bankDetails?.rejectionReason || profile.kycFailureReason) && (
+								<p className="text-caption text-text-danger">{profile.bankDetails?.rejectionReason || profile.kycFailureReason}</p>
+							)}
 							<TextField
 								label="Account holder name"
 								placeholder="Enter your account holder name"
@@ -284,15 +356,21 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 									className="flex-1"
 								/>
 							</div>
-							<Button
-								type="submit"
-								variant="primary"
-								size="sm"
-								disabled={bankSubmitting || bankCooldown > 0}
-								className="mt-1"
-							>
-								{bankSubmitting ? "Verifying…" : bankCooldown > 0 ? `Try again in ${bankCooldown}s` : "Verify bank account"}
-							</Button>
+							<div className="flex items-center gap-2 mt-1">
+								<Button
+									type="submit"
+									variant="primary"
+									size="sm"
+									disabled={bankSubmitting || bankCooldown > 0}
+								>
+									{bankSubmitting ? "Submitting…" : bankCooldown > 0 ? `Try again in ${bankCooldown}s` : "Submit bank details"}
+								</Button>
+								{bankPending && (
+									<Button type="button" variant="secondary" size="sm" onClick={() => setBankEditing(false)} disabled={bankSubmitting}>
+										Cancel
+									</Button>
+								)}
+							</div>
 						</form>
 					)}
 				</div>
