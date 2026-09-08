@@ -405,7 +405,7 @@ export async function registerAttendee(payload: AttendeeRegisterPayload): Promis
 // ─── KYC ──────────────────────────────────────────────────────────────────────
 
 export type PanVerifyResult = {
-	referenceId: string
+	referenceId: string | null
 	panVerificationStatus: "VERIFIED" | "FAILED" | "PENDING"
 	failureReason: string | null
 }
@@ -427,7 +427,7 @@ export type BankVerifyPayload = {
 }
 
 export type BankKycResult = {
-	panReferenceId: string
+	panReferenceId: string | null
 	pennyDropReference: string | null
 	kycStatus: "PENDING" | "VERIFIED" | "FAILED"
 	panVerificationStatus: "PENDING" | "VERIFIED" | "FAILED"

@@ -67,6 +67,7 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 	const [bankCooldown, setBankCooldown] = useState(0)
 
 	const panVerified = profile.panVerificationStatus === "VERIFIED"
+	const panSubmitted = !!profile.pan && !!profile.legalName
 	const bankVerified = profile.bankVerificationStatus === "VERIFIED"
 
 	const panForm = useForm<PanFormValues>({
@@ -127,7 +128,7 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 
 			await refreshProfile()
 			if (status === "VERIFIED") toast.success("PAN verified!")
-			else toast.error("PAN verification failed. Please review the details and try again.")
+			else toast.success("PAN submitted for review.")
 		} catch (e) {
 			toast.error(getApiErrorMessage(e))
 		} finally {
@@ -139,11 +140,9 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 		setBankSubmitting(true)
 		try {
 			let status: string = "VERIFIED"
-			let failureReason: string | null = null
 			try {
 				const result = await verifyBankAccount({ bankAccount: values })
 				status = result.bankVerificationStatus
-				failureReason = result.kycFailureReason
 			} catch (e) {
 				if (e instanceof ApiError && e.statusCode === 409) {
 					// Already verified — treat as success
@@ -158,7 +157,7 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 
 			await refreshProfile()
 			if (status === "VERIFIED") toast.success("Bank account verified!")
-			else toast.error(failureReason ?? "Bank account verification failed. Please try again.")
+			else toast.success("Bank details submitted for review.")
 		} catch (e) {
 			toast.error(getApiErrorMessage(e))
 		} finally {
@@ -176,7 +175,7 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 				<div className="text-center">
 					<h1 className="text-heading-sm text-text-primary font-bold">Complete your verification</h1>
 					<p className="text-body-sm text-text-secondary mt-2 max-w-md mx-auto">
-						Finish verifying your PAN and bank account before we can send your application for admin approval.
+						Submit your PAN and bank account details — our team will manually review them before your application can be approved.
 					</p>
 				</div>
 
@@ -233,11 +232,11 @@ export function CompleteKycScreen({ profile, onSignOut }: { profile: HostProfile
 							<p className="text-label-md text-text-primary font-bold">Bank account verification</p>
 							<StatusBadge status={profile.bankVerificationStatus} />
 						</div>
-					) : !panVerified ? (
+					) : !panSubmitted ? (
 						<div className="rounded-action border border-dashed border-border-default bg-surface-secondary px-4 py-4 flex items-center gap-3 opacity-70">
 							<Icon as={LockKeyholeSvg} size="md" color="muted" />
 							<p className="text-body-sm text-text-muted">
-								Complete PAN verification first to unlock bank account details.
+								Submit your PAN details first to unlock bank account details.
 							</p>
 						</div>
 					) : (
