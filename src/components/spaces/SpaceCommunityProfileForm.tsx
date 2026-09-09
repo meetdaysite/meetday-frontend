@@ -17,7 +17,10 @@ import {
 import UploadSvg from "@/icons/outlined/upload.svg"
 import clsx from "clsx"
 
-async function uploadImageAndGetKey(file: File, context: "SPONSORSHIP_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "COMMUNITY_BRAND_LOGO_MEDIA"): Promise<string> {
+async function uploadImageAndGetKey(
+	file: File,
+	context: "SPONSORSHIP_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "COMMUNITY_BRAND_LOGO_MEDIA",
+): Promise<string> {
 	const { url, key } = await getUploadUrl({ context, contentType: file.type })
 	await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
 	return key
@@ -29,14 +32,29 @@ const emptyPastEventDraft = (): PastEventDraft => ({ name: "", description: "", 
 type BrandWorkedWithDraft = { brandName: string; url?: string; logoKey?: string; logoUrl?: string; logoFile?: File }
 const emptyBrandWorkedWithDraft = (): BrandWorkedWithDraft => ({ brandName: "", url: "" })
 
+const formatHref = (url: string) => {
+	const trimmed = url.trim()
+	if (/^https?:\/\//i.test(trimmed)) {
+		return trimmed
+	}
+	return `https://${trimmed}`
+}
+
+function formatExternalUrl(url?: string | null) {
+	if (!url) return null
+	const trimmed = url.trim()
+	if (!trimmed) return null
+	return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+}
+
 const APPROVAL_BANNER: Record<string, { className: string; text: (p: SpaceCommunityProfile) => React.ReactNode }> = {
 	APPROVED: {
 		className: "bg-green-50 border-green-600 text-green-800",
-		text: () => "Live to Communities & Brands.",
+		text: () => "Live to Communities & Brands. Editing will send it back for admin re-approval.",
 	},
 	PENDING: {
 		className: "bg-amber-50 border-amber-500 text-amber-800",
-		text: () => "Profile under review.",
+		text: () => "Profile under review — awaiting admin approval.",
 	},
 	REJECTED: {
 		className: "bg-red-50 border-red-500 text-red-700",
@@ -50,10 +68,12 @@ const APPROVAL_BANNER: Record<string, { className: string; text: (p: SpaceCommun
 	},
 }
 
-// Shared by both /space/dashboard/profile and /spaces/dashboard/profile — the two parallel
-// Space Partner portals share the same account/data layer (useSpaceStore, api.ts functions),
-// so this is the single canonical "Activate Community Space Profile" form for both.
-export function SpaceCommunityProfileForm() {
+export interface SpaceCommunityProfileFormProps {
+	onClose?: () => void
+	onSaved?: (saved: SpaceCommunityProfile) => void
+}
+
+export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityProfileFormProps = {}) {
 	const spaceProfile = useSpaceStore((s) => s.profile)
 	const [categories, setCategories] = useState<Category[]>([])
 	const [community, setCommunity] = useState<SpaceCommunityProfile | null>(null)
@@ -102,7 +122,7 @@ export function SpaceCommunityProfileForm() {
 					setCategoryIds(existing.categories.map((c) => c.id))
 					setLogoPreviewUrl(existing.logoUrl)
 					setPosterPreviewUrl(existing.posterUrl || null)
-					setActiveLocations(existing.activeLocations)
+					setActiveLocations(existing.activeLocations || [])
 					setCentreShowcaseImages((existing.centreShowcaseImageKeys ?? []).map((key, i) => ({ key, url: existing.centreShowcaseUrls[i] ?? "" })))
 					setVideoLink(existing.videoLink ?? "")
 					setPastEvents(
@@ -120,6 +140,10 @@ export function SpaceCommunityProfileForm() {
 							logoUrl: b.logoUrl ?? undefined,
 						})),
 					)
+					setInstagram(spaceProfile?.socialLinks?.instagram ?? "")
+					setLinkedin(spaceProfile?.socialLinks?.linkedin ?? "")
+					setYoutube(spaceProfile?.socialLinks?.youtube ?? "")
+					setWebsite(spaceProfile?.socialLinks?.website ?? "")
 				} else {
 					setName(spaceProfile?.businessName ?? "")
 					setActiveLocations(spaceProfile?.operatingCities ?? [])
@@ -294,13 +318,16 @@ export function SpaceCommunityProfileForm() {
 			})
 
 			try {
-				await updateSpaceProfile({ operatingCities: activeLocations })
+				await updateSpaceProfile({
+					operatingCities: activeLocations,
+				})
 			} catch {
 				/* non-fatal */
 			}
 
 			setCommunity(saved)
 			setEditing(false)
+			if (onSaved) onSaved(saved)
 			toast.success(
 				saved.approvalStatus === "APPROVED"
 					? "Changes submitted — your current profile stays live until an admin approves this edit."
@@ -317,8 +344,8 @@ export function SpaceCommunityProfileForm() {
 
 	if (!loaded) {
 		return (
-			<div className="p-6 lg:p-8">
-				<p className="text-sm text-text-secondary">Loading…</p>
+			<div className="p-6">
+				<p className="text-sm font-semibold text-black/50">Loading…</p>
 			</div>
 		)
 	}
@@ -326,62 +353,281 @@ export function SpaceCommunityProfileForm() {
 	const banner = community ? APPROVAL_BANNER[community.approvalStatus] : null
 
 	return (
-		<div className="p-6 lg:p-8 max-w-3xl mx-auto flex flex-col gap-5">
-			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-black text-black">Community Space Profile</h1>
-				{community && !editing && (
-					<Button type="button" variant="secondary" size="sm" onClick={() => setEditing(true)}>
-						Edit
-					</Button>
+		<div className="bg-white flex flex-col h-full w-full px-6 py-6 overflow-y-auto">
+			{/* Panel Header */}
+			<div className="flex justify-between items-center pb-4 mb-4 border-b border-black/10 shrink-0">
+				<h2 className="text-xl font-heading font-black text-black">
+					{community && !editing ? "Community Spaces Profile" : community ? "Edit Spaces Details" : "Activate Spaces Profile"}
+				</h2>
+				{onClose && (
+					<button
+						type="button"
+						onClick={onClose}
+						className="text-black/60 hover:text-black size-8 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors font-bold text-sm cursor-pointer"
+						aria-label="Close panel"
+					>
+						✕
+					</button>
 				)}
 			</div>
 
-			{banner && (
-				<div className={clsx("rounded-xl px-3.5 py-2.5 text-xs font-semibold border-2", banner.className)}>
-					{banner.text(community!)}
-				</div>
-			)}
-
+			{/* Read-Only Details View */}
 			{community && !editing ? (
-				<div className="flex flex-col gap-4 rounded-2xl border-2 border-black/10 p-5">
-					{community.logoUrl && (
-						// eslint-disable-next-line @next/next/no-img-element
-						<img src={community.logoUrl} alt={community.name} className="size-20 rounded-full object-cover border border-black/10" />
+				<div className="flex flex-col gap-6">
+					{banner && (
+						<div className={clsx("rounded-xl px-3.5 py-2.5 text-xs font-semibold border-2", banner.className)}>
+							{banner.text(community)}
+						</div>
 					)}
-					<h2 className="text-lg font-bold text-black">{community.name}</h2>
-					<p className="text-sm text-black/70 whitespace-pre-wrap">{community.about}</p>
-					<div className="flex flex-wrap gap-1.5">
-						{community.categories.map((c) => (
-							<span key={c.id} className="rounded-full bg-black/5 px-2.5 py-1 text-xs font-medium text-black/70">
-								{c.name}
-							</span>
-						))}
+
+					{/* Top Card Header */}
+					<div className="flex items-center gap-4">
+						<div className="size-16 rounded-xl border-2 border-black overflow-hidden bg-slate-50 flex items-center justify-center shrink-0">
+							{community.logoUrl ? (
+								// eslint-disable-next-line @next/next/no-img-element
+								<img src={community.logoUrl} alt={community.name} className="size-full object-cover" />
+							) : (
+								<div className="size-full bg-[#FFCE29] flex items-center justify-center text-xl font-heading font-black text-black">
+									{community.name.substring(0, 2).toUpperCase()}
+								</div>
+							)}
+						</div>
+						<div className="flex flex-col gap-1">
+							<h3 className="text-lg font-heading font-black text-black leading-none">{community.name}</h3>
+							<div className="flex items-center gap-1.5 mt-1.5">
+								<span className="inline-block bg-[#F5C343] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[11px] font-black px-2.5 py-0.5 rounded-md uppercase tracking-wider">
+									{community.venueCapacity ? `${community.venueCapacity} Capacity` : "Venue Space"}
+								</span>
+								{spaceProfile?.businessName && (
+									<span className="text-[11px] font-black text-black/60 uppercase tracking-wider">
+										{spaceProfile.businessName}
+									</span>
+								)}
+							</div>
+						</div>
+					</div>
+
+					{/* About the space */}
+					<div className="flex flex-col gap-1.5">
+						<span className="text-xs font-bold text-black/50">About the space</span>
+						<p className="text-sm font-semibold text-black/75 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-black/5 whitespace-pre-wrap">
+							{community.about}
+						</p>
+					</div>
+
+					{/* Highlight Poster */}
+					{community.posterUrl && (
+						<div className="flex flex-col gap-1.5">
+							<span className="text-xs font-bold text-black/50">Highlight Poster</span>
+							<div className="relative w-full aspect-[4/5] rounded-2xl border-2 border-black overflow-hidden bg-slate-50 max-w-sm">
+								{/* eslint-disable-next-line @next/next/no-img-element */}
+								<img src={community.posterUrl} alt="Space Poster" className="size-full object-cover" />
+							</div>
+						</div>
+					)}
+
+					{/* Numbers Grid */}
+					<div className="grid grid-cols-2 gap-4">
+						<div className="p-3.5 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-1">
+							<span className="text-[10px] font-bold text-black/40 uppercase">Number of Venues</span>
+							<span className="text-lg font-heading font-black text-black">{community.numberOfVenues}</span>
+						</div>
+						<div className="p-3.5 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-1">
+							<span className="text-[10px] font-bold text-black/40 uppercase">Venue Capacity</span>
+							<span className="text-lg font-heading font-black text-black">{community.venueCapacity}</span>
+						</div>
+						<div className="p-3.5 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-1">
+							<span className="text-[10px] font-bold text-black/40 uppercase">Community Size</span>
+							<span className="text-lg font-heading font-black text-black">{community.communitySize}</span>
+						</div>
+						<div className="p-3.5 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-1">
+							<span className="text-[10px] font-bold text-black/40 uppercase">Experiences / Yr</span>
+							<span className="text-lg font-heading font-black text-black">{community.experiencesPerYear}</span>
+						</div>
+					</div>
+
+					{/* Categories */}
+					{community.categories.length > 0 && (
+						<div className="flex flex-col gap-2">
+							<span className="text-xs font-bold text-black/50">Categories</span>
+							<div className="flex flex-wrap gap-1.5">
+								{community.categories.map((cat) => (
+									<span key={cat.id} className="px-2.5 py-1 bg-[#FFC940]/10 text-[#6C32D1] border border-[#6C32D1]/20 rounded-lg text-xs font-bold">
+										{cat.name}
+									</span>
+								))}
+							</div>
+						</div>
+					)}
+
+					{/* Active Locations */}
+					{community.activeLocations && community.activeLocations.length > 0 && (
+						<div className="flex flex-col gap-2">
+							<span className="text-xs font-bold text-black/50">Active Locations</span>
+							<div className="flex flex-wrap gap-1.5">
+								{community.activeLocations.map((loc) => (
+									<span key={loc} className="px-2.5 py-1 bg-slate-50 text-black/70 border border-black/10 rounded-lg text-xs font-bold">
+										{loc}
+									</span>
+								))}
+							</div>
+						</div>
+					)}
+
+					{/* Centre Showcase */}
+					{community.centreShowcaseUrls && community.centreShowcaseUrls.length > 0 && (
+						<div className="flex flex-col gap-2">
+							<span className="text-xs font-bold text-black/50">Centre Showcase</span>
+							<div className="flex gap-2 flex-wrap">
+								{community.centreShowcaseUrls.map((url, idx) => (
+									<div key={idx} className="relative w-20 h-20 rounded-xl border-2 border-black overflow-hidden shrink-0">
+										{/* eslint-disable-next-line @next/next/no-img-element */}
+										<img src={url} alt={`Centre showcase ${idx + 1}`} className="w-full h-full object-cover" />
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+
+					{/* Past Events */}
+					{community.pastEvents && community.pastEvents.length > 0 && (
+						<div className="flex flex-col gap-3">
+							<span className="text-xs font-bold text-black/50">Past Experiences</span>
+							<div className="flex flex-col gap-3">
+								{community.pastEvents.map((event, i) => (
+									<div key={i} className="p-4 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-2">
+										<div className="flex justify-between items-center">
+											<span className="text-sm font-bold text-black">{event.name || `Experience #${i + 1}`}</span>
+											<span className="text-[10px] font-bold text-black/40 uppercase bg-black/5 px-2 py-0.5 rounded-md">
+												Experience #{i + 1}
+											</span>
+										</div>
+										{event.description && (
+											<p className="text-sm font-semibold text-black/75 leading-relaxed whitespace-pre-wrap">{event.description}</p>
+										)}
+										{event.imageUrls && event.imageUrls.length > 0 && (
+											<div className="flex gap-2 flex-wrap mt-1">
+												{event.imageUrls.map((url, j) => (
+													<div key={j} className="relative w-16 h-20 rounded-lg border border-black/10 overflow-hidden bg-white shrink-0">
+														{/* eslint-disable-next-line @next/next/no-img-element */}
+														<img src={url} alt={event.name || "Past experience"} className="w-full h-full object-cover" />
+													</div>
+												))}
+											</div>
+										)}
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+
+					{/* Associated Brands */}
+					{community.brandsWorkedWith && community.brandsWorkedWith.length > 0 && (
+						<div className="flex flex-col gap-2">
+							<span className="text-xs font-bold text-black/50">Associated Brands</span>
+							<div className="flex flex-wrap gap-2.5">
+								{community.brandsWorkedWith.map((brand, i) => (
+									<div key={i} className="size-12 rounded-xl border border-black/10 overflow-hidden bg-white flex items-center justify-center shadow-sm" title={brand.brandName || undefined}>
+										{brand.logoUrl ? (
+											// eslint-disable-next-line @next/next/no-img-element
+											<img src={brand.logoUrl} alt={brand.brandName || "Brand"} className="size-full object-cover" />
+										) : (
+											<span className="text-xs font-bold text-black/60">{(brand.brandName || "B").charAt(0).toUpperCase()}</span>
+										)}
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+
+					{/* Digital Presence */}
+					{(instagram || linkedin || youtube || website) && (
+						<div className="flex flex-col gap-2.5 border-t border-black/10 pt-4">
+							<span className="text-xs font-bold text-black/50">Digital Presence</span>
+							<div className="flex flex-col gap-2">
+								{instagram && (
+									<div className="flex justify-between items-center text-sm font-semibold">
+										<span className="text-black/40">Instagram</span>
+										<a href={formatHref(instagram)} target="_blank" rel="noreferrer" className="text-green-600 hover:text-green-700 hover:underline">
+											View
+										</a>
+									</div>
+								)}
+								{linkedin && (
+									<div className="flex justify-between items-center text-sm font-semibold">
+										<span className="text-black/40">LinkedIn</span>
+										<a href={formatHref(linkedin)} target="_blank" rel="noreferrer" className="text-green-600 hover:text-green-700 hover:underline">
+											View
+										</a>
+									</div>
+								)}
+								{youtube && (
+									<div className="flex justify-between items-center text-sm font-semibold">
+										<span className="text-black/40">YouTube</span>
+										<a href={formatHref(youtube)} target="_blank" rel="noreferrer" className="text-green-600 hover:text-green-700 hover:underline">
+											View
+										</a>
+									</div>
+								)}
+								{website && (
+									<div className="flex justify-between items-center text-sm font-semibold">
+										<span className="text-black/40">Website</span>
+										<a href={formatHref(website)} target="_blank" rel="noreferrer" className="text-green-600 hover:text-green-700 hover:underline">
+											View
+										</a>
+									</div>
+								)}
+							</div>
+						</div>
+					)}
+
+					{/* Edit Button Footer */}
+					<div className="mt-4 pt-4 border-t border-black/10 shrink-0">
+						<button
+							type="button"
+							onClick={() => setEditing(true)}
+							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all flex items-center justify-center gap-2 select-none cursor-pointer"
+						>
+							EDIT SPACES PROFILE
+						</button>
 					</div>
 				</div>
 			) : (
-				<form onSubmit={handleSubmit} className="flex flex-col gap-4">
+				/* Form Mode: Create / Edit */
+				<form onSubmit={handleSubmit} className="flex-1 flex flex-col gap-4">
+					{banner && (
+						<div className={clsx("rounded-xl px-3.5 py-2.5 text-xs font-semibold border-2", banner.className)}>
+							{banner.text(community!)}
+						</div>
+					)}
+
+					{/* Space Name */}
 					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-bold text-black">Name *</label>
+						<label className="text-xs font-bold text-black">Space Name *</label>
 						<input
 							type="text"
+							required
 							value={name}
 							onChange={(e) => setName(e.target.value)}
 							placeholder="e.g. WeWork Koramangala"
-							className="h-10 px-4 rounded-xl border-2 border-black bg-white text-black outline-none text-sm w-full"
+							className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30"
 						/>
 					</div>
 
+					{/* About Space */}
 					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-bold text-black">About *</label>
+						<label className="text-xs font-bold text-black">About the space *</label>
 						<textarea
+							required
 							value={about}
 							onChange={(e) => setAbout(e.target.value)}
 							placeholder="Describe the space, its vibe, and what makes it special..."
 							rows={3}
-							className="p-3 rounded-xl border-2 border-black bg-white text-black outline-none text-sm resize-none w-full"
+							className="p-3 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors resize-none w-full placeholder:text-black/30"
 						/>
 					</div>
 
+					{/* Logo */}
 					<div className="flex flex-col gap-1.5">
 						<label className="text-xs font-bold text-black">Logo *</label>
 						<div className="flex items-center gap-4">
@@ -395,14 +641,21 @@ export function SpaceCommunityProfileForm() {
 							</div>
 							<div className="flex flex-col gap-1">
 								<input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoChange} />
-								<Button type="button" variant="secondary" size="xs" onClick={() => logoInputRef.current?.click()}>
+								<Button
+									type="button"
+									variant="secondary"
+									size="xs"
+									onClick={() => logoInputRef.current?.click()}
+									className="bg-white border-2 border-black text-black text-[10px] font-bold py-1 px-3 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all self-start"
+								>
 									Choose Image
 								</Button>
-								<span className="text-[10px] text-black/40">1:1 ratio recommended.</span>
+								<span className="text-[10px] text-black/40 font-medium">1:1 ratio recommended</span>
 							</div>
 						</div>
 					</div>
 
+					{/* Poster */}
 					<div className="flex flex-col gap-1.5">
 						<label className="text-xs font-bold text-black">Highlight Poster (4:5, Optional)</label>
 						<div className="flex items-center gap-4">
@@ -411,7 +664,13 @@ export function SpaceCommunityProfileForm() {
 									<>
 										{/* eslint-disable-next-line @next/next/no-img-element */}
 										<img src={posterPreviewUrl} alt="Poster preview" className="size-full object-cover" />
-										<button type="button" onClick={removePoster} className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px]">×</button>
+										<button
+											type="button"
+											onClick={removePoster}
+											className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center font-bold"
+										>
+											×
+										</button>
 									</>
 								) : (
 									<Icon as={UploadSvg} size="md" color="muted" />
@@ -419,129 +678,278 @@ export function SpaceCommunityProfileForm() {
 							</div>
 							<div className="flex flex-col gap-1">
 								<input ref={posterInputRef} type="file" accept="image/*" className="hidden" onChange={handlePosterChange} />
-								<Button type="button" variant="secondary" size="xs" onClick={() => posterInputRef.current?.click()}>
+								<Button
+									type="button"
+									variant="secondary"
+									size="xs"
+									onClick={() => posterInputRef.current?.click()}
+									className="bg-white border-2 border-black text-black text-[10px] font-bold py-1 px-3 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all self-start"
+								>
 									Choose Image
 								</Button>
 							</div>
 						</div>
 					</div>
 
+					{/* Stats: Number of Venues & Capacity */}
 					<div className="grid grid-cols-2 gap-3">
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-bold text-black">Number of Venues / Event Spaces *</label>
-							<input type="text" value={numberOfVenues} onChange={(e) => setNumberOfVenues(e.target.value)} placeholder="e.g. 3" className="h-10 px-4 rounded-xl border-2 border-black bg-white text-black outline-none text-sm w-full" />
+							<label className="text-xs font-bold text-black">Venues / Spaces *</label>
+							<input
+								type="text"
+								required
+								value={numberOfVenues}
+								onChange={(e) => setNumberOfVenues(e.target.value)}
+								placeholder="e.g. 3"
+								className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30"
+							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
 							<label className="text-xs font-bold text-black">Venue Capacity *</label>
-							<input type="text" value={venueCapacity} onChange={(e) => setVenueCapacity(e.target.value)} placeholder="e.g. 80" className="h-10 px-4 rounded-xl border-2 border-black bg-white text-black outline-none text-sm w-full" />
+							<input
+								type="text"
+								required
+								value={venueCapacity}
+								onChange={(e) => setVenueCapacity(e.target.value)}
+								placeholder="e.g. 80"
+								className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30"
+							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
 							<label className="text-xs font-bold text-black">Community Size *</label>
-							<input type="text" value={communitySize} onChange={(e) => setCommunitySize(e.target.value)} placeholder="e.g. 250" className="h-10 px-4 rounded-xl border-2 border-black bg-white text-black outline-none text-sm w-full" />
+							<input
+								type="text"
+								required
+								value={communitySize}
+								onChange={(e) => setCommunitySize(e.target.value)}
+								placeholder="e.g. 250"
+								className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30"
+							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-bold text-black">Experiences/Year *</label>
-							<input type="text" value={experiencesPerYear} onChange={(e) => setExperiencesPerYear(e.target.value)} placeholder="e.g. 40" className="h-10 px-4 rounded-xl border-2 border-black bg-white text-black outline-none text-sm w-full" />
+							<label className="text-xs font-bold text-black">Experiences / Year *</label>
+							<input
+								type="text"
+								required
+								value={experiencesPerYear}
+								onChange={(e) => setExperiencesPerYear(e.target.value)}
+								placeholder="e.g. 40"
+								className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30"
+							/>
 						</div>
 					</div>
 
+					{/* Categories */}
 					<div className="flex flex-col gap-1.5">
 						<label className="text-xs font-bold text-black">Categories *</label>
-						<div className="grid grid-cols-2 gap-2">
-							{categories.map((cat) => (
-								<label key={cat.id} className="flex items-center gap-2 p-2 rounded-lg border border-black/15 hover:bg-black/5 cursor-pointer">
-									<input
-										type="checkbox"
-										checked={categoryIds.includes(cat.id)}
-										onChange={(e) => setCategoryIds(e.target.checked ? [...categoryIds, cat.id] : categoryIds.filter((id) => id !== cat.id))}
-										className="w-4 h-4"
-									/>
-									<span className="text-xs font-medium text-black">{cat.name}</span>
-								</label>
-							))}
+						<div className="flex flex-wrap gap-2">
+							{categories.map((cat) => {
+								const active = categoryIds.includes(cat.id)
+								return (
+									<button
+										key={cat.id}
+										type="button"
+										onClick={() => {
+											setCategoryIds((prev) =>
+												prev.includes(cat.id) ? prev.filter((id) => id !== cat.id) : [...prev, cat.id],
+											)
+										}}
+										className={clsx(
+											"px-3 py-1.5 rounded-full text-xs font-bold transition-all border-2 border-black cursor-pointer",
+											active
+												? "bg-[#FFC940] text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+												: "bg-white text-black hover:bg-black/5",
+										)}
+									>
+										{cat.name}
+									</button>
+								)
+							})}
 						</div>
 					</div>
 
+					{/* Active Locations */}
 					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-bold text-black">Active Locations</label>
-						<div className="flex gap-2">
+						<div className="flex items-center justify-between">
+							<label className="text-xs font-bold text-black">Active Locations</label>
+							<span className="text-[10px] text-black/40">Add at least one</span>
+						</div>
+						<div className="flex items-center gap-2">
 							<input
 								type="text"
 								value={locationInput}
 								onChange={(e) => setLocationInput(e.target.value)}
-								onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addLocation() } }}
-								placeholder="Type a location and press Add"
-								className="h-10 px-4 rounded-xl border-2 border-black bg-white text-black outline-none text-sm flex-1"
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										e.preventDefault()
+										addLocation()
+									}
+								}}
+								placeholder="e.g. Bangalore, Indiranagar"
+								className="flex-1 h-10 px-4 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35 placeholder:text-black/30"
 							/>
-							<Button type="button" variant="primary" size="sm" onClick={addLocation} className="h-10">Add</Button>
+							<Button
+								type="button"
+								variant="secondary"
+								size="xs"
+								onClick={addLocation}
+								className="bg-white border-2 border-black text-black text-[10px] font-bold py-1 px-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all"
+							>
+								Add
+							</Button>
 						</div>
-						<div className="flex flex-wrap gap-2">
-							{activeLocations.map((loc, idx) => (
-								<span key={idx} className="bg-black/10 text-black text-xs px-3 py-1 rounded-full flex items-center gap-2">
-									{loc}
-									<button type="button" onClick={() => setActiveLocations((prev) => prev.filter((_, i) => i !== idx))} className="text-black/60 hover:text-black">×</button>
-								</span>
-							))}
-						</div>
+						{activeLocations.length > 0 && (
+							<div className="flex flex-wrap gap-2 mt-1">
+								{activeLocations.map((loc, idx) => (
+									<span
+										key={idx}
+										className="flex items-center gap-1.5 px-3 py-1 rounded-full border-2 border-black bg-white text-xs font-bold text-black"
+									>
+										{loc}
+										<button
+											type="button"
+											onClick={() => setActiveLocations((prev) => prev.filter((_, i) => i !== idx))}
+											className="text-black/50 hover:text-black transition-colors leading-none font-bold cursor-pointer"
+										>
+											×
+										</button>
+									</span>
+								))}
+							</div>
+						)}
 					</div>
 
+					{/* Video Link */}
 					<div className="flex flex-col gap-1.5">
 						<label className="text-xs font-bold text-black">Video Link (Optional)</label>
-						<input type="text" value={videoLink} onChange={(e) => setVideoLink(e.target.value)} placeholder="https://youtube.com/watch?v=..." className="h-10 px-4 rounded-xl border-2 border-black bg-white text-black outline-none text-sm w-full" />
+						<input
+							type="text"
+							value={videoLink}
+							onChange={(e) => setVideoLink(e.target.value)}
+							placeholder="https://youtube.com/watch?v=..."
+							className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30"
+						/>
 					</div>
 
+					{/* Centre Showcase */}
 					<div className="flex flex-col gap-2">
-						<div className="flex justify-between items-center">
-							<label className="text-xs font-bold text-black">Centre Showcase (Optional)</label>
-						</div>
+						<label className="text-xs font-bold text-black">Centre Showcase (Optional)</label>
 						<div className="flex gap-2 flex-wrap">
 							{centreShowcaseImages.map((img, idx) => (
-								<div key={idx} className="relative w-20 h-20 rounded-lg border border-black/15 overflow-hidden">
+								<div key={idx} className="relative w-20 h-20 rounded-xl border-2 border-black overflow-hidden shrink-0">
 									{/* eslint-disable-next-line @next/next/no-img-element */}
 									<img src={img.url} alt={`Centre showcase ${idx + 1}`} className="w-full h-full object-cover" />
-									<button type="button" onClick={() => removeCentreShowcaseImage(idx)} className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px]">×</button>
+									<button
+										type="button"
+										onClick={() => removeCentreShowcaseImage(idx)}
+										className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center font-bold"
+									>
+										×
+									</button>
 								</div>
 							))}
-							<label className="w-20 h-20 rounded-lg border-2 border-dashed border-black/20 flex items-center justify-center cursor-pointer hover:bg-black/5">
+							<label className="w-20 h-20 rounded-xl border-2 border-dashed border-black/30 flex items-center justify-center cursor-pointer hover:bg-black/5 shrink-0 transition-colors">
 								<input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && addCentreShowcaseImage(e.target.files[0])} />
-								<span className="text-[10px] text-black/40">+ Add</span>
+								<span className="text-[10px] font-bold text-black/50">+ Add</span>
 							</label>
 						</div>
 					</div>
 
-					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-bold text-black">Social Links (Optional)</label>
-						<input type="text" value={instagram} onChange={(e) => setInstagram(e.target.value)} placeholder="Instagram URL" className="h-10 px-4 rounded-xl border-2 border-black bg-white text-black outline-none text-sm w-full" />
-						<input type="text" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="LinkedIn URL" className="h-10 px-4 rounded-xl border-2 border-black bg-white text-black outline-none text-sm w-full" />
-						<input type="text" value={youtube} onChange={(e) => setYoutube(e.target.value)} placeholder="YouTube URL" className="h-10 px-4 rounded-xl border-2 border-black bg-white text-black outline-none text-sm w-full" />
-						<input type="text" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="Website URL" className="h-10 px-4 rounded-xl border-2 border-black bg-white text-black outline-none text-sm w-full" />
+					{/* Social Links */}
+					<div className="flex flex-col gap-3">
+						<label className="text-xs font-bold text-black">Social Media Links</label>
+						<div className="flex flex-col gap-2.5">
+							<div className="flex items-center gap-2">
+								<span className="text-xs text-black/50 w-20">Instagram</span>
+								<input
+									type="text"
+									value={instagram}
+									onChange={(e) => setInstagram(e.target.value)}
+									placeholder="instagram.com/handle"
+									className="flex-1 h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35"
+								/>
+							</div>
+							<div className="flex items-center gap-2">
+								<span className="text-xs text-black/50 w-20">LinkedIn</span>
+								<input
+									type="text"
+									value={linkedin}
+									onChange={(e) => setLinkedin(e.target.value)}
+									placeholder="linkedin.com/in/profile"
+									className="flex-1 h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35"
+								/>
+							</div>
+							<div className="flex items-center gap-2">
+								<span className="text-xs text-black/50 w-20">YouTube</span>
+								<input
+									type="text"
+									value={youtube}
+									onChange={(e) => setYoutube(e.target.value)}
+									placeholder="youtube.com/@channel"
+									className="flex-1 h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35"
+								/>
+							</div>
+							<div className="flex items-center gap-2">
+								<span className="text-xs text-black/50 w-20">Website</span>
+								<input
+									type="text"
+									value={website}
+									onChange={(e) => setWebsite(e.target.value)}
+									placeholder="yourwebsite.com"
+									className="flex-1 h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35"
+								/>
+							</div>
+						</div>
 					</div>
 
+					{/* Past Events */}
 					<div className="flex flex-col gap-2">
 						<div className="flex justify-between items-center">
-							<label className="text-xs font-bold text-black">Past Events (Optional)</label>
-							<button type="button" onClick={addPastEvent} className="text-[10px] font-bold text-[#EE2C2C] underline">+ Add Event</button>
+							<label className="text-xs font-bold text-black">Past Experiences (Optional)</label>
+							<button type="button" onClick={addPastEvent} className="text-xs font-bold text-[#EE2C2C] hover:underline cursor-pointer">
+								+ Add Event
+							</button>
 						</div>
 						{pastEvents.map((event, i) => (
-							<div key={i} className="p-3 rounded-xl border-2 border-black/10 bg-slate-50/50">
-								<div className="flex justify-between items-center mb-2">
-									<span className="text-[10px] font-bold text-black/40 uppercase">Event {i + 1}</span>
-									<button type="button" onClick={() => removePastEvent(i)} className="text-[10px] font-bold text-red-600">Remove</button>
+							<div key={i} className="p-3.5 rounded-xl border-2 border-black/10 bg-slate-50/50 flex flex-col gap-2">
+								<div className="flex justify-between items-center">
+									<span className="text-[10px] font-bold text-black/40 uppercase tracking-wider">Experience #{i + 1}</span>
+									<button type="button" onClick={() => removePastEvent(i)} className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer">
+										Remove
+									</button>
 								</div>
-								<input type="text" value={event.name} onChange={(e) => updatePastEvent(i, "name", e.target.value)} placeholder="Event name" className="h-8 px-3 rounded-lg bg-white border border-black/15 text-sm w-full mb-2" />
-								<textarea value={event.description} onChange={(e) => updatePastEvent(i, "description", e.target.value)} placeholder="Description" rows={2} className="p-2 rounded-lg bg-white border border-black/15 text-sm w-full resize-none mb-2" />
-								<div className="flex gap-2 flex-wrap">
+								<input
+									type="text"
+									value={event.name}
+									onChange={(e) => updatePastEvent(i, "name", e.target.value)}
+									placeholder="Event name"
+									className="h-9 px-3 rounded-lg bg-white border border-black/15 text-sm w-full outline-none focus:border-black/35"
+								/>
+								<textarea
+									value={event.description}
+									onChange={(e) => updatePastEvent(i, "description", e.target.value)}
+									placeholder="Description"
+									rows={2}
+									className="p-2.5 rounded-lg bg-white border border-black/15 text-sm w-full resize-none outline-none focus:border-black/35"
+								/>
+								<div className="flex gap-2 flex-wrap items-center">
 									{event.images.map((img, imgIdx) => (
-										<div key={imgIdx} className="relative w-20 h-20 rounded-lg border border-black/15 overflow-hidden">
+										<div key={imgIdx} className="relative w-16 h-20 rounded-lg border-2 border-black overflow-hidden shrink-0">
 											{/* eslint-disable-next-line @next/next/no-img-element */}
 											<img src={img.url} alt={`Event ${i + 1} image ${imgIdx + 1}`} className="w-full h-full object-cover" />
-											<button type="button" onClick={() => removePastEventImage(i, imgIdx)} className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px]">×</button>
+											<button
+												type="button"
+												onClick={() => removePastEventImage(i, imgIdx)}
+												className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center font-bold"
+											>
+												×
+											</button>
 										</div>
 									))}
 									{event.images.length < 2 && (
-										<label className="w-20 h-20 rounded-lg border-2 border-dashed border-black/20 flex items-center justify-center cursor-pointer hover:bg-black/5">
+										<label className="w-16 h-20 rounded-lg border-2 border-dashed border-black/30 flex items-center justify-center cursor-pointer hover:bg-black/5 shrink-0 transition-colors">
 											<input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && addPastEventImage(i, e.target.files[0])} />
-											<span className="text-[10px] text-black/40">+ Add</span>
+											<span className="text-[10px] font-bold text-black/40">+ Add</span>
 										</label>
 									)}
 								</div>
@@ -549,44 +957,70 @@ export function SpaceCommunityProfileForm() {
 						))}
 					</div>
 
+					{/* Associated Brands */}
 					<div className="flex flex-col gap-2">
 						<div className="flex justify-between items-center">
 							<label className="text-xs font-bold text-black">Associated Brands (Optional)</label>
-							<button type="button" onClick={addBrandWorkedWith} className="text-[10px] font-bold text-[#EE2C2C] underline">+ Add Brand</button>
+							<button type="button" onClick={addBrandWorkedWith} className="text-xs font-bold text-[#EE2C2C] hover:underline cursor-pointer">
+								+ Add Brand
+							</button>
 						</div>
 						{brandsWorkedWith.map((brand, i) => (
-							<div key={i} className="p-3 rounded-xl border-2 border-black/10 bg-slate-50/50">
-								<div className="flex justify-between items-center mb-2">
-									<span className="text-[10px] font-bold text-black/40 uppercase">Brand {i + 1}</span>
-									<button type="button" onClick={() => removeBrandWorkedWith(i)} className="text-[10px] font-bold text-red-600">Remove</button>
+							<div key={i} className="p-3.5 rounded-xl border-2 border-black/10 bg-slate-50/50 flex flex-col gap-2">
+								<div className="flex justify-between items-center">
+									<span className="text-[10px] font-bold text-black/40 uppercase tracking-wider">Brand #{i + 1}</span>
+									<button type="button" onClick={() => removeBrandWorkedWith(i)} className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer">
+										Remove
+									</button>
 								</div>
-								<input type="text" value={brand.brandName} onChange={(e) => updateBrandWorkedWithName(i, e.target.value)} placeholder="Brand name" className="h-8 px-3 rounded-lg bg-white border border-black/15 text-sm w-full mb-2" />
-								<input type="text" value={brand.url || ""} onChange={(e) => updateBrandWorkedWithUrl(i, e.target.value)} placeholder="Brand URL (optional)" className="h-8 px-3 rounded-lg bg-white border border-black/15 text-sm w-full mb-2" />
-								<label className="flex items-center gap-2 p-2 rounded-lg border border-black/15 cursor-pointer hover:bg-black/5">
+								<input
+									type="text"
+									value={brand.brandName}
+									onChange={(e) => updateBrandWorkedWithName(i, e.target.value)}
+									placeholder="Brand name"
+									className="h-9 px-3 rounded-lg bg-white border border-black/15 text-sm w-full outline-none focus:border-black/35"
+								/>
+								<input
+									type="text"
+									value={brand.url || ""}
+									onChange={(e) => updateBrandWorkedWithUrl(i, e.target.value)}
+									placeholder="Brand URL (optional)"
+									className="h-9 px-3 rounded-lg bg-white border border-black/15 text-sm w-full outline-none focus:border-black/35"
+								/>
+								<label className="flex items-center gap-2 p-2 rounded-lg border border-black/15 cursor-pointer hover:bg-black/5 bg-white w-fit transition-colors">
 									<input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && updateBrandWorkedWithLogo(i, e.target.files[0])} />
 									{brand.logoUrl ? (
 										<>
 											{/* eslint-disable-next-line @next/next/no-img-element */}
-											<img src={brand.logoUrl} alt={`${brand.brandName} logo`} className="w-8 h-8 rounded object-cover" />
-											<span className="text-xs text-black">Logo selected</span>
+											<img src={brand.logoUrl} alt={`${brand.brandName} logo`} className="size-6 rounded object-cover" />
+											<span className="text-xs font-bold text-black">Logo selected</span>
 										</>
 									) : (
-										<span className="text-[10px] text-black/40">+ Upload logo</span>
+										<span className="text-[10px] font-bold text-black/40">+ Upload logo</span>
 									)}
 								</label>
 							</div>
 						))}
 					</div>
 
-					<div className="flex items-center gap-2 mt-2">
-						<Button type="submit" variant="primary" disabled={submitting}>
-							{submitting ? "Submitting…" : community ? "Save Changes" : "Activate Your Profile"}
-						</Button>
+					{/* Footer Actions */}
+					<div className="flex gap-3 justify-end mt-4 pt-4 border-t border-black/10 shrink-0">
 						{community && (
-							<Button type="button" variant="secondary" onClick={() => setEditing(false)} disabled={submitting}>
+							<button
+								type="button"
+								onClick={() => setEditing(false)}
+								className="bg-white border-[3px] border-black text-black rounded-2xl px-4 py-2 font-bold text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
+							>
 								Cancel
-							</Button>
+							</button>
 						)}
+						<button
+							type="submit"
+							disabled={submitting}
+							className="bg-[#FFC940] border-[3px] border-black text-black rounded-2xl px-4 py-2 font-bold text-xs shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+						>
+							{submitting ? "Saving…" : community ? "Update Details" : "Activate"}
+						</button>
 					</div>
 				</form>
 			)}

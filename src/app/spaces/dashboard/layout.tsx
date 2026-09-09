@@ -172,14 +172,13 @@ export default function SpacesDashboardLayout({ children }: { children: React.Re
 	}
 
 	return (
-		<div className="min-h-screen flex bg-[#EE2C2C] p-4 gap-4 overflow-hidden font-sans">
+		<div className="min-h-screen flex bg-[#EE2C2C] p-4 gap-4 overflow-hidden">
 			<SpaceSidebar
 				isOpen={sidebarOpen}
 				onClose={() => setSidebarOpen(false)}
-				onSignOut={() => setShowLogoutConfirm(true)}
 			/>
 
-			<div className="flex-1 flex flex-col min-w-0 bg-white border-[3px] border-black rounded-[36px] overflow-hidden h-[calc(100vh-2rem)] shadow-[8px_8px_0px_0px_rgba(0,0,0,0.25)]">
+			<div className="flex-1 flex flex-col min-w-0 bg-white rounded-[36px] overflow-hidden h-[calc(100vh-2rem)]">
 				{/* Mobile Top Bar */}
 				<header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-white border-b border-black/10">
 					<Link href="/spaces/dashboard">
@@ -201,8 +200,8 @@ export default function SpacesDashboardLayout({ children }: { children: React.Re
 				</header>
 
 				{/* Main Content Area */}
-				<main className="flex-1 overflow-y-auto p-6 md:p-8">
-					<div className="w-full max-w-6xl mx-auto h-full">{children}</div>
+				<main className="flex-1 overflow-y-auto mr-2 my-2">
+					<div className="w-full max-w-7xl mx-auto h-full">{children}</div>
 				</main>
 			</div>
 

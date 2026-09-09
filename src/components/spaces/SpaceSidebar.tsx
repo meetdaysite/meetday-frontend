@@ -10,7 +10,6 @@ import type { ComponentType, SVGProps } from "react"
 
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import WidgetSvg from "@/icons/filled/widget.svg"
-import UserSvg from "@/icons/outlined/user.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -26,26 +25,23 @@ const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/spaces/dashboard", outlined: WidgetsSvg, filled: WidgetSvg, exact: true },
 ]
 
-const SECONDARY_NAV: NavItem[] = [
-	{ label: "Profile", href: "/spaces/dashboard/profile", outlined: UserSvg, filled: UserSvg, exact: true },
-]
-
 interface SpaceSidebarProps {
 	isOpen: boolean
 	onClose: () => void
-	onSignOut: () => void
+	onSignOut?: () => void
 }
 
-function SpaceSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSignOut: () => void }) {
+function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 	const pathname = usePathname()
 	const { profile } = useSpaceStore()
 	const businessName = profile?.businessName || "Space Partner"
+	const avatarUrl = profile?.user?.avatarUrl
 
 	return (
-		<div className="flex flex-col h-full select-none">
-			{/* Top Header & Logo */}
-			<div className="flex items-center justify-between px-6 pt-6 pb-4">
-				<Link href="/spaces/dashboard" className="flex items-center gap-2">
+		<div className="flex flex-col h-full bg-[#EE2C2C] text-white overflow-hidden select-none">
+			{/* Brand Logo */}
+			<div className="px-6 pt-5 pb-3 flex items-center justify-center shrink-0">
+				<Link href="/spaces/dashboard">
 					<Image
 						src="/assets/brand_logo.svg"
 						alt="Meetday"
@@ -58,8 +54,8 @@ function SpaceSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 				</Link>
 			</div>
 
-			{/* Primary Nav (Dashboard on Top) */}
-			<nav className="flex flex-col gap-1 px-4 mt-2">
+			{/* Navigation Top Items */}
+			<div className="px-4 flex flex-col gap-1 mt-1 shrink-0">
 				{PRIMARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled, exact }) => {
 					const isActive = exact ? pathname === href : pathname.startsWith(href)
 					return (
@@ -68,53 +64,47 @@ function SpaceSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 							href={href}
 							onClick={onClose}
 							className={clsx(
-								"flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all text-sm font-semibold",
+								"flex items-center gap-2.5 px-4 py-2 rounded-2xl transition-all text-sm font-normal",
 								isActive
-									? "bg-[#D12525] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]"
+									? "bg-[#D12525] text-white"
 									: "text-white/90 hover:bg-[#D12525]/50 hover:text-white",
 							)}
 						>
-							<Icon as={isActive ? Filled : Outlined} size="md" className="text-white shrink-0" />
-							<span>{label}</span>
+							<Icon
+								as={isActive ? Filled : Outlined}
+								size="md"
+								className="text-white shrink-0"
+							/>
+							<span className="flex-1 whitespace-nowrap">{label}</span>
 						</Link>
 					)
 				})}
-			</nav>
+			</div>
 
-			{/* Bottom Section: Profile & Log Out */}
+			{/* Bottom Section: Space Partner Card / Pill */}
 			<div className="px-4 pb-4 flex flex-col gap-2 mt-auto shrink-0">
-				{/* Secondary Nav / Profile */}
-				{SECONDARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled, exact }) => {
-					const isActive = exact ? pathname === href : pathname.startsWith(href)
-					return (
-						<Link
-							key={href}
-							href={href}
-							onClick={onClose}
-							className={clsx(
-								"flex items-center gap-3 px-4 py-2.5 rounded-2xl transition-all text-sm font-semibold",
-								isActive
-									? "bg-[#D12525] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)]"
-									: "text-white/90 hover:bg-[#D12525]/50 hover:text-white",
-							)}
-						>
-							<Icon as={isActive ? Filled : Outlined} size="md" className="text-white shrink-0" />
-							<span>{label}</span>
-						</Link>
-					)
-				})}
-
-				{/* Space Partner Card / Pill */}
 				<Link
 					href="/spaces/dashboard/profile"
 					onClick={onClose}
 					className="flex items-center gap-2.5 px-4 py-2.5 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-semibold text-sm tracking-wide shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all relative overflow-hidden"
 				>
-					<div className="size-7 rounded-full bg-white border-2 border-black flex items-center justify-center shrink-0">
-						<svg className="size-4 text-black" viewBox="0 0 24 24" fill="currentColor">
-							<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-						</svg>
-					</div>
+					{avatarUrl ? (
+						<div className="relative size-7 rounded-full overflow-hidden border-2 border-black bg-white shrink-0">
+							<Image
+								src={avatarUrl}
+								alt={businessName}
+								fill
+								sizes="28px"
+								className="object-cover"
+							/>
+						</div>
+					) : (
+						<div className="size-7 rounded-full bg-white border-2 border-black flex items-center justify-center shrink-0">
+							<svg className="size-4 text-black" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+							</svg>
+						</div>
+					)}
 					<span className="flex-1 truncate font-bold">{businessName}</span>
 					<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-r from-transparent to-white/20 skew-x-[25deg] pointer-events-none" />
 				</Link>
@@ -123,12 +113,12 @@ function SpaceSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 	)
 }
 
-export function SpaceSidebar({ isOpen, onClose, onSignOut }: SpaceSidebarProps) {
+export function SpaceSidebar({ isOpen, onClose }: SpaceSidebarProps) {
 	return (
 		<>
 			{/* Desktop Sidebar */}
 			<aside className="hidden lg:flex flex-col w-64 shrink-0 h-[calc(100vh-2rem)] bg-[#EE2C2C] overflow-hidden">
-				<SpaceSidebarContent onClose={onClose} onSignOut={onSignOut} />
+				<SpaceSidebarContent onClose={onClose} />
 			</aside>
 
 			{/* Mobile Sidebar overlay & drawer */}
@@ -140,7 +130,7 @@ export function SpaceSidebar({ isOpen, onClose, onSignOut }: SpaceSidebarProps) 
 						aria-hidden
 					/>
 					<aside className="fixed inset-y-0 left-0 w-72 bg-[#EE2C2C] z-50 lg:hidden overflow-hidden shadow-panel">
-						<SpaceSidebarContent onClose={onClose} onSignOut={onSignOut} />
+						<SpaceSidebarContent onClose={onClose} />
 					</aside>
 				</>
 			)}
