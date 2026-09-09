@@ -154,6 +154,9 @@ export function ProposalDeckBuilder({
 	const [finalizing, setFinalizing] = useState(false)
 	const [slides, setSlides] = useState<DeckSlide[]>([])
 	const [finalizedResult, setFinalizedResult] = useState<FinalizeProposalDeckResult | null>(null)
+	// Post-generation "Customize Layout" sub-view within the pdfPreview step — drag/resize/restyle
+	// elements or replace images, then re-render via handleDone() to see the updated PDF.
+	const [showCustomize, setShowCustomize] = useState(false)
 
 	const hostNameError = attemptedSubmit && !hostName.trim() ? "Community/Host Name is required." : null
 	const eventTitleError = attemptedSubmit && !eventTitle.trim() ? "Event Title is required." : null
@@ -313,6 +316,11 @@ export function ProposalDeckBuilder({
 
 	function handleDiscard() {
 		if (step === "pdfPreview") {
+			if (showCustomize) {
+				// Cancel out of customize mode only — keep the already-rendered PDF, don't discard it.
+				setShowCustomize(false)
+				return
+			}
 			// Discard the rendered PDF only — keep the edited slide text so they can tweak and retry.
 			setFinalizedResult(null)
 			setStep("preview")
@@ -366,6 +374,7 @@ export function ProposalDeckBuilder({
 			})
 			setFinalizedResult(result)
 			setStep("pdfPreview")
+			setShowCustomize(false)
 		} catch (err) {
 			console.error(err)
 			const axiosErr = err as { response?: { data?: { message?: string | string[] } }; message?: string }
@@ -391,11 +400,19 @@ export function ProposalDeckBuilder({
 				<div className="flex flex-col gap-1">
 					<div
 						className="flex items-center gap-2 cursor-pointer text-black/60 hover:text-black"
-						onClick={() => (step === "form" ? onClose() : step === "preview" ? setStep("form") : setStep("preview"))}
+						onClick={() =>
+							step === "form"
+								? onClose()
+								: step === "preview"
+									? setStep("form")
+									: showCustomize
+										? setShowCustomize(false)
+										: setStep("preview")
+						}
 					>
 						<span className="text-xl font-bold">←</span>
 						<h1 className="text-xl sm:text-2xl md:text-3xl font-heading font-black tracking-tight text-black leading-tight">
-							{step === "form" ? "Create a Deck with Meetday" : step === "preview" ? "Review Slide Content" : "Preview Proposal Deck"}
+							{step === "form" ? "Create a Deck with Meetday" : step === "preview" ? "Review Slide Content" : showCustomize ? "Customize Layout" : "Preview Proposal Deck"}
 						</h1>
 					</div>
 					<p className="text-xs sm:text-sm font-semibold text-black/50">
@@ -403,7 +420,9 @@ export function ProposalDeckBuilder({
 							? "Fill in your event and brand details — AI fills in the rest of the copy"
 							: step === "preview"
 								? "Edit the AI-written copy for each slide, then proceed to preview the final deck"
-								: "This is how your deck will look — upload it to attach it to your proposal"}
+								: showCustomize
+									? "Drag, resize, or restyle any element, or replace an image, then apply to re-render the PDF"
+									: "This is how your deck will look — upload it to attach it to your proposal"}
 					</p>
 				</div>
 				{step === "form" ? (
@@ -439,17 +458,38 @@ export function ProposalDeckBuilder({
 						<button
 							type="button"
 							onClick={handleDiscard}
-							className="flex-1 sm:flex-none bg-white text-black text-[10px] sm:text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none text-center"
+							disabled={finalizing}
+							className="flex-1 sm:flex-none bg-white text-black text-[10px] sm:text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50 text-center"
 						>
-							Discard
+							{showCustomize ? "Cancel" : "Discard"}
 						</button>
-						<button
-							type="button"
-							onClick={handleConfirmUpload}
-							className="flex-1 sm:flex-none bg-[#EE2C2C] text-white text-[10px] sm:text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none text-center"
-						>
-							Upload
-						</button>
+						{showCustomize ? (
+							<button
+								type="button"
+								onClick={handleDone}
+								disabled={finalizing}
+								className="flex-1 sm:flex-none bg-[#EE2C2C] text-white text-[10px] sm:text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50 text-center"
+							>
+								{finalizing ? "Applying…" : "Apply Changes"}
+							</button>
+						) : (
+							<>
+								<button
+									type="button"
+									onClick={() => setShowCustomize(true)}
+									className="flex-1 sm:flex-none bg-white text-black text-[10px] sm:text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none text-center"
+								>
+									Customize
+								</button>
+								<button
+									type="button"
+									onClick={handleConfirmUpload}
+									className="flex-1 sm:flex-none bg-[#EE2C2C] text-white text-[10px] sm:text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none text-center"
+								>
+									Upload
+								</button>
+							</>
+						)}
 					</div>
 				)}
 			</div>
@@ -1087,11 +1127,20 @@ export function ProposalDeckBuilder({
 									)}
 								</>
 							)}
-
-							<div className="border-t border-black/10 pt-3 mt-1">
-								<p className="text-[10px] font-black uppercase tracking-wider text-black/40 mb-2">Customize Layout</p>
-								<DeckSlideEditor slide={slide} onChange={patch => updateSlide(idx, patch)} />
-							</div>
+						</div>
+					))}
+				</div>
+			) : showCustomize ? (
+				<div className="flex flex-col gap-4">
+					<p className="text-xs font-semibold text-black/50">
+						Drag, resize, or restyle any element below, or replace an image. Click “Apply Changes” when done to re-render the PDF.
+					</p>
+					{slides.map((slide, idx) => (
+						<div key={idx} className="border-[3px] border-dashed border-black/30 rounded-2xl sm:rounded-[24px] p-4 sm:p-5 bg-white flex flex-col gap-3">
+							<span className="self-start text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-black/60 bg-neutral-100 px-2.5 py-1 rounded-full border border-black/10">
+								Slide {idx + 1}: {slide.layout.replace(/_/g, " ")}
+							</span>
+							<DeckSlideEditor slide={slide} onChange={patch => updateSlide(idx, patch)} />
 						</div>
 					))}
 				</div>
