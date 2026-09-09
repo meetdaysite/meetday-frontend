@@ -1467,6 +1467,40 @@ export async function deactivateSpaceCommunityProfile(): Promise<void> {
 	await apiClient.delete("/spaces/community")
 }
 
+export type BrowseSpaceCommunity = {
+	id: string
+	spaceProfileId: string
+	name: string
+	about: string
+	logoUrl: string | null
+	posterUrl?: string | null
+	numberOfVenues: string
+	venueCapacity: string
+	communitySize: string
+	experiencesPerYear: string
+	activeLocations: string[]
+	centreShowcaseUrls: string[]
+	videoLink?: string | null
+	businessName: string | null
+	operatingCities: string[]
+	socialLinks?: {
+		instagram?: string
+		linkedin?: string
+		youtube?: string
+		website?: string
+	} | null
+	categories: Category[]
+	pastEvents?: PastEvent[]
+	brandsWorkedWith?: BrandWorkedWith[]
+}
+
+export async function getCommunitySpacesBrowse(): Promise<{ spaces: BrowseSpaceCommunity[]; total: number }> {
+	const { data } = await apiClient.get<{ success: boolean; data: { spaces: BrowseSpaceCommunity[]; total: number } }>(
+		"/spaces/community/browse",
+	)
+	return data.data
+}
+
 export async function getHostTeamMembers(): Promise<TeamMembersList> {
 	const { data } = await apiClient.get<{ success: boolean; data: TeamMembersList }>("/hosts/community/members")
 	return data.data
