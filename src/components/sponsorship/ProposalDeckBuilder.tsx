@@ -3,6 +3,7 @@
 import { useRef, useState } from "react"
 import { toast } from "@/lib/toast"
 import PdfViewer from "@/components/pdf/PdfViewer"
+import { DeckSlideEditor } from "./DeckSlideEditor"
 import {
 	generateProposalDeckPlan,
 	finalizeProposalDeck,
@@ -1086,6 +1087,11 @@ export function ProposalDeckBuilder({
 									)}
 								</>
 							)}
+
+							<div className="border-t border-black/10 pt-3 mt-1">
+								<p className="text-[10px] font-black uppercase tracking-wider text-black/40 mb-2">Customize Layout</p>
+								<DeckSlideEditor slide={slide} onChange={patch => updateSlide(idx, patch)} />
+							</div>
 						</div>
 					))}
 				</div>

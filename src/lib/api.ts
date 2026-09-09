@@ -1169,6 +1169,20 @@ export type DeckStat = { label: string; value: string }
 export type DeckPricingTier = { name: string; price: string }
 export type DeckPastSponsor = { name: string; logoKey?: string; projectReference?: string }
 
+// Post-generation slide editor state, keyed by a stable element "slot" id (e.g. "title", "body",
+// "kicker", "stat-0", "bullet-1", "tier-2", "sponsor-0"). Position/size are offsets from the
+// element's default template position, not absolute coordinates — an untouched slide renders
+// identically to before.
+export type DeckElementStyle = {
+	x?: number
+	y?: number
+	scale?: number
+	fontSize?: number
+	fontFamily?: string
+	color?: string
+	fontWeight?: number
+}
+
 export type DeckSlide = {
 	layout: DeckSlideLayout
 	title: string
@@ -1183,6 +1197,9 @@ export type DeckSlide = {
 	contactName?: string
 	contactEmail?: string
 	contactPhone?: string
+	elementStyles?: Record<string, DeckElementStyle>
+	// Replacement image GCS keys per image slot id (e.g. "hero", "gallery-0", "gallery-1").
+	imageOverrides?: Record<string, string>
 }
 
 export type GenerateProposalDeckPlanPayload = {
