@@ -11,7 +11,7 @@ import { useSpaceStore } from "@/store/spaceStore"
 import { getAuthMe, getHostProfile, getBrandProfile, getSpaceProfile } from "@/lib/api"
 import { ApiError, getApiErrorMessage } from "@/lib/errors"
 
-type AppKind = "host" | "brand" | "space"
+type AppKind = "host" | "brand" | "space" | "spaces"
 
 // Interim login path while real SMS OTP delivery isn't wired up for production — reuses the
 // exact same post-auth resolution logic as the phone-OTP verify pages (checkPhone → getAuthMe →
@@ -49,12 +49,12 @@ export function useGoogleSignIn(
 				if (!(err instanceof ApiError && err.statusCode === 404)) throw err
 			}
 
-			const displayApp = app === "host" ? "community" : app
+			const displayApp = app === "host" ? "community" : app === "space" || app === "spaces" ? "space partner" : app
 
 			if (me) {
 				// One login can hold host, brand, space, and admin access at once — a different primary
 				// `role` no longer means "wrong account", only the absence of this app's profile does.
-				const hasAccess = app === "host" ? me.hasHostAccess : app === "brand" ? me.hasBrandAccess : me.hasSpaceAccess;
+				const hasAccess = app === "host" ? me.hasHostAccess : app === "brand" ? me.hasBrandAccess : me.hasSpaceAccess
 
 				if (!hasAccess) {
 					if (intent === "login" && !seamless) {

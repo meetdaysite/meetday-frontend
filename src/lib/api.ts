@@ -31,7 +31,7 @@ export type AuthMeData = {
 	avatarUrl: string | null
 	isActive: boolean
 	role: { name: string }
-	// One login can hold host, brand, and admin access at once — these report what this
+	// One login can hold host, brand, spaces, and admin access at once — these report what this
 	// identity actually has, independent of the single primary `role` above.
 	hasHostAccess: boolean
 	hasBrandAccess: boolean

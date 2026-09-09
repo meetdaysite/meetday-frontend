@@ -719,10 +719,10 @@ export default function RootPage() {
 				</p>
 
 				{/* Cards Container */}
-				<div className="w-full max-w-3xl px-3 sm:px-6 grid grid-cols-2 gap-3 md:gap-8 mt-4 md:mt-5 mb-8 z-20">
+				<div className="w-full max-w-5xl px-3 sm:px-6 grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-5 mb-8 z-20">
 					
 					{/* Hosts Card */}
-					<div className="bg-white border-[2px] md:border-[4px] border-black rounded-[20px] md:rounded-[36px] p-2.5 md:p-5 flex flex-col items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
+					<div className="bg-white border-[2px] md:border-[4px] border-black rounded-[20px] md:rounded-[36px] p-2.5 md:p-5 flex flex-col items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
 						
 						{/* Image */}
 						<div className="relative w-full aspect-[4/3] border-[2px] md:border-[3px] border-black rounded-lg md:rounded-2xl overflow-hidden bg-slate-100 group">
@@ -736,7 +736,7 @@ export default function RootPage() {
 							/>
 						</div>
 						
-						<p className="mt-2 md:mt-4 text-black font-normal text-center text-[9px] sm:text-sm md:text-base leading-relaxed flex-grow max-w-sm min-h-[36px] sm:min-h-[48px] md:min-h-[60px] flex items-center justify-center">
+						<p className="mt-2 md:mt-4 text-black font-normal text-center text-[9px] sm:text-xs md:text-sm leading-relaxed flex-grow max-w-sm min-h-[36px] sm:min-h-[44px] md:min-h-[48px] flex items-center justify-center">
 							Publish proposals, get discovered by top brands, and lock sponsorship deals instantly.
 						</p>
 						
@@ -749,7 +749,7 @@ export default function RootPage() {
 					</div>
 
 					{/* Brands Card */}
-					<div className="bg-white border-[2px] md:border-[4px] border-black rounded-[20px] md:rounded-[36px] p-2.5 md:p-5 flex flex-col items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[10px_10px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
+					<div className="bg-white border-[2px] md:border-[4px] border-black rounded-[20px] md:rounded-[36px] p-2.5 md:p-5 flex flex-col items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
 						
 						{/* Image */}
 						<div className="relative w-full aspect-[4/3] border-[2px] md:border-[3px] border-black rounded-lg md:rounded-2xl overflow-hidden bg-slate-100 group">
@@ -763,7 +763,7 @@ export default function RootPage() {
 							/>
 						</div>
 						
-						<p className="mt-2 md:mt-4 text-black font-normal text-center text-[9px] sm:text-sm md:text-base leading-relaxed flex-grow max-w-sm min-h-[36px] sm:min-h-[48px] md:min-h-[60px] flex items-center justify-center">
+						<p className="mt-2 md:mt-4 text-black font-normal text-center text-[9px] sm:text-xs md:text-sm leading-relaxed flex-grow max-w-sm min-h-[36px] sm:min-h-[44px] md:min-h-[48px] flex items-center justify-center">
 							Publish campaigns, discover verified offline communities, and close partnerships in one workspace.
 						</p>
 						
@@ -772,6 +772,33 @@ export default function RootPage() {
 							className="w-full mt-3 md:mt-5 py-2 md:py-3.5 bg-[#EE2C2C] text-white border-[2px] md:border-[3px] border-black rounded-xl md:rounded-2xl font-bold text-center text-xs md:text-base shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
 						>
 							Brand
+						</Link>
+					</div>
+
+					{/* Community Spaces Card */}
+					<div className="bg-white border-[2px] md:border-[4px] border-black rounded-[20px] md:rounded-[36px] p-2.5 md:p-5 flex flex-col items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
+						
+						{/* Image */}
+						<div className="relative w-full aspect-[4/3] border-[2px] md:border-[3px] border-black rounded-lg md:rounded-2xl overflow-hidden bg-slate-100 group">
+							<Image
+								src="/images/spaces.png"
+								alt="Community Spaces"
+								fill
+								sizes="(max-width: 768px) 100vw, 350px"
+								className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+								priority
+							/>
+						</div>
+						
+						<p className="mt-2 md:mt-4 text-black font-normal text-center text-[9px] sm:text-xs md:text-sm leading-relaxed flex-grow max-w-sm min-h-[36px] sm:min-h-[44px] md:min-h-[48px] flex items-center justify-center">
+							List your venue, host curated IRL experiences, and monetize your space effortlessly.
+						</p>
+						
+						<Link
+							href="/spaces"
+							className="w-full mt-3 md:mt-5 py-2 md:py-3.5 bg-[#EE2C2C] text-white border-[2px] md:border-[3px] border-black rounded-xl md:rounded-2xl font-bold text-center text-xs md:text-base shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
+						>
+							Community Spaces
 						</Link>
 					</div>
 				</div>
