@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import { Skeleton } from "@/components/ui/Skeleton"
-import { getCommunitySpacesBrowse, type BrowseSpaceCommunity } from "@/lib/api"
+import { getCommunitySpacesBrowse, getMySpaceChats, markSpaceInterest, type BrowseSpaceCommunity } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
+import { toast } from "@/lib/toast"
 import clsx from "clsx"
 
 function formatExternalUrl(url?: string | null) {
@@ -54,6 +55,37 @@ export function CommunitySpacesBrowse() {
 	const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null)
 	const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null)
 	const [viewAllExperiencesMode, setViewAllExperiencesMode] = useState(false)
+	const [interestedSpaceIds, setInterestedSpaceIds] = useState<Set<string>>(new Set())
+	const [sendingInterestId, setSendingInterestId] = useState<string | null>(null)
+
+	useEffect(() => {
+		if (!selectedSpace) return
+		let cancelled = false
+		getMySpaceChats()
+			.then((threads) => {
+				if (cancelled) return
+				const ids = new Set(threads.map((t) => t.spaceCommunityProfileId))
+				setInterestedSpaceIds((prev) => new Set([...prev, ...ids]))
+			})
+			.catch(() => {})
+		return () => {
+			cancelled = true
+		}
+	}, [selectedSpace])
+
+	async function handleMarkInterest() {
+		if (!selectedSpace || sendingInterestId) return
+		setSendingInterestId(selectedSpace.id)
+		try {
+			await markSpaceInterest(selectedSpace.id)
+			setInterestedSpaceIds((prev) => new Set(prev).add(selectedSpace.id))
+			toast.success("Interest sent! We've notified the space.")
+		} catch (e) {
+			toast.error(getApiErrorMessage(e))
+		} finally {
+			setSendingInterestId(null)
+		}
+	}
 
 	useEffect(() => {
 		let cancelled = false
@@ -187,7 +219,26 @@ export function CommunitySpacesBrowse() {
 							) : (
 								<>
 									<div>
-										<h2 className="text-xl font-heading font-black text-black mb-3">Community Space Details</h2>
+										<div className="flex items-center justify-between gap-3 mb-3">
+											<h2 className="text-xl font-heading font-black text-black">Community Space Details</h2>
+											<button
+												type="button"
+												onClick={handleMarkInterest}
+												disabled={interestedSpaceIds.has(selectedSpace.id) || sendingInterestId === selectedSpace.id}
+												className={clsx(
+													"shrink-0 text-xs font-black px-4 py-2.5 rounded-xl uppercase tracking-wider border-2 border-black transition-all select-none",
+													interestedSpaceIds.has(selectedSpace.id)
+														? "bg-slate-100 text-black/40 cursor-default"
+														: "bg-[#EE2C2C] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50",
+												)}
+											>
+												{interestedSpaceIds.has(selectedSpace.id)
+													? "We've notified the space"
+													: sendingInterestId === selectedSpace.id
+														? "Sending…"
+														: "I'm Interested"}
+											</button>
+										</div>
 
 										{/* Grid to place details card and poster side-by-side (collapses to full width if no poster) */}
 										<div className={clsx("grid gap-6 items-start", selectedSpace.posterUrl ? "grid-cols-1 lg:grid-cols-[1fr_320px]" : "grid-cols-1")}>

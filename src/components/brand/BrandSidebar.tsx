@@ -41,6 +41,7 @@ const PRIMARY_NAV: NavItem[] = [
 const SECONDARY_NAV: NavItem[] = [
 	{ label: "Sponsorship Chats", href: "/brand/dashboard/chats?type=sponsorship", chatType: "sponsorship", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Campaign Chats", href: "/brand/dashboard/chats?type=campaign", chatType: "campaign", outlined: ChatOutSvg, filled: ChatFillSvg },
+	{ label: "Community Space Chats", href: "/brand/dashboard/space-chats", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Billing", href: "/brand/dashboard/billing", outlined: DollarSvg, filled: DollarSvg },
 	{ label: "Support Chat", href: "/brand/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/brand/dashboard/notifications", outlined: BellSvg, filled: BellSvg },

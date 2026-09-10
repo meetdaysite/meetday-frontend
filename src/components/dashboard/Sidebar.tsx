@@ -50,6 +50,7 @@ type BottomNavItem = {
 const NAV_ITEMS_BOTTOM: BottomNavItem[] = [
 	{ label: "Sponsorship Chats", href: "/community/dashboard/chats?type=sponsorship", chatType: "sponsorship", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Campaign Chats", href: "/community/dashboard/chats?type=campaign", chatType: "campaign", outlined: ChatOutSvg, filled: ChatFillSvg },
+	{ label: "Community Space Chats", href: "/community/dashboard/space-chats", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Support Chat", href: "/community/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/community/dashboard/messages", outlined: BellSvg, filled: BellFillSvg },
 ]

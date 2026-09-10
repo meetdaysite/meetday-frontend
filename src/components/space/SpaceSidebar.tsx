@@ -7,9 +7,12 @@ import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import WidgetSvg from "@/icons/filled/widget.svg"
+import ChatOutSvg from "@/icons/outlined/chat.svg"
+import ChatFillSvg from "@/icons/filled/chat.svg"
 
 const NAV_ITEMS = [
 	{ label: "Profile", href: "/space/dashboard/profile", outlined: WidgetsSvg, filled: WidgetSvg },
+	{ label: "Chats", href: "/space/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
 ]
 
 export function SpaceSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {

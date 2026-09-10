@@ -1518,6 +1518,90 @@ export async function getCommunitySpacesBrowse(): Promise<{ spaces: BrowseSpaceC
 	return data.data
 }
 
+// ─── Community Space interest + chat (Brand/Community ↔ Space Partner) ────────
+
+export type SpaceChatStatus = "REQUESTED" | "ACCEPTED" | "DECLINED"
+export type SpaceChatSenderType = "SPACE" | "BRAND" | "COMMUNITY"
+export type SpaceInterestRequesterType = "BRAND" | "COMMUNITY"
+export type SpaceChatRole = "BRAND" | "COMMUNITY" | "SPACE"
+
+export type SpaceChatThread = {
+	id: string
+	spaceCommunityProfileId: string
+	requesterType: SpaceInterestRequesterType
+	chatStatus: SpaceChatStatus
+	createdAt: string
+	chatAcceptedAt: string | null
+	lastMessageAt: string | null
+	lastMessagePreview: string | null
+	unreadCount: number
+	counterpartName: string
+	counterpartAvatarUrl: string | null
+}
+
+export type SpaceChatMessage = {
+	id: string
+	senderType: SpaceChatSenderType
+	senderId: string
+	content: string
+	mediaUrl?: string | null
+	deletedAt?: string | null
+	createdAt: string
+	wasRedacted?: boolean
+}
+
+export async function markSpaceInterest(
+	spaceCommunityProfileId: string,
+	message?: string,
+): Promise<{ message: string; alreadyInterested: boolean; interestId: string; chatStatus: SpaceChatStatus }> {
+	const { data } = await apiClient.post<{
+		success: boolean
+		data: { message: string; alreadyInterested: boolean; interestId: string; chatStatus: SpaceChatStatus }
+	}>(`/spaces/community/${spaceCommunityProfileId}/interest`, message ? { message } : {})
+	return data.data
+}
+
+export async function getMySpaceChats(status?: SpaceChatStatus, role?: SpaceChatRole): Promise<SpaceChatThread[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: SpaceChatThread[] }>("/spaces/chats", {
+		params: { ...(status && { status }), ...(role && { role }) },
+	})
+	return data.data
+}
+
+export async function getSpaceChatMessages(
+	interestId: string,
+	role?: SpaceChatRole,
+): Promise<{ messages: SpaceChatMessage[]; chatStatus: SpaceChatStatus }> {
+	const { data } = await apiClient.get<{ success: boolean; data: { messages: SpaceChatMessage[]; chatStatus: SpaceChatStatus } }>(
+		`/spaces/chats/${interestId}/messages`,
+		{ params: role ? { role } : undefined },
+	)
+	return data.data
+}
+
+export async function sendSpaceChatMessage(
+	interestId: string,
+	payload: { content?: string; mediaKey?: string },
+): Promise<SpaceChatMessage> {
+	const { data } = await apiClient.post<{ success: boolean; data: SpaceChatMessage }>(`/spaces/chats/${interestId}/messages`, payload)
+	return data.data
+}
+
+export async function acceptSpaceChatRequest(interestId: string): Promise<{ message: string; chatStatus: SpaceChatStatus }> {
+	const { data } = await apiClient.post<{ success: boolean; data: { message: string; chatStatus: SpaceChatStatus } }>(
+		`/spaces/chats/${interestId}/accept`,
+	)
+	return data.data
+}
+
+export async function declineSpaceChatRequest(interestId: string): Promise<{ message: string; chatStatus: SpaceChatStatus }> {
+	const { data } = await apiClient.post<{ success: boolean; data: { message: string; chatStatus: SpaceChatStatus } }>(
+		`/spaces/chats/${interestId}/decline`,
+	)
+	return data.data
+}
+
+
 export async function getHostTeamMembers(): Promise<TeamMembersList> {
 	const { data } = await apiClient.get<{ success: boolean; data: TeamMembersList }>("/hosts/community/members")
 	return data.data

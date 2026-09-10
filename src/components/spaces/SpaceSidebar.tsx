@@ -10,6 +10,8 @@ import type { ComponentType, SVGProps } from "react"
 
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import WidgetSvg from "@/icons/filled/widget.svg"
+import ChatOutSvg from "@/icons/outlined/chat.svg"
+import ChatFillSvg from "@/icons/filled/chat.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -23,6 +25,7 @@ type NavItem = {
 
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/spaces/dashboard", outlined: WidgetsSvg, filled: WidgetSvg, exact: true },
+	{ label: "Chats", href: "/spaces/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
 ]
 
 interface SpaceSidebarProps {
