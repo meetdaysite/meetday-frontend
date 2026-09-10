@@ -35,7 +35,6 @@ export type AuthMeData = {
 	// identity actually has, independent of the single primary `role` above.
 	hasHostAccess: boolean
 	hasBrandAccess: boolean
-	hasSpaceAccess: boolean
 	adminRole: string | null
 	attendeeProfile: unknown | null
 	createdAt: string
@@ -375,22 +374,6 @@ export async function registerBrand(payload: BrandRegisterPayload): Promise<void
 	await apiClient.post("/auth/register", payload)
 }
 
-// Space Partners are venue/space accounts — minimal signup fields, profile activation happens
-// separately via POST /spaces/community (mirrors the host community-profile pattern).
-export type SpaceRegisterPayload = {
-	firstName: string
-	lastName: string
-	email: string
-	phone?: string
-	accountType: "SPACE"
-	businessName: string
-	operatingCities?: string[]
-}
-
-export async function registerSpace(payload: SpaceRegisterPayload): Promise<void> {
-	await apiClient.post("/auth/register", payload)
-}
-
 // Called right after Firebase signup, before showing the onboarding form — if this email has a
 // pending team invite, the UI can skip the full form and show a simple "join <accountName>" step.
 // `hostType` (HOST invites only) lets the community onboarding wizard skip the "Individual vs
@@ -497,8 +480,8 @@ export type Category = {
 	description: string
 }
 
-export async function getCategories(type?: "EXPERIENCE" | "SPACE"): Promise<Category[]> {
-	const { data } = await apiClient.get<{ success: boolean; data: Category[] }>("/categories", { params: type ? { type } : undefined })
+export async function getCategories(): Promise<Category[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: Category[] }>("/categories")
 	return data.data
 }
 
@@ -1312,105 +1295,6 @@ export async function activateHostCommunityProfile(
 
 export async function deactivateHostCommunityProfile(): Promise<void> {
 	await apiClient.delete("/hosts/community")
-}
-
-// ─── Space Partner Profile ───
-export type SpaceProfile = {
-	id: string
-	userId: string
-	businessName: string
-	operatingCities: string[]
-	phone?: string | null
-	socialLinks?: {
-		instagram?: string
-		linkedin?: string
-		youtube?: string
-		website?: string
-	} | null
-	user: { id: string; email: string; phone: string | null; firstName: string; lastName: string; avatarUrl: string | null; isActive: boolean }
-	createdAt: string
-	updatedAt: string
-}
-
-export type UpdateSpaceProfilePayload = {
-	businessName?: string
-	operatingCities?: string[]
-	phone?: string
-}
-
-export async function getSpaceProfile(): Promise<SpaceProfile> {
-	const { data } = await apiClient.get<{ success: boolean; data: SpaceProfile }>("/spaces/me")
-	return data.data
-}
-
-export async function updateSpaceProfile(payload: UpdateSpaceProfilePayload): Promise<SpaceProfile> {
-	const { data } = await apiClient.patch<{ success: boolean; data: SpaceProfile }>("/spaces/me", payload)
-	return data.data
-}
-
-// ─── Space Community Profile ("Community Space" public listing) ───
-export type SpaceCommunityProfilePayload = {
-	name: string
-	about: string
-	logoKey: string
-	posterKey?: string | null
-	numberOfVenues: string
-	venueCapacity: string
-	communitySize: string
-	experiencesPerYear: string
-	activeLocations?: string[]
-	centreShowcaseImageKeys?: string[]
-	videoLink?: string
-	categoryIds: string[]
-	pastEvents?: PastEventPayload[]
-	brandsWorkedWith?: BrandWorkedWithPayload[]
-}
-
-export type SpaceCommunityProfile = {
-	id: string
-	spaceProfileId: string
-	name: string
-	about: string
-	logoKey: string
-	logoUrl: string
-	posterKey?: string | null
-	posterUrl?: string | null
-	numberOfVenues: string
-	venueCapacity: string
-	communitySize: string
-	experiencesPerYear: string
-	activeLocations: string[]
-	centreShowcaseImageKeys: string[]
-	centreShowcaseUrls: string[]
-	videoLink?: string | null
-	categories: Category[]
-	pastEvents?: PastEvent[]
-	brandsWorkedWith?: BrandWorkedWith[]
-	approvalStatus: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED"
-	adminRejectionRemark: string | null
-	pendingRevision?: Record<string, unknown> | null
-	activatedAt: string
-	createdAt: string
-	updatedAt: string
-}
-
-export async function getSpaceCommunityProfile(): Promise<SpaceCommunityProfile | null> {
-	const { data } = await apiClient.get<{ success: boolean; data: SpaceCommunityProfile | null }>("/spaces/community")
-	return data.data
-}
-
-export async function activateSpaceCommunityProfile(
-	payload: SpaceCommunityProfilePayload,
-): Promise<SpaceCommunityProfile> {
-	const { data } = await apiClient.post<{ success: boolean; data: SpaceCommunityProfile }>(
-		"/spaces/community",
-		payload,
-	)
-	return data.data
-}
-
-export async function deactivateSpaceCommunityProfile(): Promise<void> {
-	await apiClient.delete("/spaces/community")
 }
 
 export async function getHostTeamMembers(): Promise<TeamMembersList> {

@@ -7,11 +7,10 @@ import { useAuth } from "@/context/AuthContext"
 import { useAuthSessionStore } from "@/store/authSessionStore"
 import { useHostStore } from "@/store/hostStore"
 import { useBrandStore } from "@/store/brandStore"
-import { useSpaceStore } from "@/store/spaceStore"
-import { getAuthMe, getHostProfile, getBrandProfile, getSpaceProfile } from "@/lib/api"
+import { getAuthMe, getHostProfile, getBrandProfile } from "@/lib/api"
 import { ApiError, getApiErrorMessage } from "@/lib/errors"
 
-type AppKind = "host" | "brand" | "space"
+type AppKind = "host" | "brand"
 
 // Interim login path while real SMS OTP delivery isn't wired up for production — reuses the
 // exact same post-auth resolution logic as the phone-OTP verify pages (checkPhone → getAuthMe →
@@ -31,7 +30,6 @@ export function useGoogleSignIn(
 	const setSession = useAuthSessionStore((s) => s.setSession)
 	const setHostProfile = useHostStore((s) => s.setProfile)
 	const setBrandProfile = useBrandStore((s) => s.setProfile)
-	const setSpaceProfile = useSpaceStore((s) => s.setProfile)
 	const router = useRouter()
 	const base = app === "host" ? "/community" : `/${app}`
 	const seamless = options?.seamless ?? false
@@ -52,9 +50,9 @@ export function useGoogleSignIn(
 			const displayApp = app === "host" ? "community" : app
 
 			if (me) {
-				// One login can hold host, brand, space, and admin access at once — a different primary
+				// One login can hold host, brand, and admin access at once — a different primary
 				// `role` no longer means "wrong account", only the absence of this app's profile does.
-				const hasAccess = app === "host" ? me.hasHostAccess : app === "brand" ? me.hasBrandAccess : me.hasSpaceAccess;
+				const hasAccess = app === "host" ? me.hasHostAccess : me.hasBrandAccess
 
 				if (!hasAccess) {
 					if (intent === "login" && !seamless) {
@@ -76,10 +74,9 @@ export function useGoogleSignIn(
 					router.replace(`${base}/login`)
 					return
 				}
-				const profile = app === "host" ? await getHostProfile() : app === "brand" ? await getBrandProfile() : await getSpaceProfile()
+				const profile = app === "host" ? await getHostProfile() : await getBrandProfile()
 				if (app === "host") setHostProfile(profile as Awaited<ReturnType<typeof getHostProfile>>)
-				else if (app === "brand") setBrandProfile(profile as Awaited<ReturnType<typeof getBrandProfile>>)
-				else setSpaceProfile(profile as Awaited<ReturnType<typeof getSpaceProfile>>)
+				else setBrandProfile(profile as Awaited<ReturnType<typeof getBrandProfile>>)
 				// A custom redirectTo (e.g. back to a shared link) does a hard navigation — a client-side
 				// router.push to a route the caller may already be sitting on can silently no-op, leaving
 				// the pre-login UI (blur/gate) stuck until the user manually reloads.
