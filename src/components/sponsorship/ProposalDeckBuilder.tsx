@@ -3,7 +3,7 @@
 import { useRef, useState } from "react"
 import { toast } from "@/lib/toast"
 import PdfViewer from "@/components/pdf/PdfViewer"
-import { DeckSlideEditor } from "./DeckSlideEditor"
+import { LiveSlideEditor } from "./LiveSlideEditor"
 import {
 	generateProposalDeckPlan,
 	finalizeProposalDeck,
@@ -12,7 +12,6 @@ import {
 	type DeckTheme,
 	type DeckFontVibe,
 	type DeckLayoutStyle,
-	type DeckStat,
 	type FinalizeProposalDeckResult,
 } from "@/lib/api"
 
@@ -154,9 +153,7 @@ export function ProposalDeckBuilder({
 	const [finalizing, setFinalizing] = useState(false)
 	const [slides, setSlides] = useState<DeckSlide[]>([])
 	const [finalizedResult, setFinalizedResult] = useState<FinalizeProposalDeckResult | null>(null)
-	// Post-generation "Customize Layout" sub-view within the pdfPreview step — drag/resize/restyle
-	// elements or replace images, then re-render via handleDone() to see the updated PDF.
-	const [showCustomize, setShowCustomize] = useState(false)
+	const [currentEditIndex, setCurrentEditIndex] = useState(0)
 
 	const hostNameError = attemptedSubmit && !hostName.trim() ? "Community/Host Name is required." : null
 	const eventTitleError = attemptedSubmit && !eventTitle.trim() ? "Event Title is required." : null
@@ -169,18 +166,15 @@ export function ProposalDeckBuilder({
 		setSlides(prev => prev.map((s, i) => (i === idx ? { ...s, ...patch } : s)))
 	}
 
-	function updateBullet(idx: number, bulletIdx: number, value: string) {
-		setSlides(prev =>
-			prev.map((s, i) => (i === idx ? { ...s, bullets: (s.bullets ?? []).map((b, bi) => (bi === bulletIdx ? value : b)) } : s)),
-		)
-	}
-
-	function updateStat(idx: number, statIdx: number, patch: Partial<DeckStat>) {
-		setSlides(prev =>
-			prev.map((s, i) =>
-				i === idx ? { ...s, stats: (s.stats ?? []).map((st, sti) => (sti === statIdx ? { ...st, ...patch } : st)) } : s,
-			),
-		)
+	async function handleReplaceSlideImage(slotId: string, file: File) {
+		try {
+			const key = await uploadFileAndGetKey(file)
+			setSlides(prev =>
+				prev.map((s, i) => (i === currentEditIndex ? { ...s, imageOverrides: { ...(s.imageOverrides ?? {}), [slotId]: key } } : s)),
+			)
+		} catch {
+			toast.error("Failed to upload image")
+		}
 	}
 
 	function addPkgTier() {
@@ -302,6 +296,7 @@ export function ProposalDeckBuilder({
 				customPerks: customPerks.trim() || undefined,
 			})
 			setSlides(planSlides)
+			setCurrentEditIndex(0)
 			setStep("preview")
 		} catch (err) {
 			console.error(err)
@@ -316,11 +311,6 @@ export function ProposalDeckBuilder({
 
 	function handleDiscard() {
 		if (step === "pdfPreview") {
-			if (showCustomize) {
-				// Cancel out of customize mode only — keep the already-rendered PDF, don't discard it.
-				setShowCustomize(false)
-				return
-			}
 			// Discard the rendered PDF only — keep the edited slide text so they can tweak and retry.
 			setFinalizedResult(null)
 			setStep("preview")
@@ -374,7 +364,6 @@ export function ProposalDeckBuilder({
 			})
 			setFinalizedResult(result)
 			setStep("pdfPreview")
-			setShowCustomize(false)
 		} catch (err) {
 			console.error(err)
 			const axiosErr = err as { response?: { data?: { message?: string | string[] } }; message?: string }
@@ -400,29 +389,19 @@ export function ProposalDeckBuilder({
 				<div className="flex flex-col gap-1">
 					<div
 						className="flex items-center gap-2 cursor-pointer text-black/60 hover:text-black"
-						onClick={() =>
-							step === "form"
-								? onClose()
-								: step === "preview"
-									? setStep("form")
-									: showCustomize
-										? setShowCustomize(false)
-										: setStep("preview")
-						}
+						onClick={() => (step === "form" ? onClose() : step === "preview" ? setStep("form") : setStep("preview"))}
 					>
 						<span className="text-xl font-bold">←</span>
 						<h1 className="text-xl sm:text-2xl md:text-3xl font-heading font-black tracking-tight text-black leading-tight">
-							{step === "form" ? "Create a Deck with Meetday" : step === "preview" ? "Review Slide Content" : showCustomize ? "Customize Layout" : "Preview Proposal Deck"}
+							{step === "form" ? "Create a Deck with Meetday" : step === "preview" ? "Edit Your Deck" : "Preview Proposal Deck"}
 						</h1>
 					</div>
 					<p className="text-xs sm:text-sm font-semibold text-black/50">
 						{step === "form"
 							? "Fill in your event and brand details — AI fills in the rest of the copy"
 							: step === "preview"
-								? "Edit the AI-written copy for each slide, then proceed to preview the final deck"
-								: showCustomize
-									? "Drag, resize, or restyle any element, or replace an image, then apply to re-render the PDF"
-									: "This is how your deck will look — upload it to attach it to your proposal"}
+								? "Click any text to edit it, drag to reposition, or replace an image — just like editing a real slide"
+								: "This is how your deck will look — upload it to attach it to your proposal"}
 					</p>
 				</div>
 				{step === "form" ? (
@@ -450,46 +429,25 @@ export function ProposalDeckBuilder({
 							disabled={finalizing}
 							className="flex-1 sm:flex-none bg-[#EE2C2C] text-white text-[10px] sm:text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50 text-center"
 						>
-							{finalizing ? "Generating…" : "Done"}
+							{finalizing ? "Generating…" : "Preview PDF"}
 						</button>
 					</div>
 				) : (
 					<div className="flex items-center gap-2 w-full sm:w-auto justify-end">
 						<button
 							type="button"
-							onClick={handleDiscard}
-							disabled={finalizing}
-							className="flex-1 sm:flex-none bg-white text-black text-[10px] sm:text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50 text-center"
+							onClick={() => setStep("preview")}
+							className="flex-1 sm:flex-none bg-white text-black text-[10px] sm:text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none text-center"
 						>
-							{showCustomize ? "Cancel" : "Discard"}
+							Back to Edit
 						</button>
-						{showCustomize ? (
-							<button
-								type="button"
-								onClick={handleDone}
-								disabled={finalizing}
-								className="flex-1 sm:flex-none bg-[#EE2C2C] text-white text-[10px] sm:text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none disabled:opacity-50 text-center"
-							>
-								{finalizing ? "Applying…" : "Apply Changes"}
-							</button>
-						) : (
-							<>
-								<button
-									type="button"
-									onClick={() => setShowCustomize(true)}
-									className="flex-1 sm:flex-none bg-white text-black text-[10px] sm:text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none text-center"
-								>
-									Customize
-								</button>
-								<button
-									type="button"
-									onClick={handleConfirmUpload}
-									className="flex-1 sm:flex-none bg-[#EE2C2C] text-white text-[10px] sm:text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none text-center"
-								>
-									Upload
-								</button>
-							</>
-						)}
+						<button
+							type="button"
+							onClick={handleConfirmUpload}
+							className="flex-1 sm:flex-none bg-[#EE2C2C] text-white text-[10px] sm:text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none text-center"
+						>
+							Upload
+						</button>
 					</div>
 				)}
 			</div>
@@ -1032,117 +990,23 @@ export function ProposalDeckBuilder({
 					</div>
 				</div>
 			) : step === "preview" ? (
-				<div className="flex flex-col gap-4">
-					{slides.map((slide, idx) => (
-						<div key={idx} className="border-[3px] border-dashed border-black/30 rounded-2xl sm:rounded-[24px] p-4 sm:p-5 bg-white flex flex-col gap-3">
-							<span className="self-start text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-black/60 bg-neutral-100 px-2.5 py-1 rounded-full border border-black/10">
-								Slide {idx + 1}: {slide.layout.replace(/_/g, " ")}
-							</span>
-
-							{slide.layout === "PRICING_COMPARISON" ? (
-								<div className="flex flex-col gap-1.5">
-									<p className="text-sm font-black text-black">{slide.title}</p>
-									<div className="flex flex-wrap gap-1.5 sm:gap-2 mt-1">
-										{(slide.pricingTiers ?? []).map((t, ti) => (
-											<span key={ti} className="text-xs font-bold px-3 py-1.5 rounded-full border border-black/15 bg-slate-50">
-												{t.name} — {t.price}
-											</span>
-										))}
-										{slide.openToBarter && <span className="text-xs font-bold px-3 py-1.5 rounded-full border border-black/15 bg-slate-50">Open to Barter</span>}
-									</div>
-									<textarea
-										value={slide.body ?? ""}
-										onChange={e => updateSlide(idx, { body: e.target.value })}
-										rows={2}
-										className="mt-2 p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
-									/>
-								</div>
-							) : slide.layout === "PAST_SPONSORS" ? (
-								<div className="flex flex-col gap-1.5">
-									<p className="text-sm font-black text-black">{slide.title}</p>
-									{pastSponsors.filter(p => p.name.trim()).length ? (
-										<div className="flex flex-wrap gap-1.5 sm:gap-2 mt-1">
-											{pastSponsors.filter(p => p.name.trim()).map((p, pi) => (
-												<span key={pi} className="text-xs font-bold px-3 py-1.5 rounded-full border border-black/15 bg-slate-50">{p.name}</span>
-											))}
-										</div>
-									) : (
-										<p className="text-xs text-black/50">{slide.body}</p>
-									)}
-								</div>
-							) : (
-								<>
-									<input
-										value={slide.title}
-										onChange={e => updateSlide(idx, { title: e.target.value })}
-										className="text-sm font-black text-black outline-none border-b border-black/10 focus:border-black pb-1 bg-transparent"
-									/>
-									{slide.layout === "COVER" && (
-										<input
-											value={slide.subtitle ?? ""}
-											onChange={e => updateSlide(idx, { subtitle: e.target.value })}
-											placeholder="Tagline"
-											className="text-xs font-semibold text-black/60 outline-none border-b border-black/10 focus:border-black pb-1 bg-transparent"
-										/>
-									)}
-									{(slide.layout === "VALUE_PROP" || slide.layout === "STAT_HIGHLIGHT" || slide.layout === "CLOSING_CONTACT") && (
-										<textarea
-											value={slide.body ?? ""}
-											onChange={e => updateSlide(idx, { body: e.target.value })}
-											rows={3}
-											className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
-										/>
-									)}
-									{slide.layout === "STAT_HIGHLIGHT" && (
-										<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-											{(slide.stats ?? []).map((s, si) => (
-												<div key={si} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-black/10 bg-slate-50">
-													<input
-														value={s.value}
-														onChange={e => updateStat(idx, si, { value: e.target.value })}
-														className="w-20 text-xs font-black text-black outline-none bg-transparent"
-														placeholder="Value"
-													/>
-													<input
-														value={s.label}
-														onChange={e => updateStat(idx, si, { label: e.target.value })}
-														className="flex-1 min-w-0 text-[11px] font-semibold text-black/60 outline-none bg-transparent"
-														placeholder="Label"
-													/>
-												</div>
-											))}
-										</div>
-									)}
-									{slide.layout === "BULLET_LIST" && (
-										<div className="flex flex-col gap-1.5">
-											{(slide.bullets ?? []).map((b, bi) => (
-												<input
-													key={bi}
-													value={b}
-													onChange={e => updateBullet(idx, bi, e.target.value)}
-													className="px-3 py-2 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
-												/>
-											))}
-										</div>
-									)}
-								</>
-							)}
-						</div>
-					))}
-				</div>
-			) : showCustomize ? (
-				<div className="flex flex-col gap-4">
-					<p className="text-xs font-semibold text-black/50">
-						Drag, resize, or restyle any element below, or replace an image. Click “Apply Changes” when done to re-render the PDF.
-					</p>
-					{slides.map((slide, idx) => (
-						<div key={idx} className="border-[3px] border-dashed border-black/30 rounded-2xl sm:rounded-[24px] p-4 sm:p-5 bg-white flex flex-col gap-3">
-							<span className="self-start text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-black/60 bg-neutral-100 px-2.5 py-1 rounded-full border border-black/10">
-								Slide {idx + 1}: {slide.layout.replace(/_/g, " ")}
-							</span>
-							<DeckSlideEditor slide={slide} onChange={patch => updateSlide(idx, patch)} />
-						</div>
-					))}
+				<div className="max-w-2xl mx-auto w-full">
+					<LiveSlideEditor
+						slides={slides}
+						currentIndex={currentEditIndex}
+						onNavigate={setCurrentEditIndex}
+						onChangeSlide={updateSlide}
+						theme={theme}
+						fontVibe={fontVibe}
+						primaryColors={primaryColors}
+						accentColors={accentColors}
+						images={{
+							hero: mediaAssets[0]?.preview ?? null,
+							gallery: mediaAssets.slice(1, 5).map(m => m.preview),
+							sponsorLogos: pastSponsors.map(p => p.logoPreview),
+						}}
+						onReplaceImage={handleReplaceSlideImage}
+					/>
 				</div>
 			) : (
 				<div className="border-[3px] border-black rounded-2xl sm:rounded-[24px] overflow-hidden bg-white h-[65vh] sm:h-[75vh]">
