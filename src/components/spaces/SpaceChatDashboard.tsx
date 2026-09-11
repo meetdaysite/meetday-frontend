@@ -8,15 +8,23 @@ import {
 	getSpaceChatMessages,
 	sendSpaceChatMessage,
 	getSpaceDeal,
+	getSpaceDealReport,
 	type SpaceChatMessage,
 	type SpaceChatRole,
 	type SpaceChatThread,
 	type SpaceDeal,
+	type SpaceDealReport,
 } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import { toast } from "@/lib/toast"
 import clsx from "clsx"
-import { SpaceDealBanner, SpaceDealFormModal, SpaceDealDetailsModal } from "./SpaceDealPanel"
+import {
+	SpaceDealBanner,
+	SpaceDealFormModal,
+	SpaceDealDetailsModal,
+	SpaceDealReportModal,
+} from "./SpaceDealPanel"
+import { SystemMessageBubble } from "@/components/chat/SystemMessageBubble"
 import { uploadSpaceChatImage, isPdfMediaUrl } from "@/lib/uploadMedia"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
@@ -66,8 +74,10 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 	const [sending, setSending] = useState(false)
 	const [respondingId, setRespondingId] = useState<string | null>(null)
 	const [deal, setDeal] = useState<SpaceDeal | null>(null)
+	const [report, setReport] = useState<SpaceDealReport | null>(null)
 	const [showDealModal, setShowDealModal] = useState(false)
 	const [showDetailsModal, setShowDetailsModal] = useState(false)
+	const [showReportModal, setShowReportModal] = useState(false)
 	const [uploadingImage, setUploadingImage] = useState(false)
 	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const [replyingTo, setReplyingTo] = useState<SpaceChatMessage | null>(null)
@@ -122,26 +132,34 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 			clearInterval(id)
 		}
 	}, [selectedThreadId, role])
+
 	useEffect(() => {
 		if (!selectedThreadId) {
 			setDeal(null)
+			setReport(null)
 			return
 		}
 		let cancelled = false
-		function pollDeal() {
+		function pollDealAndReport() {
 			getSpaceDeal(selectedThreadId!)
 				.then((d) => {
 					if (!cancelled) setDeal(d)
 				})
 				.catch(() => {})
+
+			getSpaceDealReport(selectedThreadId!, role)
+				.then((r) => {
+					if (!cancelled) setReport(r)
+				})
+				.catch(() => {})
 		}
-		pollDeal()
-		const id = setInterval(pollDeal, MESSAGES_POLL_MS)
+		pollDealAndReport()
+		const id = setInterval(pollDealAndReport, MESSAGES_POLL_MS)
 		return () => {
 			cancelled = true
 			clearInterval(id)
 		}
-	}, [selectedThreadId])
+	}, [selectedThreadId, role])
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -445,6 +463,9 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 									onLock={() => setShowDealModal(true)}
 									onEdit={() => setShowDealModal(true)}
 									onView={() => setShowDetailsModal(true)}
+									onReport={() => setShowReportModal(true)}
+									hasReport={Boolean(report)}
+									report={report}
 								/>
 							)}
 
@@ -466,7 +487,16 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 									<p className="text-xs font-semibold text-black/40 text-center m-auto">No messages yet — say hi!</p>
 								) : (
 									messages.map((m) => {
+										if (m.messageType === "SYSTEM") {
+											return <SystemMessageBubble key={m.id} content={m.content ?? ""} />
+										}
+
 										const isMine = m.senderType === role
+										const isBrand = m.senderType === "BRAND"
+										const isCommunity = m.senderType === "COMMUNITY"
+										const isSpaceMsg = m.senderType === "SPACE"
+										const isDarkBubble = isBrand || isSpaceMsg || !isCommunity
+
 										return (
 											<div
 												key={m.id}
@@ -483,7 +513,9 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 															? "You"
 															: m.senderType === "BRAND"
 															? `${selectedThread.counterpartName} • Brand`
-															: (m.senderType === "COMMUNITY" || m.senderType === "SPACE")
+															: m.senderType === "SPACE"
+															? `${selectedThread.counterpartName} • Space`
+															: m.senderType === "COMMUNITY"
 															? `${selectedThread.counterpartName} • Community`
 															: "Meetday • Admin"}
 													</span>
@@ -496,9 +528,11 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 												<div
 													className={clsx(
 														"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words border flex flex-col shadow-xs",
-														isMine && "bg-black text-white rounded-br-sm border-black",
-														!isMine && m.senderType === "BRAND" && "bg-[#EE2C2C] text-white rounded-bl-sm border-[#EE2C2C]",
-														!isMine && (m.senderType === "COMMUNITY" || m.senderType === "SPACE") && "bg-[#FFC940] text-black rounded-bl-sm border-[#FFC940]",
+														isMine ? "rounded-br-sm" : "rounded-bl-sm",
+														isBrand && "bg-[#EE2C2C] text-white border-[#EE2C2C]",
+														isCommunity && "bg-[#FFC940] text-black border-[#FFC940]",
+														isSpaceMsg && "bg-black text-white border-black",
+														!isBrand && !isCommunity && !isSpaceMsg && "bg-black text-white border-black",
 													)}
 												>
 													{m.deletedAt ? (
@@ -511,20 +545,20 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 																	onClick={() => handleJumpToMessage(m.replyTo!.id)}
 																	className={clsx(
 																		"w-full text-left mb-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer block border-l-4 shadow-xs",
-																		isMine ? "bg-white/15 hover:bg-white/20 text-white border-white/70" : "bg-black/10 hover:bg-black/15 text-black border-black/40"
+																		isDarkBubble ? "bg-white/15 hover:bg-white/20 text-white border-white/70" : "bg-black/10 hover:bg-black/15 text-black border-black/40"
 																	)}
 																	title="Click to jump to message"
 																>
-																	<p className={clsx("text-[9px] font-black uppercase tracking-wider", isMine ? "text-white/80" : "text-black/60")}>
+																	<p className={clsx("text-[9px] font-black uppercase tracking-wider", isDarkBubble ? "text-white/80" : "text-black/60")}>
 																		↩ Replying to {replyLabel(m.replyTo.senderType)}
 																	</p>
 																	{m.replyTo.hasMedia && (
-																		<p className={clsx("text-xs font-semibold flex items-center gap-1 my-0.5", isMine ? "text-white/90" : "text-black/70")}>
+																		<p className={clsx("text-xs font-semibold flex items-center gap-1 my-0.5", isDarkBubble ? "text-white/90" : "text-black/70")}>
 																			📄 Attachment
 																		</p>
 																	)}
 																	{m.replyTo.content && (
-																		<p className={clsx("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", isMine ? "text-white/90" : "text-black/80")}>
+																		<p className={clsx("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", isDarkBubble ? "text-white/90" : "text-black/80")}>
 																			{m.replyTo.content}
 																		</p>
 																	)}
@@ -643,6 +677,18 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 					onClose={() => setShowDetailsModal(false)}
 					onUpdated={(updated) => {
 						setDeal(updated)
+					}}
+				/>
+			)}
+
+			{/* Deal Report Modal */}
+			{showReportModal && selectedThread && (
+				<SpaceDealReportModal
+					interestId={selectedThread.id}
+					role={role}
+					onClose={() => setShowReportModal(false)}
+					onReportUpdated={(updated) => {
+						setReport(updated)
 					}}
 				/>
 			)}
