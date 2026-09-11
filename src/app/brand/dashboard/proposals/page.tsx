@@ -153,66 +153,66 @@ function ProposalCard({
 			onClick={onClick}
 			className="group text-left relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-full h-[150px]"
 		>
-			{/* Image / Logo */}
-			<div className="relative w-[150px] h-full shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
-				{proposal.imageUrl ? (
-					<Image
-						src={proposal.imageUrl}
-						alt={proposal.name || "Proposal"}
-						fill
-						className="object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
-						unoptimized
-					/>
-				) : (
-					<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
-						{proposal.name ? proposal.name.substring(0, 2).toUpperCase() : "MD"}
-					</div>
-				)}
-
-				{/* Sponsorship Type Badge(s) */}
-				<div className="absolute top-2 left-2 flex flex-wrap gap-1 z-10">
-					{(proposal.sponsorshipType === "CASH" || proposal.sponsorshipType === "BOTH" || !proposal.sponsorshipType) && (
-						<span className="text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-emerald-100 text-emerald-900">
-							Cash
-						</span>
-					)}
-					{(proposal.sponsorshipType === "BARTER" || proposal.sponsorshipType === "BOTH") && (
-						<span className="text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black">
-							Barter
-						</span>
+				{/* Image / Logo */}
+				<div className="relative w-[150px] h-full shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
+					{proposal.imageUrl ? (
+						<Image
+							src={proposal.imageUrl}
+							alt={proposal.name || "Proposal"}
+							fill
+							className="object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
+							unoptimized
+						/>
+					) : (
+						<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
+							{proposal.name ? proposal.name.substring(0, 2).toUpperCase() : "MD"}
+						</div>
 					)}
 				</div>
-			</div>
 
-			{/* Content & Footer info */}
-			<div className="flex-1 p-3 flex flex-col justify-between min-w-0">
-				<div className="flex flex-col gap-1">
-					<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">
-						{proposal.name}
-					</h3>
-					<p className="text-[11px] font-bold text-black/50 truncate">
-						Hosted by {hostName} {proposal.city && `• ${proposal.city}`}
-					</p>
-					{proposal.about && (
-						<p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">
-							{proposal.about}
+				{/* Content & Footer info */}
+				<div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+					<div className="flex flex-col gap-1">
+						<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">
+							{proposal.name}
+						</h3>
+						<p className="text-[11px] font-bold text-black/50 truncate">
+							Hosted by {hostName} {proposal.city && `• ${proposal.city}`}
 						</p>
-					)}
-				</div>
+						{proposal.about && (
+							<p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">
+								{proposal.about}
+							</p>
+						)}
+					</div>
 
-				<div className="flex flex-wrap gap-1.5 mt-2">
-					{displayDate && (
-						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-							{displayDate}
-						</span>
-					)}
-					{proposal.guestCount && (
-						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-							{proposal.guestCount} Guests
-						</span>
-					)}
+					<div className="flex items-center justify-between gap-1.5 mt-2">
+						<div className="flex flex-wrap items-center gap-1.5 min-w-0">
+							{displayDate && (
+								<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+									{displayDate}
+								</span>
+							)}
+							{proposal.guestCount && (
+								<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+									{proposal.guestCount} Guests
+								</span>
+							)}
+						</div>
+						<div className="flex items-center gap-1 shrink-0 ml-auto">
+							{(proposal.sponsorshipType === "CASH" || proposal.sponsorshipType === "BOTH" || !proposal.sponsorshipType) && (
+								<span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-emerald-100 text-emerald-900 uppercase">
+									Cash
+								</span>
+							)}
+							{(proposal.sponsorshipType === "BARTER" || proposal.sponsorshipType === "BOTH") && (
+								<span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black uppercase">
+									Barter
+								</span>
+							)}
+						</div>
+					</div>
 				</div>
-			</div>
 		</button>
 	)
 }
