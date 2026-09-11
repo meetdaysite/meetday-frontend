@@ -1553,11 +1553,12 @@ export type SpaceChatMessage = {
 export async function markSpaceInterest(
 	spaceCommunityProfileId: string,
 	message?: string,
+	asRole?: "BRAND" | "COMMUNITY",
 ): Promise<{ message: string; alreadyInterested: boolean; interestId: string; chatStatus: SpaceChatStatus }> {
 	const { data } = await apiClient.post<{
 		success: boolean
 		data: { message: string; alreadyInterested: boolean; interestId: string; chatStatus: SpaceChatStatus }
-	}>(`/spaces/community/${spaceCommunityProfileId}/interest`, message ? { message } : {})
+	}>(`/spaces/community/${spaceCommunityProfileId}/interest`, { ...(message && { message }), ...(asRole && { asRole }) })
 	return data.data
 }
 

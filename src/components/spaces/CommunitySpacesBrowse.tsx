@@ -47,7 +47,7 @@ function SpaceCard({ space, onClick }: { space: BrowseSpaceCommunity; onClick: (
 	)
 }
 
-export function CommunitySpacesBrowse() {
+export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "COMMUNITY" } = {}) {
 	const [spaces, setSpaces] = useState<BrowseSpaceCommunity[] | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [selectedSpace, setSelectedSpace] = useState<BrowseSpaceCommunity | null>(null)
@@ -61,7 +61,7 @@ export function CommunitySpacesBrowse() {
 	useEffect(() => {
 		if (!selectedSpace) return
 		let cancelled = false
-		getMySpaceChats()
+		getMySpaceChats(undefined, viewerRole)
 			.then((threads) => {
 				if (cancelled) return
 				const ids = new Set(threads.map((t) => t.spaceCommunityProfileId))
@@ -71,13 +71,13 @@ export function CommunitySpacesBrowse() {
 		return () => {
 			cancelled = true
 		}
-	}, [selectedSpace])
+	}, [selectedSpace, viewerRole])
 
 	async function handleMarkInterest() {
 		if (!selectedSpace || sendingInterestId) return
 		setSendingInterestId(selectedSpace.id)
 		try {
-			await markSpaceInterest(selectedSpace.id)
+			await markSpaceInterest(selectedSpace.id, undefined, viewerRole)
 			setInterestedSpaceIds((prev) => new Set(prev).add(selectedSpace.id))
 			toast.success("Interest sent! We've notified the space.")
 		} catch (e) {
