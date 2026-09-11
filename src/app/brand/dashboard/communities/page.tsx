@@ -84,20 +84,6 @@ function ProposalCard({
 						{proposal.name ? proposal.name.substring(0, 2).toUpperCase() : "MD"}
 					</div>
 				)}
-
-				{/* Sponsorship Type Badge(s) */}
-				<div className="absolute top-2 left-2 flex flex-wrap gap-1 z-10">
-					{(proposal.sponsorshipType === "CASH" || proposal.sponsorshipType === "BOTH" || !proposal.sponsorshipType) && (
-						<span className="text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-emerald-100 text-emerald-900">
-							Cash
-						</span>
-					)}
-					{(proposal.sponsorshipType === "BARTER" || proposal.sponsorshipType === "BOTH") && (
-						<span className="text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black">
-							Barter
-						</span>
-					)}
-				</div>
 			</div>
 
 			{/* Content & Footer info */}
@@ -116,17 +102,31 @@ function ProposalCard({
 					)}
 				</div>
 
-				<div className="flex flex-wrap gap-1.5 mt-2">
-					{displayDate && (
-						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-							{displayDate}
-						</span>
-					)}
-					{proposal.guestCount && (
-						<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-							{proposal.guestCount} Guests
-						</span>
-					)}
+				<div className="flex items-center justify-between gap-1.5 mt-2">
+					<div className="flex flex-wrap items-center gap-1.5 min-w-0">
+						{displayDate && (
+							<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+								{displayDate}
+							</span>
+						)}
+						{proposal.guestCount && (
+							<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+								{proposal.guestCount} Guests
+							</span>
+						)}
+					</div>
+					<div className="flex items-center gap-1 shrink-0 ml-auto">
+						{(proposal.sponsorshipType === "CASH" || proposal.sponsorshipType === "BOTH" || !proposal.sponsorshipType) && (
+							<span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-emerald-100 text-emerald-900 uppercase">
+								Cash
+							</span>
+						)}
+						{(proposal.sponsorshipType === "BARTER" || proposal.sponsorshipType === "BOTH") && (
+							<span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black uppercase">
+								Barter
+							</span>
+						)}
+					</div>
 				</div>
 			</div>
 		</button>
