@@ -396,6 +396,11 @@ export function DealFormModal({
 				? await updateSponsorshipDeal(interestId, payload)
 				: await createSponsorshipDeal(interestId, payload)
 
+			await sendSponsorshipChatMessage(interestId, {
+				content: isCampaignDeal ? "📄 A new campaign deal was shared for approval." : "📄 A new deal proposal was shared for approval.",
+				messageType: "SYSTEM" as any,
+			}).catch(() => {})
+
 			toast.success(deal ? "Deal updated." : "Deal locked — waiting for approval.")
 			onSaved(saved)
 			onClose()
@@ -661,6 +666,11 @@ export function DealDetailsModal({
 		try {
 			const updated = await approveSponsorshipDeal(interestId)
 
+			await sendSponsorshipChatMessage(interestId, {
+				content: "🔒 The deal is officially locked and confirmed!",
+				messageType: "SYSTEM" as any,
+			}).catch(() => {})
+
 			toast.success("🎉 Deal approved and locked!")
 
 			// Trigger confetti locally in the chat canvas
@@ -690,6 +700,12 @@ export function DealDetailsModal({
 		setBusy(true)
 		try {
 			const updated = await requestSponsorshipDealChanges(interestId, { note: note.trim() || undefined })
+
+			await sendSponsorshipChatMessage(interestId, {
+				content: `⚠️ Changes were requested on the deal.${note.trim() ? ` Note: "${note.trim()}"` : ""}`,
+				messageType: "SYSTEM" as any,
+			}).catch(() => {})
+
 			toast.success("Requested changes to the deal.")
 			onUpdated(updated)
 			onClose()
@@ -1029,6 +1045,10 @@ export function DealReportModal({
 				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
 			})
 			toast.success(report ? "Report resubmitted for review." : "Report submitted for review.")
+			await sendSponsorshipChatMessage(interestId, {
+				content: "📋 The deliverables report was submitted for review.",
+				messageType: "SYSTEM" as any,
+			}).catch(() => null)
 			setReport(saved)
 			setReportStatus("PENDING")
 			setRevisionNote("")
@@ -1076,7 +1096,10 @@ export function DealReportModal({
 				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
 			})
 			if (status === "APPROVED") {
-				await sendSponsorshipChatMessage(interestId, { content: "report approved, deal is closed", messageType: "SYSTEM" }).catch(() => null)
+				await sendSponsorshipChatMessage(interestId, {
+					content: "✅ Congratulations! The deal is officially completed and closed!",
+					messageType: "SYSTEM" as any,
+				}).catch(() => null)
 				// Trigger confetti sparkle animation locally in the chat canvas
 				const canvas = document.getElementById("chat-confetti-canvas") as HTMLCanvasElement | null
 				if (canvas) {
@@ -1090,6 +1113,11 @@ export function DealReportModal({
 						origin: { y: 0.6 }
 					})
 				}
+			} else if (status === "REVISION_REQUESTED") {
+				await sendSponsorshipChatMessage(interestId, {
+					content: `⚠️ Revision was requested on the deliverables report.${note ? ` Note: "${note}"` : ""}`,
+					messageType: "SYSTEM" as any,
+				}).catch(() => null)
 			}
 			toast.success(status === "APPROVED" ? "Report approved, deal is closed!" : "Revision request sent.")
 			setReport(saved)

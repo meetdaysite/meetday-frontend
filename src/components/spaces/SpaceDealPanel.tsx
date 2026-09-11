@@ -507,7 +507,7 @@ export function SpaceDealDetailsModal({
 			const updated = await approveSpaceDeal(interestId, role)
 			await sendSpaceChatMessage(
 				interestId,
-				{ content: "Congratulations! The deal is locked.", messageType: "SYSTEM" },
+				{ content: "🔒 The deal is officially locked and confirmed!", messageType: "SYSTEM" },
 				role
 			).catch(() => null)
 
@@ -904,7 +904,7 @@ export function SpaceDealReportModal({
 			await sendSpaceChatMessage(
 				interestId,
 				{
-					content: report ? "The deliverables report was updated and resubmitted for review." : "The deliverables report was submitted for review.",
+					content: report ? "📋 The deliverables report was updated and resubmitted for review." : "📋 The deliverables report was submitted for review.",
 					messageType: "SYSTEM",
 				},
 				role
@@ -964,7 +964,7 @@ export function SpaceDealReportModal({
 			)
 
 			if (status === "APPROVED") {
-				await sendSpaceChatMessage(interestId, { content: "report approved, deal is closed", messageType: "SYSTEM" }, role).catch(() => null)
+				await sendSpaceChatMessage(interestId, { content: "✅ Congratulations! The deal is officially completed and closed!", messageType: "SYSTEM" }, role).catch(() => null)
 				// Trigger confetti sparkle animation locally in the chat canvas
 				const canvas = document.getElementById("space-chat-confetti-canvas") as HTMLCanvasElement | null
 				if (canvas) {
@@ -983,7 +983,7 @@ export function SpaceDealReportModal({
 				await sendSpaceChatMessage(
 					interestId,
 					{
-						content: `Revision was requested on the deliverables report${noteSuffix}`,
+						content: `⚠️ Revision was requested on the deliverables report${noteSuffix}`,
 						messageType: "SYSTEM",
 					},
 					role

@@ -5,29 +5,28 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 	const lower = content.toLowerCase()
 	const effectiveIsCampaign = isCampaign ?? (lower.includes("campaign") && !lower.includes("sponsorship proposal"))
 
-	// 1. Report Approved / Deal Closed (Check first so "report approved" isn't shadowed by generic "approved")
+	// 1. Report Approved / Deal Closed / Completed (Check first)
 	if (
 		lower.includes("report approved") ||
 		lower.includes("deliverables approved") ||
 		lower.includes("deal is closed") ||
 		lower.includes("closed") ||
+		lower.includes("completed") ||
 		(lower.includes("approved") && (lower.includes("deliverables") || lower.includes("report")))
 	) {
 		return (
 			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#ECFDF5] border-2 border-black text-[#065F46] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
-				<div className="size-6 rounded-full bg-[#10B981] border-2 border-black text-white flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-						<polyline points="20 6 9 17 4 12" />
-					</svg>
+				<div className="size-6 rounded-full bg-[#10B981] border-2 border-black text-white flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] font-bold text-xs">
+					✅
 				</div>
 				<span className="leading-snug">
-					Congratulations! The <strong className="font-black">deal is officially closed</strong>!
+					✅ Congratulations! The <strong className="font-black">deal is officially completed and closed</strong>!
 				</span>
 			</div>
 		)
 	}
 
-	// 2. Deliverables Report Revision Requested (Check before generic report submitted)
+	// 2. Deliverables Report Revision Requested
 	if (
 		(lower.includes("deliverables") || lower.includes("report")) &&
 		(lower.includes("revision") || lower.includes("requested change") || lower.includes("requested changes"))
@@ -41,7 +40,7 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 					</svg>
 				</div>
 				<span className="leading-snug">
-					<strong className="font-black">Revision was requested</strong> on the deliverables report.
+					⚠️ <strong className="font-black">Revision was requested</strong> on the deliverables report.
 				</span>
 			</div>
 		)
@@ -63,7 +62,7 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 					</svg>
 				</div>
 				<span className="leading-snug">
-					The <strong className="font-black">deliverables report</strong> was submitted for review.
+					📋 The <strong className="font-black">deliverables report</strong> was submitted for review.
 				</span>
 			</div>
 		)
@@ -78,14 +77,11 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 	) {
 		return (
 			<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2.5 rounded-2xl bg-[#ECFDF5] border-2 border-black text-[#065F46] shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2.5 text-xs sm:text-sm font-semibold transition-all">
-				<div className="size-6 rounded-full bg-[#10B981] border-2 border-black text-white flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-					<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-						<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-						<path d="M7 11V7a5 5 0 0 1 10 0v4" />
-					</svg>
+				<div className="size-6 rounded-full bg-[#10B981] border-2 border-black text-white flex items-center justify-center shrink-0 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] font-bold text-xs">
+					🔒
 				</div>
 				<span className="leading-snug">
-					The <strong className="font-black">deal is officially locked</strong> and confirmed!
+					🔒 The <strong className="font-black">deal is officially locked</strong> and confirmed!
 				</span>
 			</div>
 		)
@@ -110,7 +106,7 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 					</svg>
 				</div>
 				<span className="leading-snug">
-					A new <strong className="font-black">{effectiveIsCampaign ? "campaign deal" : "deal proposal"}</strong> was shared for approval.
+					📄 A new <strong className="font-black">{effectiveIsCampaign ? "campaign deal" : "deal proposal"}</strong> was shared for approval.
 				</span>
 			</div>
 		)
@@ -127,7 +123,7 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 					</svg>
 				</div>
 				<span className="leading-snug">
-					<strong className="font-black">Changes were requested</strong> on the {effectiveIsCampaign ? "campaign deal" : "proposal"}.
+					⚠️ <strong className="font-black">Changes were requested</strong> on the {effectiveIsCampaign ? "campaign deal" : "proposal"}.
 				</span>
 			</div>
 		)
@@ -144,14 +140,14 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 					</svg>
 				</div>
 				<span className="leading-snug">
-					<strong className="font-black">Payment completed</strong> successfully!
+					💳 <strong className="font-black">Payment completed</strong> successfully!
 				</span>
 			</div>
 		)
 	}
 
 	// 8. Generic Fallback
-	const cleaned = content.replace(/^[📝✏️🎉🔒💳🔁⚠️📄✅🎟️\s]+/, "").trim()
+	const cleaned = content.replace(/^[📝✏️🎉🔒💳🔁⚠️📄✅🎟️📋\s]+/, "").trim()
 	return (
 		<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2 rounded-2xl bg-neutral-100 border-2 border-black text-black/80 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs sm:text-sm font-bold text-center">
 			{cleaned}

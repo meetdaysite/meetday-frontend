@@ -10,6 +10,8 @@ import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import WidgetSvg from "@/icons/filled/widget.svg"
 import ChatOutSvg from "@/icons/outlined/chat.svg"
 import ChatFillSvg from "@/icons/filled/chat.svg"
+import BellSvg from "@/icons/outlined/bell.svg"
+import BellFillSvg from "@/icons/filled/bell.svg"
 import { getMySpaceChats } from "@/lib/api"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
@@ -27,6 +29,7 @@ const NAV_ITEMS: NavItem[] = [
 	{ label: "Profile", href: "/space/dashboard/profile", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "Community Chats", href: "/space/dashboard/chats?type=community", chatType: "community", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Brand Chats", href: "/space/dashboard/chats?type=brand", chatType: "brand", outlined: ChatOutSvg, filled: ChatFillSvg },
+	{ label: "Notifications", href: "/spaces/dashboard/notifications", outlined: BellSvg, filled: BellFillSvg },
 ]
 
 export function SpaceSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {

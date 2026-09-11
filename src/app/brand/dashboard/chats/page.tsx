@@ -759,10 +759,30 @@ function BrandChatThreadPanel({
 					<p className="text-xs font-semibold text-black/40 text-center m-auto">No messages yet — say hi!</p>
 				) : (
 					messages.map(m => {
-						if (m.messageType === "SYSTEM") {
+						const isSystemMessage =
+							m.messageType === "SYSTEM" ||
+							(m.senderType as string) === "SYSTEM" ||
+							m.content?.startsWith("[System]") ||
+							(typeof m.content === "string" && (
+								m.content.toLowerCase().includes("deal is locked") ||
+								m.content.toLowerCase().includes("deal is officially locked") ||
+								m.content.toLowerCase().includes("deal is closed") ||
+								m.content.toLowerCase().includes("deal is officially closed") ||
+								m.content.toLowerCase().includes("deliverables report was submitted") ||
+								m.content.toLowerCase().includes("revision was requested on the deliverables") ||
+								m.content.toLowerCase().includes("deal proposal was shared") ||
+								m.content.toLowerCase().includes("campaign deal was shared")
+							))
+
+						if (isSystemMessage) {
 							return <SystemMessageBubble key={m.id} content={m.content ?? ""} isCampaign={!!thread.campaignId} />
 						}
 						const isMine = m.senderType === "BRAND"
+						const isBrand = m.senderType === "BRAND"
+						const isHost = m.senderType === "HOST" || (m.senderType as string) === "COMMUNITY"
+						const isSpaceMsg = (m.senderType as string) === "SPACE"
+						const isAdmin = m.senderType === "ADMIN" || (m.senderType as string) === "BOT"
+						const isDarkBubble = isBrand || isSpaceMsg
 						const isDeleted = !!m.deletedAt
 						return (
 							<Fragment key={m.id}>
@@ -808,11 +828,13 @@ function BrandChatThreadPanel({
 									) : (
 										<div
 											className={clsx(
-												"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words border flex flex-col shadow-xs",
-												isMine && "bg-black text-white rounded-br-sm border-black",
-												!isMine && m.senderType === "HOST" && "bg-[#FFC940] text-black rounded-bl-sm border-[#FFC940]",
-												!isMine && m.senderType === "BRAND" && "bg-[#EE2C2C] text-white rounded-bl-sm border-[#EE2C2C]",
-												!isMine && m.senderType === "ADMIN" && "bg-neutral-100 text-black rounded-bl-sm border-black/10",
+												"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words border-2 border-black flex flex-col shadow-xs",
+												isMine ? "rounded-br-sm" : "rounded-bl-sm",
+												isBrand && "bg-[#EE2C2C] text-white",
+												isHost && "bg-[#FFC940] text-black",
+												isSpaceMsg && "bg-black text-white",
+												isAdmin && "bg-neutral-200 text-black",
+												!isBrand && !isHost && !isSpaceMsg && !isAdmin && "bg-neutral-200 text-black",
 											)}
 										>
 											{m.replyTo && (
@@ -821,29 +843,25 @@ function BrandChatThreadPanel({
 													onClick={() => handleJumpToMessage(m.replyTo!.id)}
 													className={clsx(
 														"w-full text-left mb-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer block border-l-4 shadow-xs",
-														isMine
+														isDarkBubble
 															? "bg-white/15 hover:bg-white/20 text-white border-white/70"
-															: m.senderType === "BRAND"
-															? "bg-black/25 hover:bg-black/35 text-white border-white/80"
-															: m.senderType === "HOST"
-															? "bg-black/10 hover:bg-black/15 text-black border-black/40"
-															: "bg-white hover:bg-neutral-50 text-black border-[#EE2C2C] border border-black/10"
+															: "bg-black/10 hover:bg-black/15 text-black border-black/40"
 													)}
 													title="Click to jump to message"
 												>
 													<p className={clsx(
 														"text-[9px] font-black uppercase tracking-wider",
-														(isMine || m.senderType === "BRAND") ? "text-white/80" : "text-black/60"
+														isDarkBubble ? "text-white/80" : "text-black/60"
 													)}>
 														↩ Replying to {replyLabel(m.replyTo.senderType)}
 													</p>
 													{m.replyTo.hasMedia && (
-														<p className={clsx("text-xs font-semibold flex items-center gap-1 my-0.5", (isMine || m.senderType === "BRAND") ? "text-white/90" : "text-black/70")}>
-														📄 Attachment
+														<p className={clsx("text-xs font-semibold flex items-center gap-1 my-0.5", isDarkBubble ? "text-white/90" : "text-black/70")}>
+															📄 Attachment
 														</p>
 													)}
 													{m.replyTo.content && (
-														<p className={clsx("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", (isMine || m.senderType === "BRAND") ? "text-white/90" : "text-black/80")}>
+														<p className={clsx("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", isDarkBubble ? "text-white/90" : "text-black/80")}>
 															{m.replyTo.content}
 														</p>
 													)}

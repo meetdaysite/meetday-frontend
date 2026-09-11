@@ -1,8 +1,9 @@
 "use client"
 
+import { Suspense } from "react"
 import { SpaceChatDashboard } from "@/components/spaces/SpaceChatDashboard"
 
-export default function BrandSpaceChatsPage() {
+function BrandSpaceChatsContent() {
 	return (
 		<div className="flex flex-col flex-1 min-h-0 bg-white">
 			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
@@ -26,5 +27,13 @@ export default function BrandSpaceChatsPage() {
 				/>
 			</div>
 		</div>
+	)
+}
+
+export default function BrandSpaceChatsPage() {
+	return (
+		<Suspense fallback={null}>
+			<BrandSpaceChatsContent />
+		</Suspense>
 	)
 }

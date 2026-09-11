@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import {
 	acceptSpaceChatRequest,
 	declineSpaceChatRequest,
@@ -86,6 +87,9 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	const prevMsgCountRef = useRef(0)
 
+	const searchParams = useSearchParams()
+	const initialThreadParam = searchParams.get("threadId") || searchParams.get("interestId")
+
 	useEffect(() => {
 		setCategory(controlledCategory ?? defaultCategory)
 		setSelectedThreadId(null)
@@ -107,6 +111,19 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 			clearInterval(id)
 		}
 	}, [role])
+
+	useEffect(() => {
+		if (initialThreadParam && threads.length > 0) {
+			const found = threads.find((t) => t.id === initialThreadParam)
+			if (found) {
+				setSelectedThreadId(found.id)
+				if (found.requesterType) {
+					setCategory(found.requesterType)
+				}
+				setSubTab(found.chatStatus === "REQUESTED" ? "REQUESTED" : "ACCEPTED")
+			}
+		}
+	}, [initialThreadParam, threads])
 
 	useEffect(() => {
 		if (!selectedThreadId) return
@@ -487,15 +504,31 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 									<p className="text-xs font-semibold text-black/40 text-center m-auto">No messages yet — say hi!</p>
 								) : (
 									messages.map((m) => {
-										if (m.messageType === "SYSTEM") {
+										const isSystemMessage =
+											m.messageType === "SYSTEM" ||
+											(m.senderType as string) === "SYSTEM" ||
+											m.content?.startsWith("[System]") ||
+											(typeof m.content === "string" && (
+												m.content.toLowerCase().includes("deal is locked") ||
+												m.content.toLowerCase().includes("deal is officially locked") ||
+												m.content.toLowerCase().includes("deal is closed") ||
+												m.content.toLowerCase().includes("deal is officially closed") ||
+												m.content.toLowerCase().includes("deliverables report was submitted") ||
+												m.content.toLowerCase().includes("revision was requested on the deliverables") ||
+												m.content.toLowerCase().includes("deal proposal was shared") ||
+												m.content.toLowerCase().includes("campaign deal was shared")
+											))
+
+										if (isSystemMessage) {
 											return <SystemMessageBubble key={m.id} content={m.content ?? ""} />
 										}
 
 										const isMine = m.senderType === role
 										const isBrand = m.senderType === "BRAND"
-										const isCommunity = m.senderType === "COMMUNITY"
+										const isCommunity = m.senderType === "COMMUNITY" || (m.senderType as string) === "HOST"
 										const isSpaceMsg = m.senderType === "SPACE"
-										const isDarkBubble = isBrand || isSpaceMsg || !isCommunity
+										const isAdmin = (m.senderType as string) === "ADMIN" || (m.senderType as string) === "BOT"
+										const isDarkBubble = isBrand || isSpaceMsg
 
 										return (
 											<div
@@ -515,7 +548,7 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 															? `${selectedThread.counterpartName} • Brand`
 															: m.senderType === "SPACE"
 															? `${selectedThread.counterpartName} • Space`
-															: m.senderType === "COMMUNITY"
+															: isCommunity
 															? `${selectedThread.counterpartName} • Community`
 															: "Meetday • Admin"}
 													</span>
@@ -527,12 +560,13 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 												</div>
 												<div
 													className={clsx(
-														"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words border flex flex-col shadow-xs",
+														"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words border-2 border-black flex flex-col shadow-xs",
 														isMine ? "rounded-br-sm" : "rounded-bl-sm",
-														isBrand && "bg-[#EE2C2C] text-white border-[#EE2C2C]",
-														isCommunity && "bg-[#FFC940] text-black border-[#FFC940]",
-														isSpaceMsg && "bg-black text-white border-black",
-														!isBrand && !isCommunity && !isSpaceMsg && "bg-black text-white border-black",
+														isBrand && "bg-[#EE2C2C] text-white",
+														isCommunity && "bg-[#FFC940] text-black",
+														isSpaceMsg && "bg-black text-white",
+														isAdmin && "bg-neutral-200 text-black",
+														!isBrand && !isCommunity && !isSpaceMsg && !isAdmin && "bg-neutral-200 text-black",
 													)}
 												>
 													{m.deletedAt ? (

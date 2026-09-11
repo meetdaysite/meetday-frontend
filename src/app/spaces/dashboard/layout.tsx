@@ -13,7 +13,6 @@ import { getSpaceProfile, type SpaceProfile } from "@/lib/api"
 import { Button } from "@/components/ui/Button"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { SpaceSidebar } from "@/components/spaces/SpaceSidebar"
-import { NotificationBell } from "@/components/ui/NotificationBell"
 
 function HamburgerIcon() {
 	return (
@@ -201,21 +200,13 @@ export default function SpacesDashboardLayout({ children }: { children: React.Re
 							className="h-7 w-auto cursor-pointer"
 						/>
 					</Link>
-					<div className="flex items-center gap-2">
-						<NotificationBell />
-						<button
-							onClick={() => setSidebarOpen(true)}
-							className="text-black p-1.5 rounded-action hover:bg-slate-100 transition-colors"
-							aria-label="Open navigation menu"
-						>
-							<HamburgerIcon />
-						</button>
-					</div>
-				</header>
-
-				{/* Desktop Top Bar */}
-				<header className="hidden lg:flex items-center justify-end px-8 py-4 border-b border-black/10 shrink-0">
-					<NotificationBell />
+					<button
+						onClick={() => setSidebarOpen(true)}
+						className="text-black p-1.5 rounded-action hover:bg-slate-100 transition-colors"
+						aria-label="Open navigation menu"
+					>
+						<HamburgerIcon />
+					</button>
 				</header>
 
 				{/* Main Content Area */}
