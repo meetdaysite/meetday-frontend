@@ -2,21 +2,58 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
+import { useState, useEffect, type ComponentType, type SVGProps } from "react"
+import { usePathname, useSearchParams } from "next/navigation"
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import WidgetSvg from "@/icons/filled/widget.svg"
 import ChatOutSvg from "@/icons/outlined/chat.svg"
 import ChatFillSvg from "@/icons/filled/chat.svg"
+import { getMySpaceChats } from "@/lib/api"
 
-const NAV_ITEMS = [
+type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
+
+type NavItem = {
+	label: string
+	href: string
+	outlined: SvgIcon
+	filled: SvgIcon
+	exact?: boolean
+	chatType?: "community" | "brand"
+}
+
+const NAV_ITEMS: NavItem[] = [
 	{ label: "Profile", href: "/space/dashboard/profile", outlined: WidgetsSvg, filled: WidgetSvg },
-	{ label: "Chats", href: "/space/dashboard/chats", outlined: ChatOutSvg, filled: ChatFillSvg },
+	{ label: "Community Chats", href: "/space/dashboard/chats?type=community", chatType: "community", outlined: ChatOutSvg, filled: ChatFillSvg },
+	{ label: "Brand Chats", href: "/space/dashboard/chats?type=brand", chatType: "brand", outlined: ChatOutSvg, filled: ChatFillSvg },
 ]
 
 export function SpaceSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
 	const pathname = usePathname()
+	const searchParams = useSearchParams()
+	const [unreadCommunityChatsCount, setUnreadCommunityChatsCount] = useState(0)
+	const [unreadBrandChatsCount, setUnreadBrandChatsCount] = useState(0)
+
+	useEffect(() => {
+		const updateCount = () => {
+			getMySpaceChats(undefined, "SPACE")
+				.then((threads) => {
+					const commCount = threads
+						.filter(t => t.requesterType === "COMMUNITY")
+						.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+					const brandCount = threads
+						.filter(t => t.requesterType === "BRAND")
+						.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
+					setUnreadCommunityChatsCount(commCount)
+					setUnreadBrandChatsCount(brandCount)
+				})
+				.catch(() => {})
+		}
+		updateCount()
+		const interval = setInterval(updateCount, 8000)
+		return () => clearInterval(interval)
+	}, [])
 
 	return (
 		<>
@@ -44,8 +81,24 @@ export function SpaceSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: ()
 					</div>
 
 					<div className="px-4 flex flex-col gap-1 mt-1 shrink-0">
-						{NAV_ITEMS.map(({ label, href, outlined: Outlined, filled: Filled }) => {
-							const isActive = pathname === href || pathname.startsWith(href)
+						{NAV_ITEMS.map(({ label, href, outlined: Outlined, filled: Filled, exact, chatType }) => {
+							let isActive = false
+							if (chatType === "brand") {
+								isActive = pathname.startsWith("/space/dashboard/chats") && searchParams.get("type") === "brand"
+							} else if (chatType === "community") {
+								isActive = pathname.startsWith("/space/dashboard/chats") && searchParams.get("type") !== "brand"
+							} else if (exact) {
+								isActive = pathname === href
+							} else {
+								isActive = pathname === href || pathname.startsWith(href)
+							}
+
+							const badgeCount = chatType === "community"
+								? unreadCommunityChatsCount
+								: chatType === "brand"
+								? unreadBrandChatsCount
+								: 0
+
 							return (
 								<Link
 									key={href}
@@ -58,6 +111,11 @@ export function SpaceSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: ()
 								>
 									<Icon as={isActive ? Filled : Outlined} size="md" className="text-white shrink-0" />
 									<span className="flex-1 whitespace-nowrap">{label}</span>
+									{badgeCount > 0 && (
+										<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+											{badgeCount > 9 ? "9+" : badgeCount}
+										</span>
+									)}
 								</Link>
 							)
 						})}

@@ -193,7 +193,9 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 								<div
 									className={clsx(
 										"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words border flex flex-col shadow-xs",
-										isMine ? (role === "BRAND" ? "bg-[#EE2C2C] text-white rounded-br-sm border-[#EE2C2C]" : "bg-[#FFC940] text-black rounded-br-sm border-[#FFC940]") : isBot ? "bg-black text-white rounded-bl-sm border-black" : "bg-neutral-100 text-black rounded-bl-sm border-black/10",
+										isMine
+											? "bg-black text-white rounded-br-sm border-black"
+											: "bg-neutral-100 text-black rounded-bl-sm border-black/10",
 									)}
 								>
 									{m.replyTo && (
@@ -202,29 +204,25 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 											onClick={() => handleJumpToMessage(m.replyTo!.id)}
 											className={clsx(
 												"w-full text-left mb-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer block border-l-4 shadow-xs",
-												isMine && role === "BRAND"
-													? "bg-black/25 hover:bg-black/35 text-white border-white/80"
-													: isMine && role === "HOST"
-													? "bg-black/10 hover:bg-black/15 text-black border-black/40"
-													: isBot
-													? "bg-white/15 hover:bg-white/25 text-white border-white/70"
+												isMine
+													? "bg-white/15 hover:bg-white/20 text-white border-white/70"
 													: "bg-white hover:bg-neutral-50 text-black border-[#EE2C2C] border border-black/10"
 											)}
 											title="Click to jump to message"
 										>
 											<p className={clsx(
 												"text-[9px] font-black uppercase tracking-wider",
-												(isBot || (isMine && role === "BRAND")) ? "text-white/80" : "text-black/60"
+												isMine ? "text-white/80" : "text-black/60"
 											)}>
 												↩ Replying to {m.replyTo.senderType === "BOT" ? "Meetday" : m.replyTo.senderType === "ADMIN" ? "Meetday • Admin" : ownName}
 											</p>
 											{m.replyTo.hasMedia && (
-												<p className={clsx("text-xs font-semibold flex items-center gap-1 my-0.5", (isBot || (isMine && role === "BRAND")) ? "text-white/90" : "text-black/70")}>
+												<p className={clsx("text-xs font-semibold flex items-center gap-1 my-0.5", isMine ? "text-white/90" : "text-black/70")}>
 													📷 Photo
 												</p>
 											)}
 											{m.replyTo.content && (
-												<p className={clsx("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", (isBot || (isMine && role === "BRAND")) ? "text-white/90" : "text-black/80")}>
+												<p className={clsx("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", isMine ? "text-white/90" : "text-black/80")}>
 													{m.replyTo.content}
 												</p>
 											)}

@@ -809,9 +809,10 @@ function BrandChatThreadPanel({
 										<div
 											className={clsx(
 												"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words border flex flex-col shadow-xs",
-												m.senderType === "BRAND" && "bg-[#EE2C2C] text-white rounded-br-sm border-[#EE2C2C]",
-												m.senderType === "HOST" && "bg-[#FFC940] text-black rounded-bl-sm border-[#FFC940]",
-												m.senderType === "ADMIN" && "bg-neutral-100 text-black rounded-bl-sm border-black/10",
+												isMine && "bg-black text-white rounded-br-sm border-black",
+												!isMine && m.senderType === "HOST" && "bg-[#FFC940] text-black rounded-bl-sm border-[#FFC940]",
+												!isMine && m.senderType === "BRAND" && "bg-[#EE2C2C] text-white rounded-bl-sm border-[#EE2C2C]",
+												!isMine && m.senderType === "ADMIN" && "bg-neutral-100 text-black rounded-bl-sm border-black/10",
 											)}
 										>
 											{m.replyTo && (
@@ -820,7 +821,9 @@ function BrandChatThreadPanel({
 													onClick={() => handleJumpToMessage(m.replyTo!.id)}
 													className={clsx(
 														"w-full text-left mb-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer block border-l-4 shadow-xs",
-														m.senderType === "BRAND"
+														isMine
+															? "bg-white/15 hover:bg-white/20 text-white border-white/70"
+															: m.senderType === "BRAND"
 															? "bg-black/25 hover:bg-black/35 text-white border-white/80"
 															: m.senderType === "HOST"
 															? "bg-black/10 hover:bg-black/15 text-black border-black/40"
@@ -830,17 +833,17 @@ function BrandChatThreadPanel({
 												>
 													<p className={clsx(
 														"text-[9px] font-black uppercase tracking-wider",
-														m.senderType === "BRAND" ? "text-white/80" : "text-black/60"
+														(isMine || m.senderType === "BRAND") ? "text-white/80" : "text-black/60"
 													)}>
 														↩ Replying to {replyLabel(m.replyTo.senderType)}
 													</p>
 													{m.replyTo.hasMedia && (
-														<p className={clsx("text-xs font-semibold flex items-center gap-1 my-0.5", m.senderType === "BRAND" ? "text-white/90" : "text-black/70")}>
+														<p className={clsx("text-xs font-semibold flex items-center gap-1 my-0.5", (isMine || m.senderType === "BRAND") ? "text-white/90" : "text-black/70")}>
 														📄 Attachment
 														</p>
 													)}
 													{m.replyTo.content && (
-														<p className={clsx("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", m.senderType === "BRAND" ? "text-white/90" : "text-black/80")}>
+														<p className={clsx("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", (isMine || m.senderType === "BRAND") ? "text-white/90" : "text-black/80")}>
 															{m.replyTo.content}
 														</p>
 													)}

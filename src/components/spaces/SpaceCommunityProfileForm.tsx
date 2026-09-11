@@ -5,6 +5,7 @@ import { toast } from "@/lib/toast"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import { useSpaceStore } from "@/store/spaceStore"
+import { setOptions, importLibrary } from "@googlemaps/js-api-loader"
 import {
 	getCategories,
 	updateSpaceProfile,
@@ -16,6 +17,35 @@ import {
 } from "@/lib/api"
 import UploadSvg from "@/icons/outlined/upload.svg"
 import clsx from "clsx"
+
+const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+let googleMapsOptionsSet = false
+
+async function ensurePlacesLibrary() {
+	if (!googleMapsApiKey) return false
+	if (!googleMapsOptionsSet) {
+		setOptions({ key: googleMapsApiKey })
+		googleMapsOptionsSet = true
+	}
+	await importLibrary("places")
+	return true
+}
+
+function cityFromComponents(components?: google.maps.places.AddressComponent[]) {
+	return (
+		components?.find((c) => c.types.includes("locality"))?.longText ??
+		components?.find((c) => c.types.includes("administrative_area_level_3"))?.longText ??
+		components?.find((c) => c.types.includes("administrative_area_level_2"))?.longText ??
+		""
+	)
+}
+
+type PlaceSuggestion = {
+	label: string
+	mainText: string
+	secondaryText: string
+	prediction: google.maps.places.PlacePrediction
+}
 
 async function uploadImageAndGetKey(
 	file: File,
@@ -38,13 +68,6 @@ const formatHref = (url: string) => {
 		return trimmed
 	}
 	return `https://${trimmed}`
-}
-
-function formatExternalUrl(url?: string | null) {
-	if (!url) return null
-	const trimmed = url.trim()
-	if (!trimmed) return null
-	return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
 }
 
 const APPROVAL_BANNER: Record<string, { className: string; text: (p: SpaceCommunityProfile) => React.ReactNode }> = {
@@ -92,8 +115,16 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 	const [communitySize, setCommunitySize] = useState("")
 	const [experiencesPerYear, setExperiencesPerYear] = useState("")
 	const [categoryIds, setCategoryIds] = useState<string[]>([])
+	const [isOtherCategorySelected, setIsOtherCategorySelected] = useState(false)
+	const [otherCategoryInput, setOtherCategoryInput] = useState("")
 	const [activeLocations, setActiveLocations] = useState<string[]>([])
 	const [locationInput, setLocationInput] = useState("")
+	const [locationSuggestions, setLocationSuggestions] = useState<PlaceSuggestion[]>([])
+	const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false)
+	const locationSessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null)
+	const locationRequestIdRef = useRef(0)
+	const locationDropdownRef = useRef<HTMLDivElement>(null)
+
 	const [centreShowcaseImages, setCentreShowcaseImages] = useState<{ key?: string; url: string; file?: File }[]>([])
 	const [videoLink, setVideoLink] = useState("")
 	const [instagram, setInstagram] = useState("")
@@ -146,7 +177,7 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 					setWebsite(spaceProfile?.socialLinks?.website ?? "")
 				} else {
 					setName(spaceProfile?.businessName ?? "")
-					setActiveLocations(spaceProfile?.operatingCities ?? [])
+					setActiveLocations([])
 					setInstagram(spaceProfile?.socialLinks?.instagram ?? "")
 					setLinkedin(spaceProfile?.socialLinks?.linkedin ?? "")
 					setYoutube(spaceProfile?.socialLinks?.youtube ?? "")
@@ -158,11 +189,103 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 
+	useEffect(() => {
+		function handleClickOutside(event: MouseEvent) {
+			if (locationDropdownRef.current && !locationDropdownRef.current.contains(event.target as Node)) {
+				setIsLocationDropdownOpen(false)
+			}
+		}
+		document.addEventListener("mousedown", handleClickOutside)
+		return () => document.removeEventListener("mousedown", handleClickOutside)
+	}, [])
+
+	useEffect(() => {
+		if (!googleMapsApiKey || locationInput.trim().length < 2) {
+			const resetTimer = window.setTimeout(() => {
+				setLocationSuggestions([])
+				setIsLocationDropdownOpen(false)
+			}, 0)
+			return () => window.clearTimeout(resetTimer)
+		}
+
+		const reqId = ++locationRequestIdRef.current
+		const timer = window.setTimeout(async () => {
+			try {
+				const loaded = await ensurePlacesLibrary()
+				if (!loaded || reqId !== locationRequestIdRef.current) return
+
+				locationSessionTokenRef.current ??= new google.maps.places.AutocompleteSessionToken()
+				const { suggestions: nextSuggestions } =
+					await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+						input: locationInput,
+						includedRegionCodes: ["in"],
+						region: "in",
+						sessionToken: locationSessionTokenRef.current,
+					})
+
+				if (reqId !== locationRequestIdRef.current) return
+
+				const placeSuggestions = nextSuggestions
+					.map((suggestion) => suggestion.placePrediction)
+					.filter((prediction): prediction is google.maps.places.PlacePrediction => prediction !== null)
+					.map((prediction) => ({
+						label: prediction.text.text,
+						mainText: prediction.mainText?.text ?? prediction.text.text,
+						secondaryText: prediction.secondaryText?.text ?? "",
+						prediction,
+					}))
+
+				setLocationSuggestions(placeSuggestions)
+				setIsLocationDropdownOpen(placeSuggestions.length > 0)
+			} catch {
+				setLocationSuggestions([])
+				setIsLocationDropdownOpen(false)
+			}
+		}, 250)
+
+		return () => window.clearTimeout(timer)
+	}, [locationInput])
+
+	async function selectLocationSuggestion(suggestion: PlaceSuggestion) {
+		setIsLocationDropdownOpen(false)
+		setLocationSuggestions([])
+
+		try {
+			const place = suggestion.prediction.toPlace()
+			await place.fetchFields({
+				fields: ["addressComponents", "displayName", "formattedAddress"],
+			})
+
+			locationSessionTokenRef.current = null
+
+			const venueName = place.displayName ?? suggestion.mainText
+			const city = cityFromComponents(place.addressComponents) || suggestion.secondaryText?.split(",")?.[0]?.trim() || ""
+
+			let combined = venueName
+			if (city && !venueName.toLowerCase().includes(city.toLowerCase())) {
+				combined = `${venueName}, ${city}`
+			}
+
+			if (combined.trim()) {
+				setActiveLocations((prev) => (prev.includes(combined.trim()) ? prev : [...prev, combined.trim()]))
+			}
+		} catch {
+			const fallback = suggestion.secondaryText
+				? `${suggestion.mainText}, ${suggestion.secondaryText}`
+				: suggestion.mainText
+			if (fallback.trim()) {
+				setActiveLocations((prev) => (prev.includes(fallback.trim()) ? prev : [...prev, fallback.trim()]))
+			}
+		}
+		setLocationInput("")
+	}
+
 	function addLocation() {
 		const trimmed = locationInput.trim()
 		if (!trimmed) return
 		setActiveLocations((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]))
 		setLocationInput("")
+		setIsLocationDropdownOpen(false)
 	}
 
 	function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -263,11 +386,13 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 		if (!name.trim()) return toast.error("Name is required.")
 		if (!about.trim()) return toast.error("About is required.")
 		if (!logoFile && !community?.logoKey) return toast.error("Logo image is required.")
-		if (!numberOfVenues.trim()) return toast.error("Number of venues / event spaces is required.")
+		if (!numberOfVenues.trim()) return toast.error("Number of venues is required.")
 		if (!venueCapacity.trim()) return toast.error("Venue capacity is required.")
 		if (!communitySize.trim()) return toast.error("Community size is required.")
 		if (!experiencesPerYear.trim()) return toast.error("Experiences/year is required.")
-		if (categoryIds.length === 0) return toast.error("At least one category must be selected.")
+		if (categoryIds.length === 0 && (!isOtherCategorySelected || !otherCategoryInput.trim())) {
+			return toast.error("At least one category must be selected.")
+		}
 
 		setSubmitting(true)
 		try {
@@ -398,11 +523,6 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 								<span className="inline-block bg-[#F5C343] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[11px] font-black px-2.5 py-0.5 rounded-md uppercase tracking-wider">
 									{community.venueCapacity ? `${community.venueCapacity} Capacity` : "Venue Space"}
 								</span>
-								{spaceProfile?.businessName && (
-									<span className="text-[11px] font-black text-black/60 uppercase tracking-wider">
-										{spaceProfile.businessName}
-									</span>
-								)}
 							</div>
 						</div>
 					</div>
@@ -694,13 +814,16 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 					{/* Stats: Number of Venues & Capacity */}
 					<div className="grid grid-cols-2 gap-3">
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-bold text-black">Venues / Spaces *</label>
+							<div className="flex items-center justify-between">
+								<label className="text-xs font-bold text-black">Number of Venues *</label>
+								<span className="text-[10px] text-black/40 font-medium">event spaces eg: 3</span>
+							</div>
 							<input
 								type="text"
 								required
 								value={numberOfVenues}
 								onChange={(e) => setNumberOfVenues(e.target.value)}
-								placeholder="e.g. 3"
+								placeholder="event spaces eg: 3"
 								className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30"
 							/>
 						</div>
@@ -716,13 +839,16 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 							/>
 						</div>
 						<div className="flex flex-col gap-1.5">
-							<label className="text-xs font-bold text-black">Community Size *</label>
+							<div className="flex items-center justify-between">
+								<label className="text-xs font-bold text-black">Community Size *</label>
+								<span className="text-[10px] text-black/40 font-medium">Number of active members in the space</span>
+							</div>
 							<input
 								type="text"
 								required
 								value={communitySize}
 								onChange={(e) => setCommunitySize(e.target.value)}
-								placeholder="e.g. 250"
+								placeholder="Number of active members in the space"
 								className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30"
 							/>
 						</div>
@@ -765,7 +891,28 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 									</button>
 								)
 							})}
+							<button
+								type="button"
+								onClick={() => setIsOtherCategorySelected((prev) => !prev)}
+								className={clsx(
+									"px-3 py-1.5 rounded-full text-xs font-bold transition-all border-2 border-black cursor-pointer",
+									isOtherCategorySelected
+										? "bg-[#FFC940] text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+										: "bg-white text-black hover:bg-black/5",
+								)}
+							>
+								Other
+							</button>
 						</div>
+						{isOtherCategorySelected && (
+							<input
+								type="text"
+								value={otherCategoryInput}
+								onChange={(e) => setOtherCategoryInput(e.target.value)}
+								placeholder="Please specify other category..."
+								className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30 mt-1"
+							/>
+						)}
 					</div>
 
 					{/* Active Locations */}
@@ -774,36 +921,59 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 							<label className="text-xs font-bold text-black">Active Locations</label>
 							<span className="text-[10px] text-black/40">Add at least one</span>
 						</div>
-						<div className="flex items-center gap-2">
-							<input
-								type="text"
-								value={locationInput}
-								onChange={(e) => setLocationInput(e.target.value)}
-								onKeyDown={(e) => {
-									if (e.key === "Enter") {
-										e.preventDefault()
-										addLocation()
-									}
-								}}
-								placeholder="e.g. Bangalore, Indiranagar"
-								className="flex-1 h-10 px-4 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35 placeholder:text-black/30"
-							/>
-							<Button
-								type="button"
-								variant="secondary"
-								size="xs"
-								onClick={addLocation}
-								className="bg-white border-2 border-black text-black text-[10px] font-bold py-1 px-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all"
-							>
-								Add
-							</Button>
+						<div ref={locationDropdownRef} className="relative">
+							<div className="flex items-center gap-2">
+								<input
+									type="text"
+									value={locationInput}
+									onChange={(e) => setLocationInput(e.target.value)}
+									onFocus={() => {
+										if (locationSuggestions.length > 0) setIsLocationDropdownOpen(true)
+									}}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											e.preventDefault()
+											addLocation()
+										}
+									}}
+									placeholder="Search venue name (e.g. WeWork Koramangala)"
+									className="flex-1 h-10 px-4 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35 placeholder:text-black/30"
+								/>
+								<Button
+									type="button"
+									variant="secondary"
+									size="xs"
+									onClick={addLocation}
+									className="bg-white border-2 border-black text-black text-[10px] font-bold py-1 px-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none transition-all cursor-pointer shrink-0"
+								>
+									Add
+								</Button>
+							</div>
+
+							{isLocationDropdownOpen && locationSuggestions.length > 0 && (
+								<div className="absolute z-50 mt-1 w-full overflow-hidden rounded-xl border-2 border-black bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] max-h-56 overflow-y-auto">
+									{locationSuggestions.map((suggestion, index) => (
+										<button
+											key={suggestion.prediction.placeId || index}
+											type="button"
+											onClick={() => selectLocationSuggestion(suggestion)}
+											className="flex w-full flex-col gap-0.5 px-3.5 py-2 text-left hover:bg-[#FFC940]/20 transition-colors border-b border-black/5 last:border-b-0 cursor-pointer"
+										>
+											<span className="text-xs font-bold text-black">{suggestion.mainText}</span>
+											{suggestion.secondaryText && (
+												<span className="text-[10px] text-black/50">{suggestion.secondaryText}</span>
+											)}
+										</button>
+									))}
+								</div>
+							)}
 						</div>
 						{activeLocations.length > 0 && (
 							<div className="flex flex-wrap gap-2 mt-1">
 								{activeLocations.map((loc, idx) => (
 									<span
 										key={idx}
-										className="flex items-center gap-1.5 px-3 py-1 rounded-full border-2 border-black bg-white text-xs font-bold text-black"
+										className="flex items-center gap-1.5 px-3 py-1 rounded-full border-2 border-black bg-white text-xs font-bold text-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
 									>
 										{loc}
 										<button
@@ -833,7 +1003,10 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 
 					{/* Centre Showcase */}
 					<div className="flex flex-col gap-2">
-						<label className="text-xs font-bold text-black">Centre Showcase (Optional)</label>
+						<div className="flex items-center justify-between">
+							<label className="text-xs font-bold text-black">Centre Showcase (Optional)</label>
+							<span className="text-[10px] text-black/40 font-medium">Photographs of the centre</span>
+						</div>
 						<div className="flex gap-2 flex-wrap">
 							{centreShowcaseImages.map((img, idx) => (
 								<div key={idx} className="relative w-20 h-20 rounded-xl border-2 border-black overflow-hidden shrink-0">
@@ -842,7 +1015,7 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 									<button
 										type="button"
 										onClick={() => removeCentreShowcaseImage(idx)}
-										className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center font-bold"
+										className="absolute top-0.5 right-0.5 size-4 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center font-bold cursor-pointer"
 									>
 										×
 									</button>
@@ -852,53 +1025,6 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 								<input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && addCentreShowcaseImage(e.target.files[0])} />
 								<span className="text-[10px] font-bold text-black/50">+ Add</span>
 							</label>
-						</div>
-					</div>
-
-					{/* Social Links */}
-					<div className="flex flex-col gap-3">
-						<label className="text-xs font-bold text-black">Social Media Links</label>
-						<div className="flex flex-col gap-2.5">
-							<div className="flex items-center gap-2">
-								<span className="text-xs text-black/50 w-20">Instagram</span>
-								<input
-									type="text"
-									value={instagram}
-									onChange={(e) => setInstagram(e.target.value)}
-									placeholder="instagram.com/handle"
-									className="flex-1 h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35"
-								/>
-							</div>
-							<div className="flex items-center gap-2">
-								<span className="text-xs text-black/50 w-20">LinkedIn</span>
-								<input
-									type="text"
-									value={linkedin}
-									onChange={(e) => setLinkedin(e.target.value)}
-									placeholder="linkedin.com/in/profile"
-									className="flex-1 h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35"
-								/>
-							</div>
-							<div className="flex items-center gap-2">
-								<span className="text-xs text-black/50 w-20">YouTube</span>
-								<input
-									type="text"
-									value={youtube}
-									onChange={(e) => setYoutube(e.target.value)}
-									placeholder="youtube.com/@channel"
-									className="flex-1 h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35"
-								/>
-							</div>
-							<div className="flex items-center gap-2">
-								<span className="text-xs text-black/50 w-20">Website</span>
-								<input
-									type="text"
-									value={website}
-									onChange={(e) => setWebsite(e.target.value)}
-									placeholder="yourwebsite.com"
-									className="flex-1 h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35"
-								/>
-							</div>
 						</div>
 					</div>
 
@@ -1001,6 +1127,53 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 								</label>
 							</div>
 						))}
+					</div>
+
+					{/* Social Links */}
+					<div className="flex flex-col gap-3">
+						<label className="text-xs font-bold text-black">Social Media Links</label>
+						<div className="flex flex-col gap-2.5">
+							<div className="flex items-center gap-2">
+								<span className="text-xs text-black/50 w-20">Instagram</span>
+								<input
+									type="text"
+									value={instagram}
+									onChange={(e) => setInstagram(e.target.value)}
+									placeholder="instagram.com/handle"
+									className="flex-1 h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35"
+								/>
+							</div>
+							<div className="flex items-center gap-2">
+								<span className="text-xs text-black/50 w-20">LinkedIn</span>
+								<input
+									type="text"
+									value={linkedin}
+									onChange={(e) => setLinkedin(e.target.value)}
+									placeholder="linkedin.com/in/profile"
+									className="flex-1 h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35"
+								/>
+							</div>
+							<div className="flex items-center gap-2">
+								<span className="text-xs text-black/50 w-20">YouTube</span>
+								<input
+									type="text"
+									value={youtube}
+									onChange={(e) => setYoutube(e.target.value)}
+									placeholder="youtube.com/@channel"
+									className="flex-1 h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35"
+								/>
+							</div>
+							<div className="flex items-center gap-2">
+								<span className="text-xs text-black/50 w-20">Website</span>
+								<input
+									type="text"
+									value={website}
+									onChange={(e) => setWebsite(e.target.value)}
+									placeholder="yourwebsite.com"
+									className="flex-1 h-9 px-3 rounded-xl bg-white text-black outline-none text-sm transition-colors border border-black/15 focus:border-black/35"
+								/>
+							</div>
+						</div>
 					</div>
 
 					{/* Footer Actions */}
