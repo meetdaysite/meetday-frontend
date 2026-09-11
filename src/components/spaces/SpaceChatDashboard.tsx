@@ -156,7 +156,7 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 		if (!selectedThreadId || !messageInput.trim() || sending) return
 		setSending(true)
 		try {
-			await sendSpaceChatMessage(selectedThreadId, { content: messageInput.trim() })
+			await sendSpaceChatMessage(selectedThreadId, { content: messageInput.trim() }, role)
 			setMessageInput("")
 			const data = await getSpaceChatMessages(selectedThreadId, role)
 			setMessages(data.messages)
@@ -170,7 +170,7 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 	async function handleAccept(threadId: string) {
 		setRespondingId(threadId)
 		try {
-			await acceptSpaceChatRequest(threadId)
+			await acceptSpaceChatRequest(threadId, role)
 			const data = await getMySpaceChats(undefined, role)
 			setThreads(data)
 			toast.success("Request accepted — chat is now open.")
@@ -184,7 +184,7 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 	async function handleDecline(threadId: string) {
 		setRespondingId(threadId)
 		try {
-			await declineSpaceChatRequest(threadId)
+			await declineSpaceChatRequest(threadId, role)
 			const data = await getMySpaceChats(undefined, role)
 			setThreads(data)
 			if (selectedThreadId === threadId) setSelectedThreadId(null)
@@ -491,6 +491,7 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 					interestId={selectedThread.id}
 					thread={selectedThread}
 					deal={deal}
+					role={role}
 					onClose={() => setShowDealModal(false)}
 					onSaved={(saved) => {
 						setDeal(saved)

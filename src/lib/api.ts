@@ -1583,21 +1583,29 @@ export async function getSpaceChatMessages(
 export async function sendSpaceChatMessage(
 	interestId: string,
 	payload: { content?: string; mediaKey?: string },
+	role?: SpaceChatRole,
 ): Promise<SpaceChatMessage> {
-	const { data } = await apiClient.post<{ success: boolean; data: SpaceChatMessage }>(`/spaces/chats/${interestId}/messages`, payload)
+	const { data } = await apiClient.post<{ success: boolean; data: SpaceChatMessage }>(`/spaces/chats/${interestId}/messages`, {
+		...payload,
+		...(role && { asRole: role }),
+	})
 	return data.data
 }
 
-export async function acceptSpaceChatRequest(interestId: string): Promise<{ message: string; chatStatus: SpaceChatStatus }> {
+export async function acceptSpaceChatRequest(interestId: string, role?: SpaceChatRole): Promise<{ message: string; chatStatus: SpaceChatStatus }> {
 	const { data } = await apiClient.post<{ success: boolean; data: { message: string; chatStatus: SpaceChatStatus } }>(
 		`/spaces/chats/${interestId}/accept`,
+		{},
+		{ params: role ? { role } : undefined },
 	)
 	return data.data
 }
 
-export async function declineSpaceChatRequest(interestId: string): Promise<{ message: string; chatStatus: SpaceChatStatus }> {
+export async function declineSpaceChatRequest(interestId: string, role?: SpaceChatRole): Promise<{ message: string; chatStatus: SpaceChatStatus }> {
 	const { data } = await apiClient.post<{ success: boolean; data: { message: string; chatStatus: SpaceChatStatus } }>(
 		`/spaces/chats/${interestId}/decline`,
+		{},
+		{ params: role ? { role } : undefined },
 	)
 	return data.data
 }
@@ -1649,23 +1657,26 @@ export async function getSpaceDeal(interestId: string): Promise<SpaceDeal | null
 	return data.data
 }
 
-export async function createSpaceDeal(interestId: string, payload: SpaceDealPayload): Promise<SpaceDeal> {
-	const { data } = await apiClient.post<{ success: boolean; data: SpaceDeal }>(`/spaces/chats/${interestId}/deal`, payload)
+export async function createSpaceDeal(interestId: string, payload: SpaceDealPayload, role?: SpaceChatRole): Promise<SpaceDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SpaceDeal }>(`/spaces/chats/${interestId}/deal`, { ...payload, ...(role && { asRole: role }) })
 	return data.data
 }
 
-export async function updateSpaceDeal(interestId: string, payload: SpaceDealPayload): Promise<SpaceDeal> {
-	const { data } = await apiClient.put<{ success: boolean; data: SpaceDeal }>(`/spaces/chats/${interestId}/deal`, payload)
+export async function updateSpaceDeal(interestId: string, payload: SpaceDealPayload, role?: SpaceChatRole): Promise<SpaceDeal> {
+	const { data } = await apiClient.put<{ success: boolean; data: SpaceDeal }>(`/spaces/chats/${interestId}/deal`, { ...payload, ...(role && { asRole: role }) })
 	return data.data
 }
 
-export async function approveSpaceDeal(interestId: string): Promise<SpaceDeal> {
-	const { data } = await apiClient.post<{ success: boolean; data: SpaceDeal }>(`/spaces/chats/${interestId}/deal/approve`)
+export async function approveSpaceDeal(interestId: string, role?: SpaceChatRole): Promise<SpaceDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SpaceDeal }>(`/spaces/chats/${interestId}/deal/approve`, {}, { params: role ? { role } : undefined })
 	return data.data
 }
 
-export async function requestSpaceDealChanges(interestId: string, payload: { note?: string }): Promise<SpaceDeal> {
-	const { data } = await apiClient.post<{ success: boolean; data: SpaceDeal }>(`/spaces/chats/${interestId}/deal/request-changes`, payload)
+export async function requestSpaceDealChanges(interestId: string, payload: { note?: string }, role?: SpaceChatRole): Promise<SpaceDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SpaceDeal }>(`/spaces/chats/${interestId}/deal/request-changes`, {
+		...payload,
+		...(role && { asRole: role }),
+	})
 	return data.data
 }
 

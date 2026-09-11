@@ -176,12 +176,14 @@ const EMPTY_FORM: SpaceDealPayload = {
 export function SpaceDealFormModal({
 	interestId,
 	deal,
+	role,
 	onClose,
 	onSaved,
 }: {
 	interestId: string
 	thread?: SpaceChatThread | null
 	deal: SpaceDeal | null
+	role?: SpaceChatRole
 	onClose: () => void
 	onSaved: (deal: SpaceDeal) => void
 }) {
@@ -227,8 +229,8 @@ export function SpaceDealFormModal({
 				endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
 			}
 			const saved = deal
-				? await updateSpaceDeal(interestId, payload)
-				: await createSpaceDeal(interestId, payload)
+				? await updateSpaceDeal(interestId, payload, role)
+				: await createSpaceDeal(interestId, payload, role)
 
 			toast.success(deal ? "Deal updated." : "Deal locked — waiting for counterpart approval.")
 			onSaved(saved)
@@ -422,7 +424,7 @@ export function SpaceDealDetailsModal({
 	async function handleApprove() {
 		setBusy(true)
 		try {
-			const updated = await approveSpaceDeal(interestId)
+			const updated = await approveSpaceDeal(interestId, role)
 			toast.success("🎉 Deal approved and locked!")
 
 			// Trigger confetti
@@ -455,7 +457,7 @@ export function SpaceDealDetailsModal({
 		}
 		setBusy(true)
 		try {
-			const updated = await requestSpaceDealChanges(interestId, { note: note.trim() })
+			const updated = await requestSpaceDealChanges(interestId, { note: note.trim() }, role)
 			toast.success("Requested changes to the deal.")
 			onUpdated(updated)
 			onClose()
