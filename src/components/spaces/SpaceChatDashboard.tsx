@@ -70,6 +70,8 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 	const [showDetailsModal, setShowDetailsModal] = useState(false)
 	const [uploadingImage, setUploadingImage] = useState(false)
 	const [viewingImage, setViewingImage] = useState<string | null>(null)
+	const [replyingTo, setReplyingTo] = useState<SpaceChatMessage | null>(null)
+	const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null)
 	const messagesEndRef = useRef<HTMLDivElement>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	const prevMsgCountRef = useRef(0)
@@ -173,8 +175,9 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 		if (!selectedThreadId || !messageInput.trim() || sending) return
 		setSending(true)
 		try {
-			await sendSpaceChatMessage(selectedThreadId, { content: messageInput.trim() }, role)
+			await sendSpaceChatMessage(selectedThreadId, { content: messageInput.trim(), replyToId: replyingTo?.id }, role)
 			setMessageInput("")
+			setReplyingTo(null)
 			const data = await getSpaceChatMessages(selectedThreadId, role)
 			setMessages(data.messages)
 		} catch (e) {
@@ -191,7 +194,8 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 		setUploadingImage(true)
 		try {
 			const mediaKey = await uploadSpaceChatImage(file, selectedThreadId)
-			await sendSpaceChatMessage(selectedThreadId, { mediaKey }, role)
+			await sendSpaceChatMessage(selectedThreadId, { mediaKey, replyToId: replyingTo?.id }, role)
+			setReplyingTo(null)
 			const data = await getSpaceChatMessages(selectedThreadId, role)
 			setMessages(data.messages)
 		} catch (e) {
@@ -199,6 +203,25 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 		} finally {
 			setUploadingImage(false)
 		}
+	}
+
+	function handleReplyStart(m: SpaceChatMessage) {
+		setReplyingTo(m)
+	}
+
+	function handleReplyCancel() {
+		setReplyingTo(null)
+	}
+
+	function handleJumpToMessage(messageId: string) {
+		const el = document.getElementById(`space-msg-${messageId}`)
+		if (el) el.scrollIntoView({ behavior: "smooth", block: "center" })
+		setHighlightedMessageId(messageId)
+		setTimeout(() => setHighlightedMessageId((cur) => (cur === messageId ? null : cur)), 2000)
+	}
+
+	function replyLabel(senderType: SpaceChatMessage["senderType"]) {
+		return senderType === "BRAND" ? "Brand" : senderType === "SPACE" ? "Space" : "Community"
 	}
 
 	async function handleAccept(threadId: string) {
@@ -447,9 +470,11 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 										return (
 											<div
 												key={m.id}
+												id={`space-msg-${m.id}`}
 												className={clsx(
 													"flex flex-col max-w-[85%] sm:max-w-[75%] md:max-w-[70%] transition-all duration-300 rounded-2xl p-1",
-													isMine ? "self-end items-end" : "self-start items-start"
+													isMine ? "self-end items-end" : "self-start items-start",
+													highlightedMessageId === m.id && "ring-4 ring-[#EE2C2C] bg-[#FFC940]/30 shadow-lg scale-[1.02]"
 												)}
 											>
 												<div className="flex items-center gap-2 mb-0.5 px-1">
@@ -462,6 +487,11 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 															? `${selectedThread.counterpartName} • Community`
 															: "Meetday • Admin"}
 													</span>
+													{!m.deletedAt && (
+														<button type="button" onClick={() => handleReplyStart(m)} className="text-[10px] font-bold text-black/30 hover:text-black">
+															Reply
+														</button>
+													)}
 												</div>
 												<div
 													className={clsx(
@@ -475,6 +505,31 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 														<span className="italic opacity-60">Message deleted</span>
 													) : (
 														<>
+															{m.replyTo && (
+																<button
+																	type="button"
+																	onClick={() => handleJumpToMessage(m.replyTo!.id)}
+																	className={clsx(
+																		"w-full text-left mb-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer block border-l-4 shadow-xs",
+																		isMine ? "bg-white/15 hover:bg-white/20 text-white border-white/70" : "bg-black/10 hover:bg-black/15 text-black border-black/40"
+																	)}
+																	title="Click to jump to message"
+																>
+																	<p className={clsx("text-[9px] font-black uppercase tracking-wider", isMine ? "text-white/80" : "text-black/60")}>
+																		↩ Replying to {replyLabel(m.replyTo.senderType)}
+																	</p>
+																	{m.replyTo.hasMedia && (
+																		<p className={clsx("text-xs font-semibold flex items-center gap-1 my-0.5", isMine ? "text-white/90" : "text-black/70")}>
+																			📄 Attachment
+																		</p>
+																	)}
+																	{m.replyTo.content && (
+																		<p className={clsx("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", isMine ? "text-white/90" : "text-black/80")}>
+																			{m.replyTo.content}
+																		</p>
+																	)}
+																</button>
+															)}
 															{m.mediaUrl &&
 																(isPdfMediaUrl(m.mediaUrl) ? (
 																	<a href={m.mediaUrl} target="_blank" rel="noreferrer" className="underline text-xs font-bold">
@@ -511,7 +566,21 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 								<div ref={messagesEndRef} />
 							</div>
 							{selectedThread.chatStatus === "ACCEPTED" && (
-								<div className="border-t-[3px] border-black shrink-0 bg-white p-2.5 sm:p-3 flex items-center gap-2 pb-[max(0.6rem,env(safe-area-inset-bottom))]">
+								<div className="border-t-[3px] border-black shrink-0 bg-white flex flex-col">
+									{replyingTo && (
+										<div className="px-3 sm:px-3.5 pt-2.5 flex items-center justify-between gap-2 pb-2 border-b border-black/10">
+											<div className="min-w-0 pl-2 border-l-2 border-[#EE2C2C]">
+												<p className="text-[10px] font-black uppercase text-black/40">Replying to {replyLabel(replyingTo.senderType)}</p>
+												<p className="text-[11px] font-semibold text-black/50 truncate">
+													{replyingTo.content?.trim() ? replyingTo.content : replyingTo.mediaUrl ? "Attachment" : ""}
+												</p>
+											</div>
+											<button type="button" onClick={handleReplyCancel} className="text-[10px] font-bold text-[#EE2C2C] shrink-0">
+												Cancel
+											</button>
+										</div>
+									)}
+									<div className="p-2.5 sm:p-3 flex items-center gap-2 pb-[max(0.6rem,env(safe-area-inset-bottom))]">
 									<input type="file" accept="image/*,application/pdf" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
 									<button
 										type="button"
@@ -543,6 +612,7 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 									>
 										{sending ? "…" : "Send"}
 									</button>
+									</div>
 								</div>
 							)}
 						</>

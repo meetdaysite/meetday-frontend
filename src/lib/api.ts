@@ -1539,6 +1539,13 @@ export type SpaceChatThread = {
 	counterpartAvatarUrl: string | null
 }
 
+export type SpaceChatReplyTo = {
+	id: string
+	senderType: SpaceChatSenderType
+	content: string
+	hasMedia: boolean
+}
+
 export type SpaceChatMessage = {
 	id: string
 	senderType: SpaceChatSenderType
@@ -1548,6 +1555,7 @@ export type SpaceChatMessage = {
 	deletedAt?: string | null
 	createdAt: string
 	wasRedacted?: boolean
+	replyTo?: SpaceChatReplyTo | null
 }
 
 export async function markSpaceInterest(
@@ -1582,7 +1590,7 @@ export async function getSpaceChatMessages(
 
 export async function sendSpaceChatMessage(
 	interestId: string,
-	payload: { content?: string; mediaKey?: string },
+	payload: { content?: string; mediaKey?: string; replyToId?: string },
 	role?: SpaceChatRole,
 ): Promise<SpaceChatMessage> {
 	const { data } = await apiClient.post<{ success: boolean; data: SpaceChatMessage }>(`/spaces/chats/${interestId}/messages`, {
