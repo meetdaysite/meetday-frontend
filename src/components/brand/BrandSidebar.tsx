@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/Icon"
 import { useBrandStore } from "@/store/brandStore"
 import { useToastStore } from "@/store/toastStore"
 import { useState, useEffect, type ComponentType, type SVGProps } from "react"
-import { getMySponsorshipChats } from "@/lib/api"
+import { getMySponsorshipChats, getMySpaceChats } from "@/lib/api"
 import { useNotificationStore } from "@/store/notificationStore"
 
 import UserSvg from "@/icons/outlined/user.svg"
@@ -27,7 +27,7 @@ import LockFillSvg from "@/icons/filled/lock.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
-type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; exact?: boolean; chatType?: "sponsorship" | "campaign" }
+type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; exact?: boolean; chatType?: "sponsorship" | "campaign" | "spaces" }
 
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
@@ -41,7 +41,7 @@ const PRIMARY_NAV: NavItem[] = [
 const SECONDARY_NAV: NavItem[] = [
 	{ label: "Sponsorship Chats", href: "/brand/dashboard/chats?type=sponsorship", chatType: "sponsorship", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Campaign Chats", href: "/brand/dashboard/chats?type=campaign", chatType: "campaign", outlined: ChatOutSvg, filled: ChatFillSvg },
-	{ label: "Spaces Chats", href: "/brand/dashboard/space-chats", outlined: ChatOutSvg, filled: ChatFillSvg },
+	{ label: "Spaces Chats", href: "/brand/dashboard/space-chats", chatType: "spaces", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Billing", href: "/brand/dashboard/billing", outlined: DollarSvg, filled: DollarSvg },
 	{ label: "Support Chat", href: "/brand/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/brand/dashboard/notifications", outlined: BellSvg, filled: BellSvg },
@@ -76,6 +76,7 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 	const avatarUrl = profile?.logoUrl
 	const [unreadSponsorshipChatsCount, setUnreadSponsorshipChatsCount] = useState(0)
 	const [unreadCampaignChatsCount, setUnreadCampaignChatsCount] = useState(0)
+	const [unreadSpaceChatsCount, setUnreadSpaceChatsCount] = useState(0)
 	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
 
 	const { notifications, init: initNotifs } = useNotificationStore()
@@ -83,6 +84,39 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 	useEffect(() => {
 		initNotifs()
 	}, [initNotifs])
+
+	// Spaces Chats badge — same fold-in pattern as sponsorship/campaign, but for space_* notifications
+	// (chat messages, deal lock/update/approve, interest accepted) not yet reflected in a thread's own unreadCount.
+	useEffect(() => {
+		if (!profile?.id) return
+
+		const updateSpaceCount = () => {
+			getMySpaceChats(undefined, "BRAND").catch(() => []).then((threads) => {
+				const isSpaceNotification = (n: (typeof notifications)[0]) => n.type.startsWith("space_") && n.type !== "space_profile_approved" && n.type !== "space_profile_pending_review" && n.type !== "space_profile_changes_approved" && n.type !== "space_profile_revision_submitted"
+
+				const threadCount = threads.reduce((sum, t) => {
+					const notifCount = notifications.filter(n => {
+						if (n.isRead || !isSpaceNotification(n)) return false
+						const m = (n.metadata as Record<string, unknown>) || {}
+						return m.spaceInterestId === t.id
+					}).length
+					return sum + Math.max(t.unreadCount || 0, notifCount)
+				}, 0)
+
+				const standaloneCount = notifications.filter(n => {
+					if (n.isRead || !isSpaceNotification(n)) return false
+					const m = (n.metadata as Record<string, unknown>) || {}
+					return !m.spaceInterestId || !threads.some(t => t.id === m.spaceInterestId)
+				}).length
+
+				setUnreadSpaceChatsCount(threadCount + standaloneCount)
+			}).catch(() => {})
+		}
+
+		updateSpaceCount()
+		const interval = setInterval(updateSpaceCount, 8000)
+		return () => clearInterval(interval)
+	}, [profile?.id, notifications])
 
 	useEffect(() => {
 		if (!profile?.id) return
@@ -274,6 +308,8 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 						? unreadSponsorshipChatsCount
 						: chatType === "campaign"
 						? unreadCampaignChatsCount
+						: chatType === "spaces"
+						? unreadSpaceChatsCount
 						: label === "Support Chat"
 						? unreadSupportCount
 						: 0

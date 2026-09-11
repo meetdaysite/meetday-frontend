@@ -8,7 +8,7 @@ import clsx from "clsx"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
-import { getHostCommunityProfile, getMySponsorshipProposals, getMySponsorshipChats } from "@/lib/api"
+import { getHostCommunityProfile, getMySponsorshipProposals, getMySponsorshipChats, getMySpaceChats } from "@/lib/api"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useToastStore } from "@/store/toastStore"
 import type { ComponentType, SVGProps } from "react"
@@ -44,13 +44,13 @@ type BottomNavItem = {
 	href: string
 	outlined: SvgIcon
 	filled: SvgIcon
-	chatType?: "sponsorship" | "campaign"
+	chatType?: "sponsorship" | "campaign" | "spaces"
 }
 
 const NAV_ITEMS_BOTTOM: BottomNavItem[] = [
 	{ label: "Sponsorship Chats", href: "/community/dashboard/chats?type=sponsorship", chatType: "sponsorship", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Campaign Chats", href: "/community/dashboard/chats?type=campaign", chatType: "campaign", outlined: ChatOutSvg, filled: ChatFillSvg },
-	{ label: "Spaces Chats", href: "/community/dashboard/space-chats", outlined: ChatOutSvg, filled: ChatFillSvg },
+	{ label: "Spaces Chats", href: "/community/dashboard/space-chats", chatType: "spaces", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Support Chat", href: "/community/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/community/dashboard/messages", outlined: BellSvg, filled: BellFillSvg },
 ]
@@ -73,6 +73,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const [dismissedList, setDismissedList] = useState<any[]>([])
 	const [unreadSponsorshipChatsCount, setUnreadSponsorshipChatsCount] = useState(0)
 	const [unreadCampaignChatsCount, setUnreadCampaignChatsCount] = useState(0)
+	const [unreadSpaceChatsCount, setUnreadSpaceChatsCount] = useState(0)
 	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
 	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
 	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
@@ -190,6 +191,39 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	useEffect(() => {
 		initNotifs()
 	}, [initNotifs])
+
+	// Spaces Chats badge — same fold-in pattern as sponsorship/campaign, but for space_* notifications
+	// (chat messages, deal lock/update/approve, interest accepted) not yet reflected in a thread's own unreadCount.
+	useEffect(() => {
+		if (!profile?.id) return
+
+		const updateSpaceCount = () => {
+			getMySpaceChats(undefined, "COMMUNITY").catch(() => []).then((threads) => {
+				const isSpaceNotification = (n: (typeof notifications)[0]) => n.type.startsWith("space_") && n.type !== "space_profile_approved" && n.type !== "space_profile_pending_review" && n.type !== "space_profile_changes_approved" && n.type !== "space_profile_revision_submitted"
+
+				const threadCount = threads.reduce((sum, t) => {
+					const notifCount = notifications.filter(n => {
+						if (n.isRead || !isSpaceNotification(n)) return false
+						const m = (n.metadata as Record<string, unknown>) || {}
+						return m.spaceInterestId === t.id
+					}).length
+					return sum + Math.max(t.unreadCount || 0, notifCount)
+				}, 0)
+
+				const standaloneCount = notifications.filter(n => {
+					if (n.isRead || !isSpaceNotification(n)) return false
+					const m = (n.metadata as Record<string, unknown>) || {}
+					return !m.spaceInterestId || !threads.some(t => t.id === m.spaceInterestId)
+				}).length
+
+				setUnreadSpaceChatsCount(threadCount + standaloneCount)
+			}).catch(() => {})
+		}
+
+		updateSpaceCount()
+		const interval = setInterval(updateSpaceCount, 8000)
+		return () => clearInterval(interval)
+	}, [profile?.id, notifications])
 
 	const activeNotifs = notifications.filter(n => !n.isRead && !dismissedNotifIds.includes(n.id))
 	const latestNotif = activeNotifs[0]
@@ -441,6 +475,8 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 						? unreadSponsorshipChatsCount
 						: chatType === "campaign"
 						? unreadCampaignChatsCount
+						: chatType === "spaces"
+						? unreadSpaceChatsCount
 						: label === "Support Chat"
 						? unreadSupportCount
 						: 0
