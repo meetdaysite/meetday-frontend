@@ -30,6 +30,14 @@ const CHAT_MESSAGE_NOTIFICATION_TYPES = new Set([
 	"sponsorship_deal_report_submitted",
 	"sponsorship_deal_report_reviewed",
 	"chat_message",
+	"space_interest_requested",
+	"space_interest_confirmed",
+	"space_interest_accepted",
+	"space_chat_message",
+	"space_deal_locked",
+	"space_deal_updated",
+	"space_deal_approved",
+	"space_deal_changes_requested",
 ])
 
 type NotificationStore = {

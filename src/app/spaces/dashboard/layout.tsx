@@ -8,10 +8,12 @@ import { ApiError } from "@/lib/errors"
 import { LogoutConfirmDialog } from "@/components/ui/LogoutConfirmDialog"
 import { useAuthStore } from "@/store/authStore"
 import { useSpaceStore } from "@/store/spaceStore"
+import { useNotificationStore } from "@/store/notificationStore"
 import { getSpaceProfile, type SpaceProfile } from "@/lib/api"
 import { Button } from "@/components/ui/Button"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { SpaceSidebar } from "@/components/spaces/SpaceSidebar"
+import { NotificationBell } from "@/components/ui/NotificationBell"
 
 function HamburgerIcon() {
 	return (
@@ -69,6 +71,7 @@ export default function SpacesDashboardLayout({ children }: { children: React.Re
 	const [needsSignup, setNeedsSignup] = useState(false)
 	const { user, authLoading, signOut } = useAuthStore()
 	const { profile, setProfile, clearProfile } = useSpaceStore()
+	const initNotifications = useNotificationStore(s => s.init)
 	const router = useRouter()
 
 	async function handleSignOut() {
@@ -109,6 +112,14 @@ export default function SpacesDashboardLayout({ children }: { children: React.Re
 			cancelled = true
 		}
 	}, [user, authLoading, profile, setProfile, router])
+
+	// Init notifications once the space profile is resolved
+	useEffect(() => {
+		if (profile) {
+			initNotifications()
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [profile])
 
 	if (authLoading || (!profile && !!user && !profileError && !needsSignup)) return <LoadingScreen />
 
@@ -190,13 +201,21 @@ export default function SpacesDashboardLayout({ children }: { children: React.Re
 							className="h-7 w-auto cursor-pointer"
 						/>
 					</Link>
-					<button
-						onClick={() => setSidebarOpen(true)}
-						className="text-black p-1.5 rounded-action hover:bg-slate-100 transition-colors"
-						aria-label="Open navigation menu"
-					>
-						<HamburgerIcon />
-					</button>
+					<div className="flex items-center gap-2">
+						<NotificationBell />
+						<button
+							onClick={() => setSidebarOpen(true)}
+							className="text-black p-1.5 rounded-action hover:bg-slate-100 transition-colors"
+							aria-label="Open navigation menu"
+						>
+							<HamburgerIcon />
+						</button>
+					</div>
+				</header>
+
+				{/* Desktop Top Bar */}
+				<header className="hidden lg:flex items-center justify-end px-8 py-4 border-b border-black/10 shrink-0">
+					<NotificationBell />
 				</header>
 
 				{/* Main Content Area */}
