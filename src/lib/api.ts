@@ -1645,162 +1645,29 @@ export type SpaceDeal = {
 }
 
 export async function getSpaceDeal(interestId: string): Promise<SpaceDeal | null> {
-	try {
-		const { data } = await apiClient.get<{ success: boolean; data: SpaceDeal | null }>(
-			`/spaces/chats/${interestId}/deal`,
-		)
-		return data.data
-	} catch {
-		if (typeof window !== "undefined") {
-			const saved = localStorage.getItem(`space-deal-${interestId}`)
-			if (saved) {
-				try {
-					return JSON.parse(saved)
-				} catch {
-					return null
-				}
-			}
-		}
-		return null
-	}
+	const { data } = await apiClient.get<{ success: boolean; data: SpaceDeal | null }>(`/spaces/chats/${interestId}/deal`)
+	return data.data
 }
 
-export async function createSpaceDeal(
-	interestId: string,
-	payload: SpaceDealPayload,
-): Promise<SpaceDeal> {
-	try {
-		const { data } = await apiClient.post<{ success: boolean; data: SpaceDeal }>(
-			`/spaces/chats/${interestId}/deal`,
-			payload,
-		)
-		if (typeof window !== "undefined") {
-			localStorage.setItem(`space-deal-${interestId}`, JSON.stringify(data.data))
-		}
-		return data.data
-	} catch {
-		const fallback: SpaceDeal = {
-			id: `deal-${Date.now()}`,
-			spaceInterestId: interestId,
-			...payload,
-			status: "PENDING_APPROVAL",
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
-		}
-		if (typeof window !== "undefined") {
-			localStorage.setItem(`space-deal-${interestId}`, JSON.stringify(fallback))
-		}
-		return fallback
-	}
+export async function createSpaceDeal(interestId: string, payload: SpaceDealPayload): Promise<SpaceDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SpaceDeal }>(`/spaces/chats/${interestId}/deal`, payload)
+	return data.data
 }
 
-export async function updateSpaceDeal(
-	interestId: string,
-	payload: SpaceDealPayload,
-): Promise<SpaceDeal> {
-	try {
-		const { data } = await apiClient.put<{ success: boolean; data: SpaceDeal }>(
-			`/spaces/chats/${interestId}/deal`,
-			payload,
-		)
-		if (typeof window !== "undefined") {
-			localStorage.setItem(`space-deal-${interestId}`, JSON.stringify(data.data))
-		}
-		return data.data
-	} catch {
-		let prev: any = {}
-		if (typeof window !== "undefined") {
-			const existing = localStorage.getItem(`space-deal-${interestId}`)
-			if (existing) {
-				try {
-					prev = JSON.parse(existing)
-				} catch {}
-			}
-		}
-		const updated: SpaceDeal = {
-			...prev,
-			id: prev.id || `deal-${Date.now()}`,
-			spaceInterestId: interestId,
-			...payload,
-			status: "PENDING_APPROVAL",
-			changeRequestNote: null,
-			updatedAt: new Date().toISOString(),
-		}
-		if (typeof window !== "undefined") {
-			localStorage.setItem(`space-deal-${interestId}`, JSON.stringify(updated))
-		}
-		return updated
-	}
+export async function updateSpaceDeal(interestId: string, payload: SpaceDealPayload): Promise<SpaceDeal> {
+	const { data } = await apiClient.put<{ success: boolean; data: SpaceDeal }>(`/spaces/chats/${interestId}/deal`, payload)
+	return data.data
 }
 
 export async function approveSpaceDeal(interestId: string): Promise<SpaceDeal> {
-	try {
-		const { data } = await apiClient.post<{ success: boolean; data: SpaceDeal }>(
-			`/spaces/chats/${interestId}/deal/approve`,
-		)
-		if (typeof window !== "undefined") {
-			localStorage.setItem(`space-deal-${interestId}`, JSON.stringify(data.data))
-		}
-		return data.data
-	} catch {
-		let prev: any = {}
-		if (typeof window !== "undefined") {
-			const existing = localStorage.getItem(`space-deal-${interestId}`)
-			if (existing) {
-				try {
-					prev = JSON.parse(existing)
-				} catch {}
-			}
-		}
-		const updated: SpaceDeal = {
-			...prev,
-			status: "APPROVED",
-			approvedAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
-		}
-		if (typeof window !== "undefined") {
-			localStorage.setItem(`space-deal-${interestId}`, JSON.stringify(updated))
-		}
-		return updated
-	}
+	const { data } = await apiClient.post<{ success: boolean; data: SpaceDeal }>(`/spaces/chats/${interestId}/deal/approve`)
+	return data.data
 }
 
-export async function requestSpaceDealChanges(
-	interestId: string,
-	payload: { note?: string },
-): Promise<SpaceDeal> {
-	try {
-		const { data } = await apiClient.post<{ success: boolean; data: SpaceDeal }>(
-			`/spaces/chats/${interestId}/deal/request-changes`,
-			payload,
-		)
-		if (typeof window !== "undefined") {
-			localStorage.setItem(`space-deal-${interestId}`, JSON.stringify(data.data))
-		}
-		return data.data
-	} catch {
-		let prev: any = {}
-		if (typeof window !== "undefined") {
-			const existing = localStorage.getItem(`space-deal-${interestId}`)
-			if (existing) {
-				try {
-					prev = JSON.parse(existing)
-				} catch {}
-			}
-		}
-		const updated: SpaceDeal = {
-			...prev,
-			status: "CHANGES_REQUESTED",
-			changeRequestNote: payload.note || null,
-			updatedAt: new Date().toISOString(),
-		}
-		if (typeof window !== "undefined") {
-			localStorage.setItem(`space-deal-${interestId}`, JSON.stringify(updated))
-		}
-		return updated
-	}
+export async function requestSpaceDealChanges(interestId: string, payload: { note?: string }): Promise<SpaceDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SpaceDeal }>(`/spaces/chats/${interestId}/deal/request-changes`, payload)
+	return data.data
 }
-
 
 export async function getHostTeamMembers(): Promise<TeamMembersList> {
 	const { data } = await apiClient.get<{ success: boolean; data: TeamMembersList }>("/hosts/community/members")
