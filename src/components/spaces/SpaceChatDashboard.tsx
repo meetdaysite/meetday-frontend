@@ -17,6 +17,12 @@ import { getApiErrorMessage } from "@/lib/errors"
 import { toast } from "@/lib/toast"
 import clsx from "clsx"
 import { SpaceDealBanner, SpaceDealFormModal, SpaceDealDetailsModal } from "./SpaceDealPanel"
+import { uploadSpaceChatImage, isPdfMediaUrl } from "@/lib/uploadMedia"
+import { ImageLightbox } from "@/components/ui/ImageLightbox"
+import { EmojiPicker } from "@/components/ui/EmojiPicker"
+import { playMessageChime } from "@/lib/notificationSound"
+import { Icon } from "@/components/ui/Icon"
+import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 
 const THREADS_POLL_MS = 8000
 const MESSAGES_POLL_MS = 4000
@@ -62,7 +68,11 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 	const [deal, setDeal] = useState<SpaceDeal | null>(null)
 	const [showDealModal, setShowDealModal] = useState(false)
 	const [showDetailsModal, setShowDetailsModal] = useState(false)
+	const [uploadingImage, setUploadingImage] = useState(false)
+	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const messagesEndRef = useRef<HTMLDivElement>(null)
+	const fileInputRef = useRef<HTMLInputElement>(null)
+	const prevMsgCountRef = useRef(0)
 
 	useEffect(() => {
 		setCategory(controlledCategory ?? defaultCategory)
@@ -88,11 +98,18 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 
 	useEffect(() => {
 		if (!selectedThreadId) return
+		prevMsgCountRef.current = 0
 		let cancelled = false
 		function poll() {
 			getSpaceChatMessages(selectedThreadId!, role)
 				.then((data) => {
-					if (!cancelled) setMessages(data.messages)
+					if (cancelled) return
+					if (prevMsgCountRef.current > 0 && data.messages.length > prevMsgCountRef.current) {
+						const newest = data.messages[data.messages.length - 1]
+						if (newest && newest.senderType !== role) playMessageChime()
+					}
+					prevMsgCountRef.current = data.messages.length
+					setMessages(data.messages)
 				})
 				.catch(() => {})
 		}
@@ -164,6 +181,23 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 			toast.error(getApiErrorMessage(e))
 		} finally {
 			setSending(false)
+		}
+	}
+
+	async function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0]
+		e.target.value = ""
+		if (!file || !selectedThreadId) return
+		setUploadingImage(true)
+		try {
+			const mediaKey = await uploadSpaceChatImage(file, selectedThreadId)
+			await sendSpaceChatMessage(selectedThreadId, { mediaKey }, role)
+			const data = await getSpaceChatMessages(selectedThreadId, role)
+			setMessages(data.messages)
+		} catch (e) {
+			toast.error(getApiErrorMessage(e))
+		} finally {
+			setUploadingImage(false)
 		}
 	}
 
@@ -437,7 +471,27 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 														!isMine && (m.senderType === "COMMUNITY" || m.senderType === "SPACE") && "bg-[#FFC940] text-black rounded-bl-sm border-[#FFC940]",
 													)}
 												>
-													{m.deletedAt ? <span className="italic opacity-60">Message deleted</span> : m.content}
+													{m.deletedAt ? (
+														<span className="italic opacity-60">Message deleted</span>
+													) : (
+														<>
+															{m.mediaUrl &&
+																(isPdfMediaUrl(m.mediaUrl) ? (
+																	<a href={m.mediaUrl} target="_blank" rel="noreferrer" className="underline text-xs font-bold">
+																		📄 View attachment
+																	</a>
+																) : (
+																	// eslint-disable-next-line @next/next/no-img-element
+																	<img
+																		src={m.mediaUrl}
+																		alt=""
+																		onClick={() => setViewingImage(m.mediaUrl!)}
+																		className="max-w-[220px] max-h-[220px] rounded-xl object-cover cursor-pointer mb-1"
+																	/>
+																))}
+															{m.content}
+														</>
+													)}
 												</div>
 												<div className={clsx("flex items-center gap-1 mt-0.5 text-[9px] font-bold text-black/40 px-1", isMine ? "justify-end" : "justify-start")}>
 													<span>
@@ -458,6 +512,17 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 							</div>
 							{selectedThread.chatStatus === "ACCEPTED" && (
 								<div className="border-t-[3px] border-black shrink-0 bg-white p-2.5 sm:p-3 flex items-center gap-2 pb-[max(0.6rem,env(safe-area-inset-bottom))]">
+									<input type="file" accept="image/*,application/pdf" ref={fileInputRef} onChange={handleImagePick} className="hidden" />
+									<button
+										type="button"
+										onClick={() => fileInputRef.current?.click()}
+										disabled={uploadingImage}
+										className="shrink-0 size-9 rounded-xl border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50"
+										aria-label="Attach image or PDF"
+									>
+										<Icon as={GallerySvg} size="sm" />
+									</button>
+									<EmojiPicker onSelect={(emoji) => setMessageInput((prev) => prev + emoji)} />
 									<input
 										value={messageInput}
 										onChange={(e) => setMessageInput(e.target.value)}
@@ -516,6 +581,8 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 				id="space-chat-confetti-canvas"
 				className="fixed inset-0 pointer-events-none z-50 w-full h-full"
 			/>
+
+			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
 		</div>
 	)
 }
