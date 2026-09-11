@@ -7,13 +7,16 @@ import {
 	getMySpaceChats,
 	getSpaceChatMessages,
 	sendSpaceChatMessage,
+	getSpaceDeal,
 	type SpaceChatMessage,
 	type SpaceChatRole,
 	type SpaceChatThread,
+	type SpaceDeal,
 } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import { toast } from "@/lib/toast"
 import clsx from "clsx"
+import { SpaceDealBanner, SpaceDealFormModal, SpaceDealDetailsModal } from "./SpaceDealPanel"
 
 const THREADS_POLL_MS = 8000
 const MESSAGES_POLL_MS = 4000
@@ -56,6 +59,9 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 	const [messageInput, setMessageInput] = useState("")
 	const [sending, setSending] = useState(false)
 	const [respondingId, setRespondingId] = useState<string | null>(null)
+	const [deal, setDeal] = useState<SpaceDeal | null>(null)
+	const [showDealModal, setShowDealModal] = useState(false)
+	const [showDetailsModal, setShowDetailsModal] = useState(false)
 	const messagesEndRef = useRef<HTMLDivElement>(null)
 
 	useEffect(() => {
@@ -97,6 +103,26 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 			clearInterval(id)
 		}
 	}, [selectedThreadId, role])
+	useEffect(() => {
+		if (!selectedThreadId) {
+			setDeal(null)
+			return
+		}
+		let cancelled = false
+		function pollDeal() {
+			getSpaceDeal(selectedThreadId!)
+				.then((d) => {
+					if (!cancelled) setDeal(d)
+				})
+				.catch(() => {})
+		}
+		pollDeal()
+		const id = setInterval(pollDeal, MESSAGES_POLL_MS)
+		return () => {
+			cancelled = true
+			clearInterval(id)
+		}
+	}, [selectedThreadId])
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -241,7 +267,7 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 													className="w-full h-full object-cover"
 												/>
 											) : (
-												<span className="font-heading font-black text-sm text-black/60">
+												<span className="font-heading font-black text-xs text-black/60">
 													{t.counterpartName.charAt(0).toUpperCase()}
 												</span>
 											)}
@@ -353,6 +379,18 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 									</div>
 								)}
 							</div>
+
+							{/* Space Deal Banner */}
+							{selectedThread.chatStatus === "ACCEPTED" && (
+								<SpaceDealBanner
+									deal={deal}
+									role={role}
+									onLock={() => setShowDealModal(true)}
+									onEdit={() => setShowDealModal(true)}
+									onView={() => setShowDetailsModal(true)}
+								/>
+							)}
+
 							<div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3 min-h-0">
 								{selectedThread.chatStatus === "REQUESTED" ? (
 									<div className="m-auto text-center max-w-xs animate-in fade-in duration-200">
@@ -446,6 +484,37 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 					)}
 				</div>
 			</div>
+
+			{/* Deal Form Modal */}
+			{showDealModal && selectedThread && (
+				<SpaceDealFormModal
+					interestId={selectedThread.id}
+					thread={selectedThread}
+					deal={deal}
+					onClose={() => setShowDealModal(false)}
+					onSaved={(saved) => {
+						setDeal(saved)
+					}}
+				/>
+			)}
+
+			{/* Deal Details Modal */}
+			{showDetailsModal && selectedThread && deal && (
+				<SpaceDealDetailsModal
+					interestId={selectedThread.id}
+					deal={deal}
+					role={role}
+					onClose={() => setShowDetailsModal(false)}
+					onUpdated={(updated) => {
+						setDeal(updated)
+					}}
+				/>
+			)}
+
+			<canvas
+				id="space-chat-confetti-canvas"
+				className="fixed inset-0 pointer-events-none z-50 w-full h-full"
+			/>
 		</div>
 	)
 }
