@@ -179,7 +179,14 @@ export default function CommunityLockedDealsPage() {
 
 	return (
 		<div className="flex flex-col min-h-full bg-white">
-			{/* Top Header */}
+			{/* Top Nav / Subheader */}
+			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
+				<p className="text-sm font-semibold text-black/50 mx-auto">
+					Welcome to <span className="text-[#EE2C2C] font-bold">Meetday</span>
+				</p>
+			</div>
+
+			{/* Page Header */}
 			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-6 lg:px-8 py-5 border-b border-black/10 gap-2">
 				<div>
 					<h1 className="text-2xl font-heading font-black text-black">Locked Deals</h1>
@@ -224,8 +231,11 @@ export default function CommunityLockedDealsPage() {
 					</div>
 				) : lockedDeals.length === 0 ? (
 					<div className="my-auto py-16 border-[3px] border-dashed border-black/30 rounded-[28px] bg-white flex flex-col items-center justify-center text-center p-8 gap-3 max-w-md mx-auto w-full">
-						<div className="size-14 rounded-full bg-[#FFC940] border-[3px] border-black flex items-center justify-center text-xl shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-							🔒
+						<div className="size-14 rounded-full bg-[#FFC940] border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+							<svg className="size-6 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+								<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+								<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+							</svg>
 						</div>
 						<h2 className="text-lg font-heading font-black text-black">No locked deals yet</h2>
 						<p className="text-xs font-semibold text-black/50 leading-relaxed">
@@ -244,7 +254,6 @@ export default function CommunityLockedDealsPage() {
 						<div className="flex flex-col gap-4">
 							<div className="flex items-center justify-between pb-3 border-b-[3px] border-black">
 								<div className="flex items-center gap-2">
-									<span className="text-lg">🤝</span>
 									<h2 className="text-base font-black text-black">Sponsorship Deals</h2>
 									<span className="px-2 py-0.5 rounded-full bg-[#FFC940] text-black text-xs font-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
 										{sponsorshipDeals.length}
@@ -267,7 +276,6 @@ export default function CommunityLockedDealsPage() {
 						<div className="flex flex-col gap-4">
 							<div className="flex items-center justify-between pb-3 border-b-[3px] border-black">
 								<div className="flex items-center gap-2">
-									<span className="text-lg">🚀</span>
 									<h2 className="text-base font-black text-black">Campaign Deals</h2>
 									<span className="px-2 py-0.5 rounded-full bg-[#EE2C2C] text-white text-xs font-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
 										{campaignDeals.length}
