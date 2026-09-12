@@ -17,6 +17,7 @@ import LockOutSvg from "@/icons/outlined/lock.svg"
 import LockFillSvg from "@/icons/filled/lock.svg"
 import ChatOutSvg from "@/icons/outlined/chat.svg"
 import ChatFillSvg from "@/icons/filled/chat.svg"
+import HeadphonesSvg from "@/icons/filled/headphones.svg"
 import BellSvg from "@/icons/outlined/bell.svg"
 import BellFillSvg from "@/icons/filled/bell.svg"
 
@@ -39,6 +40,7 @@ const PRIMARY_NAV: NavItem[] = [
 ]
 
 const SECONDARY_NAV: NavItem[] = [
+	{ label: "Support Chat", href: "/spaces/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/spaces/dashboard/notifications", outlined: BellSvg, filled: BellFillSvg },
 ]
 
@@ -53,11 +55,23 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 	const searchParams = useSearchParams()
 	const { profile } = useSpaceStore()
 	const { toasts, removeToast } = useToastStore()
-	const { unreadCount, init: initNotifs } = useNotificationStore()
+	const { unreadCount, init: initNotifs, notifications } = useNotificationStore()
 	const businessName = profile?.businessName || "Space Partner"
 	const avatarUrl = profile?.user?.avatarUrl
 	const [unreadCommunityChatsCount, setUnreadCommunityChatsCount] = useState(0)
 	const [unreadBrandChatsCount, setUnreadBrandChatsCount] = useState(0)
+	const unreadSupportCount = notifications.filter(n =>
+		!n.isRead &&
+		n.title === "Meetday" &&
+		!n.metadata?.threadId &&
+		!n.metadata?.thread_id &&
+		!n.metadata?.interestId &&
+		!n.metadata?.interest_id &&
+		!n.metadata?.chatId &&
+		!n.metadata?.chat_id &&
+		!n.metadata?.spaceInterestId &&
+		!n.metadata?.sponsorshipInterestId
+	).length
 
 	useEffect(() => {
 		initNotifs()
@@ -183,6 +197,7 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 				{SECONDARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled }) => {
 					const isActive = pathname.startsWith(href)
 					const isNotifications = label === "Notifications"
+					const badgeCount = isNotifications ? unreadCount : label === "Support Chat" ? unreadSupportCount : 0
 
 					return (
 						<Link
@@ -207,9 +222,9 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 								)}
 							</div>
 							<span className="flex-1 whitespace-nowrap">{label}</span>
-							{isNotifications && unreadCount > 0 && (
+							{badgeCount > 0 && (
 								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-									{unreadCount > 9 ? "9+" : unreadCount}
+									{badgeCount > 9 ? "9+" : badgeCount}
 								</span>
 							)}
 						</Link>

@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import { uploadMeetdayChatImage } from "@/lib/uploadMedia"
-import { getMyMeetdayChat, sendMeetdayChatMessage, type MeetdayChatMessage } from "@/lib/api"
+import { getMyMeetdayChat, sendMeetdayChatMessage, editMeetdayChatMessage, deleteMeetdayChatMessage, type MeetdayChatMessage } from "@/lib/api"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { LinkifiedText } from "@/components/ui/LinkifiedText"
@@ -25,6 +25,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 	const [uploadingImage, setUploadingImage] = useState(false)
 	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const [replyingTo, setReplyingTo] = useState<MeetdayChatMessage | null>(null)
+	const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
 	const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null)
 	const highlightTimerRef = useRef<NodeJS.Timeout | null>(null)
 	const [mentionQuery, setMentionQuery] = useState("")
@@ -103,6 +104,17 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 
 	async function handleSend() {
 		if (!input.trim()) return
+		if (editingMessageId) {
+			try {
+				const updated = await editMeetdayChatMessage(editingMessageId, input.trim())
+				setMessages(prev => prev.map(m => (m.id === updated.id ? updated : m)))
+				setEditingMessageId(null)
+				setInput("")
+			} catch {
+				toast.error("Failed to edit message.")
+			}
+			return
+		}
 		setSending(true)
 		try {
 			const msg = await sendMeetdayChatMessage({ content: input.trim(), replyToId: replyingTo?.id })
@@ -116,6 +128,28 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 			toast.error("Failed to send message.")
 		} finally {
 			setSending(false)
+		}
+	}
+
+	function handleEditStart(m: MeetdayChatMessage) {
+		setReplyingTo(null)
+		setEditingMessageId(m.id)
+		setInput(m.content)
+	}
+
+	function handleEditCancel() {
+		setEditingMessageId(null)
+		setInput("")
+	}
+
+	async function handleDelete(m: MeetdayChatMessage) {
+		if (!window.confirm("Delete this message? This can't be undone.")) return
+		try {
+			await deleteMeetdayChatMessage(m.id)
+			setMessages(prev => prev.map(msg => (msg.id === m.id ? { ...msg, content: "", mediaUrl: null, deletedAt: new Date().toISOString() } : msg)))
+			if (editingMessageId === m.id) handleEditCancel()
+		} catch {
+			toast.error("Failed to delete message.")
 		}
 	}
 
@@ -169,6 +203,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 							? (role === "HOST" ? `${ownName} • Community` : role === "SPACE" ? `${ownName} • Space` : `${ownName} • Brand`)
 							: isBot ? "Meetday" : "Meetday • Admin"
 						const isDarkBubble = isMine && (role === "BRAND" || role === "SPACE")
+						const isDeleted = !!m.deletedAt
 						return (
 							<div
 								key={m.id}
@@ -185,15 +220,34 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 									</span>
 									<button
 										type="button"
-										onClick={() => setReplyingTo(m)}
+										onClick={() => { setEditingMessageId(null); setReplyingTo(m) }}
 										className="text-[10px] font-bold text-black/30 hover:text-black transition-colors"
 									>
 										Reply
 									</button>
+									{isMine && m.content && !isDeleted && (
+										<button
+											type="button"
+											onClick={() => handleEditStart(m)}
+											className="text-[10px] font-bold text-black/30 hover:text-black transition-colors"
+										>
+											Edit
+										</button>
+									)}
+									{isMine && !isDeleted && (
+										<button
+											type="button"
+											onClick={() => handleDelete(m)}
+											className="text-[10px] font-bold text-black/30 hover:text-[#EE2C2C] transition-colors"
+										>
+											Delete
+										</button>
+									)}
 								</div>
 								<div
 									className={clsx(
 										"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words border-2 border-black flex flex-col shadow-xs",
+										isDeleted && "border-dashed opacity-90",
 										isMine && role === "HOST" && "bg-[#FFC940] text-black rounded-br-sm",
 										isMine && role === "BRAND" && "bg-[#EE2C2C] text-white rounded-br-sm",
 										isMine && role === "SPACE" && "bg-black text-white rounded-br-sm",
@@ -231,6 +285,12 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 											)}
 										</button>
 									)}
+									{isDeleted && (
+										<div className="flex items-center gap-1.5 text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-lg border border-dashed border-red-200 mb-1 w-fit">
+											<span>🗑️</span>
+											<span>This message was deleted</span>
+										</div>
+									)}
 									{m.mediaUrl && (
 										/* eslint-disable-next-line @next/next/no-img-element */
 										<img
@@ -241,7 +301,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 										/>
 									)}
 									{m.content && (
-										<div className="px-1 py-0.5">
+										<div className={clsx("px-1 py-0.5", isDeleted && "opacity-80")}>
 											<LinkifiedText text={m.content} />
 										</div>
 									)}
@@ -257,6 +317,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 												}
 											})()}
 										</span>
+										{m.editedAt && !isDeleted && <span>(edited)</span>}
 										{m.senderType === "USER" && (
 											<span className="text-[10px] leading-none font-bold text-gray-400">
 												✓✓
@@ -271,7 +332,15 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 				<div ref={bottomRef} />
 			</div>
 
-			{replyingTo && (
+			{editingMessageId && (
+				<div className="px-4 pt-2 flex items-center justify-between border-t-[3px] border-black bg-neutral-50">
+					<span className="text-[10px] font-black uppercase text-black/40">Editing message</span>
+					<button type="button" onClick={handleEditCancel} className="text-[10px] font-bold text-[#EE2C2C]">
+						Cancel
+					</button>
+				</div>
+			)}
+			{replyingTo && !editingMessageId && (
 				<div className="px-4 py-2 flex items-center justify-between gap-2 border-t-[3px] border-black bg-neutral-50">
 					<div className="min-w-0 pl-2 border-l-2 border-[#EE2C2C]">
 						<p className="text-[10px] font-black uppercase text-black/40">
@@ -298,7 +367,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 				<button
 					type="button"
 					onClick={() => fileInputRef.current?.click()}
-					disabled={uploadingImage}
+					disabled={uploadingImage || !!editingMessageId}
 					className="shrink-0 size-9 rounded-xl border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50"
 					aria-label="Attach image"
 				>
@@ -313,12 +382,13 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 							e.preventDefault()
 							handleSend()
 						}
+						if (e.key === "Escape" && editingMessageId) handleEditCancel()
 					}}
-					placeholder="Write a message… (type @ to tag)"
+					placeholder={editingMessageId ? "Edit your message… (Enter to save)" : "Write a message… (type @ to tag)"}
 					className="flex-1 rounded-2xl border-[3px] border-black bg-white px-4 py-2 text-sm font-semibold outline-none focus:bg-neutral-50"
 				/>
 				<Button onClick={handleSend} disabled={sending || !input.trim()}>
-					{sending ? "…" : "Send"}
+					{sending ? "…" : editingMessageId ? "Save" : "Send"}
 				</Button>
 			</div>
 

@@ -1271,6 +1271,8 @@ export type MeetdayChatMessage = {
 	senderId: string | null
 	content: string
 	mediaUrl?: string | null
+	editedAt?: string | null
+	deletedAt?: string | null
 	createdAt: string
 	wasRedacted?: boolean
 	hostReadAt?: string | null
@@ -1296,6 +1298,21 @@ export async function sendMeetdayChatMessage(payload: { content?: string; mediaK
 	const { data } = await apiClient.post<{ success: boolean; data: MeetdayChatMessage }>(
 		"/meetday-chat/messages",
 		payload,
+	)
+	return data.data
+}
+
+export async function editMeetdayChatMessage(messageId: string, content: string): Promise<MeetdayChatMessage> {
+	const { data } = await apiClient.patch<{ success: boolean; data: MeetdayChatMessage }>(
+		`/meetday-chat/messages/${messageId}`,
+		{ content },
+	)
+	return data.data
+}
+
+export async function deleteMeetdayChatMessage(messageId: string): Promise<{ message: string; deleted: boolean }> {
+	const { data } = await apiClient.delete<{ success: boolean; data: { message: string; deleted: boolean } }>(
+		`/meetday-chat/messages/${messageId}`,
 	)
 	return data.data
 }
