@@ -246,8 +246,8 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 								</div>
 								<div
 									className={clsx(
-										"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words border-2 border-black flex flex-col shadow-xs",
-										isDeleted && "border-dashed opacity-90",
+										"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words flex flex-col shadow-xs",
+										isDeleted && "opacity-90",
 										isMine && role === "HOST" && "bg-[#FFC940] text-black rounded-br-sm",
 										isMine && role === "BRAND" && "bg-[#EE2C2C] text-white rounded-br-sm",
 										isMine && role === "SPACE" && "bg-black text-white rounded-br-sm",

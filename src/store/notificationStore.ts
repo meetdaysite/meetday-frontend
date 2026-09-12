@@ -197,6 +197,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 			const updated = s.notifications.map((n) => {
 				const m = (n.metadata as any) || {}
 				const tId =
+					m.spaceInterestId ||
 					m.sponsorshipInterestId ||
 					m.threadId ||
 					m.interestId ||

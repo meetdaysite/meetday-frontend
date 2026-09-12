@@ -29,7 +29,7 @@ import { ImageLightbox } from "@/components/ui/ImageLightbox"
 const STATUS_LABEL: Record<SpaceDealStatus, string> = {
 	PENDING_APPROVAL: "Pending Approval",
 	CHANGES_REQUESTED: "Changes Requested",
-	APPROVED: "🔒 Locked",
+	APPROVED: "Locked",
 }
 
 const STATUS_COLOR: Record<SpaceDealStatus, string> = {
@@ -333,7 +333,7 @@ export function SpaceDealFormModal({
 			<div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg flex flex-col max-h-[90vh]">
 				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0">
 					<p className="text-lg font-black text-black">
-						{deal ? "Edit Space Deal" : "🔒 Lock Space Deal"}
+						{deal ? "Edit Space Deal" : "Lock Space Deal"}
 					</p>
 					<button
 						onClick={onClose}

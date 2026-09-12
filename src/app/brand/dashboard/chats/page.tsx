@@ -828,7 +828,7 @@ function BrandChatThreadPanel({
 									) : (
 										<div
 											className={clsx(
-												"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words border-2 border-black flex flex-col shadow-xs",
+												"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words flex flex-col shadow-xs",
 												isMine ? "rounded-br-sm" : "rounded-bl-sm",
 												isBrand && "bg-[#EE2C2C] text-white",
 												isHost && "bg-[#FFC940] text-black",

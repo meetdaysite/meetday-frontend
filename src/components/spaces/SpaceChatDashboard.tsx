@@ -30,6 +30,7 @@ import { uploadSpaceChatImage, isPdfMediaUrl } from "@/lib/uploadMedia"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { playMessageChime } from "@/lib/notificationSound"
+import { useNotificationStore } from "@/store/notificationStore"
 import { Icon } from "@/components/ui/Icon"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
 
@@ -182,11 +183,14 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
 	}, [messages])
 
+	const { markThreadRead } = useNotificationStore()
+
 	useEffect(() => {
 		if (selectedThreadId) {
 			setThreads(prev => prev.map(t => (t.id === selectedThreadId ? { ...t, unreadCount: 0 } : t)))
+			markThreadRead(selectedThreadId)
 		}
-	}, [selectedThreadId])
+	}, [selectedThreadId, markThreadRead])
 
 	const selectedThread = threads.find((t) => t.id === selectedThreadId) ?? null
 
@@ -560,7 +564,7 @@ export function SpaceChatDashboard({ role, tabs, canRespond, emptyLabel, default
 												</div>
 												<div
 													className={clsx(
-														"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words border-2 border-black flex flex-col shadow-xs",
+														"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words flex flex-col shadow-xs",
 														isMine ? "rounded-br-sm" : "rounded-bl-sm",
 														isBrand && "bg-[#EE2C2C] text-white",
 														isCommunity && "bg-[#FFC940] text-black",

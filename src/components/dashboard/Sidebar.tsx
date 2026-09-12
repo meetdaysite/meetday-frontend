@@ -199,21 +199,29 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 
 		const updateSpaceCount = () => {
 			getMySpaceChats(undefined, "COMMUNITY").catch(() => []).then((threads) => {
-				const isSpaceNotification = (n: (typeof notifications)[0]) => n.type.startsWith("space_") && n.type !== "space_profile_approved" && n.type !== "space_profile_pending_review" && n.type !== "space_profile_changes_approved" && n.type !== "space_profile_revision_submitted"
+				const isSpaceChatNotification = (n: (typeof notifications)[0]) =>
+					n.type === "space_chat_message" ||
+					n.type === "space_deal_locked" ||
+					n.type === "space_deal_updated" ||
+					n.type === "space_deal_approved" ||
+					n.type === "space_deal_changes_requested" ||
+					n.type === "space_interest_accepted"
 
 				const threadCount = threads.reduce((sum, t) => {
 					const notifCount = notifications.filter(n => {
-						if (n.isRead || !isSpaceNotification(n)) return false
+						if (n.isRead || !isSpaceChatNotification(n)) return false
 						const m = (n.metadata as Record<string, unknown>) || {}
-						return m.spaceInterestId === t.id
+						const tId = m.spaceInterestId || m.interestId || m.threadId
+						return tId === t.id
 					}).length
 					return sum + Math.max(t.unreadCount || 0, notifCount)
 				}, 0)
 
 				const standaloneCount = notifications.filter(n => {
-					if (n.isRead || !isSpaceNotification(n)) return false
+					if (n.isRead || !isSpaceChatNotification(n)) return false
 					const m = (n.metadata as Record<string, unknown>) || {}
-					return !m.spaceInterestId || !threads.some(t => t.id === m.spaceInterestId)
+					const tId = m.spaceInterestId || m.interestId || m.threadId
+					return !tId || !threads.some(t => t.id === tId)
 				}).length
 
 				setUnreadSpaceChatsCount(threadCount + standaloneCount)
