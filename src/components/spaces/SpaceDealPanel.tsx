@@ -280,8 +280,23 @@ export function SpaceDealFormModal({
 		Number(form.sponsorshipAmount) >= 0 &&
 		form.deliverables.trim()
 
+	function getMissingFieldLabels(): string[] {
+		const missing: string[] = []
+		if (!form.projectName.trim()) missing.push("Campaign Name")
+		if (typeof form.goals === "string" ? !form.goals.trim() : !(form.goals && form.goals.length > 0)) missing.push("Campaign Goals")
+		if (!form.venue.trim()) missing.push("City / Region")
+		if (!form.startDate) missing.push("Start Date")
+		if (form.sponsorshipAmount === undefined || isNaN(Number(form.sponsorshipAmount)) || Number(form.sponsorshipAmount) < 0) missing.push("Cash Amount")
+		if (!form.deliverables.trim()) missing.push("Key Deliverables")
+		return missing
+	}
+
 	async function handleSubmit() {
-		if (!isValid) return
+		if (!isValid) {
+			const missing = getMissingFieldLabels()
+			toast.error(missing.length ? `Please fill in: ${missing.join(", ")}.` : "Please fill in all required fields.")
+			return
+		}
 		setSaving(true)
 		try {
 			const rawAmount = Number(form.sponsorshipAmount)
@@ -448,7 +463,7 @@ export function SpaceDealFormModal({
 					<button
 						type="button"
 						onClick={handleSubmit}
-						disabled={!isValid || saving}
+						disabled={saving}
 						className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
 					>
 						<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
