@@ -21,7 +21,6 @@ import {
 	getSpaceDealReport,
 	upsertSpaceDealReport,
 	getSpaceDealReportPdfUrl,
-	sendSpaceChatMessage,
 } from "@/lib/api"
 import { uploadSpaceDealReportImage } from "@/lib/uploadMedia"
 import { PdfViewerModal } from "@/components/ui/PdfViewerModal"
@@ -297,21 +296,6 @@ export function SpaceDealFormModal({
 				? await updateSpaceDeal(interestId, payload, role)
 				: await createSpaceDeal(interestId, payload, role)
 
-			// Send system message into chat
-			if (deal) {
-				await sendSpaceChatMessage(
-					interestId,
-					{ content: "Space updated the deal proposal.", messageType: "SYSTEM" },
-					role
-				).catch(() => null)
-			} else {
-				await sendSpaceChatMessage(
-					interestId,
-					{ content: "Space shared a deal proposal for your approval.", messageType: "SYSTEM" },
-					role
-				).catch(() => null)
-			}
-
 			toast.success(deal ? "Deal updated." : "Deal locked — waiting for counterpart approval.")
 			onSaved(saved)
 			onClose()
@@ -505,11 +489,6 @@ export function SpaceDealDetailsModal({
 		setBusy(true)
 		try {
 			const updated = await approveSpaceDeal(interestId, role)
-			await sendSpaceChatMessage(
-				interestId,
-				{ content: "🔒 The deal is officially locked and confirmed!", messageType: "SYSTEM" },
-				role
-			).catch(() => null)
 
 			toast.success("🎉 Deal approved and locked!")
 
@@ -544,13 +523,6 @@ export function SpaceDealDetailsModal({
 		setBusy(true)
 		try {
 			const updated = await requestSpaceDealChanges(interestId, { note: note.trim() }, role)
-			const requesterLabel = role === "BRAND" ? "Brand" : role === "SPACE" ? "Space" : "Community"
-			const noteSuffix = note.trim() ? `: "${note.trim()}"` : "."
-			await sendSpaceChatMessage(
-				interestId,
-				{ content: `${requesterLabel} requested changes to the deal${noteSuffix}`, messageType: "SYSTEM" },
-				role
-			).catch(() => null)
 
 			toast.success("Requested changes to the deal.")
 			onUpdated(updated)
@@ -901,15 +873,6 @@ export function SpaceDealReportModal({
 				role
 			)
 
-			await sendSpaceChatMessage(
-				interestId,
-				{
-					content: report ? "📋 The deliverables report was updated and resubmitted for review." : "📋 The deliverables report was submitted for review.",
-					messageType: "SYSTEM",
-				},
-				role
-			).catch(() => null)
-
 			toast.success(report ? "Report resubmitted for review." : "Report submitted for review.")
 			setReport(saved)
 			setReportStatus("PENDING")
@@ -964,7 +927,6 @@ export function SpaceDealReportModal({
 			)
 
 			if (status === "APPROVED") {
-				await sendSpaceChatMessage(interestId, { content: "✅ Congratulations! The deal is officially completed and closed!", messageType: "SYSTEM" }, role).catch(() => null)
 				// Trigger confetti sparkle animation locally in the chat canvas
 				const canvas = document.getElementById("space-chat-confetti-canvas") as HTMLCanvasElement | null
 				if (canvas) {
@@ -978,16 +940,6 @@ export function SpaceDealReportModal({
 						origin: { y: 0.6 },
 					})
 				}
-			} else if (status === "REVISION_REQUESTED") {
-				const noteSuffix = note ? `: "${note}"` : "."
-				await sendSpaceChatMessage(
-					interestId,
-					{
-						content: `⚠️ Revision was requested on the deliverables report${noteSuffix}`,
-						messageType: "SYSTEM",
-					},
-					role
-				).catch(() => null)
 			}
 
 			toast.success(status === "APPROVED" ? "Report approved, deal is closed!" : "Revision request sent.")
