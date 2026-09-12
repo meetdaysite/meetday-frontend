@@ -18,6 +18,7 @@ import LockFillSvg from "@/icons/filled/lock.svg"
 import ChatOutSvg from "@/icons/outlined/chat.svg"
 import ChatFillSvg from "@/icons/filled/chat.svg"
 import HeadphonesSvg from "@/icons/filled/headphones.svg"
+import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import BellSvg from "@/icons/outlined/bell.svg"
 import BellFillSvg from "@/icons/filled/bell.svg"
 
@@ -34,6 +35,7 @@ type NavItem = {
 
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/spaces/dashboard", outlined: WidgetsSvg, filled: WidgetSvg, exact: true },
+	{ label: "Proposals", href: "/spaces/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Locked Deals", href: "/spaces/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
 	{ label: "Community Chats", href: "/spaces/dashboard/chats?type=community", chatType: "community", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Brand Chats", href: "/spaces/dashboard/chats?type=brand", chatType: "brand", outlined: ChatOutSvg, filled: ChatFillSvg },

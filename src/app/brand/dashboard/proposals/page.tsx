@@ -143,7 +143,9 @@ function ProposalCard({
 }) {
 	const hostName =
 		proposal.hostProfile?.displayName ||
+		proposal.spaceProfile?.businessName ||
 		[proposal.hostProfile?.user?.firstName, proposal.hostProfile?.user?.lastName].filter(Boolean).join(" ") ||
+		[proposal.spaceProfile?.user?.firstName, proposal.spaceProfile?.user?.lastName].filter(Boolean).join(" ") ||
 		"Host"
 	const displayDate = proposal.eventDate ? new Date(proposal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""
 
@@ -268,7 +270,9 @@ export default function ProposalsPage() {
 	// computed from the unfiltered "All" list the first time it loads.
 	const categoriesWithProposals = useMemo(() => {
 		if (selectedCategoryId !== null) return categories
-		const idsInUse = new Set(proposals.flatMap((p) => p.hostProfile?.categories?.map((c) => c.id) ?? []))
+		const idsInUse = new Set(
+			proposals.flatMap((p) => (p.hostProfile?.categories ?? p.spaceProfile?.categories ?? []).map((c) => c.id)),
+		)
 		return categories.filter((c) => idsInUse.has(c.id))
 	}, [categories, proposals, selectedCategoryId])
 

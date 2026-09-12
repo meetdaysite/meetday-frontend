@@ -639,11 +639,17 @@ export type SponsorshipProposalPayload = {
 	docSize?: number
 	sponsorTiers?: SponsorTier[]
 	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
+	// Space Partner-only sponsorship offerings (form omits the doc upload entirely instead).
+	popupDays?: string
+	popupPrice?: string
+	brandingDays?: string
+	brandingPrice?: string
 }
 
 export type SponsorshipProposal = {
 	id: string
-	hostProfileId: string
+	hostProfileId: string | null
+	spaceProfileId?: string | null
 	name: string | null
 	about: string | null
 	imageKey: string | null
@@ -665,6 +671,10 @@ export type SponsorshipProposal = {
 	videoUrl: string | null
 	sponsorTiers: SponsorTier[]
 	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
+	popupDays?: string | null
+	popupPrice?: string | null
+	brandingDays?: string | null
+	brandingPrice?: string | null
 	status: SponsorshipStatus
 	pendingRevision: (SponsorshipProposalPayload & { imageUrl?: string | null; docUrl?: string | null }) | null
 	adminRejectionRemark: string | null
@@ -734,12 +744,19 @@ export async function deleteSponsorshipProposal(id: string): Promise<void> {
 // ─── Brand: browse published sponsorship proposals ────────────────────────────
 
 export type PublishedSponsorshipProposal = SponsorshipProposal & {
+	ownerType?: "HOST" | "SPACE"
 	hostProfile: {
 		id: string
 		displayName?: string
 		user: { firstName: string; lastName: string }
 		categories: Category[]
-	}
+	} | null
+	spaceProfile?: {
+		id: string
+		businessName?: string
+		user: { firstName: string; lastName: string }
+		categories: Category[]
+	} | null
 }
 
 export type PublishedSponsorshipsResponse = {
@@ -769,6 +786,7 @@ export type SponsorshipCommunityProfile = {
 }
 
 export type PublishedSponsorshipDetail = SponsorshipProposal & {
+	ownerType?: "HOST" | "SPACE"
 	hostProfile: {
 		id: string
 		displayName?: string
@@ -780,7 +798,19 @@ export type PublishedSponsorshipDetail = SponsorshipProposal & {
 			website?: string
 		} | null
 		user: { firstName: string; lastName: string }
-	}
+	} | null
+	spaceProfile?: {
+		id: string
+		businessName?: string
+		operatingCities?: string[]
+		socialLinks?: {
+			instagram?: string
+			linkedin?: string
+			youtube?: string
+			website?: string
+		} | null
+		user: { firstName: string; lastName: string }
+	} | null
 	community: SponsorshipCommunityProfile | null
 	alreadyInterested?: boolean
 }

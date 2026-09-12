@@ -12,6 +12,7 @@ import { CommunityProfileDetailsPanel } from "@/components/community/CommunityPr
 import {
 	getPublishedSponsorshipDetail,
 	markSponsorshipInterest,
+	markSpaceInterest,
 	getBrandProfile,
 	type PublishedSponsorshipDetail,
 } from "@/lib/api"
@@ -60,8 +61,16 @@ export default function ProposalDetailPage() {
 	}, [params.id])
 
 	async function handleInterested() {
+		if (!proposal) return
 		setIsSubmittingInterest(true)
 		try {
+			if (proposal.ownerType === "SPACE" && proposal.spaceProfile) {
+				const res = await markSpaceInterest(proposal.spaceProfile.id, undefined, "BRAND")
+				setIsInterested(true)
+				toast.success(res.alreadyInterested ? "You've already expressed interest" : "Interest sent! Opening chat…")
+				router.push(`/brand/dashboard/space-chats?threadId=${res.interestId}`)
+				return
+			}
 			const res = await markSponsorshipInterest(params.id)
 			setIsInterested(true)
 			toast.success(res.alreadyInterested ? "You've already expressed interest" : "Interest sent to the host and admin team!")
@@ -78,9 +87,28 @@ export default function ProposalDetailPage() {
 
 	const hostName = proposal
 		? proposal.hostProfile?.displayName ||
+			proposal.spaceProfile?.businessName ||
 			[proposal.hostProfile?.user?.firstName, proposal.hostProfile?.user?.lastName].filter(Boolean).join(" ") ||
+			[proposal.spaceProfile?.user?.firstName, proposal.spaceProfile?.user?.lastName].filter(Boolean).join(" ") ||
 			"Host"
 		: ""
+
+	// Space Partner community profiles use different field names (communitySize/venueCapacity/posterUrl)
+	// than HostCommunityProfile's (size/avgGuestCount/secondaryImageUrl) — CommunityProfileDetailsPanel
+	// expects the latter, so map them across when displaying a space-owned proposal's community.
+	const communityForPanel = proposal?.community
+		? proposal.ownerType === "SPACE"
+			? {
+					...proposal.community,
+					size: (proposal.community as Record<string, unknown>).communitySize,
+					avgGuestCount: (proposal.community as Record<string, unknown>).venueCapacity,
+					secondaryImageUrl: (proposal.community as Record<string, unknown>).posterUrl,
+					approvalStatus: "APPROVED",
+				}
+			: { ...proposal.community, approvalStatus: "APPROVED" }
+		: null
+	const panelOperatingCities = proposal?.hostProfile?.operatingCities ?? proposal?.spaceProfile?.operatingCities
+	const panelSocialLinks = proposal?.hostProfile?.socialLinks ?? proposal?.spaceProfile?.socialLinks ?? undefined
 
 	return (
 		<div className="flex flex-col min-h-full bg-white">
@@ -381,9 +409,9 @@ export default function ProposalDetailPage() {
 								{proposal.community && (
 									<div className="md:hidden mt-4">
 										<CommunityProfileDetailsPanel
-											community={{ ...proposal.community, approvalStatus: "APPROVED" } as any}
-											operatingCities={proposal.hostProfile?.operatingCities}
-											socialLinks={proposal.hostProfile?.socialLinks ?? undefined}
+											community={communityForPanel as any}
+											operatingCities={panelOperatingCities}
+											socialLinks={panelSocialLinks}
 											hideStatus={true}
 										/>
 									</div>
@@ -397,9 +425,9 @@ export default function ProposalDetailPage() {
 				{!isLoading && proposal?.community && (
 					<div className="hidden md:flex flex-col border-l border-black/10 overflow-y-auto h-full min-h-0 shrink-0 w-full bg-white">
 						<CommunityProfileDetailsPanel
-							community={{ ...proposal.community, approvalStatus: "APPROVED" } as any}
-							operatingCities={proposal.hostProfile?.operatingCities}
-							socialLinks={proposal.hostProfile?.socialLinks ?? undefined}
+							community={communityForPanel as any}
+							operatingCities={panelOperatingCities}
+							socialLinks={panelSocialLinks}
 							hideStatus={true}
 						/>
 					</div>
