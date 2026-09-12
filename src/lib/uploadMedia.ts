@@ -79,7 +79,7 @@ export async function uploadSponsorshipDealReportImage(file: File, interestId: s
 
 export async function uploadSpaceDealReportImage(file: File, interestId: string): Promise<string> {
 	const { url, key } = await getUploadUrl({
-		context: "SPONSORSHIP_DEAL_REPORT_MEDIA",
+		context: "SPACE_DEAL_REPORT_MEDIA",
 		contentType: file.type,
 		resourceId: interestId,
 	})
