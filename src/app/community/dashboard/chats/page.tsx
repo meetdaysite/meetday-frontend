@@ -323,7 +323,22 @@ function CommunityChatsContent() {
 											<div className="flex-1 min-w-0">
 												<div className="flex items-center justify-between gap-2">
 													{(() => {
-														const isThreadClosed = t.isDealClosed || (!!t.lastMessagePreview && (t.lastMessagePreview.toLowerCase().includes("approved the deliverables report") || t.lastMessagePreview.toLowerCase().includes("report approved") || t.lastMessagePreview.toLowerCase().includes("deal is closed")))
+														const isThreadClosed =
+															t.isDealClosed ||
+															(!!t.lastMessagePreview &&
+																(t.lastMessagePreview.toLowerCase().includes("approved the deliverables report") ||
+																	t.lastMessagePreview.toLowerCase().includes("report approved") ||
+																	t.lastMessagePreview.toLowerCase().includes("deal is closed") ||
+																	t.lastMessagePreview.toLowerCase().includes("officially completed and closed") ||
+																	t.lastMessagePreview.toLowerCase().includes("deal is officially closed") ||
+																	t.lastMessagePreview.toLowerCase().includes("deal is completed")))
+														const isThreadLocked =
+															t.isDealLocked ||
+															(!!t.lastMessagePreview &&
+																(t.lastMessagePreview.toLowerCase().includes("deal is locked") ||
+																	t.lastMessagePreview.toLowerCase().includes("deal is officially locked") ||
+																	t.lastMessagePreview.toLowerCase().includes("locked and confirmed") ||
+																	t.lastMessagePreview.toLowerCase().includes("deal confirmed")))
 														return (
 															<div className="flex items-center gap-1.5 min-w-0">
 																<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
@@ -333,7 +348,7 @@ function CommunityChatsContent() {
 																			<polyline points="20 6 9 17 4 12" />
 																		</svg>
 																	</span>
-																) : t.isDealLocked ? (
+																) : isThreadLocked ? (
 																	<span className="shrink-0 text-xs" title="Deal Locked">🔒</span>
 																) : null}
 															</div>
