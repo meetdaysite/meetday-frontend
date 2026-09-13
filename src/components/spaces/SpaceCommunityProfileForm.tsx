@@ -133,6 +133,10 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 	const [website, setWebsite] = useState("")
 	const [pastEvents, setPastEvents] = useState<PastEventDraft[]>([])
 	const [brandsWorkedWith, setBrandsWorkedWith] = useState<BrandWorkedWithDraft[]>([])
+	const [popupDays, setPopupDays] = useState("")
+	const [popupPrice, setPopupPrice] = useState("")
+	const [brandingDays, setBrandingDays] = useState("")
+	const [brandingPrice, setBrandingPrice] = useState("")
 	const [submitting, setSubmitting] = useState(false)
 
 	const logoInputRef = useRef<HTMLInputElement>(null)
@@ -156,6 +160,10 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 					setActiveLocations(existing.activeLocations || [])
 					setCentreShowcaseImages((existing.centreShowcaseImageKeys ?? []).map((key, i) => ({ key, url: existing.centreShowcaseUrls[i] ?? "" })))
 					setVideoLink(existing.videoLink ?? "")
+					setPopupDays(existing.popupDays ?? "")
+					setPopupPrice(existing.popupPrice ?? "")
+					setBrandingDays(existing.brandingDays ?? "")
+					setBrandingPrice(existing.brandingPrice ?? "")
 					setPastEvents(
 						(existing.pastEvents ?? []).map((e) => ({
 							name: e.name ?? "",
@@ -437,6 +445,10 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 				activeLocations,
 				centreShowcaseImageKeys,
 				videoLink: videoLink.trim() || undefined,
+				popupDays: popupDays.trim() || undefined,
+				popupPrice: popupPrice.trim() || undefined,
+				brandingDays: brandingDays.trim() || undefined,
+				brandingPrice: brandingPrice.trim() || undefined,
 				categoryIds,
 				pastEvents: pastEventsPayload,
 				brandsWorkedWith: brandsWorkedWithPayload,
@@ -576,6 +588,31 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 										{cat.name}
 									</span>
 								))}
+							</div>
+						</div>
+					)}
+
+					{/* Sponsorship Offerings */}
+					{((community.popupDays && community.popupPrice) || (community.brandingDays && community.brandingPrice)) && (
+						<div className="flex flex-col gap-2">
+							<span className="text-xs font-bold text-black/50">Sponsorship Offerings</span>
+							<div className="flex flex-wrap gap-3">
+								{community.popupDays && community.popupPrice && (
+									<div className="flex flex-col gap-1 border border-black/10 rounded-xl px-4 py-2 bg-slate-50">
+										<span className="text-xs font-bold text-black">Pop-up</span>
+										<span className="text-xs text-black/60">
+											{community.popupDays} days · ₹{community.popupPrice}
+										</span>
+									</div>
+								)}
+								{community.brandingDays && community.brandingPrice && (
+									<div className="flex flex-col gap-1 border border-black/10 rounded-xl px-4 py-2 bg-slate-50">
+										<span className="text-xs font-bold text-black">Branding</span>
+										<span className="text-xs text-black/60">
+											{community.brandingDays} days · ₹{community.brandingPrice}
+										</span>
+									</div>
+								)}
 							</div>
 						</div>
 					)}
@@ -999,6 +1036,62 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 							placeholder="https://youtube.com/watch?v=..."
 							className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30"
 						/>
+					</div>
+
+					{/* Sponsorship Offerings */}
+					<div className="flex flex-col gap-3">
+						<div className="flex items-center justify-between">
+							<label className="text-xs font-bold text-black">Sponsorship Offerings (Optional)</label>
+							<span className="text-[10px] text-black/40 font-medium">Shown to brands alongside every proposal</span>
+						</div>
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<div className="border border-black/10 rounded-xl p-3.5 bg-slate-50 flex flex-col gap-2">
+								<span className="text-xs font-black text-black">Pop-up</span>
+								<div className="grid grid-cols-2 gap-2">
+									<input
+										type="number"
+										min="1"
+										value={popupDays}
+										onChange={(e) => setPopupDays(e.target.value)}
+										placeholder="Days"
+										className="h-10 px-3 rounded-lg border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors"
+									/>
+									<div className="relative">
+										<span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-black/40 select-none">₹</span>
+										<input
+											type="text"
+											value={popupPrice}
+											onChange={(e) => setPopupPrice(e.target.value)}
+											placeholder="Price"
+											className="w-full h-10 pl-7 pr-3 rounded-lg border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors"
+										/>
+									</div>
+								</div>
+							</div>
+							<div className="border border-black/10 rounded-xl p-3.5 bg-slate-50 flex flex-col gap-2">
+								<span className="text-xs font-black text-black">Branding</span>
+								<div className="grid grid-cols-2 gap-2">
+									<input
+										type="number"
+										min="1"
+										value={brandingDays}
+										onChange={(e) => setBrandingDays(e.target.value)}
+										placeholder="Days"
+										className="h-10 px-3 rounded-lg border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors"
+									/>
+									<div className="relative">
+										<span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-black/40 select-none">₹</span>
+										<input
+											type="text"
+											value={brandingPrice}
+											onChange={(e) => setBrandingPrice(e.target.value)}
+											placeholder="Price"
+											className="w-full h-10 pl-7 pr-3 rounded-lg border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors"
+										/>
+									</div>
+								</div>
+							</div>
+						</div>
 					</div>
 
 					{/* Centre Showcase */}

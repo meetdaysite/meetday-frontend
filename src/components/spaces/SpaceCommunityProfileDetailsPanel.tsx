@@ -240,6 +240,31 @@ export function SpaceCommunityProfileDetailsPanel({
 					</div>
 				)}
 
+				{/* Sponsorship Offerings */}
+				{((community.popupDays && community.popupPrice) || (community.brandingDays && community.brandingPrice)) && (
+					<div className="flex flex-col gap-2">
+						<span className="text-xs font-bold text-black/50">Sponsorship Offerings</span>
+						<div className="flex flex-wrap gap-3">
+							{community.popupDays && community.popupPrice && (
+								<div className="flex flex-col gap-1 border border-black/10 rounded-xl px-4 py-2 bg-slate-50">
+									<span className="text-xs font-bold text-black">Pop-up</span>
+									<span className="text-xs text-black/60">
+										{community.popupDays} days · ₹{community.popupPrice}
+									</span>
+								</div>
+							)}
+							{community.brandingDays && community.brandingPrice && (
+								<div className="flex flex-col gap-1 border border-black/10 rounded-xl px-4 py-2 bg-slate-50">
+									<span className="text-xs font-bold text-black">Branding</span>
+									<span className="text-xs text-black/60">
+										{community.brandingDays} days · ₹{community.brandingPrice}
+									</span>
+								</div>
+							)}
+						</div>
+					</div>
+				)}
+
 				{/* Active Locations */}
 				{community.activeLocations && community.activeLocations.length > 0 && (
 					<div className="flex flex-col gap-2">

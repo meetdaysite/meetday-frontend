@@ -44,10 +44,6 @@ interface StoredProposal {
 	adminRejectionRemark?: string | null
 	sponsorPrices: SponsorTier[]
 	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
-	popupDays?: string | null
-	popupPrice?: string | null
-	brandingDays?: string | null
-	brandingPrice?: string | null
 	pendingRevision?: Record<string, unknown> | null
 	updatedAt: string
 }
@@ -70,10 +66,6 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
 		adminRejectionRemark: p.adminRejectionRemark,
 		sponsorshipType: p.sponsorshipType || "CASH",
 		sponsorPrices: p.sponsorTiers || [],
-		popupDays: p.popupDays,
-		popupPrice: p.popupPrice,
-		brandingDays: p.brandingDays,
-		brandingPrice: p.brandingPrice,
 		pendingRevision: p.pendingRevision,
 		updatedAt: p.updatedAt,
 	}
@@ -118,10 +110,6 @@ export default function SpaceProposalsPage() {
 	const [projVideoUrl, setProjVideoUrl] = useState("")
 	const [projSponsorshipType, setProjSponsorshipType] = useState<"CASH" | "BARTER" | "BOTH">("CASH")
 	const [sponsorPrices, setSponsorPrices] = useState<SponsorTier[]>([{ name: "", price: "" }])
-	const [popupDays, setPopupDays] = useState("")
-	const [popupPrice, setPopupPrice] = useState("")
-	const [brandingDays, setBrandingDays] = useState("")
-	const [brandingPrice, setBrandingPrice] = useState("")
 
 	const projImageInputRef = useRef<HTMLInputElement>(null)
 
@@ -226,10 +214,6 @@ export default function SpaceProposalsPage() {
 		setProjVideoUrl("")
 		setProjSponsorshipType("CASH")
 		setSponsorPrices([{ name: "", price: "" }])
-		setPopupDays("")
-		setPopupPrice("")
-		setBrandingDays("")
-		setBrandingPrice("")
 		setShowProposalForm(false)
 	}
 
@@ -257,10 +241,6 @@ export default function SpaceProposalsPage() {
 			setProjVideoUrl(data.videoUrl || "")
 			setProjSponsorshipType(data.sponsorshipType || "CASH")
 			setSponsorPrices(data.sponsorPrices && data.sponsorPrices.length > 0 ? data.sponsorPrices : [{ name: "", price: "" }])
-			setPopupDays(data.popupDays || "")
-			setPopupPrice(data.popupPrice || "")
-			setBrandingDays(data.brandingDays || "")
-			setBrandingPrice(data.brandingPrice || "")
 			setSelectedProposal(p)
 		} else {
 			resetProposalForm()
@@ -357,9 +337,6 @@ export default function SpaceProposalsPage() {
 		if (projAudience.length === 0) return toast.error("At least one Audience Profile tag is required.")
 		if (!projAgeGroup.trim()) return toast.error("Age Group is required.")
 		if (!projGuestCount.trim()) return toast.error("Number of Guests is required.")
-		const hasPopup = popupDays.trim() && popupPrice.trim()
-		const hasBranding = brandingDays.trim() && brandingPrice.trim()
-		if (!hasPopup && !hasBranding) return toast.error("Fill in at least one of Pop-up or Branding pricing.")
 
 		setIsUploading(true)
 		try {
@@ -377,10 +354,6 @@ export default function SpaceProposalsPage() {
 				sponsorshipType: projSponsorshipType,
 				sponsorTiers: projSponsorshipType === "BARTER" ? [] : sponsorPrices,
 				...(projVideoUrl.trim() && { videoUrl: projVideoUrl.trim() }),
-				popupDays: popupDays.trim() || undefined,
-				popupPrice: popupPrice.trim() || undefined,
-				brandingDays: brandingDays.trim() || undefined,
-				brandingPrice: brandingPrice.trim() || undefined,
 				actorType: "SPACE",
 			}
 			if (projImage) {
@@ -610,25 +583,7 @@ export default function SpaceProposalsPage() {
 								</div>
 
 								<div className="bg-white border border-black/10 rounded-action p-5 flex flex-col gap-3">
-									<h4 className="text-sm font-bold text-black">Sponsorship Offerings</h4>
-									<div className="flex flex-wrap gap-3">
-										{selectedProposal.popupDays && selectedProposal.popupPrice && (
-											<div className="flex flex-col gap-1 border border-black/10 rounded-xl px-4 py-2 bg-slate-50">
-												<span className="text-xs font-bold text-black">Pop-up</span>
-												<span className="text-xs text-black/60">
-													{selectedProposal.popupDays} days · ₹{selectedProposal.popupPrice}
-												</span>
-											</div>
-										)}
-										{selectedProposal.brandingDays && selectedProposal.brandingPrice && (
-											<div className="flex flex-col gap-1 border border-black/10 rounded-xl px-4 py-2 bg-slate-50">
-												<span className="text-xs font-bold text-black">Branding</span>
-												<span className="text-xs text-black/60">
-													{selectedProposal.brandingDays} days · ₹{selectedProposal.brandingPrice}
-												</span>
-											</div>
-										)}
-									</div>
+									<h4 className="text-sm font-bold text-black">Sponsor Pricing Tiers</h4>
 									{selectedProposal.sponsorPrices.length > 0 && (
 										<div className="flex flex-wrap gap-3 mt-1">
 											{selectedProposal.sponsorPrices.map((tier, idx) => (
@@ -937,33 +892,6 @@ export default function SpaceProposalsPage() {
 									<input type="url" value={projVideoUrl} onChange={(e) => setProjVideoUrl(e.target.value)} placeholder="e.g. https://youtube.com/watch?v=..." className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black text-sm transition-colors" />
 								</div>
 
-								{/* Space sponsorship offerings — Pop-up + Branding */}
-								<div className="flex flex-col gap-3">
-									<label className="text-xs font-bold text-black">Sponsorship Offerings * (fill in at least one)</label>
-									<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-										<div className="border border-black/10 rounded-xl p-3.5 bg-slate-50 flex flex-col gap-2">
-											<span className="text-xs font-black text-black">Pop-up</span>
-											<div className="grid grid-cols-2 gap-2">
-												<input type="number" min="1" value={popupDays} onChange={(e) => setPopupDays(e.target.value)} placeholder="Days" className="h-10 px-3 rounded-lg border border-black/10 bg-white text-black outline-none focus:border-black text-sm transition-colors" />
-												<div className="relative">
-													<span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-black/40 select-none">₹</span>
-													<input type="text" value={popupPrice} onChange={(e) => setPopupPrice(e.target.value)} placeholder="Price" className="w-full h-10 pl-7 pr-3 rounded-lg border border-black/10 bg-white text-black outline-none focus:border-black text-sm transition-colors" />
-												</div>
-											</div>
-										</div>
-										<div className="border border-black/10 rounded-xl p-3.5 bg-slate-50 flex flex-col gap-2">
-											<span className="text-xs font-black text-black">Branding</span>
-											<div className="grid grid-cols-2 gap-2">
-												<input type="number" min="1" value={brandingDays} onChange={(e) => setBrandingDays(e.target.value)} placeholder="Days" className="h-10 px-3 rounded-lg border border-black/10 bg-white text-black outline-none focus:border-black text-sm transition-colors" />
-												<div className="relative">
-													<span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-black/40 select-none">₹</span>
-													<input type="text" value={brandingPrice} onChange={(e) => setBrandingPrice(e.target.value)} placeholder="Price" className="w-full h-10 pl-7 pr-3 rounded-lg border border-black/10 bg-white text-black outline-none focus:border-black text-sm transition-colors" />
-												</div>
-											</div>
-										</div>
-									</div>
-								</div>
-
 								{/* Optional cash/barter pricing tiers, same as host proposals */}
 								<div className="flex flex-col gap-2">
 									<label className="text-xs font-bold text-black">Additional Sponsorship Type</label>
@@ -1124,12 +1052,6 @@ export default function SpaceProposalsPage() {
 															<div className="flex flex-wrap gap-1.5 mt-2">
 																<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">{displayDate}</span>
 																<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">{p.guestCount} Guests</span>
-																{p.popupDays && p.popupPrice && (
-																	<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-black text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">Pop-up</span>
-																)}
-																{p.brandingDays && p.brandingPrice && (
-																	<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-black text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">Branding</span>
-																)}
 															</div>
 														</div>
 													</div>

@@ -639,11 +639,6 @@ export type SponsorshipProposalPayload = {
 	docSize?: number
 	sponsorTiers?: SponsorTier[]
 	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
-	// Space Partner-only sponsorship offerings (form omits the doc upload entirely instead).
-	popupDays?: string
-	popupPrice?: string
-	brandingDays?: string
-	brandingPrice?: string
 	// Disambiguates which profile to create/act as when the account has BOTH a Host and a Space
 	// Partner profile under the same login — only meaningful on create.
 	actorType?: "HOST" | "SPACE"
@@ -674,10 +669,6 @@ export type SponsorshipProposal = {
 	videoUrl: string | null
 	sponsorTiers: SponsorTier[]
 	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
-	popupDays?: string | null
-	popupPrice?: string | null
-	brandingDays?: string | null
-	brandingPrice?: string | null
 	status: SponsorshipStatus
 	pendingRevision: (SponsorshipProposalPayload & { imageUrl?: string | null; docUrl?: string | null }) | null
 	adminRejectionRemark: string | null
@@ -1488,6 +1479,11 @@ export type SpaceCommunityProfilePayload = {
 	categoryIds: string[]
 	pastEvents?: PastEventPayload[]
 	brandsWorkedWith?: BrandWorkedWithPayload[]
+	// Sponsorship offerings shown alongside every proposal from this space.
+	popupDays?: string
+	popupPrice?: string
+	brandingDays?: string
+	brandingPrice?: string
 }
 
 export type SpaceCommunityProfile = {
@@ -1510,6 +1506,11 @@ export type SpaceCommunityProfile = {
 	categories: Category[]
 	pastEvents?: PastEvent[]
 	brandsWorkedWith?: BrandWorkedWith[]
+	// Sponsorship offerings shown alongside every proposal from this space.
+	popupDays?: string | null
+	popupPrice?: string | null
+	brandingDays?: string | null
+	brandingPrice?: string | null
 	approvalStatus: "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED"
 	adminRejectionRemark: string | null
 	pendingRevision?: Record<string, unknown> | null
