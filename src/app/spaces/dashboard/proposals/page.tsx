@@ -21,7 +21,7 @@ import {
 	type SponsorTier,
 	type SpaceCommunityProfile,
 } from "@/lib/api"
-import { CommunityProfileDetailsPanel } from "@/components/community/CommunityProfileDetailsPanel"
+import { SpaceCommunityProfileDetailsPanel } from "@/components/spaces/SpaceCommunityProfileDetailsPanel"
 import { AddressAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
 import UploadSvg from "@/icons/outlined/upload.svg"
 import AiAvatarSvg from "@/assets/ai-avatar.svg"
@@ -157,7 +157,7 @@ export default function SpaceProposalsPage() {
 
 	useEffect(() => {
 		setLoading(true)
-		Promise.all([getMySponsorshipProposals(), getSpaceCommunityProfile().catch(() => null)])
+		Promise.all([getMySponsorshipProposals({ actorType: "SPACE" }), getSpaceCommunityProfile().catch(() => null)])
 			.then(([{ proposals: list }, c]) => {
 				const mapped = list.map(mapApiProposalToStored)
 				setProposals(mapped)
@@ -210,17 +210,6 @@ export default function SpaceProposalsPage() {
 			return true
 		})
 	}, [proposals, activeTab])
-
-	const communityForPanel = community
-		? {
-				...community,
-				size: community.communitySize,
-				avgGuestCount: community.venueCapacity,
-				secondaryImageUrl: community.posterUrl,
-				secondaryImageKey: community.posterKey,
-				hostProfileId: community.spaceProfileId,
-			}
-		: null
 
 	function resetProposalForm() {
 		setProjName("")
@@ -392,6 +381,7 @@ export default function SpaceProposalsPage() {
 				popupPrice: popupPrice.trim() || undefined,
 				brandingDays: brandingDays.trim() || undefined,
 				brandingPrice: brandingPrice.trim() || undefined,
+				actorType: "SPACE",
 			}
 			if (projImage) {
 				payload.imageKey = await uploadFileAndGetKey(projImage)
@@ -1170,9 +1160,8 @@ export default function SpaceProposalsPage() {
 
 				{isSplitLayout && (
 					<div className="hidden md:flex flex-col h-full w-full bg-white animate-in fade-in duration-150 shrink-0 overflow-hidden">
-						{communityForPanel && (
-							// eslint-disable-next-line @typescript-eslint/no-explicit-any
-							<CommunityProfileDetailsPanel community={communityForPanel as any} operatingCities={profile?.operatingCities} socialLinks={profile?.socialLinks ?? undefined} />
+						{community && (
+							<SpaceCommunityProfileDetailsPanel community={community} operatingCities={profile?.operatingCities} socialLinks={profile?.socialLinks ?? undefined} />
 						)}
 					</div>
 				)}

@@ -644,6 +644,9 @@ export type SponsorshipProposalPayload = {
 	popupPrice?: string
 	brandingDays?: string
 	brandingPrice?: string
+	// Disambiguates which profile to create/act as when the account has BOTH a Host and a Space
+	// Partner profile under the same login — only meaningful on create.
+	actorType?: "HOST" | "SPACE"
 }
 
 export type SponsorshipProposal = {
@@ -715,6 +718,9 @@ export async function getMySponsorshipProposals(params?: {
 	status?: SponsorshipStatus
 	page?: number
 	limit?: number
+	// Disambiguates which profile's proposals to list when the account has BOTH a Host and a Space
+	// Partner profile under the same login.
+	actorType?: "HOST" | "SPACE"
 }): Promise<SponsorshipProposalsListResponse> {
 	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipProposalsListResponse }>(
 		"/sponsorships/me",

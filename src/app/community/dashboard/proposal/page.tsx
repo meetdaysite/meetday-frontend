@@ -159,7 +159,7 @@ function padVenueCities(venues: string[], cities: string[]): string[] {
 }
 
 export async function getProposals(_hostId: string): Promise<StoredProposal[]> {
-    const { proposals } = await getMySponsorshipProposals()
+    const { proposals } = await getMySponsorshipProposals({ actorType: "HOST" })
     return proposals.map(mapApiProposalToStored)
 }
 
@@ -802,6 +802,7 @@ export default function ProposalPage() {
                 sponsorshipType: projSponsorshipType,
                 sponsorTiers: projSponsorshipType === "BARTER" ? [] : sponsorPrices,
                 ...(projVideoUrl.trim() && { videoUrl: projVideoUrl.trim() }),
+                actorType: "HOST",
             }
 
             if (projImage) {
