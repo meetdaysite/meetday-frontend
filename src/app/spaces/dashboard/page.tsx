@@ -113,52 +113,51 @@ export default function SpacesDashboardPage() {
 					</p>
 				</div>
 
-				{/* CTA Cards Grid */}
-				<div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mx-auto mt-2">
-					{/* CTA 1: Activate / Manage Community Space Profile */}
+				{/* Two CTAs grid */}
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+					{/* CTA 1: Raise Sponsorship */}
 					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
 						<div className="flex items-center justify-between w-full mb-4">
 							<h2 className="text-lg font-heading font-black text-black">
-								{hasCommunityProfile ? "Community Spaces Profile" : "Activate Community Space Profile"}
+								Raise Sponsorship
 							</h2>
 							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
-								{hasCommunityProfile ? "ACTIVE" : "LIVE"}
+								LIVE
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
-							{hasCommunityProfile
-								? "Manage your space amenities, capacity, showcase photos, and public listing for community organizers and brands."
-								: "Set up your venue details, highlight posters, capacity, and showcase images to start receiving offline event and community partnerships."}
+							Build custom proposals, pitch relevant brand sponsors, and secure brand backing to scale your upcoming experiences.
 						</p>
 						<Link
-							href="/spaces/dashboard/profile?open=community"
+							href="/spaces/dashboard/proposals"
 							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
 						>
-							{hasCommunityProfile ? "VIEW DETAILS" : "ACTIVATE PROFILE"}
+							CREATE PROPOSAL
 							<span className="text-base font-bold">➔</span>
 						</Link>
 					</div>
 
-					{/* CTA 2: My Account & Identity */}
+					{/* CTA 2: Brand Campaigns */}
 					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
 						<div className="flex items-center justify-between w-full mb-4">
 							<h2 className="text-lg font-heading font-black text-black">
-								Account & Settings
+								Brand Campaigns
 							</h2>
-							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
-								READY
+							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">
+								SOON
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
-							Manage your account settings, notification preferences, operating cities, and space partner identity.
+							Browse active marketing and sponsorship campaign briefs posted by brands, review requirements, and contact them to collaborate.
 						</p>
-						<Link
-							href="/spaces/dashboard/profile"
-							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
+						<button
+							type="button"
+							disabled
+							className="w-full py-3 bg-black/10 text-black/40 border-[3px] border-black/20 rounded-2xl font-black text-center text-xs tracking-wider cursor-not-allowed flex items-center justify-center gap-2 select-none"
 						>
-							MANAGE ACCOUNT
-							<span className="text-base font-bold">➔</span>
-						</Link>
+							EXPLORE CAMPAIGNS
+							<span className="text-[9px] font-black uppercase tracking-wider bg-black/15 px-1.5 py-0.5 rounded ml-1">Soon</span>
+						</button>
 					</div>
 				</div>
 
