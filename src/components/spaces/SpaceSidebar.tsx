@@ -37,9 +37,9 @@ type NavItem = {
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/spaces/dashboard", outlined: WidgetsSvg, filled: WidgetSvg, exact: true },
 	{ label: "Experience Proposals", href: "/spaces/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Brand Campaigns", href: "/spaces/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg, disabled: true },
 	{ label: "Communities", href: "/spaces/dashboard/communities", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "Locked Deals", href: "/spaces/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
-	{ label: "Brand Campaigns", href: "/spaces/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg, disabled: true },
 ]
 
 const SECONDARY_NAV: NavItem[] = [
@@ -253,19 +253,19 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 					{chatsOpen && (
 						<div className="flex flex-col gap-1 pl-3 my-1 border-l-2 border-white/20 ml-5">
 							<Link
-								href="/spaces/dashboard/chats?type=community"
+								href="/spaces/dashboard/sponsorship-chats"
 								onClick={onClose}
 								className={clsx(
 									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
-									isCommunityChat
+									isSponsorshipChat
 										? "bg-[#D12525] text-white font-medium"
 										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
 								)}
 							>
-								<span className="flex-1 whitespace-nowrap">Community Chat</span>
-								{(unreadCommunityChatsCount + unreadCommunityRequestsCount) > 0 && (
+								<span className="flex-1 whitespace-nowrap">Sponsorship Chat</span>
+								{unreadSponsorshipChatsCount > 0 && (
 									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-										{(unreadCommunityChatsCount + unreadCommunityRequestsCount) > 9 ? "9+" : (unreadCommunityChatsCount + unreadCommunityRequestsCount)}
+										{unreadSponsorshipChatsCount > 9 ? "9+" : unreadSponsorshipChatsCount}
 									</span>
 								)}
 							</Link>
@@ -289,19 +289,19 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 							</Link>
 
 							<Link
-								href="/spaces/dashboard/sponsorship-chats"
+								href="/spaces/dashboard/chats?type=community"
 								onClick={onClose}
 								className={clsx(
 									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
-									isSponsorshipChat
+									isCommunityChat
 										? "bg-[#D12525] text-white font-medium"
 										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
 								)}
 							>
-								<span className="flex-1 whitespace-nowrap">Sponsorship Chat</span>
-								{unreadSponsorshipChatsCount > 0 && (
+								<span className="flex-1 whitespace-nowrap">Community Chat</span>
+								{(unreadCommunityChatsCount + unreadCommunityRequestsCount) > 0 && (
 									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-										{unreadSponsorshipChatsCount > 9 ? "9+" : unreadSponsorshipChatsCount}
+										{(unreadCommunityChatsCount + unreadCommunityRequestsCount) > 9 ? "9+" : (unreadCommunityChatsCount + unreadCommunityRequestsCount)}
 									</span>
 								)}
 							</Link>

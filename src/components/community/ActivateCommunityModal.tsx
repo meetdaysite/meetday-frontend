@@ -513,16 +513,16 @@ export function ActivateCommunityModal({
 
 				{/* Secondary Image Upload */}
 				<div className="flex flex-col gap-1.5">
-					<label className="text-xs font-bold text-black">Secondary Image (4:5, Optional)</label>
+					<label className="text-xs font-bold text-black">Community Poster / Secondary Image (4:5 or Landscape, Optional)</label>
 					<div className="flex items-center gap-4">
 						<div className={clsx(
-						"w-16 h-20 rounded-xl bg-white flex items-center justify-center overflow-hidden shrink-0 relative",
+						"w-16 h-20 rounded-xl bg-slate-900 flex items-center justify-center overflow-hidden shrink-0 relative",
 						inline ? "border border-dashed border-black/20" : "border-2 border-dashed border-black/30"
 					)}>
 						{secondaryImagePreviewUrl ? (
 							<>
 								{/* eslint-disable-next-line @next/next/no-img-element */}
-								<img src={secondaryImagePreviewUrl} alt="Secondary preview" className="size-full object-cover" />
+								<img src={secondaryImagePreviewUrl} alt="Secondary preview" className="size-full object-contain" />
 								<button
 									type="button"
 									onClick={removeSecondaryImage}

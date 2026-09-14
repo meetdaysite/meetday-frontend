@@ -116,9 +116,9 @@ export function SpaceCommunityProfileDetailsPanel({
 				{community.posterUrl && (
 					<div className="flex flex-col gap-1.5">
 						<span className="text-xs font-bold text-black/50">Highlight Poster</span>
-						<div className="relative w-full aspect-[4/5] rounded-2xl border-2 border-black overflow-hidden bg-slate-50 max-w-sm">
+						<div className="relative w-full aspect-[4/5] rounded-2xl border-2 border-black overflow-hidden bg-slate-900 max-w-sm flex items-center justify-center">
 							{/* eslint-disable-next-line @next/next/no-img-element */}
-							<img src={community.posterUrl} alt="Highlight Poster" className="size-full object-cover" />
+							<img src={community.posterUrl} alt="Highlight Poster" className="size-full object-contain" />
 						</div>
 					</div>
 				)}

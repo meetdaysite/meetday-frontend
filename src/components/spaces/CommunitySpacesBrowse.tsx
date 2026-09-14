@@ -522,16 +522,16 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 													<span className="text-xs font-bold text-black/50 uppercase tracking-wider">Highlight Poster</span>
 													<div
 														onClick={() => setIsPosterEnlarged(true)}
-														className="relative w-full aspect-[4/5] rounded-[20px] border-2 border-black overflow-hidden bg-slate-50 cursor-pointer group"
+														className="relative w-full aspect-[4/5] rounded-[20px] border-2 border-black overflow-hidden bg-slate-900 cursor-pointer group flex items-center justify-center"
 													>
 														<Image
 															src={selectedSpace.posterUrl}
 															alt={`${selectedSpace.name} poster`}
 															fill
-															className="object-cover transition-transform duration-300 group-hover:scale-105"
+															className="object-contain transition-transform duration-300 group-hover:scale-105"
 															unoptimized
 														/>
-														<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+														<div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
 															<span className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 text-black border-2 border-black px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
 																Zoom Poster 🔍
 															</span>
@@ -674,8 +674,8 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 							✕
 						</button>
 						<span className="text-xs font-bold text-black/50 uppercase tracking-wider">Community Space Poster</span>
-						<div className="relative w-full aspect-[4/5] rounded-[20px] border-2 border-black overflow-hidden bg-slate-50">
-							<Image src={selectedSpace.posterUrl} alt="Enlarged Community Space Poster" fill className="object-cover" unoptimized />
+						<div className="relative w-full aspect-[4/5] rounded-[20px] border-2 border-black overflow-hidden bg-slate-900 flex items-center justify-center">
+							<Image src={selectedSpace.posterUrl} alt="Enlarged Community Space Poster" fill className="object-contain" unoptimized />
 						</div>
 					</div>
 				</div>
