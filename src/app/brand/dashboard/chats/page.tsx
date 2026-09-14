@@ -374,6 +374,11 @@ function BrandChatsContent() {
 														return (
 															<div className="flex items-center gap-1.5 min-w-0">
 																<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
+																{!t.campaignId && (
+																	<span className="shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase bg-black/10 text-black/50">
+																		{t.counterpartType === "SPACE" ? "Space" : "Community"}
+																	</span>
+																)}
 																{isThreadClosed ? (
 																	<span className="shrink-0 inline-flex items-center justify-center size-4 rounded-full bg-[#10B981] text-white" title="Deal Closed">
 																		<svg className="size-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -710,6 +715,7 @@ function BrandChatThreadPanel({
 
 	function labelFor(senderType: SponsorshipChatMessage["senderType"]) {
 		if (senderType === "BRAND") return `${ownName} • Brand`
+		if (senderType === "SPACE") return `${thread.counterpartName} • Space`
 		if (senderType === "HOST") return `${thread.counterpartName} • Community`
 		return "Meetday • Admin"
 	}
@@ -721,7 +727,7 @@ function BrandChatThreadPanel({
 
 	function replyLabel(senderType: SponsorshipChatMessage["senderType"]) {
 		if (senderType === "BRAND") return ownName
-		if (senderType === "HOST") return thread.counterpartName
+		if (senderType === "SPACE" || senderType === "HOST") return thread.counterpartName
 		return "Meetday"
 	}
 
@@ -754,7 +760,14 @@ function BrandChatThreadPanel({
 						)}
 					</div>
 					<div className="min-w-0 flex-1">
-						<p className="text-xs sm:text-sm font-black text-black truncate leading-tight">{thread.counterpartName}</p>
+						<div className="flex items-center gap-1.5 min-w-0">
+							<p className="text-xs sm:text-sm font-black text-black truncate leading-tight">{thread.counterpartName}</p>
+							{!thread.campaignId && (
+								<span className="shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase bg-black/10 text-black/50">
+									{thread.counterpartType === "SPACE" ? "Space" : "Community"}
+								</span>
+							)}
+						</div>
 						<p className="text-[10px] sm:text-[11px] font-semibold text-black/40 truncate">{thread.proposalName}</p>
 					</div>
 				</div>
