@@ -67,11 +67,10 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 	const [unreadCommunityRequestsCount, setUnreadCommunityRequestsCount] = useState(0)
 	const [chatsOpen, setChatsOpen] = useState(false)
 
-	const isChatsRoute = pathname.startsWith("/spaces/dashboard/chats") || pathname.startsWith("/spaces/dashboard/sponsorship-chats") || pathname.startsWith("/spaces/dashboard/community-requests")
+	const isChatsRoute = pathname.startsWith("/spaces/dashboard/chats") || pathname.startsWith("/spaces/dashboard/sponsorship-chats")
 	const isBrandChat = pathname.startsWith("/spaces/dashboard/chats") && searchParams.get("type") === "brand"
 	const isCommunityChat = pathname.startsWith("/spaces/dashboard/chats") && searchParams.get("type") !== "brand"
 	const isSponsorshipChat = pathname.startsWith("/spaces/dashboard/sponsorship-chats")
-	const isCommunityRequestsChat = pathname.startsWith("/spaces/dashboard/community-requests")
 	const totalChatsBadge = unreadCommunityChatsCount + unreadBrandChatsCount + unreadSponsorshipChatsCount + unreadCommunityRequestsCount
 
 	const unreadSupportCount = notifications.filter(n =>
@@ -264,9 +263,9 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 								)}
 							>
 								<span className="flex-1 whitespace-nowrap">Community Chat</span>
-								{unreadCommunityChatsCount > 0 && (
+								{(unreadCommunityChatsCount + unreadCommunityRequestsCount) > 0 && (
 									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-										{unreadCommunityChatsCount > 9 ? "9+" : unreadCommunityChatsCount}
+										{(unreadCommunityChatsCount + unreadCommunityRequestsCount) > 9 ? "9+" : (unreadCommunityChatsCount + unreadCommunityRequestsCount)}
 									</span>
 								)}
 							</Link>
@@ -303,24 +302,6 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 								{unreadSponsorshipChatsCount > 0 && (
 									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
 										{unreadSponsorshipChatsCount > 9 ? "9+" : unreadSponsorshipChatsCount}
-									</span>
-								)}
-							</Link>
-
-							<Link
-								href="/spaces/dashboard/community-requests"
-								onClick={onClose}
-								className={clsx(
-									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
-									isCommunityRequestsChat
-										? "bg-[#D12525] text-white font-medium"
-										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
-								)}
-							>
-								<span className="flex-1 whitespace-nowrap">Community Requests</span>
-								{unreadCommunityRequestsCount > 0 && (
-									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-										{unreadCommunityRequestsCount > 9 ? "9+" : unreadCommunityRequestsCount}
 									</span>
 								)}
 							</Link>

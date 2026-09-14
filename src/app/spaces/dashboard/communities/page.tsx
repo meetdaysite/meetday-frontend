@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { getBrandCommunities, getMySpaceHostChats, markSpaceHostInterest, type BrandCommunity } from "@/lib/api"
+import { getBrandCommunities, getMySpaceChats, getMySpaceHostChats, markSpaceHostInterest, type BrandCommunity } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import { toast } from "@/lib/toast"
 import { Skeleton } from "@/components/ui/Skeleton"
@@ -48,6 +48,10 @@ export default function SpaceCommunitiesBrowsePage() {
 	const [error, setError] = useState<string | null>(null)
 	const [selected, setSelected] = useState<BrandCommunity | null>(null)
 	const [interestedHostIds, setInterestedHostIds] = useState<Set<string>>(new Set())
+	// Communities this Space already has an open/pending channel with via the OTHER direction —
+	// i.e. the Community requested this Space first (SpaceInterest, feature A) — so we don't let
+	// the Space open a second, redundant channel with the same Community.
+	const [crossFeatureConnectedHostIds, setCrossFeatureConnectedHostIds] = useState<Set<string>>(new Set())
 	const [sendingId, setSendingId] = useState<string | null>(null)
 	const [isPosterEnlarged, setIsPosterEnlarged] = useState(false)
 	const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null)
@@ -75,6 +79,13 @@ export default function SpaceCommunitiesBrowsePage() {
 				setInterestedHostIds(new Set(threads.map((t) => t.hostProfileId)))
 			})
 			.catch(() => {})
+		getMySpaceChats(undefined, "SPACE")
+			.then((threads) => {
+				if (cancelled) return
+				const ids = threads.filter((t) => t.requesterType === "COMMUNITY" && t.hostProfileId).map((t) => t.hostProfileId as string)
+				setCrossFeatureConnectedHostIds(new Set(ids))
+			})
+			.catch(() => {})
 		return () => {
 			cancelled = true
 		}
@@ -95,6 +106,8 @@ export default function SpaceCommunitiesBrowsePage() {
 	}
 
 	const alreadyInterested = selected ? interestedHostIds.has(selected.hostProfileId) : false
+	const alreadyConnected = selected ? crossFeatureConnectedHostIds.has(selected.hostProfileId) : false
+	const collaborationBlocked = alreadyInterested || alreadyConnected
 
 	const flatExperienceImages = selected
 		? (selected.pastEvents || []).flatMap((event, eventIdx) => {
@@ -214,23 +227,32 @@ export default function SpaceCommunitiesBrowsePage() {
 									<div>
 										<div className="flex items-center justify-between gap-3 mb-3">
 											<h2 className="text-xl font-heading font-black text-black">Community Details</h2>
-											<button
-												type="button"
-												onClick={handleMarkInterest}
-												disabled={alreadyInterested || sendingId === selected.hostProfileId}
-												className={clsx(
-													"shrink-0 text-xs font-black px-4 py-2.5 rounded-xl uppercase tracking-wider border-2 border-black transition-all select-none",
-													alreadyInterested
-														? "bg-slate-100 text-black/40 cursor-default"
-														: "bg-[#EE2C2C] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50",
+											<div className="flex flex-col items-end gap-1">
+												<button
+													type="button"
+													onClick={handleMarkInterest}
+													disabled={collaborationBlocked || sendingId === selected.hostProfileId}
+													className={clsx(
+														"shrink-0 text-xs font-black px-4 py-2.5 rounded-xl uppercase tracking-wider border-2 border-black transition-all select-none",
+														collaborationBlocked
+															? "bg-slate-100 text-black/40 cursor-default"
+															: "bg-[#EE2C2C] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50",
+													)}
+												>
+													{alreadyInterested
+														? "We've notified the community"
+														: alreadyConnected
+															? "Already Connected"
+															: sendingId === selected.hostProfileId
+																? "Sending…"
+																: "Collaborate"}
+												</button>
+												{alreadyConnected && (
+													<p className="text-[10px] font-bold text-black/40 text-right max-w-[220px]">
+														You already have an open or pending chat with this community — check your Community Chat tab.
+													</p>
 												)}
-											>
-												{alreadyInterested
-													? "We've notified the community"
-													: sendingId === selected.hostProfileId
-														? "Sending…"
-														: "I'm Interested"}
-											</button>
+											</div>
 										</div>
 
 										<div className={clsx("grid gap-6 items-start", selected.secondaryImageUrl ? "grid-cols-1 lg:grid-cols-[1fr_320px]" : "grid-cols-1")}>

@@ -1,9 +1,16 @@
 "use client"
 
+import Link from "next/link"
+import clsx from "clsx"
+import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { SpaceChatDashboard } from "@/components/spaces/SpaceChatDashboard"
+import { SpaceHostChatDashboard } from "@/components/spaces/SpaceHostChatDashboard"
 
 function CommunitySpaceChatsContent() {
+	const searchParams = useSearchParams()
+	const isRequests = searchParams.get("sub") === "requests"
+
 	return (
 		<div className="flex flex-col flex-1 min-h-0 bg-white">
 			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
@@ -18,13 +25,50 @@ function CommunitySpaceChatsContent() {
 						Spaces Chats
 					</h1>
 					<p className="text-xs sm:text-sm font-semibold text-black/50 mt-1">
-						Chat with spaces you have expressed interest in.
+						{isRequests
+							? "Partnership requests sent to you by Space Partners."
+							: "Chat with spaces you have expressed interest in."}
 					</p>
 				</div>
-				<SpaceChatDashboard
-					role="COMMUNITY"
-					emptyLabel="You haven't expressed interest in any Community Space yet."
-				/>
+
+				<div className="inline-flex items-center p-1 bg-black/5 rounded-2xl border-2 border-black/10 self-start shrink-0">
+					<Link
+						href="/community/dashboard/space-chats"
+						className={clsx(
+							"px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all",
+							!isRequests
+								? "bg-[#EE2C2C] text-white shadow-sm"
+								: "text-black/60 hover:text-black"
+						)}
+					>
+						Chats
+					</Link>
+					<Link
+						href="/community/dashboard/space-chats?sub=requests"
+						className={clsx(
+							"px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all",
+							isRequests
+								? "bg-[#EE2C2C] text-white shadow-sm"
+								: "text-black/60 hover:text-black"
+						)}
+					>
+						Requests
+					</Link>
+				</div>
+
+				{isRequests ? (
+					<SpaceHostChatDashboard
+						key="requests"
+						role="HOST"
+						canRespond
+						emptyLabel="No Space Partners have requested to partner with your community yet."
+					/>
+				) : (
+					<SpaceChatDashboard
+						role="COMMUNITY"
+						emptyLabel="You haven't expressed interest in any Community Space yet."
+					/>
+				)}
 			</div>
 		</div>
 	)
@@ -37,3 +81,4 @@ export default function CommunitySpaceChatsPage() {
 		</Suspense>
 	)
 }
+

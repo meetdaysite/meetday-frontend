@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { Skeleton } from "@/components/ui/Skeleton"
-import { getCommunitySpacesBrowse, getMySpaceChats, markSpaceInterest, type BrowseSpaceCommunity } from "@/lib/api"
+import { getCommunitySpacesBrowse, getMySpaceChats, getMySpaceHostChats, markSpaceInterest, type BrowseSpaceCommunity } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import { toast } from "@/lib/toast"
 import clsx from "clsx"
@@ -59,6 +59,10 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 	const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null)
 	const [viewAllExperiencesMode, setViewAllExperiencesMode] = useState(false)
 	const [interestedSpaceIds, setInterestedSpaceIds] = useState<Set<string>>(new Set())
+	// Spaces this Community already has an open/pending channel with via the OTHER direction —
+	// i.e. the Space requested this Community first (SpaceHostInterest, feature B) — so we don't
+	// let the Community open a second, redundant channel with the same Space.
+	const [crossFeatureConnectedSpaceProfileIds, setCrossFeatureConnectedSpaceProfileIds] = useState<Set<string>>(new Set())
 	const [sendingInterestId, setSendingInterestId] = useState<string | null>(null)
 
 	useEffect(() => {
@@ -78,6 +82,13 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 				if (cancelled) return
 				const ids = new Set(threads.map((t) => t.spaceCommunityProfileId))
 				setInterestedSpaceIds((prev) => new Set([...prev, ...ids]))
+			})
+			.catch(() => {})
+		getMySpaceHostChats(undefined, "HOST")
+			.then((threads) => {
+				if (cancelled) return
+				const ids = new Set(threads.map((t) => t.spaceProfileId))
+				setCrossFeatureConnectedSpaceProfileIds((prev) => new Set([...prev, ...ids]))
 			})
 			.catch(() => {})
 		return () => {
@@ -233,23 +244,39 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 									<div>
 										<div className="flex items-center justify-between gap-3 mb-3">
 											<h2 className="text-xl font-heading font-black text-black">Community Space Details</h2>
-											<button
-												type="button"
-												onClick={handleMarkInterest}
-												disabled={interestedSpaceIds.has(selectedSpace.id) || sendingInterestId === selectedSpace.id}
-												className={clsx(
-													"shrink-0 text-xs font-black px-4 py-2.5 rounded-xl uppercase tracking-wider border-2 border-black transition-all select-none",
-													interestedSpaceIds.has(selectedSpace.id)
-														? "bg-slate-100 text-black/40 cursor-default"
-														: "bg-[#EE2C2C] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50",
-												)}
-											>
-												{interestedSpaceIds.has(selectedSpace.id)
-													? "We've notified the space"
-													: sendingInterestId === selectedSpace.id
-														? "Sending…"
-														: "I'm Interested"}
-											</button>
+												{(() => {
+													const alreadyInterested = interestedSpaceIds.has(selectedSpace.id)
+													const alreadyConnected = crossFeatureConnectedSpaceProfileIds.has(selectedSpace.spaceProfileId)
+													const collaborationBlocked = alreadyInterested || alreadyConnected
+													return (
+														<div className="flex flex-col items-end gap-1">
+															<button
+																type="button"
+																onClick={handleMarkInterest}
+																disabled={collaborationBlocked || sendingInterestId === selectedSpace.id}
+																className={clsx(
+																	"shrink-0 text-xs font-black px-4 py-2.5 rounded-xl uppercase tracking-wider border-2 border-black transition-all select-none",
+																	collaborationBlocked
+																		? "bg-slate-100 text-black/40 cursor-default"
+																		: "bg-[#EE2C2C] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50",
+																)}
+															>
+																{alreadyInterested
+																	? "We've notified the space"
+																	: alreadyConnected
+																		? "Already Connected"
+																		: sendingInterestId === selectedSpace.id
+																			? "Sending…"
+																			: "Collaborate"}
+															</button>
+															{alreadyConnected && (
+																<p className="text-[10px] font-bold text-black/40 text-right max-w-[220px]">
+																	There is an open or pending chat with this space partner — check your Spaces Chats tab.
+																</p>
+															)}
+														</div>
+													)
+												})()}
 										</div>
 
 										{/* Grid to place details card and poster side-by-side (collapses to full width if no poster) */}

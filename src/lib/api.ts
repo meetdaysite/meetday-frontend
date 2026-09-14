@@ -1585,6 +1585,10 @@ export type SpaceChatThread = {
 	id: string
 	spaceCommunityProfileId: string
 	requesterType: SpaceInterestRequesterType
+	// Raw requester ids — lets a caller cross-reference against the reverse (Space -> Community)
+	// SpaceHostInterest feature to detect an existing channel between the same two parties.
+	hostProfileId?: string | null
+	brandProfileId?: string | null
 	chatStatus: SpaceChatStatus
 	createdAt: string
 	chatAcceptedAt: string | null

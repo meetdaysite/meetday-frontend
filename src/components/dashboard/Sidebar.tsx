@@ -81,11 +81,10 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
 	const [chatsOpen, setChatsOpen] = useState(false)
 
-	const isChatsRoute = pathname.startsWith("/community/dashboard/chats") || pathname.startsWith("/community/dashboard/space-chats") || pathname.startsWith("/community/dashboard/requests")
+	const isChatsRoute = pathname.startsWith("/community/dashboard/chats") || pathname.startsWith("/community/dashboard/space-chats")
 	const isCampaignChat = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") === "campaign"
 	const isSponsorshipChat = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") !== "campaign"
 	const isSpacesChat = pathname.startsWith("/community/dashboard/space-chats")
-	const isCommunityRequestsChat = pathname.startsWith("/community/dashboard/requests")
 	const totalChatsBadge = unreadSponsorshipChatsCount + unreadCampaignChatsCount + unreadSpaceChatsCount + unreadCommunityRequestsCount
 
 	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
@@ -583,27 +582,9 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 								)}
 							>
 								<span className="flex-1 whitespace-nowrap">Spaces Chats</span>
-								{unreadSpaceChatsCount > 0 && (
+								{(unreadSpaceChatsCount + unreadCommunityRequestsCount) > 0 && (
 									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-										{unreadSpaceChatsCount > 9 ? "9+" : unreadSpaceChatsCount}
-									</span>
-								)}
-							</Link>
-
-							<Link
-								href="/community/dashboard/requests"
-								onClick={onClose}
-								className={clsx(
-									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
-									isCommunityRequestsChat
-										? "bg-[#D12525] text-white font-medium"
-										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
-								)}
-							>
-								<span className="flex-1 whitespace-nowrap">Space Partner Requests</span>
-								{unreadCommunityRequestsCount > 0 && (
-									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-										{unreadCommunityRequestsCount > 9 ? "9+" : unreadCommunityRequestsCount}
+										{(unreadSpaceChatsCount + unreadCommunityRequestsCount) > 9 ? "9+" : (unreadSpaceChatsCount + unreadCommunityRequestsCount)}
 									</span>
 								)}
 							</Link>
