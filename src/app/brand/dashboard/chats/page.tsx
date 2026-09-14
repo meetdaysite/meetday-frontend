@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback, useMemo, Fragment, Suspense } from "react"
+import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import clsx from "clsx"
 import { toast } from "sonner"
@@ -55,7 +56,7 @@ function BrandChatsContent() {
 	const { profile } = useBrandStore()
 	const ownName = profile?.brandName || "You"
 	const searchParams = useSearchParams()
-	const initialType = searchParams.get("type") === "campaign" ? "CAMPAIGN" : "SPONSORSHIP"
+	const initialType = searchParams.get("type") === "sponsorship" ? "SPONSORSHIP" : "CAMPAIGN"
 	const [dealType, setDealType] = useState<"SPONSORSHIP" | "CAMPAIGN">(initialType)
 	const [tab, setTab] = useState<Tab>("ACCEPTED")
 	const [requestedThreads, setRequestedThreads] = useState<SponsorshipChatThread[]>([])
@@ -71,10 +72,10 @@ function BrandChatsContent() {
 		const typeParam = searchParams.get("type")
 		const interestIdParam = searchParams.get("interestId")
 
-		if (typeParam === "campaign") {
-			setDealType("CAMPAIGN")
-		} else {
+		if (typeParam === "sponsorship") {
 			setDealType("SPONSORSHIP")
+		} else {
+			setDealType("CAMPAIGN")
 		}
 
 		if (prevTypeRef.current !== typeParam) {
@@ -226,15 +227,48 @@ function BrandChatsContent() {
 			</div>
 
 			<div className="flex-1 min-h-0 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-6xl w-full mx-auto flex flex-col gap-4">
-				<div>
-					<h1 className="text-2xl sm:text-3xl font-heading font-black text-black">
-						{dealType === "CAMPAIGN" ? "Campaign Chats" : "Sponsorship Chats"}
-					</h1>
-					<p className="text-xs sm:text-sm font-semibold text-black/50 mt-1">
-						{dealType === "CAMPAIGN"
-							? "Talk to communities interested in your campaigns."
-							: "Talk to communities you've expressed interest in."}
-					</p>
+				<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+					<div>
+						<h1 className="text-2xl sm:text-3xl font-heading font-black text-black">
+							{dealType === "CAMPAIGN" ? "Campaign Chats" : "Sponsorship Chats"}
+						</h1>
+						<p className="text-xs sm:text-sm font-semibold text-black/50 mt-1">
+							{dealType === "CAMPAIGN"
+								? "Talk to communities interested in your campaigns."
+								: "Talk to communities you've expressed interest in."}
+						</p>
+					</div>
+
+					<div className="inline-flex items-center p-1 bg-black/5 rounded-2xl border-2 border-black/10 self-start sm:self-auto shrink-0">
+						<Link
+							href="/brand/dashboard/chats?type=campaign"
+							className={clsx(
+								"px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all",
+								dealType === "CAMPAIGN"
+									? "bg-black text-white shadow-sm"
+									: "text-black/60 hover:text-black"
+							)}
+						>
+							Campaign
+						</Link>
+						<Link
+							href="/brand/dashboard/chats?type=sponsorship"
+							className={clsx(
+								"px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all",
+								dealType === "SPONSORSHIP"
+									? "bg-black text-white shadow-sm"
+									: "text-black/60 hover:text-black"
+							)}
+						>
+							Sponsorship
+						</Link>
+						<Link
+							href="/brand/dashboard/space-chats"
+							className="px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-black/60 hover:text-black"
+						>
+							Spaces
+						</Link>
+					</div>
 				</div>
 
 				<div className="h-[calc(100vh-240px)] border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row bg-white">

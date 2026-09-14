@@ -41,7 +41,7 @@ type TopNavItem = {
 const NAV_ITEMS_TOP: TopNavItem[] = [
 	{ label: "Dashboard", href: "/community/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "Experience Proposals", href: "/community/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
-	{ label: "Brand Campaigns", href: "/community/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
+	{ label: "Brand Campaigns", href: "/community/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg, disabled: true },
 	{ label: "Community Spaces", href: "/community/dashboard/community-spaces", outlined: CalendarOutSvg, filled: CalendarFillSvg },
 	{ label: "Locked Deals", href: "/community/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
 ]
@@ -356,7 +356,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 							<button
 								key={href}
 								type="button"
-								onClick={() => toast.info("Hosting experiences is coming soon — stay tuned!")}
+								onClick={() => toast.info(`${label} is coming soon — stay tuned!`)}
 								className="flex items-center gap-2.5 px-4 py-2 rounded-2xl text-sm font-normal text-white/50 cursor-not-allowed"
 							>
 								<Icon as={Outlined} size="md" className="text-white/50 shrink-0" />

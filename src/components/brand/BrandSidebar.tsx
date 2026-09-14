@@ -24,6 +24,8 @@ import ChatFillSvg from "@/icons/filled/chat.svg"
 import DollarSvg from "@/icons/outlined/dollar.svg"
 import LockOutSvg from "@/icons/outlined/lock.svg"
 import LockFillSvg from "@/icons/filled/lock.svg"
+import CalendarOutSvg from "@/icons/outlined/calendar.svg"
+import CalendarFillSvg from "@/icons/filled/calendar.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -32,9 +34,9 @@ type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
 	{ label: "My Campaigns", href: "/brand/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
-	{ label: "Proposals", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Curated Experiences", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
-	{ label: "Community Spaces", href: "/brand/dashboard/community-spaces", outlined: UsersGroupSvg, filled: UsersGroupSvg },
+	{ label: "Community Spaces", href: "/brand/dashboard/community-spaces", outlined: CalendarOutSvg, filled: CalendarFillSvg },
 	{ label: "Locked Deals", href: "/brand/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
 ]
 
@@ -78,8 +80,8 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 	const [chatsOpen, setChatsOpen] = useState(false)
 
 	const isChatsRoute = pathname.startsWith("/brand/dashboard/chats") || pathname.startsWith("/brand/dashboard/space-chats")
-	const isCampaignChat = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") === "campaign"
-	const isSponsorshipChat = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") !== "campaign"
+	const isSponsorshipChat = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") === "sponsorship"
+	const isCampaignChat = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") !== "sponsorship"
 	const isSpacesChat = pathname.startsWith("/brand/dashboard/space-chats")
 	const totalChatsBadge = unreadSponsorshipChatsCount + unreadCampaignChatsCount + unreadSpaceChatsCount
 
@@ -347,24 +349,6 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 					{chatsOpen && (
 						<div className="flex flex-col gap-1 pl-3 my-1 border-l-2 border-white/20 ml-5">
 							<Link
-								href="/brand/dashboard/chats?type=sponsorship"
-								onClick={onClose}
-								className={clsx(
-									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
-									isSponsorshipChat
-										? "bg-[#D12525] text-white font-medium"
-										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
-								)}
-							>
-								<span className="flex-1 whitespace-nowrap">Sponsorship Chats</span>
-								{unreadSponsorshipChatsCount > 0 && (
-									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-										{unreadSponsorshipChatsCount > 9 ? "9+" : unreadSponsorshipChatsCount}
-									</span>
-								)}
-							</Link>
-
-							<Link
 								href="/brand/dashboard/chats?type=campaign"
 								onClick={onClose}
 								className={clsx(
@@ -378,6 +362,24 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 								{unreadCampaignChatsCount > 0 && (
 									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
 										{unreadCampaignChatsCount > 9 ? "9+" : unreadCampaignChatsCount}
+									</span>
+								)}
+							</Link>
+
+							<Link
+								href="/brand/dashboard/chats?type=sponsorship"
+								onClick={onClose}
+								className={clsx(
+									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
+									isSponsorshipChat
+										? "bg-[#D12525] text-white font-medium"
+										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
+								)}
+							>
+								<span className="flex-1 whitespace-nowrap">Sponsorship Chats</span>
+								{unreadSponsorshipChatsCount > 0 && (
+									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+										{unreadSponsorshipChatsCount > 9 ? "9+" : unreadSponsorshipChatsCount}
 									</span>
 								)}
 							</Link>

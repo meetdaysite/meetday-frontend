@@ -18,6 +18,7 @@ import {
 } from "@/lib/api"
 import { ApiError, getApiErrorMessage } from "@/lib/errors"
 import { useBrandStore } from "@/store/brandStore"
+import { formatProposalDate } from "@/lib/eventForm"
 import clsx from "clsx"
 
 export default function ProposalDetailPage() {
@@ -109,6 +110,15 @@ export default function ProposalDetailPage() {
 		: null
 	const panelOperatingCities = proposal?.hostProfile?.operatingCities ?? proposal?.spaceProfile?.operatingCities
 	const panelSocialLinks = proposal?.hostProfile?.socialLinks ?? proposal?.spaceProfile?.socialLinks ?? undefined
+	const viewFullProfileHref = proposal
+		? proposal.ownerType === "SPACE"
+			? `/brand/dashboard/community-spaces?spaceId=${
+					proposal.spaceProfile?.id ||
+					(proposal.community as Record<string, unknown> | null)?.spaceProfileId ||
+					proposal.community?.id
+			  }`
+			: `/brand/dashboard/communities?communityId=${proposal.community?.id || proposal.hostProfile?.id}`
+		: undefined
 
 	return (
 		<div className="flex flex-col min-h-full bg-white">
@@ -204,35 +214,41 @@ export default function ProposalDetailPage() {
 
 									<div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-4 w-full flex flex-col justify-between gap-4">
 								<div className="grid grid-cols-2 gap-4">
-									{/* Start Date */}
+									{/* Start Date & End Date */}
 									{(() => {
-										const startDisplay = proposal.eventDate ? new Date(proposal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
-										return startDisplay ? (
-											<div>
-												<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Start</p>
-												<div className="mt-1">
-													<span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-														{startDisplay}
-													</span>
-												</div>
-											</div>
-										) : null;
-									})()}
+										const startDisplay = formatProposalDate(proposal.eventDate);
+										const endDisplay = formatProposalDate(proposal.eventEndDate);
+										const hasBothDates = Boolean(startDisplay && endDisplay && endDisplay !== startDisplay);
 
-									{/* End Date */}
-									{(() => {
-										const startDisplay = proposal.eventDate ? new Date(proposal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
-										const endDisplay = proposal.eventEndDate ? new Date(proposal.eventEndDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
-										return endDisplay && endDisplay !== startDisplay ? (
-											<div>
-												<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">End</p>
-												<div className="mt-1">
-													<span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-														{endDisplay}
-													</span>
-												</div>
-											</div>
-										) : null;
+										return (
+											<>
+												{startDisplay ? (
+													<div>
+														<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">
+															{hasBothDates ? "Start Date" : "Date"}
+														</p>
+														<div className="mt-1">
+															<span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+																{startDisplay}
+															</span>
+														</div>
+													</div>
+												) : null}
+
+												{endDisplay && endDisplay !== startDisplay ? (
+													<div>
+														<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">
+															{hasBothDates ? "End Date" : "Date"}
+														</p>
+														<div className="mt-1">
+															<span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+																{endDisplay}
+															</span>
+														</div>
+													</div>
+												) : null}
+											</>
+										);
 									})()}
 
 									{/* Venue & City — full width second row */}
@@ -413,6 +429,7 @@ export default function ProposalDetailPage() {
 											operatingCities={panelOperatingCities}
 											socialLinks={panelSocialLinks}
 											hideStatus={true}
+											viewFullProfileHref={viewFullProfileHref}
 										/>
 									</div>
 								)}
@@ -429,6 +446,7 @@ export default function ProposalDetailPage() {
 							operatingCities={panelOperatingCities}
 							socialLinks={panelSocialLinks}
 							hideStatus={true}
+							viewFullProfileHref={viewFullProfileHref}
 						/>
 					</div>
 				)}

@@ -12,6 +12,7 @@ import { useGoogleSignIn } from "@/hooks/useGoogleSignIn"
 import { useAuthStore } from "@/store/authStore"
 import { getPublishedSponsorshipDetail, type PublishedSponsorshipDetail } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
+import { formatProposalDate } from "@/lib/eventForm"
 
 // How long an anonymous visitor gets to preview the shared proposal before the
 // login gate blurs the page — long enough to feel like a real page, not a paywall trap.
@@ -66,6 +67,16 @@ export default function SharedProposalPage() {
 			"Host"
 		: ""
 
+	const viewFullProfileHref = proposal
+		? proposal.ownerType === "SPACE"
+			? `/brand/dashboard/community-spaces?spaceId=${
+					proposal.spaceProfile?.id ||
+					(proposal.community as Record<string, unknown> | null)?.spaceProfileId ||
+					proposal.community?.id
+			  }`
+			: `/brand/dashboard/communities?communityId=${proposal.community?.id || proposal.hostProfile?.id}`
+		: undefined
+
 	return (
 		<div className="flex flex-col min-h-screen bg-white">
 			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
@@ -112,16 +123,41 @@ export default function SharedProposalPage() {
 
 							<div className="flex flex-col gap-6">
 								<div className="bg-surface-card-muted border border-border-default rounded-action p-4 w-full grid grid-cols-2 gap-4">
-									{proposal.eventDate && (
-										<div>
-											<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Start</p>
-											<div className="mt-1">
-												<span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-													{new Date(proposal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-												</span>
-											</div>
-										</div>
-									)}
+									{(() => {
+										const startDisplay = formatProposalDate(proposal.eventDate);
+										const endDisplay = formatProposalDate(proposal.eventEndDate);
+										const hasBothDates = Boolean(startDisplay && endDisplay && endDisplay !== startDisplay);
+
+										return (
+											<>
+												{startDisplay ? (
+													<div>
+														<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">
+															{hasBothDates ? "Start Date" : "Date"}
+														</p>
+														<div className="mt-1">
+															<span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+																{startDisplay}
+															</span>
+														</div>
+													</div>
+												) : null}
+
+												{endDisplay && endDisplay !== startDisplay ? (
+													<div>
+														<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">
+															{hasBothDates ? "End Date" : "Date"}
+														</p>
+														<div className="mt-1">
+															<span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+																{endDisplay}
+															</span>
+														</div>
+													</div>
+												) : null}
+											</>
+										);
+									})()}
 									{proposal.guestCount && (
 										<div>
 											<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Guests</p>
@@ -239,6 +275,7 @@ export default function SharedProposalPage() {
 											operatingCities={proposal.hostProfile?.operatingCities}
 											socialLinks={proposal.hostProfile?.socialLinks ?? undefined}
 											hideStatus={true}
+											viewFullProfileHref={viewFullProfileHref}
 										/>
 									</div>
 								)}
@@ -254,6 +291,7 @@ export default function SharedProposalPage() {
 							operatingCities={proposal.hostProfile?.operatingCities}
 							socialLinks={proposal.hostProfile?.socialLinks ?? undefined}
 							hideStatus={true}
+							viewFullProfileHref={viewFullProfileHref}
 						/>
 					</div>
 				)}

@@ -9,11 +9,20 @@ import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { useDashboardStore } from "@/store/dashboardStore"
 import { useHostStore } from "@/store/hostStore"
 import type { DisplayEventStatus } from "@/types/event"
-import { formatEventDateRange } from "@/lib/eventForm"
+import { formatEventDateRange, formatProposalDateRange } from "@/lib/eventForm"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { getProposals, type StoredProposal } from "./proposal/page"
-import { getHostCommunityProfile, getMySponsorshipChats, getSponsorshipDeal, getSponsorshipDealReport, getPublishedCampaigns, type SponsorshipDeal, type Campaign } from "@/lib/api"
+import {
+	getHostCommunityProfile,
+	getMySponsorshipChats,
+	getSponsorshipDeal,
+	getSponsorshipDealReport,
+	getCommunitySpacesBrowse,
+	type SponsorshipDeal,
+	type BrowseSpaceCommunity,
+} from "@/lib/api"
 import { DealDetailsModal, DealReportModal } from "@/components/sponsorship/DealPanel"
+import { SpaceCard } from "@/components/spaces/CommunitySpacesBrowse"
 import clsx from "clsx"
 
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
@@ -38,12 +47,12 @@ export default function DashboardWelcomePage() {
 
 	const [proposals, setProposals] = useState<StoredProposal[]>([])
 	const [lockedDeals, setLockedDeals] = useState<(SponsorshipDeal & { proposalName?: string | null; brandName: string; brandLogo: string | null | undefined; sponsorshipInterestId: string; hasReport: boolean })[]>([])
+	const [communitySpaces, setCommunitySpaces] = useState<BrowseSpaceCommunity[]>([])
 	const [loadingProposals, setLoadingProposals] = useState(true)
 	const [loadingLockedDeals, setLoadingLockedDeals] = useState(true)
+	const [loadingCommunitySpaces, setLoadingCommunitySpaces] = useState(true)
 	const [hasCommunityProfile, setHasCommunityProfile] = useState<boolean>(false)
 	const [loadingCommunity, setLoadingCommunity] = useState(true)
-	const [campaigns, setCampaigns] = useState<Campaign[]>([])
-	const [loadingCampaigns, setLoadingCampaigns] = useState(true)
 
 	// Modal states for Locked Deal and Report views
 	const [selectedDeal, setSelectedDeal] = useState<{ deal: SponsorshipDeal; interestId: string } | null>(null)
@@ -126,16 +135,16 @@ export default function DashboardWelcomePage() {
 	}, [hostId])
 
 	useEffect(() => {
-		setLoadingCampaigns(true)
-		getPublishedCampaigns()
+		setLoadingCommunitySpaces(true)
+		getCommunitySpacesBrowse()
 			.then((res) => {
-				setCampaigns(res || [])
+				setCommunitySpaces(res.spaces || [])
 			})
 			.catch((err) => {
-				console.error("Failed to fetch campaigns for community dashboard", err)
+				console.error("Failed to fetch community spaces for community dashboard", err)
 			})
 			.finally(() => {
-				setLoadingCampaigns(false)
+				setLoadingCommunitySpaces(false)
 			})
 	}, [])
 
@@ -194,20 +203,21 @@ export default function DashboardWelcomePage() {
 							<h2 className="text-lg font-heading font-black text-black">
 								Explore Campaigns
 							</h2>
-							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
-								ACTIVE
+							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">
+								SOON
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
 							Browse active marketing and sponsorship campaign briefs posted by brands, review requirements, and contact them to collaborate.
 						</p>
-						<Link
-							href="/community/dashboard/campaigns"
-							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
+						<button
+							type="button"
+							disabled
+							className="w-full py-3 bg-black/10 text-black/40 border-[3px] border-black/20 rounded-2xl font-black text-center text-xs tracking-wider cursor-not-allowed flex items-center justify-center gap-2 select-none"
 						>
 							EXPLORE CAMPAIGNS
-							<span className="text-base font-bold">➔</span>
-						</Link>
+							<span className="text-[9px] font-black uppercase tracking-wider bg-black/15 px-1.5 py-0.5 rounded ml-1">Soon</span>
+						</button>
 					</div>
 				</div>
 
@@ -263,8 +273,7 @@ export default function DashboardWelcomePage() {
 							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
 								{approvedSponsorships.map((prop) => {
 									const imgUrl = typeof prop.image === "string" ? prop.image : prop.image ? URL.createObjectURL(prop.image) : null
-									const parts = prop.date ? prop.date.split("-") : []
-									const displayDate = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : prop.date
+									const displayDate = formatProposalDateRange(prop.date, prop.endDate)
 
 									return (
 										<Link
@@ -337,19 +346,19 @@ export default function DashboardWelcomePage() {
 						)}
 					</div>
 
-					{/* Row 0: Active Brand Campaigns */}
+					{/* Active Community Spaces */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
 							<div>
-								<h2 className="text-xl font-heading font-black text-black">Active Brand Campaigns</h2>
-								<p className="text-xs font-semibold text-black/50 mt-1">Explore campaign briefs from brands looking for sponsors.</p>
+								<h2 className="text-xl font-heading font-black text-black">Active Community Spaces</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Discover venues and spaces for offline activations and community events.</p>
 							</div>
-							<Link href="/community/dashboard/campaigns" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
-								View All Campaigns &gt;
+							<Link href="/community/dashboard/community-spaces" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+								View All Spaces &gt;
 							</Link>
 						</div>
 
-						{loadingCampaigns ? (
+						{loadingCommunitySpaces ? (
 							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
 								{Array.from({ length: 2 }).map((_, i) => (
 									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
@@ -361,70 +370,18 @@ export default function DashboardWelcomePage() {
 									</div>
 								))}
 							</div>
-						) : campaigns.length === 0 ? (
+						) : communitySpaces.length === 0 ? (
 							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
-								<p className="text-sm font-black text-black/80">No active campaigns yet</p>
-								<p className="text-[11px] font-semibold text-black/40">Check back later for brand sponsorship campaigns.</p>
+								<p className="text-sm font-black text-black/80">No community spaces available yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Check back later for newly listed spaces and venues.</p>
 							</div>
 						) : (
-							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
-								{campaigns.map((c) => {
-									const displayDates = `${new Date(c.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} - ${new Date(c.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`
-									return (
-										<Link
-											key={c.id}
-											href={`/community/dashboard/campaigns?campaignId=${c.id}`}
-											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-[380px] max-w-[85vw] shrink-0"
-										>
-											{/* Image / Logo */}
-											<div className="relative w-[120px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
-												{c.brandProfile?.logoUrl ? (
-													// eslint-disable-next-line @next/next/no-img-element
-													<img
-														src={c.brandProfile.logoUrl}
-														alt={c.name}
-														className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
-													/>
-												) : (
-													<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
-														{c.brandProfile?.brandName ? c.brandProfile.brandName.substring(0, 2).toUpperCase() : "MD"}
-													</div>
-												)}
-
-												{/* Offer Type Badge */}
-												<span className="absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black">
-													{c.offerType}
-												</span>
-											</div>
-
-											{/* Content & Footer info */}
-											<div className="flex-1 p-3 flex flex-col justify-between min-w-0">
-												<div className="flex flex-col gap-1">
-													<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors leading-snug">
-														{c.name}
-													</h3>
-													<p className="text-[11px] font-bold text-black/50 truncate">
-														Brand: {c.brandProfile?.brandName ?? "Brand"} {c.locations?.length > 0 && `• ${c.locations.slice(0, 2).join(", ")}`}{c.locations?.length > 2 ? ` +${c.locations.length - 2}` : ""}
-													</p>
-													{c.description && (
-														<p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">
-															{c.description}
-														</p>
-													)}
-												</div>
-
-												<div className="flex flex-wrap gap-1.5 mt-2">
-													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-														{displayDates}
-													</span>
-													<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-														{c.offerType === "BARTER" ? "BARTER" : `${c.budgetCurrency} ${Number(c.budgetAmount).toLocaleString()}`}
-													</span>
-												</div>
-											</div>
-										</Link>
-									)
-								})}
+							<div className="flex flex-row overflow-x-auto gap-6 pb-6 pt-2 px-2 w-full custom-scrollbar">
+								{communitySpaces.map((space) => (
+									<Link key={space.id} href={`/community/dashboard/community-spaces?spaceId=${space.id}`} className="block shrink-0 w-[180px]">
+										<SpaceCard space={space} />
+									</Link>
+								))}
 							</div>
 						)}
 					</div>

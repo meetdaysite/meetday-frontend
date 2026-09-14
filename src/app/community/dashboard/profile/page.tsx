@@ -332,6 +332,7 @@ export default function ProfilePage() {
 										socialLinks={profile?.socialLinks}
 										onEdit={() => setIsEditingCommunity(true)}
 										onClose={() => setShowCommunityModal(false)}
+										viewBrandPreviewHref="/community/dashboard/profile/preview?from=profile"
 									/>
 								)
 							) : showVerificationsModal ? (

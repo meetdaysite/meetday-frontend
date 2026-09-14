@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { Skeleton } from "@/components/ui/Skeleton"
 import { getCommunitySpacesBrowse, getMySpaceChats, markSpaceInterest, type BrowseSpaceCommunity } from "@/lib/api"
@@ -15,7 +16,7 @@ function formatExternalUrl(url?: string | null) {
 	return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
 }
 
-function SpaceCard({ space, onClick }: { space: BrowseSpaceCommunity; onClick: () => void }) {
+export function SpaceCard({ space, onClick }: { space: BrowseSpaceCommunity; onClick?: () => void }) {
 	return (
 		<div
 			onClick={onClick}
@@ -48,6 +49,8 @@ function SpaceCard({ space, onClick }: { space: BrowseSpaceCommunity; onClick: (
 }
 
 export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "COMMUNITY" } = {}) {
+	const searchParams = useSearchParams()
+	const urlSpaceId = searchParams?.get("spaceId")
 	const [spaces, setSpaces] = useState<BrowseSpaceCommunity[] | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [selectedSpace, setSelectedSpace] = useState<BrowseSpaceCommunity | null>(null)
@@ -57,6 +60,15 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 	const [viewAllExperiencesMode, setViewAllExperiencesMode] = useState(false)
 	const [interestedSpaceIds, setInterestedSpaceIds] = useState<Set<string>>(new Set())
 	const [sendingInterestId, setSendingInterestId] = useState<string | null>(null)
+
+	useEffect(() => {
+		if (urlSpaceId && spaces && spaces.length > 0) {
+			const found = spaces.find((s) => s.id === urlSpaceId)
+			if (found) {
+				setSelectedSpace(found)
+			}
+		}
+	}, [urlSpaceId, spaces])
 
 	useEffect(() => {
 		if (!selectedSpace) return

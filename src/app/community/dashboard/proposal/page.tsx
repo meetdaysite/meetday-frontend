@@ -35,6 +35,7 @@ import {
 import { ActivateCommunityModal } from "@/components/community/ActivateCommunityModal"
 import { CommunityProfileDetailsPanel } from "@/components/community/CommunityProfileDetailsPanel"
 import { AddressAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
+import { formatProposalDate, formatProposalDateRange } from "@/lib/eventForm"
 import PdfViewer from "@/components/pdf/PdfViewer"
 
 import UploadSvg from "@/icons/outlined/upload.svg"
@@ -327,6 +328,7 @@ export default function ProposalPage() {
                 operatingCities={profile?.operatingCities}
                 socialLinks={profile?.socialLinks}
                 onEdit={openActivationModal}
+                viewBrandPreviewHref="/community/dashboard/profile/preview?from=proposal"
             />
         )
     }
@@ -1395,38 +1397,41 @@ export default function ProposalPage() {
                                     <div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-4 w-full flex flex-col justify-between gap-4 min-w-0">
                                         {/* Row 1: Start date | End date, Row 2: Venue & City */}
                                         <div className="grid grid-cols-2 gap-4">
-                                            {/* Start Date */}
+                                            {/* Start Date & End Date */}
                                             {(() => {
-                                                const startParts = displayDetails?.date ? displayDetails.date.split("-") : [];
-                                                const startDisplay = startParts.length === 3 ? `${startParts[2]}/${startParts[1]}/${startParts[0]}` : displayDetails?.date;
-                                                return startDisplay ? (
-                                                    <div>
-                                                        <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Start</p>
-                                                        <div className="mt-1">
-                                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-                                                                {startDisplay}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ) : null;
-                                            })()}
+                                                const startDisplay = formatProposalDate(displayDetails?.date);
+                                                const endDisplay = formatProposalDate(displayDetails?.endDate);
+                                                const hasBothDates = Boolean(startDisplay && endDisplay && endDisplay !== startDisplay);
 
-                                            {/* End Date */}
-                                            {(() => {
-                                                const startParts = displayDetails?.date ? displayDetails.date.split("-") : [];
-                                                const startDisplay = startParts.length === 3 ? `${startParts[2]}/${startParts[1]}/${startParts[0]}` : displayDetails?.date;
-                                                const endParts = displayDetails?.endDate ? displayDetails.endDate.split("-") : [];
-                                                const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : displayDetails?.endDate;
-                                                return endDisplay && endDisplay !== startDisplay ? (
-                                                    <div>
-                                                        <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">End</p>
-                                                        <div className="mt-1">
-                                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-                                                                {endDisplay}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ) : null;
+                                                return (
+                                                    <>
+                                                        {startDisplay ? (
+                                                            <div>
+                                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">
+                                                                    {hasBothDates ? "Start Date" : "Date"}
+                                                                </p>
+                                                                <div className="mt-1">
+                                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                                        {startDisplay}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        ) : null}
+
+                                                        {endDisplay && endDisplay !== startDisplay ? (
+                                                            <div>
+                                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">
+                                                                    {hasBothDates ? "End Date" : "Date"}
+                                                                </p>
+                                                                <div className="mt-1">
+                                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                                        {endDisplay}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        ) : null}
+                                                    </>
+                                                );
                                             })()}
 
                                             {/* Venue & City — full width second row */}
@@ -2338,12 +2343,7 @@ export default function ProposalPage() {
                                                             const cardData = isViewingRevision ? p.pendingRevision! : p;
                                                             const isCompleted = isProposalCompleted(p);
                                                             const imgUrl = typeof cardData.image === "string" ? cardData.image : cardData.image ? URL.createObjectURL(cardData.image) : null;
-                                                            // Format date from YYYY-MM-DD to DD/MM/YYYY
-                                                            const parts = cardData.date ? cardData.date.split("-") : [];
-                                                            const startDisplay = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : cardData.date;
-                                                            const endParts = cardData.endDate ? cardData.endDate.split("-") : [];
-                                                            const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : cardData.endDate;
-                                                            const displayDate = endDisplay && endDisplay !== startDisplay ? `${startDisplay} - ${endDisplay}` : startDisplay;
+                                                            const displayDate = formatProposalDateRange(cardData.date, cardData.endDate);
                                                             return (
                                                                 <div
                                                                     key={p.id}
@@ -2546,6 +2546,7 @@ export default function ProposalPage() {
                                     setShowCommunityMobilePanel(false)
                                     openActivationModal()
                                 }}
+                                viewBrandPreviewHref="/community/dashboard/profile/preview?from=proposal"
                             />
                         </div>
                     </div>
