@@ -1593,6 +1593,8 @@ export type SpaceChatThread = {
 	unreadCount: number
 	counterpartName: string
 	counterpartAvatarUrl: string | null
+	isDealLocked?: boolean
+	isDealClosed?: boolean
 }
 
 export type SpaceChatReplyTo = {

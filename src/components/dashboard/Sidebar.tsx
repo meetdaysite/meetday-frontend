@@ -30,13 +30,20 @@ import LockFillSvg from "@/icons/filled/lock.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
-const NAV_ITEMS_TOP = [
+type TopNavItem = {
+	label: string
+	href: string
+	outlined: SvgIcon
+	filled: SvgIcon
+	disabled?: boolean
+}
+
+const NAV_ITEMS_TOP: TopNavItem[] = [
 	{ label: "Dashboard", href: "/community/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
-	{ label: "My Sponsorships", href: "/community/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
-	{ label: "Brand Campaigns", href: "/community/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
+	{ label: "Experience Proposals", href: "/community/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Brand Campaigns", href: "/community/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg, disabled: true },
 	{ label: "Community Spaces", href: "/community/dashboard/community-spaces", outlined: CalendarOutSvg, filled: CalendarFillSvg },
 	{ label: "Locked Deals", href: "/community/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
-	{ label: "My Experiences", href: "/community/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg, disabled: true },
 ]
 
 type BottomNavItem = {
@@ -44,13 +51,9 @@ type BottomNavItem = {
 	href: string
 	outlined: SvgIcon
 	filled: SvgIcon
-	chatType?: "sponsorship" | "campaign" | "spaces"
 }
 
 const NAV_ITEMS_BOTTOM: BottomNavItem[] = [
-	{ label: "Sponsorship Chats", href: "/community/dashboard/chats?type=sponsorship", chatType: "sponsorship", outlined: ChatOutSvg, filled: ChatFillSvg },
-	{ label: "Campaign Chats", href: "/community/dashboard/chats?type=campaign", chatType: "campaign", outlined: ChatOutSvg, filled: ChatFillSvg },
-	{ label: "Spaces Chats", href: "/community/dashboard/space-chats", chatType: "spaces", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Support Chat", href: "/community/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/community/dashboard/messages", outlined: BellSvg, filled: BellFillSvg },
 ]
@@ -75,6 +78,14 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const [unreadCampaignChatsCount, setUnreadCampaignChatsCount] = useState(0)
 	const [unreadSpaceChatsCount, setUnreadSpaceChatsCount] = useState(0)
 	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
+	const [chatsOpen, setChatsOpen] = useState(false)
+
+	const isChatsRoute = pathname.startsWith("/community/dashboard/chats") || pathname.startsWith("/community/dashboard/space-chats")
+	const isCampaignChat = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") === "campaign"
+	const isSponsorshipChat = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") !== "campaign"
+	const isSpacesChat = pathname.startsWith("/community/dashboard/space-chats")
+	const totalChatsBadge = unreadSponsorshipChatsCount + unreadCampaignChatsCount + unreadSpaceChatsCount
+
 	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
 	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
 
@@ -345,7 +356,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 							<button
 								key={href}
 								type="button"
-								onClick={() => toast.info("Hosting experiences is coming soon — stay tuned!")}
+								onClick={() => toast.info(`${label} is coming soon — stay tuned!`)}
 								className="flex items-center gap-2.5 px-4 py-2 rounded-2xl text-sm font-normal text-white/50 cursor-not-allowed"
 							>
 								<Icon as={Outlined} size="md" className="text-white/50 shrink-0" />
@@ -468,26 +479,107 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 
 			{/* Navigation Bottom Items */}
 			<div className="px-4 pb-4 flex flex-col gap-1 mt-auto shrink-0">
-				{NAV_ITEMS_BOTTOM.map(({ label, href, outlined: Outlined, filled: Filled, chatType }) => {
-					let isActive = false
-					if (chatType === "campaign") {
-						isActive = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") === "campaign"
-					} else if (chatType === "sponsorship") {
-						isActive = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") !== "campaign"
-					} else {
-						isActive = pathname.startsWith(href)
-					}
+				{/* Chats Menu with Sponsorship, Campaign, and Spaces Chats */}
+				<div className="flex flex-col">
+					<button
+						type="button"
+						onClick={() => setChatsOpen((prev) => !prev)}
+						className={clsx(
+							"w-full flex items-center justify-between px-4 py-2 rounded-2xl transition-all text-sm font-normal select-none text-left cursor-pointer",
+							isChatsRoute
+								? "bg-[#D12525] text-white"
+								: "text-white/90 hover:bg-[#D12525]/50 hover:text-white"
+						)}
+					>
+						<div className="flex items-center gap-2.5 min-w-0">
+							<Icon
+								as={isChatsRoute ? ChatFillSvg : ChatOutSvg}
+								size="md"
+								className="text-white shrink-0"
+							/>
+							<span className="whitespace-nowrap">Chats</span>
+						</div>
+						<div className="flex items-center gap-1.5 shrink-0">
+							{!chatsOpen && totalChatsBadge > 0 && (
+								<span className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+									{totalChatsBadge > 9 ? "9+" : totalChatsBadge}
+								</span>
+							)}
+							<svg
+								className={clsx("size-3.5 text-white/70 transition-transform duration-200", chatsOpen && "rotate-180")}
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								strokeWidth={2.5}
+							>
+								<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+							</svg>
+						</div>
+					</button>
 
+					{chatsOpen && (
+						<div className="flex flex-col gap-1 pl-3 my-1 border-l-2 border-white/20 ml-5">
+							<Link
+								href="/community/dashboard/chats?type=sponsorship"
+								onClick={onClose}
+								className={clsx(
+									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
+									isSponsorshipChat
+										? "bg-[#D12525] text-white font-medium"
+										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
+								)}
+							>
+								<span className="flex-1 whitespace-nowrap">Sponsorship Chats</span>
+								{unreadSponsorshipChatsCount > 0 && (
+									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+										{unreadSponsorshipChatsCount > 9 ? "9+" : unreadSponsorshipChatsCount}
+									</span>
+								)}
+							</Link>
+
+							<Link
+								href="/community/dashboard/chats?type=campaign"
+								onClick={onClose}
+								className={clsx(
+									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
+									isCampaignChat
+										? "bg-[#D12525] text-white font-medium"
+										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
+								)}
+							>
+								<span className="flex-1 whitespace-nowrap">Campaign Chats</span>
+								{unreadCampaignChatsCount > 0 && (
+									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+										{unreadCampaignChatsCount > 9 ? "9+" : unreadCampaignChatsCount}
+									</span>
+								)}
+							</Link>
+
+							<Link
+								href="/community/dashboard/space-chats"
+								onClick={onClose}
+								className={clsx(
+									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
+									isSpacesChat
+										? "bg-[#D12525] text-white font-medium"
+										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
+								)}
+							>
+								<span className="flex-1 whitespace-nowrap">Spaces Chats</span>
+								{unreadSpaceChatsCount > 0 && (
+									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+										{unreadSpaceChatsCount > 9 ? "9+" : unreadSpaceChatsCount}
+									</span>
+								)}
+							</Link>
+						</div>
+					)}
+				</div>
+
+				{NAV_ITEMS_BOTTOM.map(({ label, href, outlined: Outlined, filled: Filled }) => {
+					const isActive = pathname.startsWith(href)
 					const isNotifications = label === "Notifications"
-					const badgeCount = chatType === "sponsorship"
-						? unreadSponsorshipChatsCount
-						: chatType === "campaign"
-						? unreadCampaignChatsCount
-						: chatType === "spaces"
-						? unreadSpaceChatsCount
-						: label === "Support Chat"
-						? unreadSupportCount
-						: 0
+					const badgeCount = isNotifications ? unreadCount : label === "Support Chat" ? unreadSupportCount : 0
 
 					return (
 						<Link

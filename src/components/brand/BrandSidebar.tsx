@@ -24,6 +24,8 @@ import ChatFillSvg from "@/icons/filled/chat.svg"
 import DollarSvg from "@/icons/outlined/dollar.svg"
 import LockOutSvg from "@/icons/outlined/lock.svg"
 import LockFillSvg from "@/icons/filled/lock.svg"
+import CalendarOutSvg from "@/icons/outlined/calendar.svg"
+import CalendarFillSvg from "@/icons/filled/calendar.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -32,16 +34,13 @@ type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
 	{ label: "My Campaigns", href: "/brand/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
-	{ label: "Proposals", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Curated Experiences", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
-	{ label: "Community Spaces", href: "/brand/dashboard/community-spaces", outlined: UsersGroupSvg, filled: UsersGroupSvg },
+	{ label: "Community Spaces", href: "/brand/dashboard/community-spaces", outlined: CalendarOutSvg, filled: CalendarFillSvg },
 	{ label: "Locked Deals", href: "/brand/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
 ]
 
 const SECONDARY_NAV: NavItem[] = [
-	{ label: "Sponsorship Chats", href: "/brand/dashboard/chats?type=sponsorship", chatType: "sponsorship", outlined: ChatOutSvg, filled: ChatFillSvg },
-	{ label: "Campaign Chats", href: "/brand/dashboard/chats?type=campaign", chatType: "campaign", outlined: ChatOutSvg, filled: ChatFillSvg },
-	{ label: "Spaces Chats", href: "/brand/dashboard/space-chats", chatType: "spaces", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Billing", href: "/brand/dashboard/billing", outlined: DollarSvg, filled: DollarSvg },
 	{ label: "Support Chat", href: "/brand/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/brand/dashboard/notifications", outlined: BellSvg, filled: BellSvg },
@@ -78,6 +77,13 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 	const [unreadCampaignChatsCount, setUnreadCampaignChatsCount] = useState(0)
 	const [unreadSpaceChatsCount, setUnreadSpaceChatsCount] = useState(0)
 	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
+	const [chatsOpen, setChatsOpen] = useState(false)
+
+	const isChatsRoute = pathname.startsWith("/brand/dashboard/chats") || pathname.startsWith("/brand/dashboard/space-chats")
+	const isSponsorshipChat = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") === "sponsorship"
+	const isCampaignChat = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") !== "sponsorship"
+	const isSpacesChat = pathname.startsWith("/brand/dashboard/space-chats")
+	const totalChatsBadge = unreadSponsorshipChatsCount + unreadCampaignChatsCount + unreadSpaceChatsCount
 
 	const { notifications, init: initNotifs } = useNotificationStore()
 
@@ -302,25 +308,106 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 
 			{/* Navigation Bottom Items */}
 			<div className="px-4 pb-4 flex flex-col gap-1 mt-auto shrink-0">
-				{SECONDARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled, chatType }) => {
-					let isActive = false
-					if (chatType === "campaign") {
-						isActive = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") === "campaign"
-					} else if (chatType === "sponsorship") {
-						isActive = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") !== "campaign"
-					} else {
-						isActive = pathname.startsWith(href)
-					}
+				{/* Chats Menu with Sponsorship, Campaign, and Spaces Chats */}
+				<div className="flex flex-col">
+					<button
+						type="button"
+						onClick={() => setChatsOpen((prev) => !prev)}
+						className={clsx(
+							"w-full flex items-center justify-between px-4 py-2 rounded-2xl transition-all text-sm font-normal select-none text-left cursor-pointer",
+							isChatsRoute
+								? "bg-[#D12525] text-white"
+								: "text-white/90 hover:bg-[#D12525]/50 hover:text-white"
+						)}
+					>
+						<div className="flex items-center gap-2.5 min-w-0">
+							<Icon
+								as={isChatsRoute ? ChatFillSvg : ChatOutSvg}
+								size="md"
+								className="text-white shrink-0"
+							/>
+							<span className="whitespace-nowrap">Chats</span>
+						</div>
+						<div className="flex items-center gap-1.5 shrink-0">
+							{!chatsOpen && totalChatsBadge > 0 && (
+								<span className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+									{totalChatsBadge > 9 ? "9+" : totalChatsBadge}
+								</span>
+							)}
+							<svg
+								className={clsx("size-3.5 text-white/70 transition-transform duration-200", chatsOpen && "rotate-180")}
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								strokeWidth={2.5}
+							>
+								<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+							</svg>
+						</div>
+					</button>
 
-					const badgeCount = chatType === "sponsorship"
-						? unreadSponsorshipChatsCount
-						: chatType === "campaign"
-						? unreadCampaignChatsCount
-						: chatType === "spaces"
-						? unreadSpaceChatsCount
-						: label === "Support Chat"
-						? unreadSupportCount
-						: 0
+					{chatsOpen && (
+						<div className="flex flex-col gap-1 pl-3 my-1 border-l-2 border-white/20 ml-5">
+							<Link
+								href="/brand/dashboard/chats?type=campaign"
+								onClick={onClose}
+								className={clsx(
+									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
+									isCampaignChat
+										? "bg-[#D12525] text-white font-medium"
+										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
+								)}
+							>
+								<span className="flex-1 whitespace-nowrap">Campaign Chats</span>
+								{unreadCampaignChatsCount > 0 && (
+									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+										{unreadCampaignChatsCount > 9 ? "9+" : unreadCampaignChatsCount}
+									</span>
+								)}
+							</Link>
+
+							<Link
+								href="/brand/dashboard/chats?type=sponsorship"
+								onClick={onClose}
+								className={clsx(
+									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
+									isSponsorshipChat
+										? "bg-[#D12525] text-white font-medium"
+										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
+								)}
+							>
+								<span className="flex-1 whitespace-nowrap">Sponsorship Chats</span>
+								{unreadSponsorshipChatsCount > 0 && (
+									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+										{unreadSponsorshipChatsCount > 9 ? "9+" : unreadSponsorshipChatsCount}
+									</span>
+								)}
+							</Link>
+
+							<Link
+								href="/brand/dashboard/space-chats"
+								onClick={onClose}
+								className={clsx(
+									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
+									isSpacesChat
+										? "bg-[#D12525] text-white font-medium"
+										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
+								)}
+							>
+								<span className="flex-1 whitespace-nowrap">Spaces Chats</span>
+								{unreadSpaceChatsCount > 0 && (
+									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+										{unreadSpaceChatsCount > 9 ? "9+" : unreadSpaceChatsCount}
+									</span>
+								)}
+							</Link>
+						</div>
+					)}
+				</div>
+
+				{SECONDARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled }) => {
+					const isActive = pathname.startsWith(href)
+					const badgeCount = label === "Support Chat" ? unreadSupportCount : 0
 
 					return (
 						<Link

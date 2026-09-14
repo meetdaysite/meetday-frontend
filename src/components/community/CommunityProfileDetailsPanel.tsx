@@ -6,6 +6,7 @@ import UploadSvg from "@/icons/outlined/upload.svg"
 import clsx from "clsx"
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import Link from "next/link"
 
 interface CommunityProfileDetailsPanelProps {
 	community: HostCommunityProfile
@@ -19,6 +20,10 @@ interface CommunityProfileDetailsPanelProps {
 	onEdit?: () => void
 	onClose?: () => void
 	hideStatus?: boolean
+	viewFullProfileHref?: string
+	onViewFullProfile?: () => void
+	viewBrandPreviewHref?: string
+	onViewBrandPreview?: () => void
 }
 
 const STATUS_CONFIG: Record<HostCommunityProfile["approvalStatus"], { label: string; className: string }> = {
@@ -50,6 +55,10 @@ export function CommunityProfileDetailsPanel({
 	onEdit,
 	onClose,
 	hideStatus = false,
+	viewFullProfileHref,
+	onViewFullProfile,
+	viewBrandPreviewHref,
+	onViewBrandPreview,
 }: CommunityProfileDetailsPanelProps) {
 	const statusConfig = STATUS_CONFIG[community.approvalStatus]
 	const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null)
@@ -99,10 +108,47 @@ export function CommunityProfileDetailsPanel({
 	return (
 		<div className="w-full h-full flex flex-col bg-white p-6 overflow-y-auto animate-in fade-in duration-150">
 			{/* Panel Header */}
-			<div className="flex justify-between items-center pb-4 mb-4 border-b border-black/10 shrink-0">
-				<h2 className="text-xl font-heading font-black text-black">
-					Community Profile
-				</h2>
+			<div className="flex justify-between items-center pb-4 mb-4 border-b border-black/10 shrink-0 gap-3">
+				<div className="flex items-center gap-3 flex-wrap">
+					<h2 className="text-xl font-heading font-black text-black">
+						Community Profile
+					</h2>
+					{viewBrandPreviewHref ? (
+						<Link
+							href={viewBrandPreviewHref}
+							className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-[#FFC940] hover:bg-[#ffbe1a] text-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+						>
+							<span>Brand preview</span>
+							<span className="text-xs font-black">→</span>
+						</Link>
+					) : onViewBrandPreview ? (
+						<button
+							type="button"
+							onClick={onViewBrandPreview}
+							className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-[#FFC940] hover:bg-[#ffbe1a] text-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer"
+						>
+							<span>Brand preview</span>
+							<span className="text-xs font-black">→</span>
+						</button>
+					) : viewFullProfileHref ? (
+						<Link
+							href={viewFullProfileHref}
+							className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-[#FFC940] hover:bg-[#ffbe1a] text-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+						>
+							<span>View full profile</span>
+							<span className="text-xs font-black">→</span>
+						</Link>
+					) : onViewFullProfile ? (
+						<button
+							type="button"
+							onClick={onViewFullProfile}
+							className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-[#FFC940] hover:bg-[#ffbe1a] text-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer"
+						>
+							<span>View full profile</span>
+							<span className="text-xs font-black">→</span>
+						</button>
+					) : null}
+				</div>
 				{onClose && (
 					<button
 						type="button"

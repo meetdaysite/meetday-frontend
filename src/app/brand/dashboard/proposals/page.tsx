@@ -16,6 +16,7 @@ import {
 } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import { useBrandStore } from "@/store/brandStore"
+import { formatProposalDateRange } from "@/lib/eventForm"
 import clsx from "clsx"
 
 function formatDate(value: string | null): string {
@@ -147,7 +148,7 @@ function ProposalCard({
 		[proposal.hostProfile?.user?.firstName, proposal.hostProfile?.user?.lastName].filter(Boolean).join(" ") ||
 		[proposal.spaceProfile?.user?.firstName, proposal.spaceProfile?.user?.lastName].filter(Boolean).join(" ") ||
 		"Host"
-	const displayDate = proposal.eventDate ? new Date(proposal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""
+	const displayDate = formatProposalDateRange(proposal.eventDate, proposal.eventEndDate)
 
 	return (
 		<button
@@ -289,10 +290,10 @@ export default function ProposalsPage() {
 				<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 					<div>
 						<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
-							Active Proposals
+							Curated Experiences
 						</h1>
 						<p className="text-sm font-semibold text-black/50 mt-2">
-							Browse through all partnership proposals published across Meetday.
+							Browse through all curated experiences published across Meetday.
 						</p>
 					</div>
 

@@ -35,6 +35,7 @@ import {
 import { ActivateCommunityModal } from "@/components/community/ActivateCommunityModal"
 import { CommunityProfileDetailsPanel } from "@/components/community/CommunityProfileDetailsPanel"
 import { AddressAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
+import { formatProposalDate, formatProposalDateRange } from "@/lib/eventForm"
 import PdfViewer from "@/components/pdf/PdfViewer"
 
 import UploadSvg from "@/icons/outlined/upload.svg"
@@ -327,6 +328,7 @@ export default function ProposalPage() {
                 operatingCities={profile?.operatingCities}
                 socialLinks={profile?.socialLinks}
                 onEdit={openActivationModal}
+                viewBrandPreviewHref="/community/dashboard/profile/preview?from=proposal"
             />
         )
     }
@@ -1395,38 +1397,41 @@ export default function ProposalPage() {
                                     <div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-4 w-full flex flex-col justify-between gap-4 min-w-0">
                                         {/* Row 1: Start date | End date, Row 2: Venue & City */}
                                         <div className="grid grid-cols-2 gap-4">
-                                            {/* Start Date */}
+                                            {/* Start Date & End Date */}
                                             {(() => {
-                                                const startParts = displayDetails?.date ? displayDetails.date.split("-") : [];
-                                                const startDisplay = startParts.length === 3 ? `${startParts[2]}/${startParts[1]}/${startParts[0]}` : displayDetails?.date;
-                                                return startDisplay ? (
-                                                    <div>
-                                                        <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Start</p>
-                                                        <div className="mt-1">
-                                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-                                                                {startDisplay}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ) : null;
-                                            })()}
+                                                const startDisplay = formatProposalDate(displayDetails?.date);
+                                                const endDisplay = formatProposalDate(displayDetails?.endDate);
+                                                const hasBothDates = Boolean(startDisplay && endDisplay && endDisplay !== startDisplay);
 
-                                            {/* End Date */}
-                                            {(() => {
-                                                const startParts = displayDetails?.date ? displayDetails.date.split("-") : [];
-                                                const startDisplay = startParts.length === 3 ? `${startParts[2]}/${startParts[1]}/${startParts[0]}` : displayDetails?.date;
-                                                const endParts = displayDetails?.endDate ? displayDetails.endDate.split("-") : [];
-                                                const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : displayDetails?.endDate;
-                                                return endDisplay && endDisplay !== startDisplay ? (
-                                                    <div>
-                                                        <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">End</p>
-                                                        <div className="mt-1">
-                                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-                                                                {endDisplay}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ) : null;
+                                                return (
+                                                    <>
+                                                        {startDisplay ? (
+                                                            <div>
+                                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">
+                                                                    {hasBothDates ? "Start Date" : "Date"}
+                                                                </p>
+                                                                <div className="mt-1">
+                                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                                        {startDisplay}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        ) : null}
+
+                                                        {endDisplay && endDisplay !== startDisplay ? (
+                                                            <div>
+                                                                <p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">
+                                                                    {hasBothDates ? "End Date" : "Date"}
+                                                                </p>
+                                                                <div className="mt-1">
+                                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+                                                                        {endDisplay}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        ) : null}
+                                                    </>
+                                                );
                                             })()}
 
                                             {/* Venue & City — full width second row */}
@@ -2332,26 +2337,21 @@ export default function ProposalPage() {
                                                         </p>
                                                     </div>
                                                 ) : (
-                                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+                                                    <div className="flex flex-col gap-4 w-full">
                                                         {filteredProposals.map((p) => {
                                                             const isViewingRevision = p.pendingRevision != null;
                                                             const cardData = isViewingRevision ? p.pendingRevision! : p;
                                                             const isCompleted = isProposalCompleted(p);
                                                             const imgUrl = typeof cardData.image === "string" ? cardData.image : cardData.image ? URL.createObjectURL(cardData.image) : null;
-                                                            // Format date from YYYY-MM-DD to DD/MM/YYYY
-                                                            const parts = cardData.date ? cardData.date.split("-") : [];
-                                                            const startDisplay = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : cardData.date;
-                                                            const endParts = cardData.endDate ? cardData.endDate.split("-") : [];
-                                                            const endDisplay = endParts.length === 3 ? `${endParts[2]}/${endParts[1]}/${endParts[0]}` : cardData.endDate;
-                                                            const displayDate = endDisplay && endDisplay !== startDisplay ? `${startDisplay} - ${endDisplay}` : startDisplay;
+                                                            const displayDate = formatProposalDateRange(cardData.date, cardData.endDate);
                                                             return (
                                                                 <div
                                                                     key={p.id}
                                                                     onClick={() => setSelectedProposal(p)}
-                                                                    className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-full"
+                                                                    className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-full shrink-0"
                                                                 >
                                                                     {/* Image / Logo */}
-                                                                    <div className="relative w-[120px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
+                                                                    <div className="relative w-[120px] sm:w-[150px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
                                                                         {imgUrl ? (
                                                                             // eslint-disable-next-line @next/next/no-img-element
                                                                             <img
@@ -2369,7 +2369,7 @@ export default function ProposalPage() {
                                                                         {/* Status Badge */}
                                                                         <span
                                                                             className={clsx(
-                                                                                "absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+                                                                                "absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] z-10",
                                                                                 isCompleted && "bg-neutral-800 text-white",
                                                                                 !isCompleted && p.status === "DRAFT" && "bg-slate-100 text-black",
                                                                                 !isCompleted && isViewingRevision && "bg-[#F5C343] text-black",
@@ -2420,23 +2420,27 @@ export default function ProposalPage() {
                                                                             <p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">{cardData.about}</p>
                                                                         </div>
 
-                                                                        <div className="flex flex-wrap gap-1.5 mt-2">
-                                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                                                                                {displayDate}
-                                                                            </span>
-                                                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                                                                                {cardData.guestCount} Guests
-                                                                            </span>
-                                                                            {(cardData.sponsorshipType === "CASH" || cardData.sponsorshipType === "BOTH" || !cardData.sponsorshipType) && (
-                                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-900 border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                                                                                    Cash
+                                                                        <div className="flex items-center justify-between gap-2 mt-2 pt-1">
+                                                                            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] shrink-0">
+                                                                                    {displayDate}
                                                                                 </span>
-                                                                            )}
-                                                                            {(cardData.sponsorshipType === "BARTER" || cardData.sponsorshipType === "BOTH") && (
-                                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                                                                                    Barter
+                                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] shrink-0">
+                                                                                    {cardData.guestCount} Guests
                                                                                 </span>
-                                                                            )}
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1.5 ml-auto shrink-0">
+                                                                                {(cardData.sponsorshipType === "CASH" || cardData.sponsorshipType === "BOTH" || !cardData.sponsorshipType) && (
+                                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-100 text-emerald-900 border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                                                                                        Cash
+                                                                                    </span>
+                                                                                )}
+                                                                                {(cardData.sponsorshipType === "BARTER" || cardData.sponsorshipType === "BOTH") && (
+                                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#FFC940] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                                                                                        Barter
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -2542,6 +2546,7 @@ export default function ProposalPage() {
                                     setShowCommunityMobilePanel(false)
                                     openActivationModal()
                                 }}
+                                viewBrandPreviewHref="/community/dashboard/profile/preview?from=proposal"
                             />
                         </div>
                     </div>
