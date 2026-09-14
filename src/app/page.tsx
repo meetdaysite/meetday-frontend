@@ -102,7 +102,7 @@ export default function RootPage() {
 						rel="noopener noreferrer" 
 						className="text-black font-semibold text-xs sm:text-sm hover:text-[#EE2C2C] transition-colors"
 					>
-						Meetday's Story
+						About Meetday
 					</a>
 
 					{/* Pricing Dropdown */}
@@ -416,14 +416,14 @@ export default function RootPage() {
 				{/* Mobile Navigation Dropdown Menu */}
 				{isMobileMenuOpen && (
 					<div className="md:hidden absolute top-20 left-6 right-6 bg-white border-[3px] border-black rounded-[24px] shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] p-5 z-40 flex flex-col gap-4 text-left animate-in fade-in slide-in-from-top-4 duration-200">
-						{/* Option 1: Meetday's Story */}
+						{/* Option 1: About Meetday */}
 						<a 
 							href="https://meetday.ai/website" 
 							target="_blank" 
 							rel="noopener noreferrer" 
 							className="text-black font-black text-sm hover:text-[#EE2C2C] transition-colors py-2 border-b border-black/10"
 						>
-							Meetday's Story
+							About Meetday
 						</a>
 
 						{/* Option 2: Pricing Accordion (Inlined in mobile menu) */}
