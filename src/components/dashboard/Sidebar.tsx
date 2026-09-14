@@ -8,7 +8,7 @@ import clsx from "clsx"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
-import { getHostCommunityProfile, getMySponsorshipProposals, getMySponsorshipChats, getMySpaceChats } from "@/lib/api"
+import { getHostCommunityProfile, getMySponsorshipProposals, getMySponsorshipChats, getMySpaceChats, getMySpaceHostChats } from "@/lib/api"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useToastStore } from "@/store/toastStore"
 import type { ComponentType, SVGProps } from "react"
@@ -77,14 +77,16 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const [unreadSponsorshipChatsCount, setUnreadSponsorshipChatsCount] = useState(0)
 	const [unreadCampaignChatsCount, setUnreadCampaignChatsCount] = useState(0)
 	const [unreadSpaceChatsCount, setUnreadSpaceChatsCount] = useState(0)
+	const [unreadCommunityRequestsCount, setUnreadCommunityRequestsCount] = useState(0)
 	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
 	const [chatsOpen, setChatsOpen] = useState(false)
 
-	const isChatsRoute = pathname.startsWith("/community/dashboard/chats") || pathname.startsWith("/community/dashboard/space-chats")
+	const isChatsRoute = pathname.startsWith("/community/dashboard/chats") || pathname.startsWith("/community/dashboard/space-chats") || pathname.startsWith("/community/dashboard/requests")
 	const isCampaignChat = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") === "campaign"
 	const isSponsorshipChat = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") !== "campaign"
 	const isSpacesChat = pathname.startsWith("/community/dashboard/space-chats")
-	const totalChatsBadge = unreadSponsorshipChatsCount + unreadCampaignChatsCount + unreadSpaceChatsCount
+	const isCommunityRequestsChat = pathname.startsWith("/community/dashboard/requests")
+	const totalChatsBadge = unreadSponsorshipChatsCount + unreadCampaignChatsCount + unreadSpaceChatsCount + unreadCommunityRequestsCount
 
 	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
 	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
@@ -243,6 +245,21 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 		const interval = setInterval(updateSpaceCount, 8000)
 		return () => clearInterval(interval)
 	}, [profile?.id, notifications])
+
+	// Space Partner partnership Requests badge (Space -> Community, reverse direction of Spaces Chats).
+	useEffect(() => {
+		if (!profile?.id) return
+		const updateCount = () => {
+			getMySpaceHostChats(undefined, "HOST")
+				.then((threads) => {
+					setUnreadCommunityRequestsCount(threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0))
+				})
+				.catch(() => {})
+		}
+		updateCount()
+		const interval = setInterval(updateCount, 8000)
+		return () => clearInterval(interval)
+	}, [profile?.id])
 
 	const activeNotifs = notifications.filter(n => !n.isRead && !dismissedNotifIds.includes(n.id))
 	const latestNotif = activeNotifs[0]
@@ -569,6 +586,24 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 								{unreadSpaceChatsCount > 0 && (
 									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
 										{unreadSpaceChatsCount > 9 ? "9+" : unreadSpaceChatsCount}
+									</span>
+								)}
+							</Link>
+
+							<Link
+								href="/community/dashboard/requests"
+								onClick={onClose}
+								className={clsx(
+									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
+									isCommunityRequestsChat
+										? "bg-[#D12525] text-white font-medium"
+										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
+								)}
+							>
+								<span className="flex-1 whitespace-nowrap">Space Partner Requests</span>
+								{unreadCommunityRequestsCount > 0 && (
+									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+										{unreadCommunityRequestsCount > 9 ? "9+" : unreadCommunityRequestsCount}
 									</span>
 								)}
 							</Link>

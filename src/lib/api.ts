@@ -1828,6 +1828,251 @@ export async function getSpaceDealReportPdfUrl(interestId: string, role?: SpaceC
 	return typeof data.data === "string" ? data.data : data.data.url
 }
 
+// ─── Space Host Interest (Space Partner <-> Community partnership requests) ─
+// Mirrors the Space Deal block above almost exactly — the Space is always the requester and
+// always locks the deal/submits the report, the Host/Community is always the target and approves.
+
+export type SpaceHostChatStatus = "REQUESTED" | "ACCEPTED" | "DECLINED"
+export type SpaceHostChatSenderType = "SPACE" | "HOST" | "ADMIN"
+export type SpaceHostChatRole = "HOST" | "SPACE"
+
+export type SpaceHostChatThread = {
+	id: string
+	hostProfileId: string
+	spaceProfileId: string
+	chatStatus: SpaceHostChatStatus
+	createdAt: string
+	chatAcceptedAt: string | null
+	lastMessageAt: string | null
+	lastMessagePreview: string | null
+	unreadCount: number
+	counterpartName: string
+	counterpartAvatarUrl: string | null
+	isDealLocked?: boolean
+	isDealClosed?: boolean
+}
+
+export type SpaceHostChatReplyTo = {
+	id: string
+	senderType: SpaceHostChatSenderType
+	content: string
+	hasMedia: boolean
+}
+
+export type SpaceHostChatMessage = {
+	id: string
+	senderType: SpaceHostChatSenderType
+	senderId: string
+	content: string
+	mediaUrl?: string | null
+	deletedAt?: string | null
+	createdAt: string
+	wasRedacted?: boolean
+	replyTo?: SpaceHostChatReplyTo | null
+	messageType?: "TEXT" | "SYSTEM"
+}
+
+export async function markSpaceHostInterest(
+	hostProfileId: string,
+	message?: string,
+): Promise<{ message: string; alreadyInterested: boolean; interestId: string; chatStatus: SpaceHostChatStatus }> {
+	const { data } = await apiClient.post<{
+		success: boolean
+		data: { message: string; alreadyInterested: boolean; interestId: string; chatStatus: SpaceHostChatStatus }
+	}>(`/space-host/communities/${hostProfileId}/interest`, { ...(message && { message }) })
+	return data.data
+}
+
+export async function getMySpaceHostChats(status?: SpaceHostChatStatus, role?: SpaceHostChatRole): Promise<SpaceHostChatThread[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: SpaceHostChatThread[] }>("/space-host/chats", {
+		params: { ...(status && { status }), ...(role && { role }) },
+	})
+	return data.data
+}
+
+export async function getSpaceHostChatMessages(
+	interestId: string,
+	role?: SpaceHostChatRole,
+): Promise<{ messages: SpaceHostChatMessage[]; chatStatus: SpaceHostChatStatus }> {
+	const { data } = await apiClient.get<{ success: boolean; data: { messages: SpaceHostChatMessage[]; chatStatus: SpaceHostChatStatus } }>(
+		`/space-host/chats/${interestId}/messages`,
+		{ params: role ? { role } : undefined },
+	)
+	return data.data
+}
+
+export async function sendSpaceHostChatMessage(
+	interestId: string,
+	payload: { content?: string; mediaKey?: string; replyToId?: string; messageType?: "TEXT" | "SYSTEM" },
+	role?: SpaceHostChatRole,
+): Promise<SpaceHostChatMessage> {
+	const { data } = await apiClient.post<{ success: boolean; data: SpaceHostChatMessage }>(`/space-host/chats/${interestId}/messages`, {
+		...payload,
+		...(role && { asRole: role }),
+	})
+	return data.data
+}
+
+export async function acceptSpaceHostChatRequest(interestId: string, role?: SpaceHostChatRole): Promise<{ message: string; chatStatus: SpaceHostChatStatus }> {
+	const { data } = await apiClient.post<{ success: boolean; data: { message: string; chatStatus: SpaceHostChatStatus } }>(
+		`/space-host/chats/${interestId}/accept`,
+		{},
+		{ params: role ? { role } : undefined },
+	)
+	return data.data
+}
+
+export async function declineSpaceHostChatRequest(interestId: string, role?: SpaceHostChatRole): Promise<{ message: string; chatStatus: SpaceHostChatStatus }> {
+	const { data } = await apiClient.post<{ success: boolean; data: { message: string; chatStatus: SpaceHostChatStatus } }>(
+		`/space-host/chats/${interestId}/decline`,
+		{},
+		{ params: role ? { role } : undefined },
+	)
+	return data.data
+}
+
+export type SpaceHostDealStatus = "PENDING_APPROVAL" | "CHANGES_REQUESTED" | "APPROVED"
+
+export type SpaceHostDealPayload = {
+	projectName: string
+	goals?: string[] | string
+	venue: string
+	time?: string
+	targetAudience?: string[] | string
+	startDate: string
+	endDate?: string
+	sponsorshipAmount: number
+	barterElements?: string
+	deliverables: string
+	otherTerms?: string
+	additionalNotes?: string
+}
+
+export type SpaceHostDeal = {
+	id: string
+	spaceHostInterestId: string
+	projectName: string
+	goals?: string[] | string | null
+	venue: string
+	time?: string | null
+	targetAudience?: string[] | string | null
+	startDate: string
+	endDate?: string | null
+	sponsorshipAmount: number | string
+	barterElements?: string | null
+	deliverables: string
+	otherTerms?: string | null
+	additionalNotes?: string | null
+	status: SpaceHostDealStatus
+	changeRequestNote?: string | null
+	approvedAt?: string | null
+	createdById?: string
+	createdAt: string
+	updatedAt: string
+}
+
+export async function getSpaceHostDeal(interestId: string): Promise<SpaceHostDeal | null> {
+	const { data } = await apiClient.get<{ success: boolean; data: SpaceHostDeal | null }>(`/space-host/chats/${interestId}/deal`)
+	return data.data
+}
+
+export async function createSpaceHostDeal(interestId: string, payload: SpaceHostDealPayload, role?: SpaceHostChatRole): Promise<SpaceHostDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SpaceHostDeal }>(`/space-host/chats/${interestId}/deal`, { ...payload, ...(role && { asRole: role }) })
+	return data.data
+}
+
+export async function updateSpaceHostDeal(interestId: string, payload: SpaceHostDealPayload, role?: SpaceHostChatRole): Promise<SpaceHostDeal> {
+	const { data } = await apiClient.put<{ success: boolean; data: SpaceHostDeal }>(`/space-host/chats/${interestId}/deal`, { ...payload, ...(role && { asRole: role }) })
+	return data.data
+}
+
+export async function approveSpaceHostDeal(interestId: string, role?: SpaceHostChatRole): Promise<SpaceHostDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SpaceHostDeal }>(`/space-host/chats/${interestId}/deal/approve`, {}, { params: role ? { role } : undefined })
+	return data.data
+}
+
+export async function requestSpaceHostDealChanges(interestId: string, payload: { note?: string }, role?: SpaceHostChatRole): Promise<SpaceHostDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: SpaceHostDeal }>(`/space-host/chats/${interestId}/deal/request-changes`, {
+		...payload,
+		...(role && { asRole: role }),
+	})
+	return data.data
+}
+
+export type SpaceHostDealReport = {
+	id: string
+	spaceHostDealId?: string
+	spaceHostInterestId?: string
+	projectName?: string
+	eventDate?: string
+	venue?: string
+	time?: string | null
+	guestCount?: string | null
+	ageRange?: string | null
+	deliverables?: any
+	videoLinks?: string[]
+	socialLinks?: string[]
+	status?: "PENDING" | "APPROVED" | "REVISION_REQUESTED" | string
+	revisionNote?: string | null
+	summary: string
+	proofKeys: string[]
+	proofUrls?: string[]
+	notes?: string | null
+	submittedById?: string
+	submittedAt?: string
+	updatedAt?: string
+}
+
+export function isSpaceHostReportApproved(report?: SpaceHostDealReport | null): boolean {
+	if (!report) return false
+	if (report.status === "APPROVED") return true
+	try {
+		const parsed = JSON.parse(report.summary)
+		return parsed.status === "APPROVED"
+	} catch {
+		return false
+	}
+}
+
+export type SpaceHostDealReportPayload = {
+	projectName?: string
+	eventDate?: string
+	venue?: string
+	time?: string
+	guestCount?: string
+	ageRange?: string
+	deliverables?: any
+	videoLinks?: string[]
+	socialLinks?: string[]
+	status?: "PENDING" | "APPROVED" | "REVISION_REQUESTED" | string
+	revisionNote?: string
+	summary: string
+	proofKeys?: string[]
+	notes?: string
+}
+
+export async function getSpaceHostDealReport(interestId: string, role?: SpaceHostChatRole): Promise<SpaceHostDealReport | null> {
+	const { data } = await apiClient.get<{ success: boolean; data: SpaceHostDealReport | null }>(
+		`/space-host/chats/${interestId}/deal/report`,
+		{ params: role ? { role } : undefined }
+	)
+	return data.data
+}
+
+export async function upsertSpaceHostDealReport(
+	interestId: string,
+	payload: SpaceHostDealReportPayload,
+	role?: SpaceHostChatRole,
+): Promise<SpaceHostDealReport> {
+	const { data } = await apiClient.put<{ success: boolean; data: SpaceHostDealReport }>(
+		`/space-host/chats/${interestId}/deal/report`,
+		payload,
+		{ params: role ? { role } : undefined }
+	)
+	return data.data
+}
+
+
 export async function getHostTeamMembers(): Promise<TeamMembersList> {
 	const { data } = await apiClient.get<{ success: boolean; data: TeamMembersList }>("/hosts/community/members")
 	return data.data
@@ -2575,7 +2820,7 @@ export async function getCommunityAnnouncements(
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
-	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "SPACE_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "SPONSORSHIP_DEAL_REPORT_MEDIA" | "SPACE_DEAL_REPORT_MEDIA" | "COMMUNITY_BRAND_LOGO_MEDIA"
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "SPACE_CHAT_MEDIA" | "SPACE_HOST_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "SPONSORSHIP_DEAL_REPORT_MEDIA" | "SPACE_DEAL_REPORT_MEDIA" | "SPACE_HOST_DEAL_REPORT_MEDIA" | "COMMUNITY_BRAND_LOGO_MEDIA"
 	contentType: string
 	resourceId?: string
 	mediaType?: string

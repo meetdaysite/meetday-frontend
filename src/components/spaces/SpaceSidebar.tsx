@@ -9,7 +9,7 @@ import { useSpaceStore } from "@/store/spaceStore"
 import { useToastStore } from "@/store/toastStore"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useState, useEffect, type ComponentType, type SVGProps } from "react"
-import { getMySpaceChats, getMySponsorshipChats } from "@/lib/api"
+import { getMySpaceChats, getMySponsorshipChats, getMySpaceHostChats } from "@/lib/api"
 
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import WidgetSvg from "@/icons/filled/widget.svg"
@@ -37,6 +37,7 @@ type NavItem = {
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/spaces/dashboard", outlined: WidgetsSvg, filled: WidgetSvg, exact: true },
 	{ label: "Experience Proposals", href: "/spaces/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Communities", href: "/spaces/dashboard/communities", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "Locked Deals", href: "/spaces/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
 	{ label: "Brand Campaigns", href: "/spaces/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg, disabled: true },
 ]
@@ -63,13 +64,15 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 	const [unreadCommunityChatsCount, setUnreadCommunityChatsCount] = useState(0)
 	const [unreadBrandChatsCount, setUnreadBrandChatsCount] = useState(0)
 	const [unreadSponsorshipChatsCount, setUnreadSponsorshipChatsCount] = useState(0)
+	const [unreadCommunityRequestsCount, setUnreadCommunityRequestsCount] = useState(0)
 	const [chatsOpen, setChatsOpen] = useState(false)
 
-	const isChatsRoute = pathname.startsWith("/spaces/dashboard/chats") || pathname.startsWith("/spaces/dashboard/sponsorship-chats")
+	const isChatsRoute = pathname.startsWith("/spaces/dashboard/chats") || pathname.startsWith("/spaces/dashboard/sponsorship-chats") || pathname.startsWith("/spaces/dashboard/community-requests")
 	const isBrandChat = pathname.startsWith("/spaces/dashboard/chats") && searchParams.get("type") === "brand"
 	const isCommunityChat = pathname.startsWith("/spaces/dashboard/chats") && searchParams.get("type") !== "brand"
 	const isSponsorshipChat = pathname.startsWith("/spaces/dashboard/sponsorship-chats")
-	const totalChatsBadge = unreadCommunityChatsCount + unreadBrandChatsCount + unreadSponsorshipChatsCount
+	const isCommunityRequestsChat = pathname.startsWith("/spaces/dashboard/community-requests")
+	const totalChatsBadge = unreadCommunityChatsCount + unreadBrandChatsCount + unreadSponsorshipChatsCount + unreadCommunityRequestsCount
 
 	const unreadSupportCount = notifications.filter(n =>
 		!n.isRead &&
@@ -106,6 +109,11 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 			getMySponsorshipChats(undefined, "SPACE")
 				.then((threads) => {
 					setUnreadSponsorshipChatsCount(threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0))
+				})
+				.catch(() => {})
+			getMySpaceHostChats(undefined, "SPACE")
+				.then((threads) => {
+					setUnreadCommunityRequestsCount(threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0))
 				})
 				.catch(() => {})
 		}
@@ -295,6 +303,24 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 								{unreadSponsorshipChatsCount > 0 && (
 									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
 										{unreadSponsorshipChatsCount > 9 ? "9+" : unreadSponsorshipChatsCount}
+									</span>
+								)}
+							</Link>
+
+							<Link
+								href="/spaces/dashboard/community-requests"
+								onClick={onClose}
+								className={clsx(
+									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
+									isCommunityRequestsChat
+										? "bg-[#D12525] text-white font-medium"
+										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
+								)}
+							>
+								<span className="flex-1 whitespace-nowrap">Community Requests</span>
+								{unreadCommunityRequestsCount > 0 && (
+									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+										{unreadCommunityRequestsCount > 9 ? "9+" : unreadCommunityRequestsCount}
 									</span>
 								)}
 							</Link>
