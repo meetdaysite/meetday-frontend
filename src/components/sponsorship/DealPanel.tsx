@@ -123,7 +123,7 @@ export const PAYMENT_STATUS_COLOR: Record<DealPaymentDisplayStatus, string> = {
 // sides see the same thing, regardless of how far back the actual deal-related chat messages are.
 export function DealBanner({
 	deal,
-	role,
+	role: roleProp,
 	onLock,
 	onEdit,
 	onView,
@@ -133,7 +133,7 @@ export function DealBanner({
 	isCampaign = false,
 }: {
 	deal: SponsorshipDeal | null
-	role: "HOST" | "BRAND"
+	role: "HOST" | "SPACE" | "BRAND"
 	onLock?: () => void
 	onEdit?: () => void
 	onView: () => void
@@ -142,6 +142,9 @@ export function DealBanner({
 	report?: SponsorshipDealReport | null
 	isCampaign?: boolean
 }) {
+	// A Space Partner is the proposal owner exactly like a Host — normalize once here so every
+	// existing `role === "HOST"` owner-side check below applies to Space too, without touching each.
+	const role: "HOST" | "BRAND" = roleProp === "SPACE" ? "HOST" : roleProp
 	const canLockOrEdit = isCampaign ? role === "BRAND" : role === "HOST"
 
 	if (!deal) {
@@ -602,7 +605,7 @@ export function DealFormModal({
 export function DealDetailsModal({
 	interestId,
 	deal,
-	role,
+	role: roleProp,
 	isCampaign = false,
 	campaignId,
 	onClose,
@@ -610,12 +613,15 @@ export function DealDetailsModal({
 }: {
 	interestId: string
 	deal: SponsorshipDeal
-	role: "HOST" | "BRAND"
+	role: "HOST" | "SPACE" | "BRAND"
 	isCampaign?: boolean
 	campaignId?: string
 	onClose: () => void
 	onUpdated: (deal: SponsorshipDeal) => void
 }) {
+	// A Space Partner is the proposal owner exactly like a Host — normalize once here so every
+	// existing `role === "HOST"` owner-side check below applies to Space too, without touching each.
+	const role: "HOST" | "BRAND" = roleProp === "SPACE" ? "HOST" : roleProp
 	const [requestingChanges, setRequestingChanges] = useState(false)
 	const [note, setNote] = useState("")
 	const [busy, setBusy] = useState(false)
@@ -881,13 +887,16 @@ export function DealDetailsModal({
 // it read-only via the same modal.
 export function DealReportModal({
 	interestId,
-	role,
+	role: roleProp,
 	onClose,
 }: {
 	interestId: string
-	role: "HOST" | "BRAND"
+	role: "HOST" | "SPACE" | "BRAND"
 	onClose: () => void
 }) {
+	// A Space Partner is the proposal owner exactly like a Host — normalize once here so every
+	// existing `role === "HOST"` owner-side check below applies to Space too, without touching each.
+	const role: "HOST" | "BRAND" = roleProp === "SPACE" ? "HOST" : roleProp
 	const [loading, setLoading] = useState(true)
 	const [report, setReport] = useState<SponsorshipDealReport | null>(null)
 	const [deal, setDeal] = useState<SponsorshipDeal | null>(null)

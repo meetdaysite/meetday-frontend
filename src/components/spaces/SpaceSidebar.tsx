@@ -9,7 +9,7 @@ import { useSpaceStore } from "@/store/spaceStore"
 import { useToastStore } from "@/store/toastStore"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useState, useEffect, type ComponentType, type SVGProps } from "react"
-import { getMySpaceChats } from "@/lib/api"
+import { getMySpaceChats, getMySponsorshipChats } from "@/lib/api"
 
 import WidgetsSvg from "@/icons/outlined/widgets.svg"
 import WidgetSvg from "@/icons/filled/widget.svg"
@@ -30,13 +30,14 @@ type NavItem = {
 	outlined: SvgIcon
 	filled: SvgIcon
 	exact?: boolean
-	chatType?: "community" | "brand"
+	chatType?: "community" | "brand" | "sponsorship"
 }
 
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/spaces/dashboard", outlined: WidgetsSvg, filled: WidgetSvg, exact: true },
 	{ label: "Proposals", href: "/spaces/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Locked Deals", href: "/spaces/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
+	{ label: "Sponsorship Chats", href: "/spaces/dashboard/sponsorship-chats", chatType: "sponsorship", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Community Chats", href: "/spaces/dashboard/chats?type=community", chatType: "community", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Brand Chats", href: "/spaces/dashboard/chats?type=brand", chatType: "brand", outlined: ChatOutSvg, filled: ChatFillSvg },
 ]
@@ -62,6 +63,7 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 	const avatarUrl = profile?.user?.avatarUrl
 	const [unreadCommunityChatsCount, setUnreadCommunityChatsCount] = useState(0)
 	const [unreadBrandChatsCount, setUnreadBrandChatsCount] = useState(0)
+	const [unreadSponsorshipChatsCount, setUnreadSponsorshipChatsCount] = useState(0)
 	const unreadSupportCount = notifications.filter(n =>
 		!n.isRead &&
 		n.title === "Meetday" &&
@@ -92,6 +94,11 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 						.reduce((sum, t) => sum + (t.unreadCount || 0), 0)
 					setUnreadCommunityChatsCount(commCount)
 					setUnreadBrandChatsCount(brandCount)
+				})
+				.catch(() => {})
+			getMySponsorshipChats(undefined, "SPACE")
+				.then((threads) => {
+					setUnreadSponsorshipChatsCount(threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0))
 				})
 				.catch(() => {})
 		}
@@ -125,6 +132,8 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 						isActive = pathname.startsWith("/spaces/dashboard/chats") && searchParams.get("type") === "brand"
 					} else if (chatType === "community") {
 						isActive = pathname.startsWith("/spaces/dashboard/chats") && searchParams.get("type") !== "brand"
+					} else if (chatType === "sponsorship") {
+						isActive = pathname.startsWith("/spaces/dashboard/sponsorship-chats")
 					} else if (exact) {
 						isActive = pathname === href
 					} else {
@@ -135,6 +144,8 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 						? unreadCommunityChatsCount
 						: chatType === "brand"
 						? unreadBrandChatsCount
+						: chatType === "sponsorship"
+						? unreadSponsorshipChatsCount
 						: 0
 
 					return (

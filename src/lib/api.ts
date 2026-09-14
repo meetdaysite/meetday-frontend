@@ -842,7 +842,7 @@ export async function markCampaignInterest(
 // ─── TriChat: Host ↔ Brand (+ Admin) chat tied to a sponsorship interest ────────
 
 export type SponsorshipChatStatus = "REQUESTED" | "ACCEPTED"
-export type ChatSenderType = "HOST" | "BRAND" | "ADMIN"
+export type ChatSenderType = "HOST" | "SPACE" | "BRAND" | "ADMIN"
 
 export type SponsorshipChatThread = {
 	id: string
@@ -855,6 +855,8 @@ export type SponsorshipChatThread = {
 	lastMessagePreview: string | null
 	counterpartName: string
 	counterpartAvatarUrl?: string | null
+	// Whether the proposal owner (from the Brand's point of view) is a Community or a Space.
+	counterpartType?: "HOST" | "SPACE"
 	unreadCount: number
 	hasUnreadMention?: boolean
 	sponsorshipProposalId?: string | null
@@ -890,7 +892,7 @@ export type SponsorshipChatMessage = {
 
 export async function getMySponsorshipChats(
 	status?: SponsorshipChatStatus,
-	role?: "HOST" | "BRAND",
+	role?: "HOST" | "SPACE" | "BRAND",
 ): Promise<SponsorshipChatThread[]> {
 	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipChatThread[] }>(
 		"/sponsorships/chats",
@@ -906,7 +908,7 @@ export async function getMySponsorshipChats(
 
 export async function getSponsorshipChatMessages(
 	interestId: string,
-	role?: "HOST" | "BRAND",
+	role?: "HOST" | "SPACE" | "BRAND",
 ): Promise<{ messages: SponsorshipChatMessage[]; chatStatus: SponsorshipChatStatus; unreadCount: number; firstUnreadMessageId: string | null }> {
 	const { data } = await apiClient.get<{
 		success: boolean
@@ -921,7 +923,7 @@ export async function markThreadNotificationsRead(threadId: string): Promise<voi
 
 export async function sendSponsorshipChatMessage(
 	interestId: string,
-	payload: { content?: string; mediaKey?: string; replyToId?: string; messageType?: "TEXT" | "SYSTEM"; asRole?: "HOST" | "BRAND" },
+	payload: { content?: string; mediaKey?: string; replyToId?: string; messageType?: "TEXT" | "SYSTEM"; asRole?: "HOST" | "SPACE" | "BRAND" },
 ): Promise<SponsorshipChatMessage> {
 	const { data } = await apiClient.post<{ success: boolean; data: SponsorshipChatMessage }>(
 		`/sponsorships/chats/${interestId}/messages`,
