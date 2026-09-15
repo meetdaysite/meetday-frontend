@@ -5,13 +5,11 @@ import clsx from "clsx"
 import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { SpaceChatDashboard } from "@/components/spaces/SpaceChatDashboard"
-import { SpaceHostChatDashboard } from "@/components/spaces/SpaceHostChatDashboard"
 
 function SpacesChatsContent() {
 	const searchParams = useSearchParams()
 	const isBrand = searchParams.get("type") === "brand"
 	const category = isBrand ? "BRAND" : "COMMUNITY"
-	const isSentRequests = !isBrand && searchParams.get("sub") === "sent-requests"
 
 	return (
 		<div className="flex flex-col flex-1 min-h-0 bg-white">
@@ -30,9 +28,7 @@ function SpacesChatsContent() {
 						<p className="text-xs sm:text-sm font-semibold text-black/50 mt-1">
 							{isBrand
 								? "Respond to brands interested in your space."
-								: isSentRequests
-									? "Requests you've sent to communities to partner with them."
-									: "Respond to communities interested in your space."}
+								: "Collaborate with communities and manage your partnership chats and requests."}
 						</p>
 					</div>
 
@@ -62,52 +58,16 @@ function SpacesChatsContent() {
 					</div>
 				</div>
 
-				{!isBrand && (
-					<div className="inline-flex items-center p-1 bg-black/5 rounded-2xl border-2 border-black/10 self-start shrink-0">
-						<Link
-							href="/spaces/dashboard/chats?type=community"
-							className={clsx(
-								"px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all",
-								!isSentRequests
-									? "bg-[#EE2C2C] text-white shadow-sm"
-									: "text-black/60 hover:text-black"
-							)}
-						>
-							Chats
-						</Link>
-						<Link
-							href="/spaces/dashboard/chats?type=community&sub=sent-requests"
-							className={clsx(
-								"px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all",
-								isSentRequests
-									? "bg-[#EE2C2C] text-white shadow-sm"
-									: "text-black/60 hover:text-black"
-							)}
-						>
-							Sent Requests
-						</Link>
-					</div>
-				)}
-
-				{isSentRequests ? (
-					<SpaceHostChatDashboard
-						key="sent-requests"
-						role="SPACE"
-						emptyLabel="You haven't sent any partnership requests to communities yet."
-					/>
-				) : (
-					<SpaceChatDashboard
-						key={category}
-						role="SPACE"
-						canRespond
-						category={category}
-						emptyLabel={
-							isBrand
-								? "No brands have expressed interest in your space yet."
-								: "No communities have expressed interest in your space yet."
-						}
-					/>
-				)}
+				<SpaceChatDashboard
+					key={category}
+					role="SPACE"
+					category={category}
+					emptyLabel={
+						isBrand
+							? "No brands have expressed interest in your space yet."
+							: "No communities have expressed interest in your space yet."
+					}
+				/>
 			</div>
 		</div>
 	)
@@ -120,4 +80,3 @@ export default function SpacesChatsPage() {
 		</Suspense>
 	)
 }
-

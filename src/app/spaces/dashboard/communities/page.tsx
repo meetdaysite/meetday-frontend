@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { getBrandCommunities, getMySpaceChats, getMySpaceHostChats, markSpaceHostInterest, type BrandCommunity } from "@/lib/api"
+import Link from "next/link"
+import { getBrandCommunities, getMySpaceChats, getMySpaceHostChats, markSpaceHostInterest, type BrandCommunity, type SpaceChatThread, type SpaceHostChatThread } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import { toast } from "@/lib/toast"
 import { Skeleton } from "@/components/ui/Skeleton"
@@ -47,11 +48,8 @@ export default function SpaceCommunitiesBrowsePage() {
 	const [communities, setCommunities] = useState<BrandCommunity[] | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [selected, setSelected] = useState<BrandCommunity | null>(null)
-	const [interestedHostIds, setInterestedHostIds] = useState<Set<string>>(new Set())
-	// Communities this Space already has an open/pending channel with via the OTHER direction —
-	// i.e. the Community requested this Space first (SpaceInterest, feature A) — so we don't let
-	// the Space open a second, redundant channel with the same Community.
-	const [crossFeatureConnectedHostIds, setCrossFeatureConnectedHostIds] = useState<Set<string>>(new Set())
+	const [spaceHostThreads, setSpaceHostThreads] = useState<SpaceHostChatThread[]>([])
+	const [spaceChats, setSpaceChats] = useState<SpaceChatThread[]>([])
 	const [sendingId, setSendingId] = useState<string | null>(null)
 	const [isPosterEnlarged, setIsPosterEnlarged] = useState(false)
 	const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null)
@@ -71,24 +69,21 @@ export default function SpaceCommunitiesBrowsePage() {
 		}
 	}, [])
 
-	useEffect(() => {
-		let cancelled = false
+	const fetchConnectedThreads = () => {
 		getMySpaceHostChats(undefined, "SPACE")
 			.then((threads) => {
-				if (cancelled) return
-				setInterestedHostIds(new Set(threads.map((t) => t.hostProfileId)))
+				setSpaceHostThreads(threads)
 			})
 			.catch(() => {})
 		getMySpaceChats(undefined, "SPACE")
 			.then((threads) => {
-				if (cancelled) return
-				const ids = threads.filter((t) => t.requesterType === "COMMUNITY" && t.hostProfileId).map((t) => t.hostProfileId as string)
-				setCrossFeatureConnectedHostIds(new Set(ids))
+				setSpaceChats(threads)
 			})
 			.catch(() => {})
-		return () => {
-			cancelled = true
-		}
+	}
+
+	useEffect(() => {
+		fetchConnectedThreads()
 	}, [])
 
 	async function handleMarkInterest() {
@@ -96,18 +91,14 @@ export default function SpaceCommunitiesBrowsePage() {
 		setSendingId(selected.hostProfileId)
 		try {
 			await markSpaceHostInterest(selected.hostProfileId)
-			setInterestedHostIds((prev) => new Set(prev).add(selected.hostProfileId))
 			toast.success("Interest sent! We've notified the community.")
+			fetchConnectedThreads()
 		} catch (e) {
 			toast.error(getApiErrorMessage(e))
 		} finally {
 			setSendingId(null)
 		}
 	}
-
-	const alreadyInterested = selected ? interestedHostIds.has(selected.hostProfileId) : false
-	const alreadyConnected = selected ? crossFeatureConnectedHostIds.has(selected.hostProfileId) : false
-	const collaborationBlocked = alreadyInterested || alreadyConnected
 
 	const flatExperienceImages = selected
 		? (selected.pastEvents || []).flatMap((event, eventIdx) => {
@@ -227,32 +218,42 @@ export default function SpaceCommunitiesBrowsePage() {
 									<div>
 										<div className="flex items-center justify-between gap-3 mb-3">
 											<h2 className="text-xl font-heading font-black text-black">Community Details</h2>
-											<div className="flex flex-col items-end gap-1">
-												<button
-													type="button"
-													onClick={handleMarkInterest}
-													disabled={collaborationBlocked || sendingId === selected.hostProfileId}
-													className={clsx(
-														"shrink-0 text-xs font-black px-4 py-2.5 rounded-xl uppercase tracking-wider border-2 border-black transition-all select-none",
-														collaborationBlocked
-															? "bg-slate-100 text-black/40 cursor-default"
-															: "bg-[#EE2C2C] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50",
-													)}
-												>
-													{alreadyInterested
-														? "We've notified the community"
-														: alreadyConnected
-															? "Already Connected"
-															: sendingId === selected.hostProfileId
-																? "Sending…"
-																: "Collaborate"}
-												</button>
-												{alreadyConnected && (
-													<p className="text-[10px] font-bold text-black/40 text-right max-w-[220px]">
-														You already have an open or pending chat with this community — check your Community Chat tab.
-													</p>
-												)}
-											</div>
+											{(() => {
+												const matchingSpaceHostThread = selected ? spaceHostThreads.find((t) => t.hostProfileId === selected.hostProfileId) : undefined
+												const matchingSpaceThread = selected ? spaceChats.find((t) => t.requesterType === "COMMUNITY" && t.hostProfileId === selected.hostProfileId) : undefined
+												const existingThread = matchingSpaceHostThread || matchingSpaceThread
+												const hasExistingChannel = Boolean(existingThread)
+
+												if (hasExistingChannel) {
+													return (
+														<div className="flex flex-col items-end gap-1.5">
+															<p className="text-xs font-bold text-black/60 text-right">
+																A communication channel already exists with this community.
+															</p>
+															<Link
+																href={`/spaces/dashboard/chats?type=community&threadId=${existingThread!.id}`}
+																className="shrink-0 text-xs font-black px-4 py-2.5 rounded-xl uppercase tracking-wider border-2 border-black bg-[#FFC940] hover:bg-[#ffbe1a] text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all inline-flex items-center gap-1.5 select-none"
+															>
+																<span>Go to Channel</span>
+																<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+																	<path d="M5 12h14m-7-7 7 7-7 7" />
+																</svg>
+															</Link>
+														</div>
+													)
+												}
+
+												return (
+													<button
+														type="button"
+														onClick={handleMarkInterest}
+														disabled={sendingId === selected.hostProfileId}
+														className="shrink-0 text-xs font-black px-4 py-2.5 rounded-xl uppercase tracking-wider border-2 border-black bg-[#EE2C2C] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] disabled:opacity-50 transition-all select-none"
+													>
+														{sendingId === selected.hostProfileId ? "Sending…" : "Collaborate"}
+													</button>
+												)
+											})()}
 										</div>
 
 										<div className={clsx("grid gap-6 items-start", selected.secondaryImageUrl ? "grid-cols-1 lg:grid-cols-[1fr_320px]" : "grid-cols-1")}>
