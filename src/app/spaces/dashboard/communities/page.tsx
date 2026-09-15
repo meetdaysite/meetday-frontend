@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { getBrandCommunities, getMySpaceChats, getMySpaceHostChats, markSpaceHostInterest, type BrandCommunity, type SpaceChatThread, type SpaceHostChatThread } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import { toast } from "@/lib/toast"
@@ -16,7 +17,7 @@ function formatExternalUrl(url?: string | null) {
 	return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
 }
 
-function CommunityCard({ community, onClick }: { community: BrandCommunity; onClick: () => void }) {
+export function CommunityCard({ community, onClick }: { community: BrandCommunity; onClick?: () => void }) {
 	return (
 		<div
 			onClick={onClick}
@@ -44,7 +45,10 @@ function CommunityCard({ community, onClick }: { community: BrandCommunity; onCl
 	)
 }
 
-export default function SpaceCommunitiesBrowsePage() {
+function SpaceCommunitiesBrowseContent() {
+	const searchParams = useSearchParams()
+	const urlCommunityId = searchParams ? searchParams.get("communityId") : null
+
 	const [communities, setCommunities] = useState<BrandCommunity[] | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [selected, setSelected] = useState<BrandCommunity | null>(null)
@@ -54,6 +58,18 @@ export default function SpaceCommunitiesBrowsePage() {
 	const [isPosterEnlarged, setIsPosterEnlarged] = useState(false)
 	const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null)
 	const [viewAllExperiencesMode, setViewAllExperiencesMode] = useState(false)
+
+	useEffect(() => {
+		if (urlCommunityId && communities && communities.length > 0) {
+			const found = communities.find(
+				(c) =>
+					c.id === urlCommunityId ||
+					c.hostProfileId === urlCommunityId ||
+					c.name.toLowerCase().trim() === urlCommunityId.toLowerCase().trim()
+			)
+			if (found) setSelected(found)
+		}
+	}, [urlCommunityId, communities])
 
 	useEffect(() => {
 		let cancelled = false
@@ -699,5 +715,13 @@ export default function SpaceCommunitiesBrowsePage() {
 				</div>
 			)}
 		</div>
+	)
+}
+
+export default function SpaceCommunitiesBrowsePage() {
+	return (
+		<Suspense fallback={<div className="p-8 text-center font-bold">Loading communities...</div>}>
+			<SpaceCommunitiesBrowseContent />
+		</Suspense>
 	)
 }
