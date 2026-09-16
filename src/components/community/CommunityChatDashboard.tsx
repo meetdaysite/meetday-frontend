@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import clsx from "clsx"
-import Image from "next/image"
-import Link from "next/link"
 import {
 	getMyCommunityCollaborationChats,
 	getCommunityCollaborationChatMessages,
@@ -20,9 +18,12 @@ import { uploadCommunityCollaborationChatImage } from "@/lib/uploadMedia"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { playMessageChime } from "@/lib/notificationSound"
+import { useNotificationStore } from "@/store/notificationStore"
 import { LinkifiedText } from "@/components/ui/LinkifiedText"
 import { Icon } from "@/components/ui/Icon"
+import { Button } from "@/components/ui/Button"
 import GallerySvg from "@/icons/outlined/gallery-wide.svg"
+import AltArrowLeftSvg from "@/icons/outlined/alt-arrow-left.svg"
 
 const THREADS_POLL_MS = 8000
 const MESSAGES_POLL_MS = 4000
@@ -38,17 +39,6 @@ function timeAgo(iso: string | null): string {
 	return `${Math.floor(hours / 24)}d`
 }
 
-function formatDateDivider(iso: string): string {
-	const d = new Date(iso)
-	const today = new Date()
-	const yesterday = new Date()
-	yesterday.setDate(yesterday.getDate() - 1)
-
-	if (d.toDateString() === today.toDateString()) return "Today"
-	if (d.toDateString() === yesterday.toDateString()) return "Yesterday"
-	return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: d.getFullYear() !== today.getFullYear() ? "numeric" : undefined })
-}
-
 export type CommunityChatSubTab = "ACCEPTED" | "REQUESTS" | "SENT_REQUESTS"
 
 export function CommunityChatDashboard() {
@@ -59,26 +49,26 @@ export function CommunityChatDashboard() {
 	const [loadingThreads, setLoadingThreads] = useState(true)
 	const [activeTab, setActiveTab] = useState<CommunityChatSubTab>("ACCEPTED")
 	const [selectedThreadId, setSelectedThreadId] = useState<string | null>(initialThreadParam)
-	const [searchQuery, setSearchQuery] = useState("")
 
 	const [messages, setMessages] = useState<CommunityCollaborationMessage[]>([])
 	const [loadingMessages, setLoadingMessages] = useState(false)
-	const [messageText, setMessageText] = useState("")
+	const [input, setInput] = useState("")
 	const [sending, setSending] = useState(false)
-	const [replyTo, setReplyTo] = useState<CommunityCollaborationMessage | null>(null)
+	const [replyingTo, setReplyingTo] = useState<CommunityCollaborationMessage | null>(null)
+	const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null)
 
-	const [pendingMediaKey, setPendingMediaKey] = useState<string | null>(null)
-	const [pendingMediaPreview, setPendingMediaPreview] = useState<string | null>(null)
-	const [uploadingMedia, setUploadingMedia] = useState(false)
-	const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+	const [uploadingImage, setUploadingImage] = useState(false)
+	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const [responding, setResponding] = useState(false)
 
 	const fileInputRef = useRef<HTMLInputElement>(null)
-	const messagesEndRef = useRef<HTMLDivElement>(null)
-	const textareaRef = useRef<HTMLTextAreaElement>(null)
+	const bottomRef = useRef<HTMLDivElement>(null)
+	const highlightTimerRef = useRef<NodeJS.Timeout | null>(null)
 	const prevMsgCountRef = useRef(0)
 
-	// Fetch threads
+	const { markThreadRead } = useNotificationStore()
+
+	// Fetch threads list
 	const fetchThreads = useCallback((quiet = false) => {
 		if (!quiet) setLoadingThreads(true)
 		getMyCommunityCollaborationChats()
@@ -97,7 +87,7 @@ export function CommunityChatDashboard() {
 		return () => clearInterval(interval)
 	}, [fetchThreads])
 
-	// Auto-select initial thread from URL query param
+	// Auto-select initial thread from URL parameter
 	useEffect(() => {
 		if (initialThreadParam && threads.length > 0) {
 			const found = threads.find((t) => t.id === initialThreadParam)
@@ -118,25 +108,41 @@ export function CommunityChatDashboard() {
 		return threads.find((t) => t.id === selectedThreadId) || null
 	}, [threads, selectedThreadId])
 
-	// Filter threads by active tab & search query
+	// Mark read on selection
+	useEffect(() => {
+		if (selectedThreadId) {
+			setThreads((prev) =>
+				prev.map((t) => (t.id === selectedThreadId ? { ...t, unreadCount: 0 } : t))
+			)
+			markThreadRead(selectedThreadId)
+		}
+	}, [selectedThreadId, markThreadRead])
+
+	// Filter threads by active tab
 	const filteredThreads = useMemo(() => {
 		return threads.filter((t) => {
-			if (activeTab === "ACCEPTED" && t.chatStatus !== "ACCEPTED") return false
-			if (activeTab === "REQUESTS" && (t.chatStatus !== "REQUESTED" || t.direction !== "INCOMING")) return false
-			if (activeTab === "SENT_REQUESTS" && (t.chatStatus !== "REQUESTED" || t.direction !== "OUTGOING")) return false
-
-			if (searchQuery.trim()) {
-				const query = searchQuery.trim().toLowerCase()
-				const name = (t.counterpartName || "").toLowerCase()
-				return name.includes(query)
-			}
+			if (activeTab === "ACCEPTED") return t.chatStatus === "ACCEPTED"
+			if (activeTab === "REQUESTS") return t.chatStatus === "REQUESTED" && t.direction === "INCOMING"
+			if (activeTab === "SENT_REQUESTS") return t.chatStatus === "REQUESTED" && t.direction === "OUTGOING"
 			return true
 		})
-	}, [threads, activeTab, searchQuery])
+	}, [threads, activeTab])
 
-	// Incoming requests count badge
-	const incomingRequestsCount = useMemo(() => {
-		return threads.filter((t) => t.direction === "INCOMING" && t.chatStatus === "REQUESTED").length
+	// Counts
+	const unreadAcceptedCount = useMemo(() => {
+		return threads
+			.filter((t) => t.chatStatus === "ACCEPTED")
+			.reduce((sum, t) => sum + (selectedThreadId === t.id ? 0 : t.unreadCount || 0), 0)
+	}, [threads, selectedThreadId])
+
+	const unreadRequestsCount = useMemo(() => {
+		return threads
+			.filter((t) => t.chatStatus === "REQUESTED" && t.direction === "INCOMING")
+			.reduce((sum, t) => sum + (selectedThreadId === t.id ? 0 : t.unreadCount || 0), 0)
+	}, [threads, selectedThreadId])
+
+	const sentRequestsCount = useMemo(() => {
+		return threads.filter((t) => t.chatStatus === "REQUESTED" && t.direction === "OUTGOING").length
 	}, [threads])
 
 	// Fetch messages for selected thread
@@ -179,28 +185,34 @@ export function CommunityChatDashboard() {
 
 	// Scroll to bottom on new messages
 	useEffect(() => {
-		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-	}, [messages])
+		bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+	}, [messages.length])
 
-	// Handle sending a message
-	async function handleSendMessage(e?: React.FormEvent) {
-		e?.preventDefault()
-		if (!selectedThreadId || sending || uploadingMedia) return
-		const text = messageText.trim()
-		if (!text && !pendingMediaKey) return
+	// Jump to message
+	const handleJumpToMessage = useCallback((messageId: string) => {
+		const el = document.getElementById(`collab-msg-${messageId}`)
+		if (el) {
+			el.scrollIntoView({ behavior: "smooth", block: "center" })
+			if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current)
+			setHighlightedMessageId(messageId)
+			highlightTimerRef.current = setTimeout(() => {
+				setHighlightedMessageId(null)
+			}, 2000)
+		}
+	}, [])
 
+	// Send message
+	async function handleSend() {
+		if (!selectedThreadId || !input.trim() || sending) return
 		setSending(true)
 		try {
 			const sent = await sendCommunityCollaborationMessage(selectedThreadId, {
-				content: text || undefined,
-				mediaKey: pendingMediaKey || undefined,
-				replyToId: replyTo ? replyTo.id : undefined,
+				content: input.trim(),
+				replyToId: replyingTo?.id,
 			})
 			setMessages((prev) => [...prev, sent])
-			setMessageText("")
-			setReplyTo(null)
-			setPendingMediaKey(null)
-			setPendingMediaPreview(null)
+			setInput("")
+			setReplyingTo(null)
 			fetchThreads(true)
 		} catch (err) {
 			toast.error(getApiErrorMessage(err))
@@ -209,36 +221,40 @@ export function CommunityChatDashboard() {
 		}
 	}
 
-	// Handle media attachment upload
-	async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+	// Image pick
+	async function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0]
+		e.target.value = ""
 		if (!file || !selectedThreadId) return
+		if (!file.type.startsWith("image/")) {
+			toast.error("Only image files can be sent.")
+			return
+		}
 
-		setUploadingMedia(true)
-		const preview = URL.createObjectURL(file)
-		setPendingMediaPreview(preview)
-
+		setUploadingImage(true)
 		try {
-			const key = await uploadCommunityCollaborationChatImage(file, selectedThreadId)
-			setPendingMediaKey(key)
-			toast.success("Image attached")
+			const mediaKey = await uploadCommunityCollaborationChatImage(file, selectedThreadId)
+			const sent = await sendCommunityCollaborationMessage(selectedThreadId, {
+				mediaKey,
+				replyToId: replyingTo?.id,
+			})
+			setMessages((prev) => [...prev, sent])
+			setReplyingTo(null)
+			fetchThreads(true)
 		} catch (err) {
-			toast.error("Failed to upload image")
-			setPendingMediaPreview(null)
-			setPendingMediaKey(null)
+			toast.error(getApiErrorMessage(err))
 		} finally {
-			setUploadingMedia(false)
-			if (fileInputRef.current) fileInputRef.current.value = ""
+			setUploadingImage(false)
 		}
 	}
 
-	// Handle accept / decline requests
+	// Accept / Decline request
 	async function handleAccept() {
 		if (!selectedThreadId || responding) return
 		setResponding(true)
 		try {
 			await acceptCommunityCollaborationRequest(selectedThreadId)
-			toast.success("Collaboration request accepted! You can now message each other.")
+			toast.success("Accepted — you can now chat.")
 			fetchThreads()
 			setActiveTab("ACCEPTED")
 			fetchMessages()
@@ -254,7 +270,7 @@ export function CommunityChatDashboard() {
 		setResponding(true)
 		try {
 			await declineCommunityCollaborationRequest(selectedThreadId)
-			toast.success("Collaboration request declined.")
+			toast.success("Request declined.")
 			fetchThreads()
 			setSelectedThreadId(null)
 		} catch (err) {
@@ -264,538 +280,414 @@ export function CommunityChatDashboard() {
 		}
 	}
 
-	// Group messages by date
-	const groupedMessages = useMemo(() => {
-		const groups: { date: string; items: CommunityCollaborationMessage[] }[] = []
-		let currentDate = ""
-		let currentGroup: CommunityCollaborationMessage[] = []
-
-		for (const msg of messages) {
-			const dateStr = formatDateDivider(msg.createdAt)
-			if (dateStr !== currentDate) {
-				if (currentGroup.length > 0) {
-					groups.push({ date: currentDate, items: currentGroup })
-				}
-				currentDate = dateStr
-				currentGroup = [msg]
-			} else {
-				currentGroup.push(msg)
-			}
-		}
-		if (currentGroup.length > 0) {
-			groups.push({ date: currentDate, items: currentGroup })
-		}
-		return groups
-	}, [messages])
-
 	return (
-		<div className="flex flex-col flex-1 min-h-0 bg-white border-[3px] border-black rounded-[28px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
-			<div className="flex flex-col md:flex-row flex-1 min-h-0">
-				{/* Left Sidebar: Threads list */}
-				<div
-					className={clsx(
-						"w-full md:w-[360px] lg:w-[400px] border-r-[3px] border-black flex flex-col bg-slate-50/50 shrink-0",
-						selectedThreadId ? "hidden md:flex" : "flex"
-					)}
-				>
-					{/* Sub-tabs header */}
-					<div className="p-3.5 border-b-2 border-black/10 flex items-center gap-1.5 bg-white">
-						<button
-							type="button"
-							onClick={() => setActiveTab("ACCEPTED")}
-							className={clsx(
-								"flex-1 py-2 px-2.5 rounded-xl font-heading font-black text-xs transition-all uppercase tracking-wider text-center cursor-pointer select-none",
-								activeTab === "ACCEPTED"
-									? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-									: "bg-white text-black/60 hover:text-black border-2 border-transparent hover:border-black/10"
-							)}
-						>
-							Chats
-						</button>
-						<button
-							type="button"
-							onClick={() => setActiveTab("REQUESTS")}
-							className={clsx(
-								"flex-1 py-2 px-2.5 rounded-xl font-heading font-black text-xs transition-all uppercase tracking-wider text-center cursor-pointer select-none relative inline-flex items-center justify-center gap-1.5",
-								activeTab === "REQUESTS"
-									? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-									: "bg-white text-black/60 hover:text-black border-2 border-transparent hover:border-black/10"
-							)}
-						>
-							<span>Requests</span>
-							{incomingRequestsCount > 0 && (
-								<span className="size-4 rounded-full bg-[#EE2C2C] text-white text-[10px] font-black flex items-center justify-center shrink-0">
-									{incomingRequestsCount}
-								</span>
-							)}
-						</button>
-						<button
-							type="button"
-							onClick={() => setActiveTab("SENT_REQUESTS")}
-							className={clsx(
-								"flex-1 py-2 px-2.5 rounded-xl font-heading font-black text-xs transition-all uppercase tracking-wider text-center cursor-pointer select-none",
-								activeTab === "SENT_REQUESTS"
-									? "bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-									: "bg-white text-black/60 hover:text-black border-2 border-transparent hover:border-black/10"
-							)}
-						>
-							Sent
-						</button>
-					</div>
+		<div className="h-[calc(100vh-240px)] border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col sm:flex-row bg-white min-h-0">
+			{/* Thread list sidebar */}
+			<div
+				className={clsx(
+					"w-full sm:w-80 md:w-80 shrink-0 sm:min-w-[320px] sm:max-w-[320px] border-b-[3px] sm:border-b-0 sm:border-r-[3px] border-black flex flex-col",
+					selectedThreadId ? "hidden sm:flex" : "flex"
+				)}
+			>
+				{/* Sub-tabs header */}
+				<div className="flex border-b-[3px] border-black shrink-0">
+					{(["ACCEPTED", "REQUESTS", "SENT_REQUESTS"] as const).map((tab) => {
+						const isReq = tab === "REQUESTS"
+						const isSent = tab === "SENT_REQUESTS"
+						const count = isReq
+							? unreadRequestsCount
+							: isSent
+							? sentRequestsCount
+							: unreadAcceptedCount
+						const isActive = activeTab === tab
 
-					{/* Search input */}
-					<div className="p-3 border-b-2 border-black/10 bg-white">
-						<div className="relative">
-							<input
-								type="text"
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-								placeholder="Search communities..."
-								className="w-full bg-slate-50 border-2 border-black rounded-xl px-3.5 py-1.5 text-xs font-semibold text-black placeholder:text-black/40 focus:outline-none focus:ring-2 focus:ring-black"
-							/>
-							{searchQuery && (
-								<button
-									type="button"
-									onClick={() => setSearchQuery("")}
-									className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-black/40 hover:text-black"
-								>
-									✕
-								</button>
-							)}
-						</div>
-					</div>
+						let label = "Accepted"
+						if (isReq) label = "Requests"
+						if (isSent) label = "Sent"
 
-					{/* Threads List */}
-					<div className="flex-1 overflow-y-auto p-2.5 flex flex-col gap-2">
-						{loadingThreads && threads.length === 0 && (
-							<div className="p-6 text-center text-xs font-bold text-black/40 animate-pulse">
-								Loading chats...
-							</div>
-						)}
-
-						{!loadingThreads && filteredThreads.length === 0 && (
-							<div className="p-8 text-center flex flex-col items-center gap-3">
-								<div className="size-12 rounded-2xl bg-black/5 border-2 border-black/10 flex items-center justify-center text-xl">
-									💬
-								</div>
-								<p className="text-xs font-bold text-black/50 max-w-[200px]">
-									{activeTab === "ACCEPTED"
-										? "No active community chats yet."
-										: activeTab === "REQUESTS"
-										? "No incoming collaboration requests."
-										: "No sent collaboration requests."}
-								</p>
-								{activeTab === "ACCEPTED" && (
-									<Link
-										href="/community/dashboard/communities"
-										className="mt-1 text-xs font-black px-3.5 py-1.5 rounded-xl border-2 border-black bg-[#FFC940] hover:bg-[#ffbe1a] text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all uppercase tracking-wider"
-									>
-										Explore Communities
-									</Link>
+						return (
+							<button
+								key={tab}
+								type="button"
+								onClick={() => {
+									setActiveTab(tab)
+									setSelectedThreadId(null)
+								}}
+								className={clsx(
+									"flex-grow py-3 text-xs font-black uppercase tracking-wider transition-colors relative flex items-center justify-center gap-1.5",
+									isActive ? "bg-[#EE2C2C] text-white" : "bg-white text-black/50 hover:bg-neutral-50"
 								)}
-							</div>
-						)}
+							>
+								<span>{label}</span>
+								{count > 0 && (
+									<span
+										className={clsx(
+											"min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-black flex items-center justify-center border",
+											isActive
+												? "bg-white text-[#EE2C2C] border-transparent"
+												: "bg-[#FFC940] text-black border-black/10"
+										)}
+									>
+										{count}
+									</span>
+								)}
+							</button>
+						)
+					})}
+				</div>
 
-						{filteredThreads.map((thread) => {
-							const isSelected = thread.id === selectedThreadId
+				{/* Threads list scrollable container */}
+				<div className="flex-1 overflow-y-auto">
+					{loadingThreads && threads.length === 0 ? (
+						<p className="text-xs font-semibold text-black/40 text-center py-8">Loading…</p>
+					) : filteredThreads.length === 0 ? (
+						<p className="text-xs font-semibold text-black/40 text-center py-8 px-4">
+							{activeTab === "ACCEPTED"
+								? "No accepted community chats yet."
+								: activeTab === "REQUESTS"
+								? "No pending collaboration requests."
+								: "No sent requests."}
+						</p>
+					) : (
+						filteredThreads.map((t) => {
+							const isSelected = selectedThreadId === t.id
+							const unread = isSelected ? 0 : t.unreadCount || 0
 							return (
-								<div
-									key={thread.id}
-									onClick={() => setSelectedThreadId(thread.id)}
+								<button
+									key={t.id}
+									type="button"
+									onClick={() => setSelectedThreadId(t.id)}
 									className={clsx(
-										"p-3 rounded-2xl border-2 border-black cursor-pointer transition-all flex items-start gap-3 select-none",
-										isSelected
-											? "bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] translate-x-[1px] translate-y-[1px]"
-											: "bg-white/80 hover:bg-white hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+										"w-full text-left px-4 py-3 border-b border-black/10 transition-colors flex items-center gap-3",
+										isSelected ? "bg-[#FFC940]/20" : "hover:bg-neutral-50"
 									)}
 								>
-									<div className="relative size-11 rounded-xl border-2 border-black overflow-hidden bg-[#FFCE29] shrink-0 flex items-center justify-center font-heading font-black text-black text-sm">
-										{thread.counterpartAvatarUrl ? (
-											<Image src={thread.counterpartAvatarUrl} alt={thread.counterpartName} fill className="object-cover" unoptimized />
-										) : (
-											thread.counterpartName.substring(0, 2).toUpperCase()
-										)}
-									</div>
-
-									<div className="flex-1 min-w-0 flex flex-col gap-1">
-										<div className="flex items-center justify-between gap-1.5">
-											<h4 className="font-heading font-black text-sm text-black truncate">
-												{thread.counterpartName}
-											</h4>
-											<span className="text-[10px] font-bold text-black/40 shrink-0">
-												{timeAgo(thread.lastMessageAt || thread.createdAt)}
-											</span>
-										</div>
-
-										<div className="flex items-center justify-between gap-1">
-											<p className="text-xs font-semibold text-black/60 truncate">
-												{thread.lastMessagePreview ||
-													(thread.chatStatus === "ACCEPTED"
-														? "Ready to collaborate! Send a message."
-														: thread.direction === "INCOMING"
-														? "Requested collaboration with you"
-														: "Collaboration request sent")}
-											</p>
-											{thread.unreadCount > 0 && (
-												<span className="size-4.5 min-w-[18px] px-1 rounded-full bg-[#FFC940] text-black font-black text-[10px] flex items-center justify-center shrink-0 border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-													{thread.unreadCount}
+									<div className="relative shrink-0">
+										<div className="w-10 h-10 rounded-full border border-black/15 overflow-hidden bg-neutral-100 flex items-center justify-center">
+											{t.counterpartAvatarUrl ? (
+												<img
+													src={t.counterpartAvatarUrl}
+													alt={t.counterpartName}
+													className="w-full h-full object-cover"
+												/>
+											) : (
+												<span className="font-heading font-black text-xs text-black/60">
+													{t.counterpartName.charAt(0).toUpperCase()}
 												</span>
 											)}
 										</div>
-									</div>
-								</div>
-							)
-						})}
-					</div>
-				</div>
-
-				{/* Right Pane: Active Chat Conversation */}
-				<div
-					className={clsx(
-						"flex-1 flex flex-col bg-white min-w-0 min-h-0",
-						!selectedThreadId ? "hidden md:flex" : "flex"
-					)}
-				>
-					{selectedThread ? (
-						<>
-							{/* Top Thread Header */}
-							<div className="px-4 py-3.5 border-b-2 border-black/10 flex items-center justify-between gap-3 bg-white shrink-0">
-								<div className="flex items-center gap-3 min-w-0">
-									<button
-										type="button"
-										onClick={() => setSelectedThreadId(null)}
-										className="md:hidden size-8 rounded-xl border-2 border-black flex items-center justify-center text-black font-extrabold hover:bg-black/5"
-										aria-label="Back to threads"
-									>
-										‹
-									</button>
-
-									<div className="relative size-10 rounded-xl border-2 border-black overflow-hidden bg-[#FFCE29] shrink-0 flex items-center justify-center font-heading font-black text-black text-sm">
-										{selectedThread.counterpartAvatarUrl ? (
-											<Image
-												src={selectedThread.counterpartAvatarUrl}
-												alt={selectedThread.counterpartName}
-												fill
-												className="object-cover"
-												unoptimized
-											/>
-										) : (
-											selectedThread.counterpartName.substring(0, 2).toUpperCase()
+										{unread > 0 && (
+											<span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#EE2C2C] text-white text-[9px] font-black flex items-center justify-center border-2 border-white shadow-sm">
+												{unread > 9 ? "9+" : unread}
+											</span>
 										)}
 									</div>
 
-									<div className="min-w-0 flex flex-col">
-										<h3 className="font-heading font-black text-base text-black truncate leading-tight">
-											{selectedThread.counterpartName}
-										</h3>
-										<span className="text-[10px] font-bold text-black/50 uppercase tracking-wider">
-											Community Collaboration
-										</span>
-									</div>
-								</div>
-
-								<div className="shrink-0 flex items-center gap-2">
-									{selectedThread.chatStatus === "ACCEPTED" ? (
-										<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-green-50 text-green-700 border border-green-200">
-											<span className="size-1.5 rounded-full bg-green-600 animate-pulse" />
-											Active
-										</span>
-									) : selectedThread.direction === "INCOMING" ? (
-										<span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
-											Request Pending
-										</span>
-									) : (
-										<span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-200">
-											Sent Request
-										</span>
-									)}
-								</div>
-							</div>
-
-							{/* Request Decision Banner (if incoming request is not accepted yet) */}
-							{selectedThread.chatStatus === "REQUESTED" && selectedThread.direction === "INCOMING" && (
-								<div className="p-4 bg-[#FFF8E6] border-b-2 border-black/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-									<div className="flex flex-col gap-0.5">
-										<p className="text-xs font-black text-black">
-											{selectedThread.counterpartName} wants to collaborate with your community!
-										</p>
-										<p className="text-[11px] font-semibold text-black/60">
-											Accept to unlock community-to-community direct messaging.
-										</p>
-									</div>
-
-									<div className="flex items-center gap-2 shrink-0">
-										<button
-											type="button"
-											onClick={handleAccept}
-											disabled={responding}
-											className="px-4 py-1.5 rounded-xl border-2 border-black bg-[#EE2C2C] text-white font-heading font-black text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all disabled:opacity-50 cursor-pointer uppercase tracking-wider"
-										>
-											{responding ? "Accepting…" : "Accept"}
-										</button>
-										<button
-											type="button"
-											onClick={handleDecline}
-											disabled={responding}
-											className="px-3 py-1.5 rounded-xl border-2 border-black bg-white hover:bg-black/5 text-black font-heading font-black text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all disabled:opacity-50 cursor-pointer uppercase tracking-wider"
-										>
-											Decline
-										</button>
-									</div>
-								</div>
-							)}
-
-							{/* Request Sent Pending Banner */}
-							{selectedThread.chatStatus === "REQUESTED" && selectedThread.direction === "OUTGOING" && (
-								<div className="p-3.5 bg-blue-50/70 border-b-2 border-black/10 flex items-center gap-3 shrink-0">
-									<span className="text-base">⏳</span>
-									<p className="text-xs font-semibold text-blue-900">
-										Collaboration request sent to <strong>{selectedThread.counterpartName}</strong>. Once accepted, you can message here.
-									</p>
-								</div>
-							)}
-
-							{/* Messages Area */}
-							<div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 min-h-0 bg-slate-50/30">
-								{loadingMessages && messages.length === 0 && (
-									<div className="m-auto text-xs font-bold text-black/40">Loading messages...</div>
-								)}
-
-								{!loadingMessages && messages.length === 0 && (
-									<div className="m-auto text-center flex flex-col items-center gap-2 text-black/40 max-w-sm">
-										<div className="size-12 rounded-2xl bg-black/5 border-2 border-black/10 flex items-center justify-center text-xl">
-											🤝
-										</div>
-										<h4 className="font-heading font-black text-sm text-black">
-											{selectedThread.chatStatus === "ACCEPTED"
-												? "You are now connected!"
-												: "Collaboration Request"}
-										</h4>
-										<p className="text-xs font-semibold">
-											{selectedThread.chatStatus === "ACCEPTED"
-												? "Say hello and discuss opportunities to cross-promote or co-host experiences."
-												: "Messages will appear here once the collaboration request is accepted."}
-										</p>
-									</div>
-								)}
-
-								{groupedMessages.map((group, gIdx) => (
-									<div key={gIdx} className="flex flex-col gap-3">
-										<div className="flex items-center justify-center my-1">
-											<span className="px-3 py-0.5 rounded-full bg-black/5 text-[10px] font-black uppercase tracking-wider text-black/50 border border-black/10">
-												{group.date}
+									<div className="flex-1 min-w-0">
+										<div className="flex items-center justify-between gap-2">
+											<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
+											<span className="text-[10px] font-semibold text-black/30 shrink-0">
+												{timeAgo(t.lastMessageAt || t.createdAt)}
 											</span>
 										</div>
-
-										{group.items.map((msg) => {
-											const isMine = msg.senderType === selectedThread.mySenderType
-
-											return (
-												<div
-													key={msg.id}
-													className={clsx(
-														"flex flex-col max-w-[85%] sm:max-w-[70%]",
-														isMine ? "self-end items-end" : "self-start items-start"
-													)}
-												>
-													{/* Sender Name for incoming */}
-													{!isMine && (
-														<span className="text-[10px] font-black text-black/40 mb-1 ml-2">
-															{selectedThread.counterpartName}
-														</span>
-													)}
-
-													{/* Reply To Preview */}
-													{msg.replyTo && (
-														<div
-															className={clsx(
-																"px-3 py-1.5 rounded-t-xl text-[11px] font-semibold border-2 border-b-0 border-black flex flex-col max-w-full truncate opacity-75 -mb-0.5",
-																isMine ? "bg-black/90 text-white" : "bg-slate-100 text-black"
-															)}
-														>
-															<span className="font-black text-[9px] uppercase tracking-wider">
-																{msg.replyTo.sender?.firstName || "Replying to"}
-															</span>
-															<span className="truncate">{msg.replyTo.content}</span>
-														</div>
-													)}
-
-													<div
-														className={clsx(
-															"p-3.5 rounded-2xl border-2 border-black flex flex-col gap-2 relative group",
-															isMine
-																? "bg-black text-white rounded-br-none shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]"
-																: "bg-white text-black rounded-bl-none shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-														)}
-													>
-														{/* Attached Image */}
-														{msg.mediaUrl && (
-															<div
-																onClick={() => setLightboxUrl(msg.mediaUrl!)}
-																className="relative w-48 sm:w-60 aspect-video rounded-xl border-2 border-black overflow-hidden bg-black/5 cursor-pointer hover:opacity-90 transition-opacity"
-															>
-																<Image src={msg.mediaUrl} alt="Attachment" fill className="object-cover" unoptimized />
-															</div>
-														)}
-
-														{/* Content */}
-														{msg.content && (
-															<p className="text-xs sm:text-sm font-semibold leading-relaxed whitespace-pre-wrap break-words">
-																<LinkifiedText
-																	text={msg.content}
-																	linkClassName={isMine ? "text-[#FFC940] underline hover:opacity-80" : "text-[#EE2C2C] underline hover:opacity-80"}
-																/>
-															</p>
-														)}
-
-														<div className="flex items-center justify-end gap-1.5 mt-0.5">
-															<span className={clsx("text-[9px] font-bold", isMine ? "text-white/50" : "text-black/40")}>
-																{new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-															</span>
-														</div>
-
-														{/* Quick Reply Action on Hover */}
-														{selectedThread.chatStatus === "ACCEPTED" && (
-															<button
-																type="button"
-																onClick={() => {
-																	setReplyTo(msg)
-																	textareaRef.current?.focus()
-																}}
-																className={clsx(
-																	"absolute top-2 hidden group-hover:flex size-6 rounded-lg border border-black/20 bg-white/90 text-black items-center justify-center text-xs font-black shadow-sm hover:bg-white cursor-pointer",
-																	isMine ? "-left-8" : "-right-8"
-																)}
-																title="Reply to message"
-															>
-																↩
-															</button>
-														)}
-													</div>
-												</div>
-											)
-										})}
-									</div>
-								))}
-								<div ref={messagesEndRef} />
-							</div>
-
-							{/* Active Messaging Input Bar */}
-							{selectedThread.chatStatus === "ACCEPTED" ? (
-								<div className="p-3 sm:p-4 border-t-2 border-black/10 bg-white shrink-0 flex flex-col gap-2">
-									{/* Reply Preview */}
-									{replyTo && (
-										<div className="flex items-center justify-between bg-slate-50 border-2 border-black rounded-xl p-2 px-3 text-xs">
-											<div className="flex flex-col min-w-0">
-												<span className="text-[10px] font-black uppercase text-black/50">
-													Replying to {replyTo.sender?.firstName || "message"}
+										<p className="text-[11px] font-semibold text-black/40 truncate mt-0.5">
+											{t.lastMessagePreview ||
+												(t.chatStatus === "ACCEPTED"
+													? "Ready to collaborate! Send a message."
+													: t.direction === "INCOMING"
+													? "Collaboration request received"
+													: "Collaboration request sent")}
+										</p>
+										{t.chatStatus === "REQUESTED" && t.direction === "INCOMING" && (
+											<div className="flex items-center gap-1.5 mt-1.5">
+												<span className="px-2 py-0.5 rounded-lg bg-[#22C55E]/10 text-[#22C55E] text-[10px] font-black uppercase border border-[#22C55E]/20">
+													Incoming Request
 												</span>
-												<span className="text-xs font-semibold text-black truncate">{replyTo.content || "Attachment"}</span>
 											</div>
-											<button
-												type="button"
-												onClick={() => setReplyTo(null)}
-												className="text-xs font-black text-black/40 hover:text-black ml-2"
-											>
-												✕
-											</button>
-										</div>
-									)}
-
-									{/* Attached Media Preview */}
-									{pendingMediaPreview && (
-										<div className="relative size-16 rounded-xl border-2 border-black overflow-hidden bg-slate-100">
-											<Image src={pendingMediaPreview} alt="Preview" fill className="object-cover" unoptimized />
-											<button
-												type="button"
-												onClick={() => {
-													setPendingMediaPreview(null)
-													setPendingMediaKey(null)
-												}}
-												className="absolute top-1 right-1 size-5 rounded-full bg-black text-white text-[10px] font-black flex items-center justify-center hover:scale-105"
-											>
-												✕
-											</button>
-										</div>
-									)}
-
-									{/* Input & Action controls */}
-									<form onSubmit={handleSendMessage} className="flex items-center gap-2">
-										<input
-											type="file"
-											ref={fileInputRef}
-											onChange={handleFileSelected}
-											accept="image/jpeg,image/png,image/webp"
-											className="hidden"
-										/>
-										<button
-											type="button"
-											onClick={() => fileInputRef.current?.click()}
-											disabled={uploadingMedia}
-											className="size-10 rounded-xl border-2 border-black bg-white hover:bg-black/5 flex items-center justify-center text-black font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all disabled:opacity-50 cursor-pointer shrink-0"
-											title="Attach photo"
-										>
-											<Icon as={GallerySvg} size="sm" />
-										</button>
-
-										<EmojiPicker
-											onSelect={(emoji) => {
-												setMessageText((prev) => prev + emoji)
-												textareaRef.current?.focus()
-											}}
-										/>
-
-										<textarea
-											ref={textareaRef}
-											value={messageText}
-											onChange={(e) => setMessageText(e.target.value)}
-											onKeyDown={(e) => {
-												if (e.key === "Enter" && !e.shiftKey) {
-													e.preventDefault()
-													handleSendMessage()
-												}
-											}}
-											placeholder="Type a message... (Enter to send)"
-											rows={1}
-											className="flex-1 bg-slate-50 border-2 border-black rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold text-black placeholder:text-black/40 focus:outline-none focus:ring-2 focus:ring-black resize-none max-h-24"
-										/>
-
-										<button
-											type="submit"
-											disabled={sending || uploadingMedia || (!messageText.trim() && !pendingMediaKey)}
-											className="size-10 rounded-xl border-2 border-black bg-[#EE2C2C] text-white flex items-center justify-center font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all disabled:opacity-50 cursor-pointer shrink-0"
-											title="Send message"
-										>
-											<svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-												<path d="M5 12h14m-7-7 7 7-7 7" />
-											</svg>
-										</button>
-									</form>
-								</div>
-							) : (
-								<div className="p-4 border-t-2 border-black/10 bg-slate-50/50 text-center text-xs font-bold text-black/50 shrink-0">
-									{selectedThread.chatStatus === "REQUESTED"
-										? "Messaging will unlock once the collaboration request is accepted."
-										: "This collaboration request was declined."}
-								</div>
-							)}
-						</>
-					) : (
-						<div className="m-auto text-center flex flex-col items-center gap-3 p-6 max-w-sm">
-							<div className="size-16 rounded-3xl bg-black/5 border-2 border-black/10 flex items-center justify-center text-3xl">
-								💬
-							</div>
-							<h3 className="font-heading font-black text-xl text-black">Select a Chat</h3>
-							<p className="text-xs sm:text-sm font-semibold text-black/50 leading-relaxed">
-								Pick a conversation from the list on the left to start collaborating with other communities.
-							</p>
-						</div>
+										)}
+										{t.chatStatus === "REQUESTED" && t.direction === "OUTGOING" && (
+											<span className="text-[10px] font-black uppercase text-black/40 mt-1 block">
+												Awaiting response
+											</span>
+										)}
+									</div>
+								</button>
+							)
+						})
 					)}
 				</div>
 			</div>
 
+			{/* Thread detail panel */}
+			<div
+				className={clsx(
+					"flex-1 min-w-0 min-h-0 flex flex-col bg-white",
+					selectedThreadId ? "flex" : "hidden sm:flex"
+				)}
+			>
+				{!selectedThread ? (
+					<div className="flex-1 flex items-center justify-center text-sm font-semibold text-black/30">
+						Select a chat to view
+					</div>
+				) : (
+					<div className="flex-1 min-w-0 min-h-0 flex flex-col relative h-full bg-white">
+						{/* Top Header */}
+						<div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-white flex items-center justify-between shrink-0 gap-2">
+							<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+								<button
+									type="button"
+									onClick={() => setSelectedThreadId(null)}
+									className="sm:hidden p-1.5 -ml-1 text-black/70 hover:text-black hover:bg-neutral-100 rounded-full shrink-0 transition-colors"
+									aria-label="Back to chat list"
+								>
+									<Icon as={AltArrowLeftSvg} size="sm" />
+								</button>
+								<div className="w-8 h-8 rounded-full border border-black/15 overflow-hidden shrink-0 relative bg-neutral-100 flex items-center justify-center">
+									{selectedThread.counterpartAvatarUrl ? (
+										<img
+											src={selectedThread.counterpartAvatarUrl}
+											alt={selectedThread.counterpartName}
+											className="w-full h-full object-cover"
+										/>
+									) : (
+										<span className="font-heading font-black text-xs text-black/60">
+											{selectedThread.counterpartName.charAt(0).toUpperCase()}
+										</span>
+									)}
+								</div>
+								<div className="min-w-0 flex-1">
+									<p className="text-xs sm:text-sm font-black text-black truncate leading-tight">
+										{selectedThread.counterpartName}
+									</p>
+									<p className="text-[10px] sm:text-[11px] font-semibold text-black/40 truncate">
+										Community Collaboration
+									</p>
+								</div>
+							</div>
+
+							{selectedThread.chatStatus === "REQUESTED" && selectedThread.direction === "INCOMING" && (
+								<div className="flex items-center gap-2 shrink-0">
+									<button
+										type="button"
+										onClick={handleAccept}
+										disabled={responding}
+										className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#22C55E] hover:bg-[#1ea750] text-white font-black text-xs border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+									>
+										{responding ? "Accepting…" : "Accept"}
+									</button>
+									<button
+										type="button"
+										onClick={handleDecline}
+										disabled={responding}
+										className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-50 text-black font-black text-xs border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+									>
+										Decline
+									</button>
+								</div>
+							)}
+						</div>
+
+						{/* Messages scroll area */}
+						<div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
+							{loadingMessages ? (
+								<p className="text-xs font-semibold text-black/40 text-center">Loading…</p>
+							) : selectedThread.chatStatus === "REQUESTED" ? (
+								<div className="m-auto text-center max-w-xs animate-in fade-in duration-200">
+									{selectedThread.direction === "INCOMING" ? (
+										<>
+											<p className="text-sm font-black text-black">Collaboration Request Received</p>
+											<p className="text-xs font-semibold text-black/50 mt-2">
+												{selectedThread.counterpartName} wants to collaborate with your community. Accept the request to start chatting.
+											</p>
+											<button
+												type="button"
+												onClick={handleAccept}
+												disabled={responding}
+												className="mt-4 inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer disabled:opacity-50"
+											>
+												{responding ? "Accepting…" : "Accept Request"}
+											</button>
+										</>
+									) : (
+										<>
+											<p className="text-sm font-black text-black">Collaboration Request Sent</p>
+											<p className="text-xs font-semibold text-black/50 mt-2">
+												You&apos;ve sent a collaboration request to {selectedThread.counterpartName}. You can start messaging as soon as they accept.
+											</p>
+										</>
+									)}
+								</div>
+							) : messages.length === 0 ? (
+								<p className="text-xs font-semibold text-black/40 text-center m-auto">
+									No messages yet — say hi and start collaborating!
+								</p>
+							) : (
+								messages.map((m) => {
+									const isMine = m.senderType === selectedThread.mySenderType
+									return (
+										<div
+											key={m.id}
+											id={`collab-msg-${m.id}`}
+											className={clsx(
+												"flex flex-col max-w-[85%] sm:max-w-[75%] md:max-w-[70%] transition-all duration-300 rounded-2xl p-1",
+												isMine ? "self-end items-end" : "self-start items-start",
+												highlightedMessageId === m.id && "ring-4 ring-[#EE2C2C] bg-[#FFC940]/30 shadow-lg scale-[1.02]"
+											)}
+										>
+											<div className="flex items-center gap-2 mb-0.5 px-1">
+												<span className="text-[10px] font-black uppercase tracking-wide text-black/30">
+													{isMine ? "You" : selectedThread.counterpartName}
+												</span>
+												{selectedThread.chatStatus === "ACCEPTED" && (
+													<button
+														type="button"
+														onClick={() => setReplyingTo(m)}
+														className="text-[10px] font-bold text-black/30 hover:text-black cursor-pointer"
+													>
+														Reply
+													</button>
+												)}
+											</div>
+
+											<div
+												className={clsx(
+													"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words flex flex-col shadow-xs",
+													isMine ? "rounded-br-sm bg-[#FFC940] text-black" : "rounded-bl-sm bg-neutral-100 text-black border border-black/5"
+												)}
+											>
+												{m.replyTo && (
+													<button
+														type="button"
+														onClick={() => handleJumpToMessage(m.replyTo!.id)}
+														className="w-full text-left mb-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer block border-l-4 shadow-xs bg-black/10 hover:bg-black/15 text-black border-black/40"
+														title="Click to jump to message"
+													>
+														<p className="text-[9px] font-black uppercase tracking-wider text-black/60">
+															↩ Replying to {m.replyTo.sender?.firstName || "message"}
+														</p>
+														{m.replyTo.content && (
+															<p className="text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5 text-black/80">
+																{m.replyTo.content}
+															</p>
+														)}
+													</button>
+												)}
+
+												{m.mediaUrl && (
+													/* eslint-disable-next-line @next/next/no-img-element */
+													<img
+														src={m.mediaUrl}
+														alt="Shared attachment"
+														onClick={() => setViewingImage(m.mediaUrl!)}
+														className="max-w-[240px] max-h-[240px] rounded-2xl border-[3px] border-black object-cover cursor-pointer mb-1 hover:opacity-95 transition-opacity"
+													/>
+												)}
+
+												{m.content && (
+													<div className="px-1 py-0.5">
+														<LinkifiedText
+															text={m.content}
+															linkClassName={isMine ? "underline font-bold text-black" : "underline font-bold text-[#EE2C2C]"}
+														/>
+													</div>
+												)}
+											</div>
+
+											<div
+												className={clsx(
+													"flex items-center gap-1 mt-0.5 text-[9px] font-bold text-black/40 px-1",
+													isMine ? "justify-end" : "justify-start"
+												)}
+											>
+												<span>
+													{(() => {
+														try {
+															return new Date(m.createdAt).toLocaleTimeString([], {
+																hour: "2-digit",
+																minute: "2-digit",
+															})
+														} catch {
+															return ""
+														}
+													})()}
+												</span>
+											</div>
+										</div>
+									)
+								})
+							)}
+							<div ref={bottomRef} />
+						</div>
+
+						{/* Bottom Input Bar */}
+						{selectedThread.chatStatus === "ACCEPTED" && (
+							<div className="border-t-[3px] border-black shrink-0 bg-white flex flex-col">
+								{replyingTo && (
+									<div className="px-3 pt-2 flex items-center justify-between gap-2 border-b border-black/10 pb-2">
+										<div className="min-w-0 pl-2 border-l-2 border-[#EE2C2C]">
+											<p className="text-[10px] font-black uppercase text-black/40">
+												Replying to {replyingTo.sender?.firstName || selectedThread.counterpartName}
+											</p>
+											<p className="text-[11px] font-semibold text-black/50 truncate">
+												{replyingTo.content?.trim() ? replyingTo.content : "Photo"}
+											</p>
+										</div>
+										<button
+											type="button"
+											onClick={() => setReplyingTo(null)}
+											className="text-[10px] font-bold text-[#EE2C2C] shrink-0 cursor-pointer"
+										>
+											Cancel
+										</button>
+									</div>
+								)}
+
+								<div className="relative p-2.5 sm:p-3 flex items-center gap-2 pb-[max(0.6rem,env(safe-area-inset-bottom))]">
+									<input
+										type="file"
+										accept="image/*"
+										ref={fileInputRef}
+										onChange={handleImagePick}
+										className="hidden"
+									/>
+									<button
+										type="button"
+										onClick={() => fileInputRef.current?.click()}
+										disabled={uploadingImage}
+										className="shrink-0 size-9 rounded-xl border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50 cursor-pointer"
+										aria-label="Attach photo"
+									>
+										<Icon as={GallerySvg} size="sm" />
+									</button>
+									<EmojiPicker onSelect={(emoji) => setInput((prev) => prev + emoji)} />
+									<input
+										value={input}
+										onChange={(e) => setInput(e.target.value)}
+										onKeyDown={(e) => {
+											if (e.key === "Enter" && !e.shiftKey) {
+												e.preventDefault()
+												handleSend()
+											}
+										}}
+										placeholder="Write a message…"
+										className="flex-1 min-w-0 rounded-2xl border-[3px] border-black bg-white px-3.5 sm:px-4 py-2 text-sm font-semibold outline-none focus:bg-neutral-50"
+									/>
+									<Button
+										onClick={handleSend}
+										disabled={sending || uploadingImage || !input.trim()}
+										className="shrink-0 whitespace-nowrap"
+									>
+										{sending ? "…" : "Send"}
+									</Button>
+								</div>
+							</div>
+						)}
+					</div>
+				)}
+			</div>
+
 			{/* Lightbox Modal */}
-			{lightboxUrl && <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
+			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
 		</div>
 	)
 }
