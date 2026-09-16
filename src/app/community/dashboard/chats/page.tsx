@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback, useMemo, Fragment, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import clsx from "clsx"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
@@ -52,6 +52,7 @@ function timeAgo(iso: string | null) {
 }
 
 function CommunityChatsContent() {
+	const router = useRouter()
 	const { profile } = useHostStore()
 	const ownName = profile?.displayName || "You"
 	const searchParams = useSearchParams()
@@ -70,6 +71,11 @@ function CommunityChatsContent() {
 	useEffect(() => {
 		const typeParam = searchParams.get("type")
 		const interestIdParam = searchParams.get("interestId")
+
+		if (typeParam === "community") {
+			router.replace(`/community/dashboard/community-chats${interestIdParam ? `?threadId=${interestIdParam}` : ""}`)
+			return
+		}
 
 		if (typeParam === "campaign") {
 			setDealType("CAMPAIGN")

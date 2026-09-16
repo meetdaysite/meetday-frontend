@@ -8,7 +8,7 @@ import clsx from "clsx"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
-import { getHostCommunityProfile, getMySponsorshipProposals, getMySponsorshipChats, getMySpaceChats, getMySpaceHostChats } from "@/lib/api"
+import { getHostCommunityProfile, getMySponsorshipProposals, getMySponsorshipChats, getMySpaceChats, getMySpaceHostChats, getMyCommunityCollaborationChats } from "@/lib/api"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useToastStore } from "@/store/toastStore"
 import type { ComponentType, SVGProps } from "react"
@@ -27,6 +27,7 @@ import CalendarFillSvg from "@/icons/filled/calendar.svg"
 import RocketSvg from "@/icons/outlined/rocket.svg"
 import LockOutSvg from "@/icons/outlined/lock.svg"
 import LockFillSvg from "@/icons/filled/lock.svg"
+import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -43,6 +44,7 @@ const NAV_ITEMS_TOP: TopNavItem[] = [
 	{ label: "Experience Proposals", href: "/community/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Brand Campaigns", href: "/community/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg, disabled: true },
 	{ label: "Community Spaces", href: "/community/dashboard/community-spaces", outlined: CalendarOutSvg, filled: CalendarFillSvg },
+	{ label: "Communities", href: "/community/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
 	{ label: "Locked Deals", href: "/community/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
 ]
 
@@ -78,14 +80,29 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const [unreadCampaignChatsCount, setUnreadCampaignChatsCount] = useState(0)
 	const [unreadSpaceChatsCount, setUnreadSpaceChatsCount] = useState(0)
 	const [unreadCommunityRequestsCount, setUnreadCommunityRequestsCount] = useState(0)
+	const [unreadCommunityCollaborationChatsCount, setUnreadCommunityCollaborationChatsCount] = useState(0)
 	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
 	const [chatsOpen, setChatsOpen] = useState(false)
 
-	const isChatsRoute = pathname.startsWith("/community/dashboard/chats") || pathname.startsWith("/community/dashboard/space-chats")
+	const isChatsRoute =
+		pathname.startsWith("/community/dashboard/chats") ||
+		pathname.startsWith("/community/dashboard/space-chats") ||
+		pathname.startsWith("/community/dashboard/community-chats")
 	const isCampaignChat = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") === "campaign"
-	const isSponsorshipChat = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") !== "campaign"
+	const isSponsorshipChat =
+		pathname.startsWith("/community/dashboard/chats") &&
+		searchParams.get("type") !== "campaign" &&
+		searchParams.get("type") !== "community"
 	const isSpacesChat = pathname.startsWith("/community/dashboard/space-chats")
-	const totalChatsBadge = unreadSponsorshipChatsCount + unreadCampaignChatsCount + unreadSpaceChatsCount + unreadCommunityRequestsCount
+	const isCommunityCollaborationChat =
+		pathname.startsWith("/community/dashboard/community-chats") ||
+		(pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") === "community")
+	const totalChatsBadge =
+		unreadSponsorshipChatsCount +
+		unreadCampaignChatsCount +
+		unreadSpaceChatsCount +
+		unreadCommunityRequestsCount +
+		unreadCommunityCollaborationChatsCount
 
 	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
 	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
@@ -252,6 +269,25 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 			getMySpaceHostChats(undefined, "HOST")
 				.then((threads) => {
 					setUnreadCommunityRequestsCount(threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0))
+				})
+				.catch(() => {})
+		}
+		updateCount()
+		const interval = setInterval(updateCount, 8000)
+		return () => clearInterval(interval)
+	}, [profile?.id])
+
+	// Community Collaboration Chats badge (Community <-> Community)
+	useEffect(() => {
+		if (!profile?.id) return
+		const updateCount = () => {
+			getMyCommunityCollaborationChats()
+				.then((threads) => {
+					const count = (threads || []).reduce((sum, t) => {
+						const isIncomingPending = t.direction === "INCOMING" && t.chatStatus === "REQUESTED"
+						return sum + (t.unreadCount || 0) + (isIncomingPending ? 1 : 0)
+					}, 0)
+					setUnreadCommunityCollaborationChatsCount(count)
 				})
 				.catch(() => {})
 		}
@@ -585,6 +621,24 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 								{(unreadSpaceChatsCount + unreadCommunityRequestsCount) > 0 && (
 									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
 										{(unreadSpaceChatsCount + unreadCommunityRequestsCount) > 9 ? "9+" : (unreadSpaceChatsCount + unreadCommunityRequestsCount)}
+									</span>
+								)}
+							</Link>
+
+							<Link
+								href="/community/dashboard/community-chats"
+								onClick={onClose}
+								className={clsx(
+									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
+									isCommunityCollaborationChat
+										? "bg-[#D12525] text-white font-medium"
+										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
+								)}
+							>
+								<span className="flex-1 whitespace-nowrap">Community Chats</span>
+								{unreadCommunityCollaborationChatsCount > 0 && (
+									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+										{unreadCommunityCollaborationChatsCount > 9 ? "9+" : unreadCommunityCollaborationChatsCount}
 									</span>
 								)}
 							</Link>

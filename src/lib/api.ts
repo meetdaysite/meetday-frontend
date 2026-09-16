@@ -2076,6 +2076,150 @@ export async function upsertSpaceHostDealReport(
 	return data.data
 }
 
+// ─── Community Collaboration ──────────────────────────────────────────────────
+
+export type CommunityCollaborationStatus = "REQUESTED" | "ACCEPTED" | "DECLINED"
+
+export type CommunityCollaborationThread = {
+	id: string
+	requesterCommunityId: string
+	targetCommunityId: string
+	communityId: string
+	hostId: string
+	counterpartCommunityId: string
+	counterpartHostProfileId: string
+	mySenderType: "REQUESTER" | "TARGET"
+	direction: "INCOMING" | "OUTGOING"
+	communityName: string
+	hostName: string
+	counterpartName: string
+	communityAvatarUrl: string | null
+	hostAvatarUrl: string | null
+	counterpartAvatarUrl: string | null
+	chatStatus: CommunityCollaborationStatus
+	lastMessagePreview?: string | null
+	lastMessageAt?: string | null
+	createdAt: string
+	unreadCount: number
+}
+
+export type CommunityCollaborationMessage = {
+	id: string
+	communityCollaborationId: string
+	senderType: "REQUESTER" | "TARGET"
+	senderId: string
+	sender?: {
+		id: string
+		firstName: string
+		lastName: string
+		avatarUrl?: string | null
+	}
+	messageType: "TEXT" | "IMAGE" | "FILE"
+	content: string
+	mediaKey?: string | null
+	mediaUrl?: string | null
+	replyToId?: string | null
+	replyTo?: {
+		id: string
+		content: string
+		sender?: {
+			firstName: string
+			lastName: string
+		}
+	} | null
+	deletedAt?: string | null
+	createdAt: string
+}
+
+export async function getCommunityCollaborationCommunities(): Promise<{ communities: BrandCommunity[]; total: number }> {
+	const { data } = await apiClient.get<{ success: boolean; data: { communities: BrandCommunity[]; total: number } }>(
+		"/community-collaboration/communities",
+	)
+	return data.data
+}
+
+export async function markCommunityCollaborationInterest(
+	targetCommunityId: string,
+): Promise<{ message: string; alreadyInterested: boolean; interestId: string; chatStatus: CommunityCollaborationStatus }> {
+	const { data } = await apiClient.post<{
+		success: boolean
+		data: { message: string; alreadyInterested: boolean; interestId: string; chatStatus: CommunityCollaborationStatus }
+	}>(`/community-collaboration/interest/${targetCommunityId}`)
+	return data.data
+}
+
+export async function getMyCommunityCollaborationChats(
+	status?: CommunityCollaborationStatus,
+): Promise<CommunityCollaborationThread[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: CommunityCollaborationThread[] }>(
+		"/community-collaboration/chats",
+		{ params: status ? { status } : undefined }
+	)
+	return data.data
+}
+
+export async function getCommunityCollaborationChatMessages(
+	interestId: string,
+): Promise<{
+	messages: CommunityCollaborationMessage[]
+	chatStatus: CommunityCollaborationStatus
+	mySenderType: "REQUESTER" | "TARGET"
+	counterpartName: string
+	counterpartAvatarUrl: string | null
+}> {
+	const { data } = await apiClient.get<{
+		success: boolean
+		data: {
+			messages: CommunityCollaborationMessage[]
+			chatStatus: CommunityCollaborationStatus
+			mySenderType: "REQUESTER" | "TARGET"
+			counterpartName: string
+			counterpartAvatarUrl: string | null
+		}
+	}>(`/community-collaboration/chats/${interestId}/messages`)
+	return data.data
+}
+
+export async function acceptCommunityCollaborationRequest(
+	interestId: string,
+): Promise<{ message: string; chatStatus: CommunityCollaborationStatus }> {
+	const { data } = await apiClient.post<{
+		success: boolean
+		data: { message: string; chatStatus: CommunityCollaborationStatus }
+	}>(`/community-collaboration/chats/${interestId}/accept`)
+	return data.data
+}
+
+export async function declineCommunityCollaborationRequest(
+	interestId: string,
+): Promise<{ message: string; chatStatus: CommunityCollaborationStatus }> {
+	const { data } = await apiClient.post<{
+		success: boolean
+		data: { message: string; chatStatus: CommunityCollaborationStatus }
+	}>(`/community-collaboration/chats/${interestId}/decline`)
+	return data.data
+}
+
+export async function sendCommunityCollaborationMessage(
+	interestId: string,
+	payload: { content?: string; mediaKey?: string; replyToId?: string },
+): Promise<CommunityCollaborationMessage> {
+	const { data } = await apiClient.post<{ success: boolean; data: CommunityCollaborationMessage }>(
+		`/community-collaboration/chats/${interestId}/messages`,
+		payload,
+	)
+	return data.data
+}
+
+export async function getCommunityCollaborationChatByPartner(
+	partnerId: string,
+): Promise<CommunityCollaborationThread | null> {
+	const { data } = await apiClient.get<{ success: boolean; data: CommunityCollaborationThread | null }>(
+		`/community-collaboration/chats/partner/${partnerId}`
+	)
+	return data.data
+}
+
 
 export async function getHostTeamMembers(): Promise<TeamMembersList> {
 	const { data } = await apiClient.get<{ success: boolean; data: TeamMembersList }>("/hosts/community/members")
@@ -2824,7 +2968,7 @@ export async function getCommunityAnnouncements(
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
-	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "SPACE_CHAT_MEDIA" | "SPACE_HOST_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "SPONSORSHIP_DEAL_REPORT_MEDIA" | "SPACE_DEAL_REPORT_MEDIA" | "SPACE_HOST_DEAL_REPORT_MEDIA" | "COMMUNITY_BRAND_LOGO_MEDIA"
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "SPACE_CHAT_MEDIA" | "SPACE_HOST_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "SPONSORSHIP_DEAL_REPORT_MEDIA" | "SPACE_DEAL_REPORT_MEDIA" | "SPACE_HOST_DEAL_REPORT_MEDIA" | "COMMUNITY_BRAND_LOGO_MEDIA" | "COMMUNITY_COLLABORATION_CHAT_MEDIA"
 	contentType: string
 	resourceId?: string
 	mediaType?: string
