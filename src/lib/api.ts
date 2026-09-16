@@ -3785,6 +3785,7 @@ export type CommunityHostChatThread = {
 	id: string
 	communityId: string
 	hostId: string
+	mySenderType: "REQUESTER" | "TARGET"
 	communityName: string
 	hostName: string
 	communityAvatarUrl?: string | null
@@ -3794,6 +3795,16 @@ export type CommunityHostChatThread = {
 	lastMessageAt?: string | null
 	createdAt?: string | null
 	unreadCount?: number
+}
+
+export type CommunityCollaborationMessage = {
+	id: string
+	content: string
+	mediaKey?: string | null
+	createdAt: string
+	senderType: "REQUESTER" | "TARGET"
+	senderId: string
+	sender?: { firstName: string; lastName: string; avatarUrl?: string | null }
 }
 
 export async function markCommunityCollaborationInterest(
@@ -3812,8 +3823,8 @@ export async function getMyCommunityCollaborationChats(status?: CommunityHostCha
 
 export async function getCommunityCollaborationChatMessages(
 	interestId: string,
-): Promise<{ messages: any[]; chatStatus: CommunityHostChatStatus }> {
-	const { data } = await apiClient.get<{ success: boolean; data: { messages: any[]; chatStatus: CommunityHostChatStatus } }>(
+): Promise<{ messages: CommunityCollaborationMessage[]; chatStatus: CommunityHostChatStatus }> {
+	const { data } = await apiClient.get<{ success: boolean; data: { messages: CommunityCollaborationMessage[]; chatStatus: CommunityHostChatStatus } }>(
 		`/community-collaboration/chats/${interestId}/messages`,
 	)
 	return data.data
@@ -3849,8 +3860,8 @@ export async function declineCommunityCollaborationRequest(interestId: string): 
 export async function sendCommunityCollaborationMessage(
 	interestId: string,
 	payload: { content?: string; mediaKey?: string; replyToId?: string },
-): Promise<any> {
-	const { data } = await apiClient.post<{ success: boolean; data: any }>(
+): Promise<CommunityCollaborationMessage> {
+	const { data } = await apiClient.post<{ success: boolean; data: CommunityCollaborationMessage }>(
 		`/community-collaboration/chats/${interestId}/messages`,
 		payload,
 	)

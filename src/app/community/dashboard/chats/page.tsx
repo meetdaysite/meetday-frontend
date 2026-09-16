@@ -34,6 +34,7 @@ import { useNotificationStore } from "@/store/notificationStore"
 import { playMessageChime } from "@/lib/notificationSound"
 import { LinkifiedText } from "@/components/ui/LinkifiedText"
 import { SystemMessageBubble } from "@/components/chat/SystemMessageBubble"
+import CommunityCollaborationChatDashboard from "@/components/community/CommunityCollaborationChatDashboard"
 import confetti from "canvas-confetti"
 
 const POLL_MS = 4000
@@ -428,9 +429,14 @@ function CommunityChatsContent() {
 export default function CommunityChatsPage() {
 	return (
 		<Suspense fallback={<div className="flex-1 flex items-center justify-center min-h-[400px] text-xs font-semibold text-black/40">Loading chats…</div>}>
-			<CommunityChatsContent />
+			<ChatsRouteContent />
 		</Suspense>
 	)
+}
+
+function ChatsRouteContent() {
+	const searchParams = useSearchParams()
+	return searchParams.get("type") === "community" ? <CommunityCollaborationChatDashboard /> : <CommunityChatsContent />
 }
 
 function ChatThreadPanel({

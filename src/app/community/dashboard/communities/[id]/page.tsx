@@ -1614,7 +1614,7 @@ export default function HostCommunityDetailPage() {
 
 									{/* Collaborate Button */}
 									{existingChatId ? (
-										<Link href={`/community/dashboard/space-chats?threadId=${existingChatId}`}>
+										<Link href={`/community/dashboard/chats?type=community&chatId=${existingChatId}`}>
 											<Button
 												variant="primary"
 												size="md"
