@@ -940,11 +940,12 @@ export default function HostCommunityDetailPage() {
 
 	// Check for existing collaboration chat
 	useEffect(() => {
-		if (!data?.community?.id) return
+		const communityId = data?.community?.id
+		if (typeof communityId !== "string" || communityId.length === 0) return
 		let cancelled = false
 		async function checkExistingChat() {
 			try {
-				const existingChat = await getCommunityCollaborationChatByPartner(data.community.id)
+				const existingChat = await getCommunityCollaborationChatByPartner(communityId!)
 				if (!cancelled && existingChat) {
 					setExistingChatId(existingChat.id)
 				}

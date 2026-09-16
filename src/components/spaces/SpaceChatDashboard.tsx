@@ -903,7 +903,7 @@ export function SpaceChatDashboard({
 													</span>
 												</div>
 											</div>
-									<>
+										</>
 										)
 									})
 								)}
