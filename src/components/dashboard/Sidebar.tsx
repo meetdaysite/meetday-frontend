@@ -27,6 +27,8 @@ import CalendarFillSvg from "@/icons/filled/calendar.svg"
 import RocketSvg from "@/icons/outlined/rocket.svg"
 import LockOutSvg from "@/icons/outlined/lock.svg"
 import LockFillSvg from "@/icons/filled/lock.svg"
+import UsersGroupOutSvg from "@/icons/outlined/users-group-2.svg"
+import UsersGroupFillSvg from "@/icons/filled/users-group-2.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
@@ -40,6 +42,7 @@ type TopNavItem = {
 
 const NAV_ITEMS_TOP: TopNavItem[] = [
 	{ label: "Dashboard", href: "/community/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
+	{ label: "Communities", href: "/community/dashboard/communities", outlined: UsersGroupOutSvg, filled: UsersGroupFillSvg },
 	{ label: "Experience Proposals", href: "/community/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Brand Campaigns", href: "/community/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg, disabled: true },
 	{ label: "Community Spaces", href: "/community/dashboard/community-spaces", outlined: CalendarOutSvg, filled: CalendarFillSvg },

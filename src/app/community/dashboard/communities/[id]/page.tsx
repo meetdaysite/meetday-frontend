@@ -20,6 +20,8 @@ import {
 	deleteHostCommunityAnnouncement,
 	joinCommunity,
 	leaveCommunity,
+	markCommunityCollaborationInterest,
+	getCommunityCollaborationChatByPartner,
 	type HostCommunityOverviewResponse,
 	type HostCommunityAudienceResponse,
 	type HostCommunityExperience,
@@ -898,6 +900,10 @@ export default function HostCommunityDetailPage() {
 	// Leave community state
 	const [leaveModalOpen, setLeaveModalOpen] = useState(false)
 
+	// Collaboration state
+	const [collaborationSending, setCollaborationSending] = useState(false)
+	const [existingChatId, setExistingChatId] = useState<string | null>(null)
+
 	// Announcements tab state
 	const [annItems, setAnnItems] = useState<HostCommunityAnnouncement[]>([])
 	const [annTotal, setAnnTotal] = useState(0)
@@ -931,6 +937,26 @@ export default function HostCommunityDetailPage() {
 			cancelled = true
 		}
 	}, [id, refreshKey])
+
+	// Check for existing collaboration chat
+	useEffect(() => {
+		if (!data?.community?.id) return
+		let cancelled = false
+		async function checkExistingChat() {
+			try {
+				const existingChat = await getCommunityCollaborationChatByPartner(data.community.id)
+				if (!cancelled && existingChat) {
+					setExistingChatId(existingChat.id)
+				}
+			} catch {
+				// Silent - collaboration chat might not exist
+			}
+		}
+		checkExistingChat()
+		return () => {
+			cancelled = true
+		}
+	}, [data?.community?.id])
 
 	// Experiences: re-fetch when tab is active or page changes
 	useEffect(() => {
@@ -1126,6 +1152,18 @@ export default function HostCommunityDetailPage() {
 		toast.success(`You've left ${community.name}`)
 		setLeaveModalOpen(false)
 		setRefreshKey(k => k + 1)
+	}
+
+	async function handleCollaborate() {
+		try {
+			setCollaborationSending(true)
+			await markCommunityCollaborationInterest(id)
+			toast.success(`Collaboration request sent to ${community.name}`)
+		} catch (err) {
+			toast.error(getApiErrorMessage(err) || "Failed to send collaboration request")
+		} finally {
+			setCollaborationSending(false)
+		}
 	}
 
 	const cityLabel = community.communityCities.length > 1 ? "All Cities" : community.primaryCity
@@ -1572,6 +1610,31 @@ export default function HostCommunityDetailPage() {
 											</Button>
 										)
 									)}
+
+									{/* Collaborate Button */}
+									{existingChatId ? (
+										<Link href={`/community/dashboard/space-chats?threadId=${existingChatId}`}>
+											<Button
+												variant="primary"
+												size="md"
+												radius="md"
+												className="w-full"
+											>
+												Go to Chat
+											</Button>
+										</Link>
+									) : hostContext.isMember ? (
+										<Button
+											variant="primary"
+											size="md"
+											radius="md"
+											className="w-full bg-[#EE2C2C] hover:bg-[#d42525] text-white"
+											disabled={collaborationSending}
+											onClick={handleCollaborate}
+										>
+											{collaborationSending ? "Sending…" : "Collaborate"}
+										</Button>
+									) : null}
 								</div>
 
 								{/* Community Stats */}

@@ -3775,3 +3775,84 @@ export async function getPublishedCampaignDetail(id: string): Promise<Campaign> 
 
 
 
+
+// ─── Community-to-Community Collaboration ──────────────────────────────────
+
+export type CommunityHostChatStatus = "REQUESTED" | "ACCEPTED" | "DECLINED"
+export type CommunityHostChatRole = "COMMUNITY" | "HOST"
+
+export type CommunityHostChatThread = {
+	id: string
+	communityId: string
+	hostId: string
+	communityName: string
+	hostName: string
+	communityAvatarUrl?: string | null
+	hostAvatarUrl?: string | null
+	chatStatus: CommunityHostChatStatus
+	lastMessagePreview?: string | null
+	lastMessageAt?: string | null
+	createdAt?: string | null
+	unreadCount?: number
+}
+
+export async function markCommunityCollaborationInterest(
+	communityId: string,
+): Promise<{ message: string; alreadyInterested: boolean; interestId: string; chatStatus: CommunityHostChatStatus }> {
+	const { data } = await apiClient.post<{ success: boolean; data: { message: string; alreadyInterested: boolean; interestId: string; chatStatus: CommunityHostChatStatus } }>(`/community-collaboration/interest/${communityId}`, {})
+	return data.data
+}
+
+export async function getMyCommunityCollaborationChats(status?: CommunityHostChatStatus): Promise<CommunityHostChatThread[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: CommunityHostChatThread[] }>("/community-collaboration/chats", {
+		params: status ? { status } : undefined,
+	})
+	return data.data
+}
+
+export async function getCommunityCollaborationChatMessages(
+	interestId: string,
+): Promise<{ messages: any[]; chatStatus: CommunityHostChatStatus }> {
+	const { data } = await apiClient.get<{ success: boolean; data: { messages: any[]; chatStatus: CommunityHostChatStatus } }>(
+		`/community-collaboration/chats/${interestId}/messages`,
+	)
+	return data.data
+}
+
+export async function acceptCommunityCollaborationRequest(interestId: string): Promise<{ message: string; chatStatus: CommunityHostChatStatus }> {
+	const { data } = await apiClient.post<{ success: boolean; data: { message: string; chatStatus: CommunityHostChatStatus } }>(
+		`/community-collaboration/chats/${interestId}/accept`,
+		{},
+	)
+	return data.data
+}
+
+export async function getCommunityCollaborationChatByPartner(partnerId: string): Promise<CommunityHostChatThread | null> {
+	try {
+		const { data } = await apiClient.get<{ success: boolean; data: CommunityHostChatThread | null }>(
+			`/community-collaboration/chats/partner/${partnerId}`,
+		)
+		return data.data
+	} catch {
+		return null
+	}
+}
+
+export async function declineCommunityCollaborationRequest(interestId: string): Promise<{ message: string; chatStatus: CommunityHostChatStatus }> {
+	const { data } = await apiClient.post<{ success: boolean; data: { message: string; chatStatus: CommunityHostChatStatus } }>(
+		`/community-collaboration/chats/${interestId}/decline`,
+		{},
+	)
+	return data.data
+}
+
+export async function sendCommunityCollaborationMessage(
+	interestId: string,
+	payload: { content?: string; mediaKey?: string; replyToId?: string },
+): Promise<any> {
+	const { data } = await apiClient.post<{ success: boolean; data: any }>(
+		`/community-collaboration/chats/${interestId}/messages`,
+		payload,
+	)
+	return data.data
+}

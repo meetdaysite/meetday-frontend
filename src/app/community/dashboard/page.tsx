@@ -23,6 +23,7 @@ import {
 } from "@/lib/api"
 import { DealDetailsModal, DealReportModal } from "@/components/sponsorship/DealPanel"
 import { SpaceCard } from "@/components/spaces/CommunitySpacesBrowse"
+import { CollaborationRequestsCard } from "./_components/CollaborationRequestsCard"
 import clsx from "clsx"
 
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
@@ -385,6 +386,9 @@ export default function DashboardWelcomePage() {
 							</div>
 						)}
 					</div>
+
+					{/* Collaboration Requests */}
+					<CollaborationRequestsCard />
 
 					{/* Row 2: Locked Deals & Reports */}
 					<div className="flex flex-col w-full">

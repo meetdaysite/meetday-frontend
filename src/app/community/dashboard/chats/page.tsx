@@ -51,6 +51,30 @@ function timeAgo(iso: string | null) {
 	return `${Math.floor(hours / 24)}d`
 }
 
+function getDateLabel(iso: string | null): string {
+	if (!iso) return ""
+	const date = new Date(iso)
+	const today = new Date()
+	const yesterday = new Date(today)
+	yesterday.setDate(yesterday.getDate() - 1)
+
+	const dateKey = date.toDateString()
+	const todayKey = today.toDateString()
+	const yesterdayKey = yesterday.toDateString()
+
+	if (dateKey === todayKey) return "Today"
+	if (dateKey === yesterdayKey) return "Yesterday"
+
+	return date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+}
+
+function shouldShowDateDivider(currentMsg: SponsorshipChatMessage, prevMsg: SponsorshipChatMessage | null): boolean {
+	if (!prevMsg) return true
+	const currentDate = new Date(currentMsg.createdAt).toDateString()
+	const prevDate = new Date(prevMsg.createdAt).toDateString()
+	return currentDate !== prevDate
+}
+
 function CommunityChatsContent() {
 	const { profile } = useHostStore()
 	const ownName = profile?.displayName || "You"
@@ -791,7 +815,7 @@ function ChatThreadPanel({
 				) : messages.length === 0 ? (
 					<p className="text-xs font-semibold text-black/40 text-center m-auto">No messages yet — say hi!</p>
 				) : (
-					messages.map(m => {
+					messages.map((m, idx) => {
 						const isSystemMessage =
 							m.messageType === "SYSTEM" ||
 							(m.senderType as string) === "SYSTEM" ||
@@ -817,8 +841,19 @@ function ChatThreadPanel({
 						const isAdmin = m.senderType === "ADMIN" || (m.senderType as string) === "BOT"
 						const isDarkBubble = isBrand || isSpaceMsg
 						const isDeleted = !!m.deletedAt
+						const prevMsg = idx > 0 ? messages[idx - 1] : null
+						const showDateDivider = shouldShowDateDivider(m, prevMsg as SponsorshipChatMessage | null)
 						return (
 							<Fragment key={m.id}>
+								{showDateDivider && (
+									<div className="self-stretch flex items-center gap-2 my-3">
+										<div className="flex-1 h-px bg-black/15" />
+										<span className="text-[10px] font-black uppercase text-black/40 shrink-0">
+											{getDateLabel(m.createdAt)}
+										</span>
+										<div className="flex-1 h-px bg-black/15" />
+									</div>
+								)}
 								{unreadDivider?.messageId === m.id && (
 									<div className="self-stretch flex items-center gap-2 my-1">
 										<div className="flex-1 h-px bg-[#EE2C2C]/30" />

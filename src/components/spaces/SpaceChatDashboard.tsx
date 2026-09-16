@@ -66,6 +66,30 @@ function timeAgo(iso: string | null): string {
 	return `${Math.floor(hours / 24)}d`
 }
 
+function getDateLabel(iso: string | null): string {
+	if (!iso) return ""
+	const date = new Date(iso)
+	const today = new Date()
+	const yesterday = new Date(today)
+	yesterday.setDate(yesterday.getDate() - 1)
+
+	const dateKey = date.toDateString()
+	const todayKey = today.toDateString()
+	const yesterdayKey = yesterday.toDateString()
+
+	if (dateKey === todayKey) return "Today"
+	if (dateKey === yesterdayKey) return "Yesterday"
+
+	return date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+}
+
+function shouldShowDateDivider(currentMsg: SpaceChatMessage | SpaceHostChatMessage, prevMsg: (SpaceChatMessage | SpaceHostChatMessage) | null): boolean {
+	if (!prevMsg) return true
+	const currentDate = new Date(currentMsg.createdAt).toDateString()
+	const prevDate = new Date(prevMsg.createdAt).toDateString()
+	return currentDate !== prevDate
+}
+
 export type SpaceChatSubTab = "ACCEPTED" | "REQUESTS" | "SENT_REQUESTS"
 
 export type UnifiedSpaceThread = {
@@ -244,11 +268,15 @@ export function SpaceChatDashboard({
 	}, [spaceThreads, spaceHostThreads, role, category])
 
 	useEffect(() => {
-		if (initialThreadParam && allUnifiedThreads.length > 0) {
+		if (initialThreadParam) {
 			const found = allUnifiedThreads.find((t) => t.id === initialThreadParam)
 			if (found) {
 				setSelectedThreadId(found.id)
 				setActiveTab(found.targetTab)
+			} else if (allUnifiedThreads.length === 0) {
+				// Threads not yet loaded, but we have the param - set thread ID anyway
+				// It will be validated once threads are loaded
+				setSelectedThreadId(initialThreadParam)
 			}
 		}
 	}, [initialThreadParam, allUnifiedThreads])
@@ -736,7 +764,7 @@ export function SpaceChatDashboard({
 								) : messages.length === 0 ? (
 									<p className="text-xs font-semibold text-black/40 text-center m-auto">No messages yet — say hi!</p>
 								) : (
-									messages.map((m) => {
+									messages.map((m, idx) => {
 										const isSystemMessage =
 											m.messageType === "SYSTEM" ||
 											(m.senderType as string) === "SYSTEM" ||
@@ -764,9 +792,21 @@ export function SpaceChatDashboard({
 										const isSpaceMsg = m.senderType === "SPACE"
 										const isAdmin = (m.senderType as string) === "ADMIN" || (m.senderType as string) === "BOT"
 										const isDarkBubble = isBrand || isSpaceMsg
+										const prevMsg = idx > 0 ? messages[idx - 1] : null
+										const showDateDivider = shouldShowDateDivider(m, prevMsg ?? null)
 
 										return (
-											<div
+											<>
+												{showDateDivider && (
+													<div className="self-stretch flex items-center gap-2 my-3">
+														<div className="flex-1 h-px bg-black/15" />
+														<span className="text-[10px] font-black uppercase text-black/40 shrink-0">
+															{getDateLabel(m.createdAt)}
+														</span>
+														<div className="flex-1 h-px bg-black/15" />
+													</div>
+												)}
+												<div
 												key={m.id}
 												id={`space-msg-${m.id}`}
 												className={clsx(
@@ -863,6 +903,7 @@ export function SpaceChatDashboard({
 													</span>
 												</div>
 											</div>
+									<>
 										)
 									})
 								)}
