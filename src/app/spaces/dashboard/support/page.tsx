@@ -18,20 +18,20 @@ export default function SpacesSupportPage() {
 	}, [notifications, markRead])
 
 	return (
-		<div className="flex flex-col min-h-screen bg-white">
+		<div className="flex flex-col flex-1 min-h-0 bg-white h-full">
 			{/* Top Nav / Subheader */}
-			<div className="hidden sm:flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
+			<div className="hidden sm:flex justify-between items-center px-8 py-3.5 border-b border-black/10 shrink-0">
 				<p className="text-sm font-semibold text-black/50 mx-auto">
 					Welcome to <span className="text-[#EE2C2C] font-bold">Meetday</span>
 				</p>
 			</div>
 
-			<div className="flex-1 min-h-0 flex flex-col p-6 max-w-4xl w-full mx-auto">
-				<div className="mb-4">
-					<h1 className="text-3xl font-heading font-black text-black">Support Chat</h1>
-					<p className="text-sm font-semibold text-black/50 mt-1">Chat directly with the Meetday team.</p>
+			<div className="flex-1 min-h-0 px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4 max-w-7xl w-full mx-auto flex flex-col h-full gap-3">
+				<div className="shrink-0">
+					<h1 className="text-2xl sm:text-3xl font-heading font-black text-black">Support Chat</h1>
+					<p className="text-xs sm:text-sm font-semibold text-black/50 mt-0.5">Chat directly with the Meetday team.</p>
 				</div>
-				<div className="flex-1 min-h-0 border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex bg-white">
+				<div className="flex-1 min-h-[440px] border-[3px] border-black rounded-[24px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden flex flex-col bg-white">
 					<MeetdayChatPanel ownName={ownName} role="SPACE" />
 				</div>
 			</div>

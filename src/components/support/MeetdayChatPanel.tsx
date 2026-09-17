@@ -174,17 +174,17 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 	}
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col">
-			<div className="px-5 py-3 border-b-[3px] border-black shrink-0">
-				<p className="text-sm font-black text-black">Talk to Meetday</p>
-				<p className="text-[11px] font-semibold text-black/40">Questions, issues, or feedback? We&apos;re here to help.</p>
+		<div className="flex-1 min-h-0 flex flex-col h-full bg-white overflow-hidden">
+			<div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black shrink-0 bg-white">
+				<p className="text-xs sm:text-sm font-black text-black">Talk to Meetday</p>
+				<p className="text-[10px] sm:text-[11px] font-semibold text-black/40">Questions, issues, or feedback? We&apos;re here to help.</p>
 			</div>
 
-			<div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
+			<div className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-5 py-3 sm:py-4 flex flex-col gap-2.5 sm:gap-3">
 				{loading ? (
-					<p className="text-xs font-semibold text-black/40 text-center">Loading…</p>
+					<p className="text-xs font-semibold text-black/40 text-center py-6">Loading…</p>
 				) : messages.length === 0 ? (
-					<p className="text-xs font-semibold text-black/40 text-center m-auto">No messages yet — say hi to the Meetday team!</p>
+					<p className="text-xs font-semibold text-black/40 text-center m-auto py-8">No messages yet — say hi to the Meetday team!</p>
 				) : (
 					messages.map(m => {
 						const isMine = m.senderType === "USER"
@@ -193,43 +193,43 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 						if (isSystemMessage) {
 							return (
 								<div key={m.id} className="w-full flex justify-center my-1">
-									<span className="text-[11px] font-bold text-black/40 bg-neutral-100 px-3 py-1 rounded-full border border-black/10">
+									<span className="text-[10px] sm:text-[11px] font-bold text-black/40 bg-neutral-100 px-3 py-1 rounded-full border border-black/10 text-center">
 										{m.content.replace(/^\[System\]\s*/, "")}
 									</span>
 								</div>
 							)
 						}
-						const senderLabel = isMine
-							? (role === "HOST" ? `${ownName} • Community` : role === "SPACE" ? `${ownName} • Space` : `${ownName} • Brand`)
-							: isBot ? "Meetday" : "Meetday • Admin"
+						const senderLabel = isMine ? "You" : isBot ? "Meetday" : "Admin"
 						const isDarkBubble = isMine && (role === "BRAND" || role === "SPACE")
-						const isDeleted = !!m.deletedAt
+						const isDeleted = Boolean(m.deletedAt)
 						return (
 							<div
 								key={m.id}
 								id={`support-msg-${m.id}`}
 								className={clsx(
-									"flex flex-col max-w-[75%] transition-all duration-300 rounded-2xl p-1",
+									"flex flex-col max-w-[85%] sm:max-w-[75%] md:max-w-[70%] transition-all duration-300 rounded-2xl p-0.5 sm:p-1",
 									isMine ? "self-end items-end" : "self-start items-start",
 									highlightedMessageId === m.id && "ring-4 ring-[#EE2C2C] bg-[#FFC940]/40 shadow-xl scale-[1.03] animate-pulse"
 								)}
 							>
-								<div className="flex items-center gap-2 mb-0.5 px-1">
-									<span className="text-[10px] font-black uppercase tracking-wide text-black/30">
+								<div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 px-1 max-w-full flex-wrap">
+									<span className="text-[10px] font-black uppercase tracking-wide text-black/35 truncate max-w-[160px] sm:max-w-none">
 										{senderLabel}
 									</span>
-									<button
-										type="button"
-										onClick={() => { setEditingMessageId(null); setReplyingTo(m) }}
-										className="text-[10px] font-bold text-black/30 hover:text-black transition-colors"
-									>
-										Reply
-									</button>
+									{!isDeleted && (
+										<button
+											type="button"
+											onClick={() => { setEditingMessageId(null); setReplyingTo(m) }}
+											className="text-[10px] font-bold text-black/35 hover:text-black transition-colors cursor-pointer"
+										>
+											Reply
+										</button>
+									)}
 									{isMine && m.content && !isDeleted && (
 										<button
 											type="button"
 											onClick={() => handleEditStart(m)}
-											className="text-[10px] font-bold text-black/30 hover:text-black transition-colors"
+											className="text-[10px] font-bold text-black/35 hover:text-black transition-colors cursor-pointer"
 										>
 											Edit
 										</button>
@@ -238,7 +238,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 										<button
 											type="button"
 											onClick={() => handleDelete(m)}
-											className="text-[10px] font-bold text-black/30 hover:text-[#EE2C2C] transition-colors"
+											className="text-[10px] font-bold text-black/35 hover:text-[#EE2C2C] transition-colors cursor-pointer"
 										>
 											Delete
 										</button>
@@ -246,13 +246,13 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 								</div>
 								<div
 									className={clsx(
-										"rounded-2xl p-2 sm:p-2.5 text-sm font-semibold break-words flex flex-col shadow-xs",
+										"rounded-2xl p-2.5 sm:p-3 text-xs sm:text-sm font-semibold break-words [overflow-wrap:anywhere] flex flex-col shadow-xs",
 										isDeleted && "opacity-90",
 										isMine && role === "HOST" && "bg-[#FFC940] text-black rounded-br-sm",
 										isMine && role === "BRAND" && "bg-[#EE2C2C] text-white rounded-br-sm",
 										isMine && role === "SPACE" && "bg-black text-white rounded-br-sm",
 										isMine && role !== "HOST" && role !== "BRAND" && role !== "SPACE" && "bg-[#FFC940] text-black rounded-br-sm",
-										!isMine && "bg-neutral-200 text-black rounded-bl-sm",
+										!isMine && "bg-neutral-100 text-black border border-black/10 rounded-bl-sm",
 									)}
 								>
 									{m.replyTo && (
@@ -260,7 +260,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 											type="button"
 											onClick={() => handleJumpToMessage(m.replyTo!.id)}
 											className={clsx(
-												"w-full text-left mb-1.5 px-3 py-2 rounded-xl transition-all cursor-pointer block border-l-4 shadow-xs",
+												"w-full text-left mb-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl transition-all cursor-pointer block border-l-4 shadow-xs",
 												isDarkBubble
 													? "bg-white/15 hover:bg-white/20 text-white border-white/70"
 													: "bg-black/10 hover:bg-black/15 text-black border-black/40"
@@ -271,7 +271,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 												"text-[9px] font-black uppercase tracking-wider",
 												isDarkBubble ? "text-white/80" : "text-black/60"
 											)}>
-												↩ Replying to {m.replyTo.senderType === "BOT" ? "Meetday" : m.replyTo.senderType === "ADMIN" ? "Meetday • Admin" : ownName}
+												↩ Replying to {m.replyTo.senderType?.toUpperCase() === "ADMIN" ? "Admin" : m.replyTo.senderType === "BOT" ? "Meetday" : "You"}
 											</p>
 											{m.replyTo.hasMedia && (
 												<p className={clsx("text-xs font-semibold flex items-center gap-1 my-0.5", isDarkBubble ? "text-white/90" : "text-black/70")}>
@@ -279,7 +279,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 												</p>
 											)}
 											{m.replyTo.content && (
-												<p className={clsx("text-xs font-medium break-words whitespace-pre-wrap leading-relaxed mt-0.5", isDarkBubble ? "text-white/90" : "text-black/80")}>
+												<p className={clsx("text-xs font-medium break-words [overflow-wrap:anywhere] whitespace-pre-wrap leading-relaxed mt-0.5 line-clamp-3", isDarkBubble ? "text-white/90" : "text-black/80")}>
 													{m.replyTo.content}
 												</p>
 											)}
@@ -297,12 +297,18 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 											src={m.mediaUrl}
 											alt="Shared image"
 											onClick={() => setViewingImage(m.mediaUrl!)}
-											className="max-w-[220px] max-h-[220px] rounded-xl border border-black/15 object-cover cursor-pointer mb-1 shadow-sm"
+											className="max-w-[180px] sm:max-w-[240px] max-h-[180px] sm:max-h-[240px] rounded-xl border-2 sm:border-[3px] border-black object-cover cursor-pointer mb-1 hover:opacity-95 transition-opacity"
 										/>
 									)}
 									{m.content && (
-										<div className={clsx("px-1 py-0.5", isDeleted && "opacity-80")}>
-											<LinkifiedText text={m.content} />
+										<div className={clsx("px-1 py-0.5 break-words [overflow-wrap:anywhere]", isDeleted && "opacity-80")}>
+											<LinkifiedText
+												text={m.content}
+												linkClassName={clsx(
+													"underline font-bold",
+													isDarkBubble ? "text-white hover:text-white/80" : "text-[#EE2C2C] hover:text-[#EE2C2C]/80"
+												)}
+											/>
 										</div>
 									)}
 								</div>
@@ -333,29 +339,29 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 			</div>
 
 			{editingMessageId && (
-				<div className="px-4 pt-2 flex items-center justify-between border-t-[3px] border-black bg-neutral-50">
+				<div className="px-3 sm:px-4 py-1.5 sm:py-2 flex items-center justify-between border-t-2 sm:border-t-[3px] border-black bg-neutral-50 shrink-0">
 					<span className="text-[10px] font-black uppercase text-black/40">Editing message</span>
-					<button type="button" onClick={handleEditCancel} className="text-[10px] font-bold text-[#EE2C2C]">
+					<button type="button" onClick={handleEditCancel} className="text-[10px] font-bold text-[#EE2C2C] cursor-pointer">
 						Cancel
 					</button>
 				</div>
 			)}
 			{replyingTo && !editingMessageId && (
-				<div className="px-4 py-2 flex items-center justify-between gap-2 border-t-[3px] border-black bg-neutral-50">
+				<div className="px-3 sm:px-4 py-1.5 sm:py-2 flex items-center justify-between gap-2 border-t-2 sm:border-t-[3px] border-black bg-neutral-50 shrink-0">
 					<div className="min-w-0 pl-2 border-l-2 border-[#EE2C2C]">
 						<p className="text-[10px] font-black uppercase text-black/40">
-							Replying to {replyingTo.senderType === "BOT" ? "Meetday" : replyingTo.senderType === "ADMIN" ? "Meetday • Admin" : ownName}
+							Replying to {replyingTo.senderType?.toUpperCase() === "ADMIN" ? "Admin" : replyingTo.senderType === "BOT" ? "Meetday" : "You"}
 						</p>
 						<p className="text-[11px] font-semibold text-black/60 truncate">
 							{replyingTo.content?.trim() ? replyingTo.content : (replyingTo.mediaUrl ? "Photo" : "")}
 						</p>
 					</div>
-					<button type="button" onClick={() => setReplyingTo(null)} className="text-[10px] font-bold text-[#EE2C2C] shrink-0">
+					<button type="button" onClick={() => setReplyingTo(null)} className="text-[10px] font-bold text-[#EE2C2C] shrink-0 cursor-pointer">
 						Cancel
 					</button>
 				</div>
 			)}
-			<div className="relative p-3 border-t-[3px] border-black flex items-center gap-2 shrink-0 bg-white">
+			<div className="relative p-2 sm:p-3 border-t-[3px] border-black flex items-center gap-1.5 sm:gap-2 shrink-0 bg-white pb-[max(0.6rem,env(safe-area-inset-bottom))]">
 				<MentionPicker
 					suggestions={mentionSuggestions}
 					query={mentionQuery}
@@ -368,7 +374,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 					type="button"
 					onClick={() => fileInputRef.current?.click()}
 					disabled={uploadingImage || !!editingMessageId}
-					className="shrink-0 size-9 rounded-xl border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50"
+					className="shrink-0 size-8 sm:size-9 rounded-xl border-2 sm:border-[3px] border-black flex items-center justify-center hover:bg-neutral-50 disabled:opacity-50 cursor-pointer"
 					aria-label="Attach image"
 				>
 					<Icon as={GallerySvg} size="sm" />
@@ -385,9 +391,13 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 						if (e.key === "Escape" && editingMessageId) handleEditCancel()
 					}}
 					placeholder={editingMessageId ? "Edit your message… (Enter to save)" : "Write a message… (type @ to tag)"}
-					className="flex-1 rounded-2xl border-[3px] border-black bg-white px-4 py-2 text-sm font-semibold outline-none focus:bg-neutral-50"
+					className="flex-1 min-w-0 rounded-2xl border-2 sm:border-[3px] border-black bg-white px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold outline-none focus:bg-neutral-50 placeholder:text-xs sm:placeholder:text-sm"
 				/>
-				<Button onClick={handleSend} disabled={sending || !input.trim()}>
+				<Button
+					onClick={handleSend}
+					disabled={sending || !input.trim()}
+					className="shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm"
+				>
 					{sending ? "…" : editingMessageId ? "Save" : "Send"}
 				</Button>
 			</div>
