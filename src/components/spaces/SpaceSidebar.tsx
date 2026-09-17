@@ -212,102 +212,30 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 
 			{/* Navigation Bottom Items */}
 			<div className="px-4 pb-4 flex flex-col gap-1 mt-auto shrink-0">
-				{/* Chats Menu with Community and Brand Chat */}
-				<div className="flex flex-col">
-					<button
-						type="button"
-						onClick={() => setChatsOpen((prev) => !prev)}
-						className={clsx(
-							"w-full flex items-center justify-between px-4 py-2 rounded-2xl transition-all text-sm font-normal select-none text-left cursor-pointer",
-							isChatsRoute
-								? "bg-[#D12525] text-white"
-								: "text-white/90 hover:bg-[#D12525]/50 hover:text-white"
-						)}
-					>
-						<div className="flex items-center gap-2.5 min-w-0">
-							<Icon
-								as={isChatsRoute ? ChatFillSvg : ChatOutSvg}
-								size="md"
-								className="text-white shrink-0"
-							/>
-							<span className="whitespace-nowrap">Chats</span>
-						</div>
-						<div className="flex items-center gap-1.5 shrink-0">
-							{!chatsOpen && totalChatsBadge > 0 && (
-								<span className="min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-									{totalChatsBadge > 9 ? "9+" : totalChatsBadge}
-								</span>
-							)}
-							<svg
-								className={clsx("size-3.5 text-white/70 transition-transform duration-200", chatsOpen && "rotate-180")}
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-								strokeWidth={2.5}
-							>
-								<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-							</svg>
-						</div>
-					</button>
-
-					{chatsOpen && (
-						<div className="flex flex-col gap-1 pl-3 my-1 border-l-2 border-white/20 ml-5">
-							<Link
-								href="/spaces/dashboard/sponsorship-chats"
-								onClick={onClose}
-								className={clsx(
-									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
-									isSponsorshipChat
-										? "bg-[#D12525] text-white font-medium"
-										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
-								)}
-							>
-								<span className="flex-1 whitespace-nowrap">Sponsorship Chat</span>
-								{unreadSponsorshipChatsCount > 0 && (
-									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-										{unreadSponsorshipChatsCount > 9 ? "9+" : unreadSponsorshipChatsCount}
-									</span>
-								)}
-							</Link>
-
-							<Link
-								href="/spaces/dashboard/chats?type=brand"
-								onClick={onClose}
-								className={clsx(
-									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
-									isBrandChat
-										? "bg-[#D12525] text-white font-medium"
-										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
-								)}
-							>
-								<span className="flex-1 whitespace-nowrap">Brand Chat</span>
-								{unreadBrandChatsCount > 0 && (
-									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-										{unreadBrandChatsCount > 9 ? "9+" : unreadBrandChatsCount}
-									</span>
-								)}
-							</Link>
-
-							<Link
-								href="/spaces/dashboard/chats?type=community"
-								onClick={onClose}
-								className={clsx(
-									"flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all text-xs sm:text-sm font-normal",
-									isCommunityChat
-										? "bg-[#D12525] text-white font-medium"
-										: "text-white/80 hover:bg-[#D12525]/40 hover:text-white"
-								)}
-							>
-								<span className="flex-1 whitespace-nowrap">Community Chat</span>
-								{(unreadCommunityChatsCount + unreadCommunityRequestsCount) > 0 && (
-									<span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
-										{(unreadCommunityChatsCount + unreadCommunityRequestsCount) > 9 ? "9+" : (unreadCommunityChatsCount + unreadCommunityRequestsCount)}
-									</span>
-								)}
-							</Link>
-						</div>
+				{/* Chats Direct Link to 2-Step Chat Hub */}
+				<Link
+					href="/spaces/dashboard/chats"
+					onClick={onClose}
+					className={clsx(
+						"flex items-center gap-2.5 px-4 py-2 rounded-2xl transition-all text-sm font-normal",
+						isChatsRoute
+							? "bg-[#D12525] text-white"
+							: "text-white/90 hover:bg-[#D12525]/50 hover:text-white"
 					)}
-				</div>
+				>
+					<Icon
+						as={isChatsRoute ? ChatFillSvg : ChatOutSvg}
+						size="md"
+						className="text-white shrink-0"
+					/>
+					<span className="flex-1 whitespace-nowrap">Chats</span>
+					{totalChatsBadge > 0 && (
+						<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+							{totalChatsBadge > 9 ? "9+" : totalChatsBadge}
+						</span>
+					)}
+				</Link>
+
 				{SECONDARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled }) => {
 					const isActive = pathname.startsWith(href)
 					const isNotifications = label === "Notifications"
