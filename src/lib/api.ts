@@ -1478,6 +1478,7 @@ export type SpaceCommunityProfilePayload = {
 	activeLocations?: string[]
 	centreShowcaseImageKeys?: string[]
 	videoLink?: string
+	proposalPdfKey?: string | null
 	categoryIds: string[]
 	pastEvents?: PastEventPayload[]
 	brandsWorkedWith?: BrandWorkedWithPayload[]
@@ -1505,6 +1506,7 @@ export type SpaceCommunityProfile = {
 	centreShowcaseImageKeys: string[]
 	centreShowcaseUrls: string[]
 	videoLink?: string | null
+	proposalPdfKey?: string | null
 	categories: Category[]
 	pastEvents?: PastEvent[]
 	brandsWorkedWith?: BrandWorkedWith[]
@@ -2968,7 +2970,7 @@ export async function getCommunityAnnouncements(
 // ─── Storage ──────────────────────────────────────────────────────────────────
 
 export type UploadUrlPayload = {
-	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "SPACE_CHAT_MEDIA" | "SPACE_HOST_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "SPONSORSHIP_DEAL_REPORT_MEDIA" | "SPACE_DEAL_REPORT_MEDIA" | "SPACE_HOST_DEAL_REPORT_MEDIA" | "COMMUNITY_BRAND_LOGO_MEDIA" | "COMMUNITY_COLLABORATION_CHAT_MEDIA"
+	context: "EVENT_MEDIA" | "USER_AVATAR" | "HOST_DOCUMENT" | "REVIEW_PHOTO" | "COMMUNITY_DM_MEDIA" | "COMMUNITY_FEED_MEDIA" | "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" | "SPACE_PROPOSAL_DOCUMENT" | "SPONSORSHIP_CHAT_MEDIA" | "SPACE_CHAT_MEDIA" | "SPACE_HOST_CHAT_MEDIA" | "MEETDAY_CHAT_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "SPONSORSHIP_DEAL_REPORT_MEDIA" | "SPACE_DEAL_REPORT_MEDIA" | "SPACE_HOST_DEAL_REPORT_MEDIA" | "COMMUNITY_BRAND_LOGO_MEDIA" | "COMMUNITY_COLLABORATION_CHAT_MEDIA"
 	contentType: string
 	resourceId?: string
 	mediaType?: string

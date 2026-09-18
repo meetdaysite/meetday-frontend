@@ -49,7 +49,7 @@ type PlaceSuggestion = {
 
 async function uploadImageAndGetKey(
 	file: File,
-	context: "SPONSORSHIP_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "COMMUNITY_BRAND_LOGO_MEDIA",
+	context: "SPONSORSHIP_MEDIA" | "COMMUNITY_PAST_EVENT_MEDIA" | "COMMUNITY_BRAND_LOGO_MEDIA" | "SPACE_PROPOSAL_DOCUMENT",
 ): Promise<string> {
 	const { url, key } = await getUploadUrl({ context, contentType: file.type })
 	await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
@@ -127,6 +127,8 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 
 	const [centreShowcaseImages, setCentreShowcaseImages] = useState<{ key?: string; url: string; file?: File }[]>([])
 	const [videoLink, setVideoLink] = useState("")
+	const [proposalPdfFile, setProposalPdfFile] = useState<File | null>(null)
+	const [proposalPdfName, setProposalPdfName] = useState<string | null>(null)
 	const [instagram, setInstagram] = useState("")
 	const [linkedin, setLinkedin] = useState("")
 	const [youtube, setYoutube] = useState("")
@@ -160,6 +162,7 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 					setActiveLocations(existing.activeLocations || [])
 					setCentreShowcaseImages((existing.centreShowcaseImageKeys ?? []).map((key, i) => ({ key, url: existing.centreShowcaseUrls[i] ?? "" })))
 					setVideoLink(existing.videoLink ?? "")
+					setProposalPdfName(existing.proposalPdfKey ? "Existing proposal PDF" : null)
 					setPopupDays(existing.popupDays ?? "")
 					setPopupPrice(existing.popupPrice ?? "")
 					setBrandingDays(existing.brandingDays ?? "")
@@ -433,6 +436,10 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 					})),
 			)
 
+			const proposalPdfKey = proposalPdfFile
+				? await uploadImageAndGetKey(proposalPdfFile, "SPACE_PROPOSAL_DOCUMENT")
+				: community?.proposalPdfKey
+
 			const saved = await activateSpaceCommunityProfile({
 				name: name.trim(),
 				about: about.trim(),
@@ -445,6 +452,7 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 				activeLocations,
 				centreShowcaseImageKeys,
 				videoLink: videoLink.trim() || undefined,
+				proposalPdfKey: proposalPdfKey || undefined,
 				popupDays: popupDays.trim() || undefined,
 				popupPrice: popupPrice.trim() || undefined,
 				brandingDays: brandingDays.trim() || undefined,
@@ -1036,6 +1044,27 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 							placeholder="https://youtube.com/watch?v=..."
 							className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30"
 						/>
+					</div>
+
+					<div className="flex flex-col gap-1.5">
+						<label className="text-xs font-bold text-black">Proposal PDF (Optional)</label>
+						<div className="flex items-center gap-3">
+							<input
+								type="file"
+								accept="application/pdf,.pdf"
+								onChange={(e) => {
+									const file = e.target.files?.[0]
+									e.target.value = ""
+									if (!file) return
+									if (file.type !== "application/pdf") return toast.error("Only PDF files are accepted.")
+									setProposalPdfFile(file)
+									setProposalPdfName(file.name)
+								}}
+								className="text-xs text-black"
+							/>
+							{proposalPdfName && <span className="text-xs font-semibold text-black/60 truncate">{proposalPdfName}</span>}
+							{proposalPdfFile && <button type="button" onClick={() => { setProposalPdfFile(null); setProposalPdfName(null) }} className="text-xs font-bold text-red-600 hover:underline">Remove</button>}
+						</div>
 					</div>
 
 					{/* Branding & Activation Offerings */}
