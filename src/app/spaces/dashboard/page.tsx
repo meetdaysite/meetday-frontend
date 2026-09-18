@@ -230,7 +230,7 @@ export default function SpacesDashboardPage() {
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
 							<div>
 								<h2 className="text-xl font-heading font-black text-black">Locked Deals & Reports</h2>
-								<p className="text-xs font-semibold text-black/50 mt-1">View locked space deal terms and submitted deliverables reports.</p>
+								<p className="text-xs font-semibold text-black/50 mt-1">View locked hub deal terms and submitted deliverables reports.</p>
 							</div>
 							<Link href="/spaces/dashboard/deals" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
 								View All Deals &gt;

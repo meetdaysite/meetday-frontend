@@ -49,7 +49,7 @@ export function useGoogleSignIn(
 				if (!(err instanceof ApiError && err.statusCode === 404)) throw err
 			}
 
-			const displayApp = app === "host" ? "community" : app === "space" || app === "spaces" ? "space partner" : app
+			const displayApp = app === "host" ? "community" : app === "space" || app === "spaces" ? "hub partner" : app
 
 			if (me) {
 				// One login can hold host, brand, space, and admin access at once — a different primary

@@ -266,7 +266,7 @@ export default function CommunityLockedDealsPage() {
 									{deal.counterpartName}
 								</span>
 								<span className="text-[10px] font-bold text-black/50 uppercase">
-									Space Partner Deal
+									Hub Partner Deal
 								</span>
 							</div>
 						</div>
@@ -339,7 +339,7 @@ export default function CommunityLockedDealsPage() {
 				<div>
 					<h1 className="text-2xl font-heading font-black text-black">Locked Deals</h1>
 					<p className="text-xs font-semibold text-black/50 mt-0.5">
-						All locked sponsorship agreements, campaign deals, space partner deals, and deliverables reports.
+						All locked sponsorship agreements, campaign deals, hub partner deals, and deliverables reports.
 					</p>
 				</div>
 				<Link
@@ -387,7 +387,7 @@ export default function CommunityLockedDealsPage() {
 						</div>
 						<h2 className="text-lg font-heading font-black text-black">No locked deals yet</h2>
 						<p className="text-xs font-semibold text-black/50 leading-relaxed">
-							Once you finalize and lock sponsorship, campaign, or space deals in your chats, your active agreements and reports will appear here.
+							Once you finalize and lock sponsorship, campaign, or hub deals in your chats, your active agreements and reports will appear here.
 						</p>
 						<Link
 							href="/community/dashboard/chats"
@@ -442,11 +442,11 @@ export default function CommunityLockedDealsPage() {
 							)}
 						</div>
 
-						{/* Column 3: Space Deals */}
+						{/* Column 3: Hub Deals */}
 						<div className="flex flex-col gap-4">
 							<div className="flex items-center justify-between pb-3 border-b-[3px] border-black">
 								<div className="flex items-center gap-2">
-									<h2 className="text-base font-black text-black">Space Deals</h2>
+									<h2 className="text-base font-black text-black">Hub Deals</h2>
 									<span className="px-2 py-0.5 rounded-full bg-black text-white text-xs font-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
 										{lockedSpaceDeals.length}
 									</span>
@@ -455,7 +455,7 @@ export default function CommunityLockedDealsPage() {
 
 							{lockedSpaceDeals.length === 0 ? (
 								<div className="py-12 border-2 border-dashed border-black/20 rounded-[20px] bg-neutral-50 flex flex-col items-center justify-center text-center p-6 gap-2">
-									<p className="text-xs font-bold text-black/40">No locked community space deals yet</p>
+									<p className="text-xs font-bold text-black/40">No locked community hub deals yet</p>
 								</div>
 							) : (
 								<div className="flex flex-col gap-4">

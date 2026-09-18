@@ -95,7 +95,7 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 		setSendingInterestId(selectedSpace.id)
 		try {
 			await markSpaceInterest(selectedSpace.id, undefined, viewerRole)
-			toast.success("Interest sent! We've notified the space.")
+			toast.success("Interest sent! We've notified the hub.")
 			fetchConnectedThreads()
 		} catch (e) {
 			toast.error(getApiErrorMessage(e))
@@ -237,7 +237,7 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 								<>
 									<div>
 										<div className="flex items-center justify-between gap-3 mb-3">
-											<h2 className="text-xl font-heading font-black text-black">Community Space Details</h2>
+											<h2 className="text-xl font-heading font-black text-black">Community Hub Details</h2>
 												{(() => {
 													const existingSpaceThread = spaceChatThreads.find((t) => t.spaceCommunityProfileId === selectedSpace.id)
 													const existingSpaceHostThread = spaceHostChatThreads.find((t) => t.spaceProfileId === selectedSpace.spaceProfileId)
@@ -253,7 +253,7 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 														return (
 															<div className="flex flex-col items-end gap-1.5">
 																<p className="text-xs font-bold text-black/60 text-right">
-																	A communication channel already exists with this space.
+																	A communication channel already exists with this hub.
 																</p>
 																<Link
 																	href={redirectHref}
@@ -283,11 +283,11 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 
 										{/* Grid to place details card and poster side-by-side (collapses to full width if no poster) */}
 										<div className={clsx("grid gap-6 items-start", selectedSpace.posterUrl ? "grid-cols-1 lg:grid-cols-[1fr_320px]" : "grid-cols-1")}>
-											{/* Horizontally Spread Community Space Profile Card */}
+											{/* Horizontally Spread Community Hub Profile Card */}
 											<div className="border-[3px] border-black p-4 sm:p-6 rounded-[28px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white flex flex-col gap-6 items-start w-full max-w-full min-w-0">
 												{/* Top Row: Logo on the left, Name & stacked stats on the right */}
 												<div className="flex flex-row items-start gap-4 sm:gap-6 w-full text-left">
-													{/* Space Logo */}
+													{/* Hub Logo */}
 													<div className="relative size-24 rounded-2xl overflow-hidden border-2 border-black bg-slate-50 shrink-0">
 														{selectedSpace.logoUrl ? (
 															<Image src={selectedSpace.logoUrl} alt={selectedSpace.name} fill className="object-cover" unoptimized />
@@ -349,7 +349,7 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 												{/* About Section */}
 												{selectedSpace.about && (
 													<div className="flex flex-col gap-1.5 w-full">
-														<span className="text-xs font-bold text-black/50">About the space</span>
+														<span className="text-xs font-bold text-black/50">About the hub</span>
 														<p className="text-sm font-semibold text-black/75 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-black/5 whitespace-pre-wrap w-full">
 															{selectedSpace.about}
 														</p>
@@ -359,7 +359,7 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 												{/* Experience Categories */}
 												{selectedSpace.categories.length > 0 && (
 													<div className="flex flex-col gap-2 w-full">
-														<span className="text-xs font-bold text-black/50">Space Categories</span>
+														<span className="text-xs font-bold text-black/50">Hub Categories</span>
 														<div className="flex flex-wrap gap-1.5 mt-1">
 															{selectedSpace.categories.map((cat) => (
 																<span
@@ -624,10 +624,10 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 					<>
 						<div>
 							<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
-								Community Spaces
+								Community Hubs
 							</h1>
 							<p className="text-sm font-semibold text-black/50 mt-2">
-								Discover co-working spaces, venues, and partner spaces onboarded to Meetday.
+								Discover co-working hubs, venues, and partner hubs onboarded to Meetday.
 							</p>
 						</div>
 
@@ -643,7 +643,7 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 							)}
 
 							{spaces && spaces.length === 0 && (
-								<p className="text-sm font-bold text-black/50">No community spaces available yet.</p>
+								<p className="text-sm font-bold text-black/50">No community hubs available yet.</p>
 							)}
 
 							{spaces && spaces.length > 0 && (
@@ -675,9 +675,9 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 						>
 							✕
 						</button>
-						<span className="text-xs font-bold text-black/50 uppercase tracking-wider">Community Space Poster</span>
+						<span className="text-xs font-bold text-black/50 uppercase tracking-wider">Community Hub Poster</span>
 						<div className="relative w-full aspect-[4/5] rounded-[20px] border-2 border-black overflow-hidden bg-slate-900 flex items-center justify-center">
-							<Image src={selectedSpace.posterUrl} alt="Enlarged Community Space Poster" fill className="object-contain" unoptimized />
+							<Image src={selectedSpace.posterUrl} alt="Enlarged Community Hub Poster" fill className="object-contain" unoptimized />
 						</div>
 					</div>
 				</div>

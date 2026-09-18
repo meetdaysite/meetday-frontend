@@ -86,7 +86,7 @@ export default function SpacesOnboardingPage() {
 	async function handleSubmit() {
 		if (!validate()) return
 
-		setLoadingMessage("Creating your Space Partner account…")
+		setLoadingMessage("Creating your Hub Partner account…")
 		try {
 			const fullPhone = `${country.dialCode}${phone.trim()}`
 			try {
@@ -107,7 +107,7 @@ export default function SpacesOnboardingPage() {
 			const profile = await getSpaceProfile()
 			setProfile(profile)
 			clearSession()
-			toast.success("Welcome to Meetday Spaces!")
+			toast.success("Welcome to Meetday Hubs!")
 			router.push(redirectTo || "/spaces/dashboard")
 		} catch (e) {
 			toast.error(getApiErrorMessage(e))
@@ -151,7 +151,7 @@ export default function SpacesOnboardingPage() {
 			<div className="flex flex-col flex-grow justify-between h-full">
 				<div className="text-center pt-2 mb-4">
 					<h2 className="font-heading text-3xl sm:text-4xl font-black text-black tracking-tight mb-2">
-						Set up your Space Partner profile
+						Set up your Hub Partner profile
 					</h2>
 					<p className="text-sm font-semibold text-black/60 max-w-md mx-auto leading-relaxed">
 						Tell us about yourself and the venue locations you manage.
@@ -207,7 +207,7 @@ export default function SpacesOnboardingPage() {
 						</div>
 					</SectionCard>
 
-					<SectionCard title="Business & Space Info">
+					<SectionCard title="Business & Hub Info">
 						<div className="flex flex-col gap-4">
 							<TextField
 								label="Business Name / Venue Chain"

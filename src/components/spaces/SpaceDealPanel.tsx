@@ -333,7 +333,7 @@ export function SpaceDealFormModal({
 			<div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg flex flex-col max-h-[90vh]">
 				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0">
 					<p className="text-lg font-black text-black">
-						{deal ? "Edit Space Deal" : "Lock Space Deal"}
+						{deal ? "Edit Hub Deal" : "Lock Hub Deal"}
 					</p>
 					<button
 						onClick={onClose}
@@ -350,7 +350,7 @@ export function SpaceDealFormModal({
 							value={form.projectName}
 							onChange={(e) => setForm((f) => ({ ...f, projectName: e.target.value }))}
 							className={inputClass}
-							placeholder="e.g. Summer Space Activation"
+							placeholder="e.g. Summer Hub Activation"
 						/>
 					</Field>
 
@@ -437,7 +437,7 @@ export function SpaceDealFormModal({
 							value={form.deliverables}
 							onChange={(e) => setForm((f) => ({ ...f, deliverables: e.target.value }))}
 							className={`${inputClass} resize-none`}
-							placeholder="e.g. Dedicated space access for 50 attendees, banner display, projector setup, etc."
+							placeholder="e.g. Dedicated hub access for 50 attendees, banner display, projector setup, etc."
 						/>
 					</Field>
 
@@ -559,7 +559,7 @@ export function SpaceDealDetailsModal({
 			<div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg flex flex-col max-h-[90vh]">
 				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0">
 					<div className="flex items-center gap-2">
-						<p className="text-lg font-black text-black">Space Deal Details</p>
+						<p className="text-lg font-black text-black">Hub Deal Details</p>
 						<span
 							className={clsx(
 								"px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border-2 border-black",
@@ -592,7 +592,7 @@ export function SpaceDealDetailsModal({
 						</div>
 					)}
 
-					<Row label="Campaign / Space Name" value={deal.projectName} />
+					<Row label="Campaign / Hub Name" value={deal.projectName} />
 					{deal.goals && <Row label="Campaign Goals" value={typeof deal.goals === "string" ? deal.goals : deal.goals.join(", ")} />}
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 						<Row label="City / Region" value={deal.venue} />
@@ -1013,7 +1013,7 @@ export function SpaceDealReportModal({
 					<div className="px-6 py-10 text-center text-sm font-semibold text-black/40">Loading…</div>
 				) : !isSpace && !report ? (
 					<div className="px-6 py-10 text-center text-sm font-semibold text-black/40">
-						The space partner hasn&apos;t submitted a deliverables report yet.
+						The hub partner hasn&apos;t submitted a deliverables report yet.
 					</div>
 				) : (
 					<>

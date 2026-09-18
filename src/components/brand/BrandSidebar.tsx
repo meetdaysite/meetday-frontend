@@ -36,7 +36,7 @@ const PRIMARY_NAV: NavItem[] = [
 	{ label: "My Campaigns", href: "/brand/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
 	{ label: "Curated Experiences", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
-	{ label: "Community Spaces", href: "/brand/dashboard/community-spaces", outlined: CalendarOutSvg, filled: CalendarFillSvg },
+	{ label: "Community Hubs", href: "/brand/dashboard/community-spaces", outlined: CalendarOutSvg, filled: CalendarFillSvg },
 	{ label: "Locked Deals", href: "/brand/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
 ]
 

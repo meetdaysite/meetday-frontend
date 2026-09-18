@@ -22,7 +22,7 @@ export default function SpaceLoginPage() {
 			<div className="mb-6">
 				<h1 className="font-heading text-3xl font-black text-black">Log In</h1>
 				<p className="text-body-sm text-text-secondary mt-2">
-					Welcome back, Space Partner! Sign in with Google to continue.
+					Welcome back, Hub Partner! Sign in with Google to continue.
 				</p>
 			</div>
 
@@ -31,7 +31,7 @@ export default function SpaceLoginPage() {
 			</div>
 
 			<p className="text-center text-body-sm text-text-secondary mt-4">
-				New Space Partner?{" "}
+				New Hub Partner?{" "}
 				<Link href="/space/signup" className="font-semibold text-text-link hover:underline">
 					Create an account
 				</Link>

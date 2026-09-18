@@ -494,7 +494,7 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 			{/* Panel Header */}
 			<div className="flex justify-between items-center pb-4 mb-4 border-b border-black/10 shrink-0">
 				<h2 className="text-xl font-heading font-black text-black">
-					{community && !editing ? "Community Spaces Profile" : community ? "Edit Spaces Details" : "Activate Spaces Profile"}
+					{community && !editing ? "Community Hubs Profile" : community ? "Edit Hub Details" : "Activate Hub Profile"}
 				</h2>
 				{onClose && (
 					<button
@@ -533,15 +533,15 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 							<h3 className="text-lg font-heading font-black text-black leading-none">{community.name}</h3>
 							<div className="flex items-center gap-1.5 mt-1.5">
 								<span className="inline-block bg-[#F5C343] text-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[11px] font-black px-2.5 py-0.5 rounded-md uppercase tracking-wider">
-									{community.venueCapacity ? `${community.venueCapacity} Capacity` : "Venue Space"}
+									{community.venueCapacity ? `${community.venueCapacity} Capacity` : "Venue Hub"}
 								</span>
 							</div>
 						</div>
 					</div>
 
-					{/* About the space */}
+					{/* About the hub */}
 					<div className="flex flex-col gap-1.5">
-						<span className="text-xs font-bold text-black/50">About the space</span>
+						<span className="text-xs font-bold text-black/50">About the hub</span>
 						<p className="text-sm font-semibold text-black/75 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-black/5 whitespace-pre-wrap">
 							{community.about}
 						</p>
@@ -553,7 +553,7 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 							<span className="text-xs font-bold text-black/50">Highlight Poster</span>
 							<div className="relative w-full aspect-[4/5] rounded-2xl border-2 border-black overflow-hidden bg-slate-50 max-w-sm">
 								{/* eslint-disable-next-line @next/next/no-img-element */}
-								<img src={community.posterUrl} alt="Space Poster" className="size-full object-cover" />
+								<img src={community.posterUrl} alt="Hub Poster" className="size-full object-cover" />
 							</div>
 						</div>
 					)}
@@ -592,10 +592,10 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 						</div>
 					)}
 
-					{/* Sponsorship Offerings */}
+					{/* Branding & Activation Offerings */}
 					{((community.popupDays && community.popupPrice) || (community.brandingDays && community.brandingPrice)) && (
 						<div className="flex flex-col gap-2">
-							<span className="text-xs font-bold text-black/50">Sponsorship Offerings</span>
+							<span className="text-xs font-bold text-black/50">Branding and Activation Offerings</span>
 							<div className="flex flex-wrap gap-3">
 								{community.popupDays && community.popupPrice && (
 									<div className="flex flex-col gap-1 border border-black/10 rounded-xl px-4 py-2 bg-slate-50">
@@ -745,7 +745,7 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 							onClick={() => setEditing(true)}
 							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all flex items-center justify-center gap-2 select-none cursor-pointer"
 						>
-							EDIT SPACES PROFILE
+							EDIT HUB PROFILE
 						</button>
 					</div>
 				</div>
@@ -758,9 +758,9 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 						</div>
 					)}
 
-					{/* Space Name */}
+					{/* Hub Name */}
 					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-bold text-black">Space Name *</label>
+						<label className="text-xs font-bold text-black">Hub Name *</label>
 						<input
 							type="text"
 							required
@@ -771,14 +771,14 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 						/>
 					</div>
 
-					{/* About Space */}
+					{/* About Hub */}
 					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-bold text-black">About the space *</label>
+						<label className="text-xs font-bold text-black">About the hub *</label>
 						<textarea
 							required
 							value={about}
 							onChange={(e) => setAbout(e.target.value)}
-							placeholder="Describe the space, its vibe, and what makes it special..."
+							placeholder="Describe the hub, its vibe, and what makes it special..."
 							rows={3}
 							className="p-3 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors resize-none w-full placeholder:text-black/30"
 						/>
@@ -853,14 +853,14 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 						<div className="flex flex-col gap-1.5">
 							<div className="flex items-center justify-between">
 								<label className="text-xs font-bold text-black">Number of Venues *</label>
-								<span className="text-[10px] text-black/40 font-medium">event spaces eg: 3</span>
+								<span className="text-[10px] text-black/40 font-medium">event hubs eg: 3</span>
 							</div>
 							<input
 								type="text"
 								required
 								value={numberOfVenues}
 								onChange={(e) => setNumberOfVenues(e.target.value)}
-								placeholder="event spaces eg: 3"
+								placeholder="event hubs eg: 3"
 								className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30"
 							/>
 						</div>
@@ -878,14 +878,14 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 						<div className="flex flex-col gap-1.5">
 							<div className="flex items-center justify-between">
 								<label className="text-xs font-bold text-black">Community Size *</label>
-								<span className="text-[10px] text-black/40 font-medium">Number of active members in the space</span>
+								<span className="text-[10px] text-black/40 font-medium">Number of active members in the hub</span>
 							</div>
 							<input
 								type="text"
 								required
 								value={communitySize}
 								onChange={(e) => setCommunitySize(e.target.value)}
-								placeholder="Number of active members in the space"
+								placeholder="Number of active members in the hub"
 								className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30"
 							/>
 						</div>
@@ -1038,10 +1038,10 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 						/>
 					</div>
 
-					{/* Sponsorship Offerings */}
+					{/* Branding & Activation Offerings */}
 					<div className="flex flex-col gap-3">
 						<div className="flex items-center justify-between">
-							<label className="text-xs font-bold text-black">Sponsorship Offerings (Optional)</label>
+							<label className="text-xs font-bold text-black">Branding and Activation Offerings (Optional)</label>
 							<span className="text-[10px] text-black/40 font-medium">Shown to brands alongside every proposal</span>
 						</div>
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

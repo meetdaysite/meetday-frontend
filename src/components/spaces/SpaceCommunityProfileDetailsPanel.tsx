@@ -57,7 +57,7 @@ export function SpaceCommunityProfileDetailsPanel({
 		<div className="w-full h-full flex flex-col bg-white p-6 overflow-y-auto animate-in fade-in duration-150">
 			{/* Panel Header */}
 			<div className="flex justify-between items-center pb-4 mb-4 border-b border-black/10 shrink-0">
-				<h2 className="text-xl font-heading font-black text-black">Community Space Profile</h2>
+				<h2 className="text-xl font-heading font-black text-black">Community Hub Profile</h2>
 				{onClose && (
 					<button
 						type="button"
@@ -106,7 +106,7 @@ export function SpaceCommunityProfileDetailsPanel({
 
 				{/* About */}
 				<div className="flex flex-col gap-1.5">
-					<span className="text-xs font-bold text-black/50">About the space</span>
+					<span className="text-xs font-bold text-black/50">About the hub</span>
 					<p className="text-sm font-semibold text-black/75 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-black/5 whitespace-pre-wrap">
 						{community.about}
 					</p>
@@ -240,10 +240,10 @@ export function SpaceCommunityProfileDetailsPanel({
 					</div>
 				)}
 
-				{/* Sponsorship Offerings */}
+				{/* Branding & Activation Offerings */}
 				{((community.popupDays && community.popupPrice) || (community.brandingDays && community.brandingPrice)) && (
 					<div className="flex flex-col gap-2">
-						<span className="text-xs font-bold text-black/50">Sponsorship Offerings</span>
+						<span className="text-xs font-bold text-black/50">Branding and Activation Offerings</span>
 						<div className="flex flex-wrap gap-3">
 							{community.popupDays && community.popupPrice && (
 								<div className="flex flex-col gap-1 border border-black/10 rounded-xl px-4 py-2 bg-slate-50">
@@ -296,7 +296,7 @@ export function SpaceCommunityProfileDetailsPanel({
 				{/* Video Link */}
 				{community.videoLink && (
 					<div className="flex flex-col gap-1.5">
-						<span className="text-xs font-bold text-black/50">Space Video</span>
+						<span className="text-xs font-bold text-black/50">Hub Video</span>
 						<a
 							href={formatExternalUrl(community.videoLink) ?? undefined}
 							target="_blank"
@@ -355,7 +355,7 @@ export function SpaceCommunityProfileDetailsPanel({
 							onClick={onEdit}
 							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all flex items-center justify-center gap-2 select-none"
 						>
-							EDIT COMMUNITY SPACE DETAILS
+							EDIT COMMUNITY HUB DETAILS
 						</button>
 					</div>
 				)}

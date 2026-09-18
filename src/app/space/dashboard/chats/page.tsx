@@ -24,8 +24,8 @@ function SpaceChatsContent() {
 					</h1>
 					<p className="text-xs sm:text-sm font-semibold text-black/50 mt-1">
 						{isBrand
-							? "Respond to brands interested in your space."
-							: "Respond to communities interested in your space."}
+							? "Respond to brands interested in your hub."
+							: "Respond to communities interested in your hub."}
 					</p>
 				</div>
 				<SpaceChatDashboard
@@ -35,8 +35,8 @@ function SpaceChatsContent() {
 					category={category}
 					emptyLabel={
 						isBrand
-							? "No brands have expressed interest in your space yet."
-							: "No communities have expressed interest in your space yet."
+							? "No brands have expressed interest in your hub yet."
+							: "No communities have expressed interest in your hub yet."
 					}
 				/>
 			</div>

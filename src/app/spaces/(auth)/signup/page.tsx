@@ -35,15 +35,15 @@ export default function SpacesSignupPage() {
 				<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
 					<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
 				</svg>
-				Back to spaces
+				Back to hubs
 			</Link>
 
 			<div className="mb-6">
 				<h1 className="font-heading text-3xl font-black text-black mb-1">
-					Join as Space Partner
+					Join as Hub Partner
 				</h1>
 				<p className="text-body-sm text-text-secondary mt-2">
-					List your venues, host top offline communities, and monetize your spaces.
+					List your venues, host top offline communities, and monetize your hubs.
 				</p>
 			</div>
 

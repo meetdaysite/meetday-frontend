@@ -43,7 +43,7 @@ const NAV_ITEMS_TOP: TopNavItem[] = [
 	{ label: "Dashboard", href: "/community/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "Experience Proposals", href: "/community/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Brand Campaigns", href: "/community/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg, disabled: true },
-	{ label: "Community Spaces", href: "/community/dashboard/community-spaces", outlined: CalendarOutSvg, filled: CalendarFillSvg },
+	{ label: "Community Hubs", href: "/community/dashboard/community-spaces", outlined: CalendarOutSvg, filled: CalendarFillSvg },
 	{ label: "Communities", href: "/community/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
 	{ label: "Locked Deals", href: "/community/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
 ]

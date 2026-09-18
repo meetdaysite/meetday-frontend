@@ -443,15 +443,15 @@ export default function BrandDashboardWelcomePage() {
 						)}
 					</div>
 
-					{/* Row 3: Active Community Spaces */}
+					{/* Row 3: Active Community Hubs */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
 							<div>
-								<h2 className="text-xl font-heading font-black text-black">Active Community Spaces</h2>
-								<p className="text-xs font-semibold text-black/50 mt-1">Discover venues and spaces for offline activations and community events.</p>
+								<h2 className="text-xl font-heading font-black text-black">Active Community Hubs</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Discover venues and hubs for offline activations and community events.</p>
 							</div>
 							<Link href="/brand/dashboard/community-spaces" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
-								View All Spaces &gt;
+								View All Hubs &gt;
 							</Link>
 						</div>
 
@@ -469,8 +469,8 @@ export default function BrandDashboardWelcomePage() {
 							</div>
 						) : communitySpaces.length === 0 ? (
 							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
-								<p className="text-sm font-black text-black/80">No community spaces available yet</p>
-								<p className="text-[11px] font-semibold text-black/40">Check back later for newly listed spaces and venues.</p>
+								<p className="text-sm font-black text-black/80">No community hubs available yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Check back later for newly listed hubs and venues.</p>
 							</div>
 						) : (
 							<div className="flex flex-row overflow-x-auto gap-6 pb-6 pt-2 px-2 w-full custom-scrollbar">

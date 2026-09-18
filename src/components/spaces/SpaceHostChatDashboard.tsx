@@ -233,7 +233,7 @@ export function SpaceHostChatDashboard({ role, canRespond, emptyLabel }: SpaceHo
 	}
 
 	function replyLabel(senderType: SpaceHostChatMessage["senderType"]) {
-		return senderType === "SPACE" ? "Space" : senderType === "HOST" ? "Community" : "Meetday"
+		return senderType === "SPACE" ? "Hub" : senderType === "HOST" ? "Community" : "Meetday"
 	}
 
 	async function handleAccept(threadId: string) {
@@ -541,7 +541,7 @@ export function SpaceHostChatDashboard({ role, canRespond, emptyLabel }: SpaceHo
 														{isMine
 															? "You"
 															: m.senderType === "SPACE"
-															? `${selectedThread.counterpartName} • Space`
+															? `${selectedThread.counterpartName} • Hub`
 															: isHost
 															? `${selectedThread.counterpartName} • Community`
 															: "Meetday • Admin"}

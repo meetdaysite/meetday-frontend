@@ -126,9 +126,9 @@ export default function SpacesDashboardLayout({ children }: { children: React.Re
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-surface-page px-4">
 				<div className="w-full max-w-md flex flex-col items-center gap-6 py-12 text-center">
-					<h1 className="text-heading-sm text-text-primary font-bold">Complete your Space Partner registration</h1>
+					<h1 className="text-heading-sm text-text-primary font-bold">Complete your Hub Partner registration</h1>
 					<p className="text-body-sm text-text-secondary max-w-sm">
-						You&apos;re signed in, but this account hasn&apos;t set up a Space Partner profile yet. Finish onboarding to access the Spaces dashboard.
+						You&apos;re signed in, but this account hasn&apos;t set up a Hub Partner profile yet. Finish onboarding to access the Hubs dashboard.
 					</p>
 					<Button
 						variant="primary"
@@ -166,10 +166,10 @@ export default function SpacesDashboardLayout({ children }: { children: React.Re
 				<main className="flex-1 flex items-center justify-center">
 					<div className="w-full max-w-md flex flex-col items-center gap-4 text-center px-6">
 						<h1 className="text-heading-sm font-bold text-text-primary">
-							Failed to load space profile
+							Failed to load hub profile
 						</h1>
 						<p className="text-body-sm text-text-secondary">
-							We couldn&apos;t load your space partner profile. Check your connection and try again.
+							We couldn&apos;t load your hub partner profile. Check your connection and try again.
 						</p>
 						<div className="flex gap-3 mt-2">
 							<Button onClick={() => setProfileError(false)}>Try again</Button>

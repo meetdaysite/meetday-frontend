@@ -42,7 +42,7 @@ export default function SpacesProfilePage() {
 		await signOut()
 	}
 
-	const businessName = profile?.businessName || "Space Partner"
+	const businessName = profile?.businessName || "Hub Partner"
 	const email = user?.email || profile?.user?.email || ""
 	const phone = profile?.phone || profile?.user?.phone || ""
 	const cities = profile?.operatingCities || []
@@ -74,7 +74,7 @@ export default function SpacesProfilePage() {
 							My Profile
 						</h1>
 						<p className="text-sm font-semibold text-black/50 mt-1.5">
-							Your space partner identity and account details
+							Your hub partner identity and account details
 						</p>
 					</div>
 
@@ -96,7 +96,7 @@ export default function SpacesProfilePage() {
 								<div className="flex flex-col gap-1.5">
 									<p className="text-xl font-heading font-black text-black leading-none">{businessName}</p>
 									<span className="inline-block bg-[#1E1B4B] text-white text-[8px] font-black px-2.5 py-0.5 rounded-lg uppercase tracking-wider w-max">
-										Venue / Space Partner
+										Venue / Hub Partner
 									</span>
 								</div>
 							</div>
@@ -130,7 +130,7 @@ export default function SpacesProfilePage() {
 
 					{/* Options Menu List */}
 					<div className="flex flex-col mt-4">
-						{/* Community Spaces Profile */}
+						{/* Community Hubs Profile */}
 						<div
 							onClick={() => !communityLoading && setShowCommunityModal(true)}
 							className={clsx(
@@ -138,7 +138,7 @@ export default function SpacesProfilePage() {
 								communityLoading ? "cursor-wait opacity-60" : "cursor-pointer"
 							)}
 						>
-							<span className="font-heading font-black text-base text-black">Community Spaces Profile</span>
+							<span className="font-heading font-black text-base text-black">Community Hubs Profile</span>
 							<div className="flex items-center gap-3">
 								<button
 									type="button"

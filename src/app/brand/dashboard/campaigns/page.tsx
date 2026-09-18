@@ -619,7 +619,7 @@ export default function CampaignsPage() {
 										required
 										value={description}
 										onChange={(e) => setDescription(e.target.value)}
-										placeholder='Provide context for our AI matching engine (e.g., "Looking for spaces with high afternoon foot traffic and an eco-friendly vibe.")'
+										placeholder='Provide context for our AI matching engine (e.g., "Looking for hubs with high afternoon foot traffic and an eco-friendly vibe.")'
 										rows={4}
 										className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
 									/>

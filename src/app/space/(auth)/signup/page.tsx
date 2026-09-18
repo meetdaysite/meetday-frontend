@@ -23,7 +23,7 @@ export default function SpaceSignupPage() {
 			<div className="mb-6">
 				<h1 className="font-heading text-3xl font-black text-black">Create Account</h1>
 				<p className="text-body-sm text-text-secondary mt-2">
-					List your venue or space — sign up with Google to get started!
+					List your venue or hub — sign up with Google to get started!
 				</p>
 			</div>
 

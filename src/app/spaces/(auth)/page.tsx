@@ -23,7 +23,7 @@ export default function SpacesWelcomeAuthPage() {
 						Getting Started
 					</h2>
 					<p className="text-sm font-semibold text-black/60 max-w-xs mx-auto leading-relaxed">
-						List your venues, host top offline communities, and monetize your spaces!
+						List your venues, host top offline communities, and monetize your hubs!
 					</p>
 				</div>
 

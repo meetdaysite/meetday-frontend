@@ -101,7 +101,7 @@ function getCategoryHeading(cat: ChatCategoryKey, role: ChatRole): { title: stri
 					role === "BRAND"
 						? "Talk to communities about proposals you've expressed interest in."
 						: role === "SPACE"
-						? "Talk to brands interested in your space sponsorship proposals."
+						? "Talk to brands interested in your hub sponsorship proposals."
 						: "Talk to brands interested in your proposals.",
 			}
 		case "campaigns":
@@ -114,11 +114,11 @@ function getCategoryHeading(cat: ChatCategoryKey, role: ChatRole): { title: stri
 			}
 		case "spaces":
 			return {
-				title: "Spaces Chats",
+				title: "Hubs Chats",
 				subtitle:
 					role === "BRAND"
-						? "Manage venue inquiries and collaborate with space partners."
-						: "Collaborate with Community Spaces and manage your requests.",
+						? "Manage venue inquiries and collaborate with hub partners."
+						: "Collaborate with Community Hubs and manage your requests.",
 			}
 		case "communities":
 			return {
@@ -131,7 +131,7 @@ function getCategoryHeading(cat: ChatCategoryKey, role: ChatRole): { title: stri
 		case "brands":
 			return {
 				title: "Brand Chats",
-				subtitle: "Manage space bookings and inquiries from brands.",
+				subtitle: "Manage hub bookings and inquiries from brands.",
 			}
 		default:
 			return {

@@ -92,8 +92,8 @@ export default function SpaceOnboardingPage() {
 				className="w-full max-w-md flex flex-col gap-5 bg-white rounded-3xl border-3 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] p-6"
 			>
 				<div>
-					<h1 className="font-heading text-2xl font-black text-black">Tell us about your space</h1>
-					<p className="text-body-sm text-text-secondary mt-1">A few details to get your Space Partner account set up.</p>
+					<h1 className="font-heading text-2xl font-black text-black">Tell us about your hub</h1>
+					<p className="text-body-sm text-text-secondary mt-1">A few details to get your Hub Partner account set up.</p>
 				</div>
 
 				<TextField label="First name" {...register("firstName")} error={!!errors.firstName} helperText={errors.firstName?.message} />

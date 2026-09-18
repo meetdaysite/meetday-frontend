@@ -23,10 +23,10 @@ interface BubbleProps {
 
 function SpeechBubble({ text, bg, textColor, rotation, positionClass, tailOffset = "left-4", animationClass = "animate-float-1" }: BubbleProps) {
 	return (
-		<div className={`absolute z-20 ${positionClass} ${rotation} desktop-bubbles pointer-events-none transition-transform duration-300 hover:scale-105`}>
+		<div className={`absolute z-10 ${positionClass} ${rotation} desktop-bubbles pointer-events-none transition-transform duration-300 hover:scale-105`}>
 			<div className={animationClass}>
 				<div 
-					className="relative px-5 py-2.5 rounded-full font-bold text-xs tracking-wider"
+					className="relative px-3.5 2xl:px-5 py-1.5 2xl:py-2.5 rounded-full font-bold text-[11px] 2xl:text-xs tracking-wider whitespace-nowrap shadow-sm"
 					style={{ backgroundColor: bg, color: textColor }}
 				>
 					{text}
@@ -610,14 +610,14 @@ export default function RootPage() {
 			{/* Main Content Area */}
 			<main className="relative flex-1 flex flex-col items-center justify-start pt-2 md:pt-3 pb-0">
 				
-				{/* Scattered Speech Bubbles (Visible on desktop/tablet) */}
+				{/* Scattered Speech Bubbles (Visible on desktop) */}
 				{/* Left Side Bubbles */}
 				<SpeechBubble 
 					text="RAISE SPONSORSHIP" 
 					bg="#F8EFE2" 
 					textColor="#EE2C2C" 
 					rotation="rotate-[-8deg]" 
-					positionClass="left-[6%] top-[16%]" 
+					positionClass="left-[6%] 2xl:left-[8%] top-[14%]" 
 					tailOffset="left-5"
 					animationClass="animate-float-1"
 				/>
@@ -626,7 +626,7 @@ export default function RootPage() {
 					bg="#FFD9D9" 
 					textColor="#000000" 
 					rotation="rotate-[6deg]" 
-					positionClass="left-[10%] top-[39%]" 
+					positionClass="left-[9%] 2xl:left-[12%] top-[30%]" 
 					tailOffset="left-6"
 					animationClass="animate-float-3"
 				/>
@@ -634,8 +634,8 @@ export default function RootPage() {
 					text="BACKED BY DATA" 
 					bg="#F8EFE2" 
 					textColor="#EE2C2C" 
-					rotation="rotate-[-3deg]" 
-					positionClass="left-[5%] top-[58%]" 
+					rotation="rotate-[-4deg]" 
+					positionClass="left-[4%] 2xl:left-[6%] top-[51%]" 
 					tailOffset="left-5"
 					animationClass="animate-float-2"
 				/>
@@ -643,8 +643,8 @@ export default function RootPage() {
 					text="VERIFIED USERS" 
 					bg="#FFCE29" 
 					textColor="#000000" 
-					rotation="rotate-[12deg]" 
-					positionClass="left-[12%] top-[71%] z-30" 
+					rotation="rotate-[9deg]" 
+					positionClass="left-[6%] 2xl:left-[8.5%] top-[71%]" 
 					tailOffset="left-4"
 					animationClass="animate-float-4"
 				/>
@@ -654,8 +654,8 @@ export default function RootPage() {
 					text="ENGAGE GEN Z AUDIENCE" 
 					bg="#FFD9D9" 
 					textColor="#000000" 
-					rotation="rotate-[9deg]" 
-					positionClass="right-[6%] top-[18%]" 
+					rotation="rotate-[7deg]" 
+					positionClass="right-[6%] 2xl:right-[8%] top-[15%]" 
 					tailOffset="right-5"
 					animationClass="animate-float-2"
 				/>
@@ -663,8 +663,8 @@ export default function RootPage() {
 					text="OPTIMIZE BUDGETS" 
 					bg="#F8EFE2" 
 					textColor="#EE2C2C" 
-					rotation="rotate-[-4deg]" 
-					positionClass="right-[11%] top-[36%]" 
+					rotation="rotate-[-5deg]" 
+					positionClass="right-[9%] 2xl:right-[12%] top-[31%]" 
 					tailOffset="right-5"
 					animationClass="animate-float-4"
 				/>
@@ -673,7 +673,7 @@ export default function RootPage() {
 					bg="#FFD9D9" 
 					textColor="#000000" 
 					rotation="rotate-[5deg]" 
-					positionClass="right-[6%] top-[56%]" 
+					positionClass="right-[4%] 2xl:right-[6%] top-[52%]" 
 					tailOffset="right-6"
 					animationClass="animate-float-1"
 				/>
@@ -681,8 +681,8 @@ export default function RootPage() {
 					text="GROW COMMUNITY" 
 					bg="#FFCE29" 
 					textColor="#000000" 
-					rotation="rotate-[-10deg]" 
-					positionClass="right-[11%] top-[70%] z-30" 
+					rotation="rotate-[-8deg]" 
+					positionClass="right-[6%] 2xl:right-[8.5%] top-[69%]" 
 					tailOffset="right-4"
 					animationClass="animate-float-3"
 				/>
@@ -719,7 +719,7 @@ export default function RootPage() {
 				</p>
 
 				{/* Cards Container */}
-				<div className="w-full max-w-5xl px-3 sm:px-6 grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-5 mb-8 z-20">
+				<div className="relative w-full max-w-5xl px-3 sm:px-6 grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-5 mb-8 z-20">
 					
 					{/* Hosts Card */}
 					<div className="bg-white border-[2px] md:border-[4px] border-black rounded-[20px] md:rounded-[36px] p-2.5 md:p-5 flex flex-col items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
@@ -775,14 +775,14 @@ export default function RootPage() {
 						</Link>
 					</div>
 
-					{/* Community Spaces Card */}
+					{/* Community Hubs Card */}
 					<div className="bg-white border-[2px] md:border-[4px] border-black rounded-[20px] md:rounded-[36px] p-2.5 md:p-5 flex flex-col items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
 						
 						{/* Image */}
 						<div className="relative w-full aspect-[4/3] border-[2px] md:border-[3px] border-black rounded-lg md:rounded-2xl overflow-hidden bg-slate-100 group">
 							<Image
 								src="/images/spaces.png"
-								alt="Community Spaces"
+								alt="Community Hubs"
 								fill
 								sizes="(max-width: 768px) 100vw, 350px"
 								className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
@@ -791,14 +791,14 @@ export default function RootPage() {
 						</div>
 						
 						<p className="mt-2 md:mt-4 text-black font-normal text-center text-[9px] sm:text-xs md:text-sm leading-relaxed flex-grow max-w-sm min-h-[36px] sm:min-h-[44px] md:min-h-[48px] flex items-center justify-center">
-							List your venue, host curated IRL experiences, and monetize your space effortlessly.
+							List your space, host curated IRL experiences, and monetize your hub effortlessly.
 						</p>
 						
 						<Link
 							href="/spaces"
 							className="w-full mt-3 md:mt-5 py-2 md:py-3.5 bg-[#EE2C2C] text-white border-[2px] md:border-[3px] border-black rounded-xl md:rounded-2xl font-bold text-center text-xs md:text-base shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
 						>
-							Community Spaces
+							Community Hubs
 						</Link>
 					</div>
 				</div>
@@ -814,7 +814,7 @@ export default function RootPage() {
 							animation: marqueeRTL 14s linear infinite;
 							will-change: transform;
 						}
-						@media (max-width: 1024px) {
+						@media (max-width: 1200px) {
 							.desktop-bubbles {
 								display: none !important;
 							}
@@ -822,7 +822,7 @@ export default function RootPage() {
 								display: block !important;
 							}
 						}
-						@media (min-width: 1025px) {
+						@media (min-width: 1201px) {
 							.desktop-bubbles {
 								display: block !important;
 							}

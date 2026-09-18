@@ -90,9 +90,9 @@ export default function SpaceDashboardLayout({ children }: { children: React.Rea
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-surface-page px-4">
 				<div className="w-full max-w-md flex flex-col items-center gap-6 py-12 text-center">
-					<h1 className="text-heading-sm text-text-primary font-bold">Complete your Space Partner signup</h1>
+					<h1 className="text-heading-sm text-text-primary font-bold">Complete your Hub Partner signup</h1>
 					<p className="text-body-sm text-text-secondary max-w-sm">
-						You&apos;re signed in, but this account hasn&apos;t set up a Space Partner profile yet.
+						You&apos;re signed in, but this account hasn&apos;t set up a Hub Partner profile yet.
 					</p>
 					<Button
 						variant="primary"

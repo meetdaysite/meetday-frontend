@@ -221,8 +221,8 @@ export default function SpaceProposalsPage() {
 		if (!p && !isCommunityApproved) {
 			toast.error(
 				community?.approvalStatus === "REJECTED"
-					? "Your Community Space profile was rejected by admin. Update it and wait for re-approval before creating a proposal."
-					: "Your Community Space profile is still pending admin approval. You'll be able to create a proposal once it's approved.",
+					? "Your Community Hub profile was rejected by admin. Update it and wait for re-approval before creating a proposal."
+					: "Your Community Hub profile is still pending admin approval. You'll be able to create a proposal once it's approved.",
 			)
 			return
 		}
@@ -460,15 +460,15 @@ export default function SpaceProposalsPage() {
 								<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight mt-1">
 									My Proposals
 								</h1>
-								<p className="text-sm font-semibold text-black/50 mt-1.5">Pitch your Community Space to brands</p>
+								<p className="text-sm font-semibold text-black/50 mt-1.5">Pitch your Community Hub to brands</p>
 							</div>
 							<div className="bg-white border-[3px] border-black rounded-[20px] p-6 flex flex-col md:flex-row md:items-center justify-between shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] gap-4">
 								<div className="flex flex-col gap-1.5">
 									<h3 className="font-heading font-black text-black text-lg">
-										Uh-Oh! Looks like you haven&apos;t activated your Community Space Profile yet.
+										Uh-Oh! Looks like you haven&apos;t activated your Community Hub Profile yet.
 									</h3>
 									<p className="text-sm font-semibold text-black/50">
-										Activate your Community Space Profile before creating proposals for brands.
+										Activate your Community Hub Profile before creating proposals for brands.
 									</p>
 								</div>
 								<a
@@ -576,7 +576,7 @@ export default function SpaceProposalsPage() {
 								</div>
 
 								<div className="bg-white border border-black/10 rounded-action p-5">
-									<h4 className="text-sm font-bold text-black mb-2">About the Space</h4>
+									<h4 className="text-sm font-bold text-black mb-2">About the Hub</h4>
 									<p className="text-body-sm text-black/70 leading-relaxed whitespace-pre-wrap break-words">
 										{selectedProposal.about}
 									</p>
@@ -607,7 +607,7 @@ export default function SpaceProposalsPage() {
 											{selectedProposal ? "Edit Proposal" : "Create Proposal"}
 										</h1>
 									</div>
-									<p className="text-xs sm:text-sm font-semibold text-black/50">Provide details about your space and offerings</p>
+									<p className="text-xs sm:text-sm font-semibold text-black/50">Provide details about your hub and offerings</p>
 								</div>
 								<div className="flex items-center gap-2 w-full sm:w-auto justify-end">
 									<button
@@ -647,7 +647,7 @@ export default function SpaceProposalsPage() {
 															Start with our <span className="text-[#EE2C2C]">AI Companion</span>
 														</h3>
 														<p className="text-[11px] sm:text-xs font-semibold text-black/65 mt-0.5">
-															Describe your space in a few words, we fill the rest.
+															Describe your hub in a few words, we fill the rest.
 														</p>
 													</div>
 												</div>
@@ -681,12 +681,12 @@ export default function SpaceProposalsPage() {
 												</div>
 												<div className="flex flex-col gap-2">
 													<label className="text-xs sm:text-sm font-bold text-black">
-														Describe your space in a minimum of 20 words to continue
+														Describe your hub in a minimum of 20 words to continue
 													</label>
 													<textarea
 														value={copilotPrompt}
 														onChange={(e) => setCopilotPrompt(e.target.value)}
-														placeholder="e.g. We run a 5000 sq ft rooftop event space in Bangalore that hosts pop-ups, launches, and branded activations for 150-300 guests."
+														placeholder="e.g. We run a 5000 sq ft rooftop event hub in Bangalore that hosts pop-ups, launches, and branded activations for 150-300 guests."
 														rows={5}
 														disabled={copilotLoading}
 														className="px-4 py-2.5 rounded-xl border-2 border-black/30 bg-white/80 text-black outline-none focus:border-black text-sm transition-colors resize-none disabled:opacity-50"
@@ -739,18 +739,18 @@ export default function SpaceProposalsPage() {
 										required
 										value={projName}
 										onChange={(e) => setProjName(e.target.value)}
-										placeholder="e.g. Rooftop Pop-up Space"
+										placeholder="e.g. Rooftop Pop-up Hub"
 										className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
 									/>
 								</div>
 
 								<div className="flex flex-col gap-1.5">
-									<label className="text-xs font-bold text-black">About the space *</label>
+									<label className="text-xs font-bold text-black">About the hub *</label>
 									<textarea
 										required
 										value={projAbout}
 										onChange={(e) => setProjAbout(e.target.value)}
-										placeholder="Describe your space's details, format, and what brands can do here..."
+										placeholder="Describe your hub's details, format, and what brands can do here..."
 										rows={8}
 										className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
 									/>
@@ -960,12 +960,12 @@ export default function SpaceProposalsPage() {
 							<div className="flex justify-between items-center mb-2">
 								<div>
 									<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight mt-1">My Proposals</h1>
-									<p className="text-sm font-semibold text-black/50 mt-1.5">Pitch your Community Space to brands</p>
+									<p className="text-sm font-semibold text-black/50 mt-1.5">Pitch your Community Hub to brands</p>
 								</div>
 								{proposals.length > 0 && (
 									<button
 										onClick={() => openProposalForm()}
-										title={!isCommunityApproved ? "Your Community Space profile must be admin-approved first" : undefined}
+										title={!isCommunityApproved ? "Your Community Hub profile must be admin-approved first" : undefined}
 										className={clsx(
 											"text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all select-none cursor-pointer",
 											isCommunityApproved ? "bg-[#EE2C2C]" : "bg-black/30",
@@ -1063,10 +1063,10 @@ export default function SpaceProposalsPage() {
 							) : (
 								<div className="border-[3px] border-dashed border-black/30 rounded-[20px] p-12 text-center w-full flex flex-col items-center justify-center gap-2">
 									<h2 className="font-heading font-black text-black text-lg">No active proposals</h2>
-									<p className="text-xs font-semibold text-black/50 mb-3">Create a proposal detailing your space&apos;s offerings.</p>
+									<p className="text-xs font-semibold text-black/50 mb-3">Create a proposal detailing your hub&apos;s offerings.</p>
 									<button
 										onClick={() => openProposalForm()}
-										title={!isCommunityApproved ? "Your Community Space profile must be admin-approved first" : undefined}
+										title={!isCommunityApproved ? "Your Community Hub profile must be admin-approved first" : undefined}
 										className={clsx(
 											"text-white text-[9px] font-black px-5 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all select-none cursor-pointer",
 											isCommunityApproved ? "bg-[#EE2C2C]" : "bg-black/30",

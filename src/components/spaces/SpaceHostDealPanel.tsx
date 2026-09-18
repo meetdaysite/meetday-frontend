@@ -434,7 +434,7 @@ export function SpaceHostDealFormModal({
 							value={form.deliverables}
 							onChange={(e) => setForm((f) => ({ ...f, deliverables: e.target.value }))}
 							className={`${inputClass} resize-none`}
-							placeholder="e.g. Dedicated space access for 50 attendees, banner display, projector setup, etc."
+							placeholder="e.g. Dedicated hub access for 50 attendees, banner display, projector setup, etc."
 						/>
 					</Field>
 
@@ -977,7 +977,7 @@ export function SpaceHostDealReportModal({
 					<div className="px-6 py-10 text-center text-sm font-semibold text-black/40">Loading…</div>
 				) : !isSpace && !report ? (
 					<div className="px-6 py-10 text-center text-sm font-semibold text-black/40">
-						The space partner hasn&apos;t submitted a deliverables report yet.
+						The hub partner hasn&apos;t submitted a deliverables report yet.
 					</div>
 				) : (
 					<>

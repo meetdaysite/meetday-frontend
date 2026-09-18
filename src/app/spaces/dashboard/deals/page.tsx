@@ -111,7 +111,7 @@ export default function SpaceLockedDealsPage() {
 									{deal.counterpartName}
 								</span>
 								<span className="text-[10px] font-bold text-black/50 uppercase">
-									{isBrand ? "Brand Space Deal" : "Community Space Deal"}
+									{isBrand ? "Brand Hub Deal" : "Community Hub Deal"}
 								</span>
 							</div>
 						</div>
@@ -184,7 +184,7 @@ export default function SpaceLockedDealsPage() {
 				<div>
 					<h1 className="text-2xl font-heading font-black text-black">Locked Deals</h1>
 					<p className="text-xs font-semibold text-black/50 mt-0.5">
-						All locked space partner agreements, brand & community deals, deliverables reports, and terms.
+						All locked hub partner agreements, brand & community deals, deliverables reports, and terms.
 					</p>
 				</div>
 				<Link

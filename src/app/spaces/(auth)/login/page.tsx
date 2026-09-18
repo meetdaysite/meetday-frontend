@@ -17,15 +17,15 @@ export default function SpacesLoginPage() {
 				<svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
 					<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
 				</svg>
-				Back to spaces
+				Back to hubs
 			</Link>
 
 			<div className="mb-6">
 				<h1 className="font-heading text-3xl font-black text-black mb-1">
-					Space Partner Login
+					Hub Partner Login
 				</h1>
 				<p className="text-body-sm text-text-secondary mt-2">
-					Welcome back! Sign in with Google to manage your venue spaces.
+					Welcome back! Sign in with Google to manage your venue hubs.
 				</p>
 			</div>
 
@@ -34,7 +34,7 @@ export default function SpacesLoginPage() {
 			</div>
 
 			<p className="text-center text-body-sm text-text-secondary mt-6">
-				New to Spaces?{" "}
+				New to Hubs?{" "}
 				<Link href="/spaces/signup" className="font-semibold text-text-link hover:underline">
 					Create an account
 				</Link>

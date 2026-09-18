@@ -436,7 +436,7 @@ export function SpaceChatDashboard({
 	}
 
 	function replyLabel(senderType: string) {
-		return senderType === "BRAND" ? "Brand" : senderType === "SPACE" ? "Space" : "Community"
+		return senderType === "BRAND" ? "Brand" : senderType === "SPACE" ? "Hub" : "Community"
 	}
 
 	async function handleAccept(threadId: string) {
@@ -782,7 +782,7 @@ export function SpaceChatDashboard({
 															: m.senderType === "BRAND"
 																? `${selectedThread.counterpartName} • Brand`
 																: m.senderType === "SPACE"
-																	? `${selectedThread.counterpartName} • Space`
+																	? `${selectedThread.counterpartName} • Hub`
 																	: isCommunity
 																		? `${selectedThread.counterpartName} • Community`
 																		: "Meetday • Admin"}
