@@ -1316,17 +1316,21 @@ export type MeetdayChatReplyTo = {
 	hasMedia: boolean
 }
 
-export async function getMyMeetdayChat(): Promise<{ messages: MeetdayChatMessage[] }> {
+export type MeetdayChatContext = "HOST" | "BRAND" | "SPACE_PARTNER"
+
+export async function getMyMeetdayChat(context: MeetdayChatContext = "HOST"): Promise<{ messages: MeetdayChatMessage[] }> {
 	const { data } = await apiClient.get<{ success: boolean; data: { messages: MeetdayChatMessage[] } }>(
 		"/meetday-chat/messages",
+		{ params: { context } },
 	)
 	return data.data
 }
 
-export async function sendMeetdayChatMessage(payload: { content?: string; mediaKey?: string; replyToId?: string }): Promise<MeetdayChatMessage> {
+export async function sendMeetdayChatMessage(payload: { content?: string; mediaKey?: string; replyToId?: string }, context: MeetdayChatContext = "HOST"): Promise<MeetdayChatMessage> {
 	const { data } = await apiClient.post<{ success: boolean; data: MeetdayChatMessage }>(
 		"/meetday-chat/messages",
 		payload,
+		{ params: { context } },
 	)
 	return data.data
 }

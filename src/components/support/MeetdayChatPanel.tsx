@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
 import { uploadMeetdayChatImage } from "@/lib/uploadMedia"
-import { getMyMeetdayChat, sendMeetdayChatMessage, editMeetdayChatMessage, deleteMeetdayChatMessage, type MeetdayChatMessage } from "@/lib/api"
+import { getMyMeetdayChat, sendMeetdayChatMessage, editMeetdayChatMessage, deleteMeetdayChatMessage, type MeetdayChatMessage, type MeetdayChatContext } from "@/lib/api"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
 import { EmojiPicker } from "@/components/ui/EmojiPicker"
 import { LinkifiedText } from "@/components/ui/LinkifiedText"
@@ -18,6 +18,7 @@ const POLL_MS = 4000
 // Single persistent support chat with the Meetday team — one thread per user, no thread list
 // needed (unlike TriChat). Shared by both the host and brand chat pages.
 export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HOST" | "BRAND" | "SPACE" }) {
+	const chatContext: MeetdayChatContext = role === "SPACE" ? "SPACE_PARTNER" : role
 	const [messages, setMessages] = useState<MeetdayChatMessage[]>([])
 	const [loading, setLoading] = useState(true)
 	const [input, setInput] = useState("")
@@ -81,7 +82,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 
 	const load = useCallback(async () => {
 		try {
-			const res = await getMyMeetdayChat()
+				  const res = await getMyMeetdayChat(chatContext)
 			setMessages(res.messages)
 		} catch {
 			// silent on poll
@@ -117,7 +118,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 		}
 		setSending(true)
 		try {
-			const msg = await sendMeetdayChatMessage({ content: input.trim(), replyToId: replyingTo?.id })
+						 const msg = await sendMeetdayChatMessage({ content: input.trim(), replyToId: replyingTo?.id }, chatContext)
 			setMessages(prev => [...prev, msg])
 			setInput("")
 			setReplyingTo(null)
@@ -163,7 +164,7 @@ export function MeetdayChatPanel({ ownName, role }: { ownName: string; role: "HO
 		setUploadingImage(true)
 		try {
 			const mediaKey = await uploadMeetdayChatImage(file)
-			const msg = await sendMeetdayChatMessage({ mediaKey, replyToId: replyingTo?.id })
+				const msg = await sendMeetdayChatMessage({ mediaKey, replyToId: replyingTo?.id }, chatContext)
 			setMessages(prev => [...prev, msg])
 			setReplyingTo(null)
 		} catch {
