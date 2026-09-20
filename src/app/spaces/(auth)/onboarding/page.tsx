@@ -75,8 +75,8 @@ export default function SpacesOnboardingPage() {
 		const newErrors: typeof errors = {}
 		if (!firstName.trim()) newErrors.firstName = "First name is required"
 		if (!lastName.trim()) newErrors.lastName = "Last name is required"
-		if (!businessName.trim()) newErrors.businessName = "Business name / Venue chain is required"
-		if (operatingCities.length === 0) newErrors.operatingCities = "Please select or type at least one operating city"
+		if (!businessName.trim()) newErrors.businessName = "Business name is required"
+		if (operatingCities.length === 0) newErrors.operatingCities = "Please add at least one operating city"
 		if (!phone.trim() || phone.length < 7) newErrors.phone = "Please enter a valid phone number"
 
 		setErrors(newErrors)
@@ -210,7 +210,7 @@ export default function SpacesOnboardingPage() {
 					<SectionCard title="Business & Hub Info">
 						<div className="flex flex-col gap-4">
 							<TextField
-								label="Business Name / Venue Chain"
+								label="Business Name"
 								placeholder="e.g. Social Offline, Third Wave Coffee, WeWork"
 								value={businessName}
 								onChange={(e) => {
@@ -229,7 +229,7 @@ export default function SpacesOnboardingPage() {
 									if (errors.operatingCities) setErrors((prev) => ({ ...prev, operatingCities: undefined }))
 								}}
 								error={errors.operatingCities}
-								placeholder="Select or type cities (e.g. Bengaluru, Mumbai, Delhi)..."
+									placeholder="Type a city and press Enter..."
 							/>
 						</div>
 					</SectionCard>

@@ -50,11 +50,27 @@ export default function SpaceOnboardingPage() {
 		defaultValues: { firstName: firstName ?? "", lastName: lastName ?? "", businessName: "", phone: "" },
 	})
 
-	function addCity() {
-		const trimmed = cityInput.trim()
+	function addCity(value?: string) {
+		const trimmed = (value ?? cityInput).trim()
 		if (!trimmed) return
-		setCities((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]))
+		setCities((prev) => {
+			const normalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1)
+			return prev.some((city) => city.toLowerCase() === normalized.toLowerCase()) ? prev : [...prev, normalized]
+		})
 		setCityInput("")
+	}
+
+	function handleCityKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+		if (e.key === "Enter") {
+			e.preventDefault()
+			addCity()
+			return
+		}
+
+		if (e.key === "Backspace" && !cityInput && cities.length > 0) {
+			e.preventDefault()
+			setCities((prev) => prev.slice(0, -1))
+		}
 	}
 
 	async function onSubmit(values: FormValues) {
@@ -99,7 +115,7 @@ export default function SpaceOnboardingPage() {
 				<TextField label="First name" {...register("firstName")} error={!!errors.firstName} helperText={errors.firstName?.message} />
 				<TextField label="Last name" {...register("lastName")} error={!!errors.lastName} helperText={errors.lastName?.message} />
 				<TextField
-					label="Business / venue name"
+					label="Business Name"
 					placeholder="e.g. WeWork Koramangala"
 					{...register("businessName")}
 					error={!!errors.businessName}
@@ -120,18 +136,10 @@ export default function SpaceOnboardingPage() {
 							type="text"
 							value={cityInput}
 							onChange={(e) => setCityInput(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									e.preventDefault()
-									addCity()
-								}
-							}}
-							placeholder="Type a city and press Add"
+							onKeyDown={handleCityKeyDown}
+							placeholder="Type a city and press Enter"
 							className="h-10 px-4 rounded-xl border-2 border-black bg-white text-black outline-none text-sm flex-1"
 						/>
-						<Button type="button" variant="primary" size="sm" onClick={addCity} className="h-10">
-							Add
-						</Button>
 					</div>
 					{cities.length > 0 && (
 						<div className="flex flex-wrap gap-2 mt-1">
