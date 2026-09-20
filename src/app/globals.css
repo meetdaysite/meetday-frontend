@@ -233,9 +233,11 @@ body {
 	will-change: transform;
 }
 
-/* Hide top-right sonner toasters on dashboard layouts that feature a sidebar */
-body:has(aside) [data-sonner-toaster] {
-	display: none !important;
+/* Hide top-right sonner toasters on desktop dashboard layouts that feature a sidebar (sidebar handles it) */
+@media (min-width: 1024px) {
+	body:has(aside) [data-sonner-toaster] {
+		display: none !important;
+	}
 }
 
 /* AI icon pulse — zoom in/out to grab attention */

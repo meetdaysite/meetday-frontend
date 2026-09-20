@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic"
 import type { Metadata } from "next"
 import { Poppins, Bricolage_Grotesque } from "next/font/google"
 import { Toaster } from "sonner"
+import { MobileTopToasts } from "@/components/ui/MobileTopToasts"
 import { AuthProvider } from "@/context/AuthContext"
 import "./globals.css"
 
@@ -51,6 +52,7 @@ export default function RootLayout({
 		<html lang="en" className={`${poppins.variable} ${bricolage.variable} h-full antialiased`}>
 			<body className="min-h-full flex flex-col bg-surface-page text-text-primary">
 				<AuthProvider>{children}</AuthProvider>
+				<MobileTopToasts />
 				<Toaster richColors position="top-right" />
 			</body>
 		</html>

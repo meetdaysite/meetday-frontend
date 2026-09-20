@@ -412,7 +412,7 @@ export default function CampaignsPage() {
 	return (
 		<div className="flex flex-col min-h-screen bg-white text-black">
 			{/* Top Bar */}
-			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
+			<div className="hidden sm:flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
 				<p className="text-sm font-semibold text-black/50 mx-auto">
 					Welcome to <span className="text-[#EE2C2C] font-bold">Meetday</span>
 				</p>
@@ -619,7 +619,7 @@ export default function CampaignsPage() {
 										required
 										value={description}
 										onChange={(e) => setDescription(e.target.value)}
-										placeholder='Provide context for our AI matching engine (e.g., "Looking for spaces with high afternoon foot traffic and an eco-friendly vibe.")'
+										placeholder='Provide context for our AI matching engine (e.g., "Looking for hubs with high afternoon foot traffic and an eco-friendly vibe.")'
 										rows={4}
 										className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
 									/>

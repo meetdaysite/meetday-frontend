@@ -162,6 +162,29 @@ export function formatEventDateRange(eventDate?: string, endDate?: string | null
 	return `${single} – ${endLabel}`
 }
 
+export function formatProposalDate(dStr?: string | null): string {
+	if (!dStr) return ""
+	const clean = dStr.includes("T") ? dStr.split("T")[0] : dStr
+	const p = clean.split("-")
+	if (p.length === 3) {
+		const d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]))
+		if (!isNaN(d.getTime())) {
+			return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+		}
+	}
+	const d = new Date(dStr)
+	return isNaN(d.getTime()) ? dStr : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+}
+
+export function formatProposalDateRange(startDate?: string | null, endDate?: string | null): string {
+	const start = formatProposalDate(startDate)
+	const end = formatProposalDate(endDate)
+	if (start && end && start !== end) {
+		return `${start} - ${end}`
+	}
+	return start || end || ""
+}
+
 // ─── Converters ───────────────────────────────────────────────────────────────
 
 // The API returns both the raw storage key and a short-lived signed url for

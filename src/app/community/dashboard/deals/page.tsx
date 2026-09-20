@@ -10,9 +10,15 @@ import {
 	getMySponsorshipChats,
 	getSponsorshipDeal,
 	getSponsorshipDealReport,
+	getMySpaceChats,
+	getSpaceDeal,
+	getSpaceDealReport,
 	type SponsorshipDeal,
+	type SpaceDeal,
+	type SpaceChatThread,
 } from "@/lib/api"
 import { DealDetailsModal, DealReportModal } from "@/components/sponsorship/DealPanel"
+import { SpaceDealDetailsModal, SpaceDealReportModal } from "@/components/spaces/SpaceDealPanel"
 
 type LockedDealItem = SponsorshipDeal & {
 	proposalName: string
@@ -25,24 +31,43 @@ type LockedDealItem = SponsorshipDeal & {
 	proposalId?: string | null
 }
 
+type LockedSpaceDealItem = SpaceDeal & {
+	counterpartName: string
+	counterpartAvatarUrl?: string | null
+	thread: SpaceChatThread
+	hasReport: boolean
+}
+
 export default function CommunityLockedDealsPage() {
 	const router = useRouter()
 	const { profile } = useHostStore()
 	const hostId = profile?.id
 
 	const [lockedDeals, setLockedDeals] = useState<LockedDealItem[]>([])
+	const [lockedSpaceDeals, setLockedSpaceDeals] = useState<LockedSpaceDealItem[]>([])
 	const [loading, setLoading] = useState(true)
 	const [loadingDealDetailId, setLoadingDealDetailId] = useState<string | null>(null)
+	const [loadingSpaceDealId, setLoadingSpaceDealId] = useState<string | null>(null)
+
+	// Sponsorship/Campaign modals
 	const [selectedDeal, setSelectedDeal] = useState<{ deal: LockedDealItem; interestId: string } | null>(null)
 	const [selectedInterestIdForReport, setSelectedInterestIdForReport] = useState<string | null>(null)
+
+	// Space Deal modals
+	const [selectedSpaceDeal, setSelectedSpaceDeal] = useState<{ deal: SpaceDeal; thread: SpaceChatThread } | null>(null)
+	const [selectedSpaceReport, setSelectedSpaceReport] = useState<{ deal: SpaceDeal; thread: SpaceChatThread } | null>(null)
 
 	useEffect(() => {
 		if (!hostId) return
 		setLoading(true)
 
-		getMySponsorshipChats("ACCEPTED", "HOST")
-			.then(async (threads) => {
-				const dealsPromises = threads.map(async (thread) => {
+		Promise.all([
+			getMySponsorshipChats("ACCEPTED", "HOST").catch(() => []),
+			getMySpaceChats(undefined, "COMMUNITY").catch(() => []),
+		])
+			.then(async ([sponsorshipThreads, spaceThreads]) => {
+				// 1. Sponsorship and Campaign Deals
+				const dealsPromises = sponsorshipThreads.map(async (thread) => {
 					try {
 						const deal = await getSponsorshipDeal(thread.id)
 						if (deal && deal.status === "APPROVED") {
@@ -65,12 +90,42 @@ export default function CommunityLockedDealsPage() {
 							}
 						}
 					} catch (e) {
-						console.error("error fetching deal", e)
+						console.error("error fetching sponsorship deal", e)
 					}
 					return null
 				})
-				const resolvedDeals = await Promise.all(dealsPromises)
+
+				// 2. Space Deals
+				const spaceDealsPromises = spaceThreads.map(async (thread) => {
+					try {
+						const deal = await getSpaceDeal(thread.id)
+						if (deal && deal.status === "APPROVED") {
+							let hasReport = false
+							try {
+								const rep = await getSpaceDealReport(thread.id, "COMMUNITY")
+								if (rep) hasReport = true
+							} catch {}
+							return {
+								...deal,
+								counterpartName: thread.counterpartName || "Space Partner",
+								counterpartAvatarUrl: thread.counterpartAvatarUrl,
+								thread,
+								hasReport,
+							}
+						}
+					} catch (e) {
+						console.error("error fetching space deal", e)
+					}
+					return null
+				})
+
+				const [resolvedDeals, resolvedSpaceDeals] = await Promise.all([
+					Promise.all(dealsPromises),
+					Promise.all(spaceDealsPromises),
+				])
+
 				setLockedDeals(resolvedDeals.filter((d): d is NonNullable<typeof d> => d !== null))
+				setLockedSpaceDeals(resolvedSpaceDeals.filter((d): d is NonNullable<typeof d> => d !== null))
 			})
 			.catch((err) => {
 				console.error("Failed to fetch accepted chats/deals", err)
@@ -82,8 +137,9 @@ export default function CommunityLockedDealsPage() {
 
 	const sponsorshipDeals = lockedDeals.filter((d) => !d.isCampaign)
 	const campaignDeals = lockedDeals.filter((d) => d.isCampaign)
+	const totalDealsCount = lockedDeals.length + lockedSpaceDeals.length
 
-	function renderDealCard(deal: LockedDealItem) {
+	function renderSponsorshipOrCampaignDealCard(deal: LockedDealItem) {
 		const isPaid = deal.paymentStatus === "PAID"
 		return (
 			<div
@@ -177,10 +233,102 @@ export default function CommunityLockedDealsPage() {
 		)
 	}
 
+	function renderSpaceDealCard(deal: LockedSpaceDealItem) {
+		return (
+			<div
+				key={deal.id}
+				onClick={(e) => {
+					const target = e.target as HTMLElement
+					if (target.closest("button") || target.closest("a")) return
+					router.push(`/community/dashboard/space-chats?threadId=${deal.spaceInterestId}`)
+				}}
+				className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all p-4 sm:p-5 flex flex-col justify-between"
+			>
+				<div>
+					<div className="flex items-center justify-between gap-2 mb-2">
+						<div className="flex items-center gap-2.5 min-w-0">
+							<div className="w-9 h-9 rounded-full border-[2px] border-black overflow-hidden bg-neutral-100 flex items-center justify-center shrink-0">
+								{deal.counterpartAvatarUrl ? (
+									// eslint-disable-next-line @next/next/no-img-element
+									<img
+										src={deal.counterpartAvatarUrl}
+										alt={deal.counterpartName}
+										className="w-full h-full object-cover"
+									/>
+								) : (
+									<span className="font-bold text-xs text-black/60">
+										{deal.counterpartName.charAt(0).toUpperCase()}
+									</span>
+								)}
+							</div>
+							<div className="min-w-0">
+								<span className="font-heading font-black text-sm sm:text-base text-black truncate block">
+									{deal.counterpartName}
+								</span>
+								<span className="text-[10px] font-bold text-black/50 uppercase">
+									Hub Partner Deal
+								</span>
+							</div>
+						</div>
+					</div>
+					<p className="text-xs text-black/60 font-semibold truncate mt-2">
+						Project: <span className="text-black font-bold">{deal.projectName}</span>
+					</p>
+					{deal.venue && (
+						<p className="text-[11px] text-black/40 font-semibold truncate mt-0.5">
+							Venue: {deal.venue}
+						</p>
+					)}
+				</div>
+				<div className="mt-4 pt-3 border-t-2 border-black/5 flex flex-col gap-2">
+					<div className="flex justify-between items-center text-xs font-black text-black">
+						<span>Amount:</span>
+						<span>₹{Number(deal.sponsorshipAmount || 0).toLocaleString("en-IN")}</span>
+					</div>
+					<div className={clsx("grid gap-2 mt-1", deal.hasReport ? "grid-cols-2" : "grid-cols-1")}>
+						<button
+							type="button"
+							disabled={loadingSpaceDealId === deal.id}
+							onClick={async () => {
+								setLoadingSpaceDealId(deal.id)
+								try {
+									const dealObj = await getSpaceDeal(deal.spaceInterestId)
+									if (dealObj) {
+										setSelectedSpaceDeal({ deal: dealObj, thread: deal.thread })
+									} else {
+										toast.error("Deal terms are not active yet.")
+									}
+								} catch {
+									toast.error("Failed to load deal terms.")
+								} finally {
+									setLoadingSpaceDealId(null)
+								}
+							}}
+							className="py-2 px-2 bg-[#FFC940] text-black border-2 border-black rounded-xl text-[10px] font-black tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none text-center cursor-pointer"
+						>
+							{loadingSpaceDealId === deal.id ? "..." : "Locked Deal"}
+						</button>
+						{deal.hasReport && (
+							<button
+								type="button"
+								onClick={() => {
+									setSelectedSpaceReport({ deal, thread: deal.thread })
+								}}
+								className="py-2 px-2 bg-white text-black border-2 border-black rounded-xl text-[10px] font-black tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none text-center cursor-pointer"
+							>
+								Report
+							</button>
+						)}
+					</div>
+				</div>
+			</div>
+		)
+	}
+
 	return (
 		<div className="flex flex-col min-h-full bg-white">
 			{/* Top Nav / Subheader */}
-			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
+			<div className="hidden sm:flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
 				<p className="text-sm font-semibold text-black/50 mx-auto">
 					Welcome to <span className="text-[#EE2C2C] font-bold">Meetday</span>
 				</p>
@@ -191,7 +339,7 @@ export default function CommunityLockedDealsPage() {
 				<div>
 					<h1 className="text-2xl font-heading font-black text-black">Locked Deals</h1>
 					<p className="text-xs font-semibold text-black/50 mt-0.5">
-						All locked sponsorship agreements, campaign deals, deliverables reports, and payment statuses.
+						All locked sponsorship agreements, campaign deals, hub partner deals, and deliverables reports.
 					</p>
 				</div>
 				<Link
@@ -204,11 +352,11 @@ export default function CommunityLockedDealsPage() {
 
 			<div className="px-6 lg:px-8 py-6 max-w-7xl mx-auto w-full flex-1 flex flex-col">
 				{loading ? (
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-						{[1, 2].map((col) => (
+					<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+						{[1, 2, 3].map((col) => (
 							<div key={col} className="flex flex-col gap-4">
-								<div className="h-7 bg-black/10 rounded-lg w-48 animate-pulse" />
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+								<div className="h-7 bg-black/10 rounded-lg w-40 animate-pulse" />
+								<div className="flex flex-col gap-4">
 									{[1, 2].map((i) => (
 										<div
 											key={i}
@@ -229,7 +377,7 @@ export default function CommunityLockedDealsPage() {
 							</div>
 						))}
 					</div>
-				) : lockedDeals.length === 0 ? (
+				) : totalDealsCount === 0 ? (
 					<div className="my-auto py-16 border-[3px] border-dashed border-black/30 rounded-[28px] bg-white flex flex-col items-center justify-center text-center p-8 gap-3 max-w-md mx-auto w-full">
 						<div className="size-14 rounded-full bg-[#FFC940] border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
 							<svg className="size-6 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -239,7 +387,7 @@ export default function CommunityLockedDealsPage() {
 						</div>
 						<h2 className="text-lg font-heading font-black text-black">No locked deals yet</h2>
 						<p className="text-xs font-semibold text-black/50 leading-relaxed">
-							Once you finalize and lock sponsorship or campaign terms with a brand in your chats, your active agreements and reports will appear here.
+							Once you finalize and lock sponsorship, campaign, or hub deals in your chats, your active agreements and reports will appear here.
 						</p>
 						<Link
 							href="/community/dashboard/chats"
@@ -249,7 +397,7 @@ export default function CommunityLockedDealsPage() {
 						</Link>
 					</div>
 				) : (
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+					<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 						{/* Column 1: Sponsorship Deals */}
 						<div className="flex flex-col gap-4">
 							<div className="flex items-center justify-between pb-3 border-b-[3px] border-black">
@@ -266,8 +414,8 @@ export default function CommunityLockedDealsPage() {
 									<p className="text-xs font-bold text-black/40">No locked sponsorship proposal deals yet</p>
 								</div>
 							) : (
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-									{sponsorshipDeals.map(renderDealCard)}
+								<div className="flex flex-col gap-4">
+									{sponsorshipDeals.map(renderSponsorshipOrCampaignDealCard)}
 								</div>
 							)}
 						</div>
@@ -288,8 +436,30 @@ export default function CommunityLockedDealsPage() {
 									<p className="text-xs font-bold text-black/40">No locked brand campaign deals yet</p>
 								</div>
 							) : (
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-									{campaignDeals.map(renderDealCard)}
+								<div className="flex flex-col gap-4">
+									{campaignDeals.map(renderSponsorshipOrCampaignDealCard)}
+								</div>
+							)}
+						</div>
+
+						{/* Column 3: Hub Deals */}
+						<div className="flex flex-col gap-4">
+							<div className="flex items-center justify-between pb-3 border-b-[3px] border-black">
+								<div className="flex items-center gap-2">
+									<h2 className="text-base font-black text-black">Hub Deals</h2>
+									<span className="px-2 py-0.5 rounded-full bg-black text-white text-xs font-black border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+										{lockedSpaceDeals.length}
+									</span>
+								</div>
+							</div>
+
+							{lockedSpaceDeals.length === 0 ? (
+								<div className="py-12 border-2 border-dashed border-black/20 rounded-[20px] bg-neutral-50 flex flex-col items-center justify-center text-center p-6 gap-2">
+									<p className="text-xs font-bold text-black/40">No locked community hub deals yet</p>
+								</div>
+							) : (
+								<div className="flex flex-col gap-4">
+									{lockedSpaceDeals.map(renderSpaceDealCard)}
 								</div>
 							)}
 						</div>
@@ -297,6 +467,7 @@ export default function CommunityLockedDealsPage() {
 				)}
 			</div>
 
+			{/* Sponsorship & Campaign Deals Modals */}
 			{selectedDeal && (
 				<DealDetailsModal
 					interestId={selectedDeal.interestId}
@@ -316,6 +487,27 @@ export default function CommunityLockedDealsPage() {
 					interestId={selectedInterestIdForReport}
 					role="HOST"
 					onClose={() => setSelectedInterestIdForReport(null)}
+				/>
+			)}
+
+			{/* Space Deals Modals */}
+			{selectedSpaceDeal && (
+				<SpaceDealDetailsModal
+					interestId={selectedSpaceDeal.deal.spaceInterestId}
+					deal={selectedSpaceDeal.deal}
+					role="COMMUNITY"
+					onClose={() => setSelectedSpaceDeal(null)}
+					onUpdated={(updated) => {
+						setSelectedSpaceDeal({ deal: updated, thread: selectedSpaceDeal.thread })
+					}}
+				/>
+			)}
+
+			{selectedSpaceReport && (
+				<SpaceDealReportModal
+					interestId={selectedSpaceReport.deal.spaceInterestId}
+					role="COMMUNITY"
+					onClose={() => setSelectedSpaceReport(null)}
 				/>
 			)}
 		</div>

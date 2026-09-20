@@ -8,7 +8,7 @@ import clsx from "clsx"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
-import { getHostCommunityProfile, getMySponsorshipProposals, getMySponsorshipChats } from "@/lib/api"
+import { getHostCommunityProfile, getMySponsorshipProposals, getMySponsorshipChats, getMySpaceChats, getMySpaceHostChats, getMyCommunityCollaborationChats } from "@/lib/api"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useToastStore } from "@/store/toastStore"
 import type { ComponentType, SVGProps } from "react"
@@ -27,15 +27,25 @@ import CalendarFillSvg from "@/icons/filled/calendar.svg"
 import RocketSvg from "@/icons/outlined/rocket.svg"
 import LockOutSvg from "@/icons/outlined/lock.svg"
 import LockFillSvg from "@/icons/filled/lock.svg"
+import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
-const NAV_ITEMS_TOP = [
+type TopNavItem = {
+	label: string
+	href: string
+	outlined: SvgIcon
+	filled: SvgIcon
+	disabled?: boolean
+}
+
+const NAV_ITEMS_TOP: TopNavItem[] = [
 	{ label: "Dashboard", href: "/community/dashboard", outlined: WidgetsSvg, filled: WidgetSvg },
-	{ label: "My Sponsorships", href: "/community/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
-	{ label: "Brand Campaigns", href: "/community/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
+	{ label: "Experience Proposals", href: "/community/dashboard/proposal", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Brand Campaigns", href: "/community/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg, disabled: true },
+	{ label: "Community Hubs", href: "/community/dashboard/community-spaces", outlined: CalendarOutSvg, filled: CalendarFillSvg },
+	{ label: "Communities", href: "/community/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
 	{ label: "Locked Deals", href: "/community/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
-	{ label: "My Experiences", href: "/community/dashboard/events", outlined: CalendarOutSvg, filled: CalendarFillSvg, disabled: true },
 ]
 
 type BottomNavItem = {
@@ -43,12 +53,9 @@ type BottomNavItem = {
 	href: string
 	outlined: SvgIcon
 	filled: SvgIcon
-	chatType?: "sponsorship" | "campaign"
 }
 
 const NAV_ITEMS_BOTTOM: BottomNavItem[] = [
-	{ label: "Sponsorship Chats", href: "/community/dashboard/chats?type=sponsorship", chatType: "sponsorship", outlined: ChatOutSvg, filled: ChatFillSvg },
-	{ label: "Campaign Chats", href: "/community/dashboard/chats?type=campaign", chatType: "campaign", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Support Chat", href: "/community/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/community/dashboard/messages", outlined: BellSvg, filled: BellFillSvg },
 ]
@@ -71,7 +78,32 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const [dismissedList, setDismissedList] = useState<any[]>([])
 	const [unreadSponsorshipChatsCount, setUnreadSponsorshipChatsCount] = useState(0)
 	const [unreadCampaignChatsCount, setUnreadCampaignChatsCount] = useState(0)
+	const [unreadSpaceChatsCount, setUnreadSpaceChatsCount] = useState(0)
+	const [unreadCommunityRequestsCount, setUnreadCommunityRequestsCount] = useState(0)
+	const [unreadCommunityCollaborationChatsCount, setUnreadCommunityCollaborationChatsCount] = useState(0)
 	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
+	const [chatsOpen, setChatsOpen] = useState(false)
+
+	const isChatsRoute =
+		pathname.startsWith("/community/dashboard/chats") ||
+		pathname.startsWith("/community/dashboard/space-chats") ||
+		pathname.startsWith("/community/dashboard/community-chats")
+	const isCampaignChat = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") === "campaign"
+	const isSponsorshipChat =
+		pathname.startsWith("/community/dashboard/chats") &&
+		searchParams.get("type") !== "campaign" &&
+		searchParams.get("type") !== "community"
+	const isSpacesChat = pathname.startsWith("/community/dashboard/space-chats")
+	const isCommunityCollaborationChat =
+		pathname.startsWith("/community/dashboard/community-chats") ||
+		(pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") === "community")
+	const totalChatsBadge =
+		unreadSponsorshipChatsCount +
+		unreadCampaignChatsCount +
+		unreadSpaceChatsCount +
+		unreadCommunityRequestsCount +
+		unreadCommunityCollaborationChatsCount
+
 	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
 	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
 
@@ -189,6 +221,81 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 		initNotifs()
 	}, [initNotifs])
 
+	// Spaces Chats badge — same fold-in pattern as sponsorship/campaign, but for space_* notifications
+	// (chat messages, deal lock/update/approve, interest accepted) not yet reflected in a thread's own unreadCount.
+	useEffect(() => {
+		if (!profile?.id) return
+
+		const updateSpaceCount = () => {
+			getMySpaceChats(undefined, "COMMUNITY").catch(() => []).then((threads) => {
+				const isSpaceChatNotification = (n: (typeof notifications)[0]) =>
+					n.type === "space_chat_message" ||
+					n.type === "space_deal_locked" ||
+					n.type === "space_deal_updated" ||
+					n.type === "space_deal_approved" ||
+					n.type === "space_deal_changes_requested" ||
+					n.type === "space_interest_accepted"
+
+				const threadCount = threads.reduce((sum, t) => {
+					const notifCount = notifications.filter(n => {
+						if (n.isRead || !isSpaceChatNotification(n)) return false
+						const m = (n.metadata as Record<string, unknown>) || {}
+						const tId = m.spaceInterestId || m.interestId || m.threadId
+						return tId === t.id
+					}).length
+					return sum + Math.max(t.unreadCount || 0, notifCount)
+				}, 0)
+
+				const standaloneCount = notifications.filter(n => {
+					if (n.isRead || !isSpaceChatNotification(n)) return false
+					const m = (n.metadata as Record<string, unknown>) || {}
+					const tId = m.spaceInterestId || m.interestId || m.threadId
+					return !tId || !threads.some(t => t.id === tId)
+				}).length
+
+				setUnreadSpaceChatsCount(threadCount + standaloneCount)
+			}).catch(() => {})
+		}
+
+		updateSpaceCount()
+		const interval = setInterval(updateSpaceCount, 8000)
+		return () => clearInterval(interval)
+	}, [profile?.id, notifications])
+
+	// Space Partner partnership Requests badge (Space -> Community, reverse direction of Spaces Chats).
+	useEffect(() => {
+		if (!profile?.id) return
+		const updateCount = () => {
+			getMySpaceHostChats(undefined, "HOST")
+				.then((threads) => {
+					setUnreadCommunityRequestsCount(threads.reduce((sum, t) => sum + (t.unreadCount || 0), 0))
+				})
+				.catch(() => {})
+		}
+		updateCount()
+		const interval = setInterval(updateCount, 8000)
+		return () => clearInterval(interval)
+	}, [profile?.id])
+
+	// Community Collaboration Chats badge (Community <-> Community)
+	useEffect(() => {
+		if (!profile?.id) return
+		const updateCount = () => {
+			getMyCommunityCollaborationChats()
+				.then((threads) => {
+					const count = (threads || []).reduce((sum, t) => {
+						const isIncomingPending = t.direction === "INCOMING" && t.chatStatus === "REQUESTED"
+						return sum + (t.unreadCount || 0) + (isIncomingPending ? 1 : 0)
+					}, 0)
+					setUnreadCommunityCollaborationChatsCount(count)
+				})
+				.catch(() => {})
+		}
+		updateCount()
+		const interval = setInterval(updateCount, 8000)
+		return () => clearInterval(interval)
+	}, [profile?.id])
+
 	const activeNotifs = notifications.filter(n => !n.isRead && !dismissedNotifIds.includes(n.id))
 	const latestNotif = activeNotifs[0]
 
@@ -301,7 +408,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 							<button
 								key={href}
 								type="button"
-								onClick={() => toast.info("Hosting experiences is coming soon — stay tuned!")}
+								onClick={() => toast.info(`${label} is coming soon — stay tuned!`)}
 								className="flex items-center gap-2.5 px-4 py-2 rounded-2xl text-sm font-normal text-white/50 cursor-not-allowed"
 							>
 								<Icon as={Outlined} size="md" className="text-white/50 shrink-0" />
@@ -424,24 +531,35 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 
 			{/* Navigation Bottom Items */}
 			<div className="px-4 pb-4 flex flex-col gap-1 mt-auto shrink-0">
-				{NAV_ITEMS_BOTTOM.map(({ label, href, outlined: Outlined, filled: Filled, chatType }) => {
-					let isActive = false
-					if (chatType === "campaign") {
-						isActive = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") === "campaign"
-					} else if (chatType === "sponsorship") {
-						isActive = pathname.startsWith("/community/dashboard/chats") && searchParams.get("type") !== "campaign"
-					} else {
-						isActive = pathname.startsWith(href)
-					}
+				{/* Chats Direct Link to 2-Step Chat Hub */}
+				<Link
+					href="/community/dashboard/chats"
+					onClick={onClose}
+					className={clsx(
+						"flex items-center gap-2.5 px-4 py-2 rounded-2xl transition-all text-sm font-normal",
+						isChatsRoute
+							? "bg-[#D12525] text-white"
+							: "text-white/90 hover:bg-[#D12525]/50 hover:text-white"
+					)}
+				>
+					<Icon
+						as={isChatsRoute ? ChatFillSvg : ChatOutSvg}
+						size="md"
+						className="text-white shrink-0"
+					/>
+					<span className="flex-1 whitespace-nowrap">Chats</span>
+					{totalChatsBadge > 0 && (
+						<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+							{totalChatsBadge > 9 ? "9+" : totalChatsBadge}
+						</span>
+					)}
+				</Link>
 
+
+				{NAV_ITEMS_BOTTOM.map(({ label, href, outlined: Outlined, filled: Filled }) => {
+					const isActive = pathname.startsWith(href)
 					const isNotifications = label === "Notifications"
-					const badgeCount = chatType === "sponsorship"
-						? unreadSponsorshipChatsCount
-						: chatType === "campaign"
-						? unreadCampaignChatsCount
-						: label === "Support Chat"
-						? unreadSupportCount
-						: 0
+					const badgeCount = isNotifications ? unreadCount : label === "Support Chat" ? unreadSupportCount : 0
 
 					return (
 						<Link

@@ -130,8 +130,8 @@ export function MessageBubble({
 							? "bg-surface-vibe-soft"
 							: isOwn
 								? isActiveThread
-									? "p-3 bg-surface-brand-soft border border-border-focus"
-									: "p-3 bg-surface-brand-soft border border-border-brand"
+									? "p-3 bg-black text-white border border-black ring-2 ring-black/20"
+									: "p-3 bg-black text-white border border-black"
 								: isActiveThread
 									? "p-3 bg-neutral-50 border border-neutral-500"
 									: "p-3 bg-neutral-50 border border-border-default"
@@ -140,7 +140,7 @@ export function MessageBubble({
 					{!isGrouped && (
 						<div className="flex items-center gap-2 mb-0.5">
 							<span
-								className={`text-label-sm font-bold ${isOwn ? "text-text-brand" : "text-text-primary"}`}
+								className={`text-label-sm font-bold ${isOwn ? "text-white/80" : "text-text-primary"}`}
 							>
 								{displayName}
 							</span>
@@ -149,13 +149,13 @@ export function MessageBubble({
 									Pinned
 								</span>
 							)}
-							<span className="text-[11px] text-text-muted opacity-0 group-hover:opacity-100 transition-opacity">
+							<span className={`text-[11px] opacity-0 group-hover:opacity-100 transition-opacity ${isOwn ? "text-white/60" : "text-text-muted"}`}>
 								{formatTimeShort(message.createdAt)}
 							</span>
 						</div>
 					)}
 
-					<p className="text-label-sm text-text-primary font-normal leading-relaxed whitespace-pre-line">
+					<p className={`text-label-sm font-normal leading-relaxed whitespace-pre-line ${isOwn ? "text-white" : "text-text-primary"}`}>
 						<LinkifiedText text={message.content} />
 					</p>
 

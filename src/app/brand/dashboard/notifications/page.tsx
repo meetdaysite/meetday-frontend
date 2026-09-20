@@ -35,7 +35,7 @@ export default function NotificationsPage() {
 	return (
 		<div className="flex flex-col flex-1 min-h-0 bg-white">
 			{/* Top Nav / Subheader */}
-			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
+			<div className="hidden sm:flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
 				<p className="text-sm font-semibold text-black/50 mx-auto">
 					Welcome to <span className="text-[#EE2C2C] font-bold">Meetday</span>
 				</p>

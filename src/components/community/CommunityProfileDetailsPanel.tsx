@@ -6,6 +6,7 @@ import UploadSvg from "@/icons/outlined/upload.svg"
 import clsx from "clsx"
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import Link from "next/link"
 
 interface CommunityProfileDetailsPanelProps {
 	community: HostCommunityProfile
@@ -19,6 +20,10 @@ interface CommunityProfileDetailsPanelProps {
 	onEdit?: () => void
 	onClose?: () => void
 	hideStatus?: boolean
+	viewFullProfileHref?: string
+	onViewFullProfile?: () => void
+	viewBrandPreviewHref?: string
+	onViewBrandPreview?: () => void
 }
 
 const STATUS_CONFIG: Record<HostCommunityProfile["approvalStatus"], { label: string; className: string }> = {
@@ -50,9 +55,14 @@ export function CommunityProfileDetailsPanel({
 	onEdit,
 	onClose,
 	hideStatus = false,
+	viewFullProfileHref,
+	onViewFullProfile,
+	viewBrandPreviewHref,
+	onViewBrandPreview,
 }: CommunityProfileDetailsPanelProps) {
 	const statusConfig = STATUS_CONFIG[community.approvalStatus]
 	const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null)
+	const [isPosterEnlarged, setIsPosterEnlarged] = useState(false)
 
 	const allExperienceImages = (community.pastEvents || []).flatMap((event, eventIdx) => {
 		const urls = event.imageUrls || []
@@ -99,10 +109,47 @@ export function CommunityProfileDetailsPanel({
 	return (
 		<div className="w-full h-full flex flex-col bg-white p-6 overflow-y-auto animate-in fade-in duration-150">
 			{/* Panel Header */}
-			<div className="flex justify-between items-center pb-4 mb-4 border-b border-black/10 shrink-0">
-				<h2 className="text-xl font-heading font-black text-black">
-					Community Profile
-				</h2>
+			<div className="flex justify-between items-center pb-4 mb-4 border-b border-black/10 shrink-0 gap-3">
+				<div className="flex items-center gap-3 flex-wrap">
+					<h2 className="text-xl font-heading font-black text-black">
+						Community Profile
+					</h2>
+					{viewBrandPreviewHref ? (
+						<Link
+							href={viewBrandPreviewHref}
+							className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-[#FFC940] hover:bg-[#ffbe1a] text-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+						>
+							<span>Brand preview</span>
+							<span className="text-xs font-black">→</span>
+						</Link>
+					) : onViewBrandPreview ? (
+						<button
+							type="button"
+							onClick={onViewBrandPreview}
+							className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-[#FFC940] hover:bg-[#ffbe1a] text-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer"
+						>
+							<span>Brand preview</span>
+							<span className="text-xs font-black">→</span>
+						</button>
+					) : viewFullProfileHref ? (
+						<Link
+							href={viewFullProfileHref}
+							className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-[#FFC940] hover:bg-[#ffbe1a] text-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+						>
+							<span>View full profile</span>
+							<span className="text-xs font-black">→</span>
+						</Link>
+					) : onViewFullProfile ? (
+						<button
+							type="button"
+							onClick={onViewFullProfile}
+							className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-[#FFC940] hover:bg-[#ffbe1a] text-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer"
+						>
+							<span>View full profile</span>
+							<span className="text-xs font-black">→</span>
+						</button>
+					) : null}
+				</div>
 				{onClose && (
 					<button
 						type="button"
@@ -168,9 +215,21 @@ export function CommunityProfileDetailsPanel({
 				{community.secondaryImageUrl && (
 					<div className="flex flex-col gap-1.5">
 						<span className="text-xs font-bold text-black/50">Community Poster</span>
-						<div className="relative w-full aspect-[4/5] rounded-2xl border-2 border-black overflow-hidden bg-slate-50 max-w-sm">
+						<div
+							onClick={() => setIsPosterEnlarged(true)}
+							className="relative w-full aspect-[4/5] rounded-2xl border-2 border-black overflow-hidden bg-slate-900 max-w-sm flex items-center justify-center cursor-pointer group"
+						>
 							{/* eslint-disable-next-line @next/next/no-img-element */}
-							<img src={community.secondaryImageUrl} alt="Community Poster" className="size-full object-cover" />
+							<img
+								src={community.secondaryImageUrl}
+								alt="Community Poster"
+								className="size-full object-contain transition-transform duration-300 group-hover:scale-105"
+							/>
+							<div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
+								<span className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 text-black border-2 border-black px-3 py-1 rounded-xl text-[11px] font-black uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+									Zoom Poster 🔍
+								</span>
+							</div>
 						</div>
 					</div>
 				)}
@@ -524,6 +583,36 @@ export function CommunityProfileDetailsPanel({
 								</div>
 							</div>
 						)}
+					</div>
+				</div>
+			)}
+
+			{/* Zoomed Poster Modal */}
+			{isPosterEnlarged && community.secondaryImageUrl && (
+				<div
+					className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in duration-200"
+					onClick={() => setIsPosterEnlarged(false)}
+				>
+					<div
+						className="relative max-w-2xl w-full max-h-[90vh] flex flex-col items-center justify-center p-2"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<button
+							type="button"
+							onClick={() => setIsPosterEnlarged(false)}
+							aria-label="Close enlarged poster"
+							className="absolute -top-4 -right-4 z-10 size-10 rounded-full bg-white text-black border-2 border-black flex items-center justify-center font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer"
+						>
+							✕
+						</button>
+						<div className="relative w-full aspect-[4/5] max-h-[85vh] rounded-[24px] border-[3px] border-black overflow-hidden bg-slate-900 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center">
+							{/* eslint-disable-next-line @next/next/no-img-element */}
+							<img
+								src={community.secondaryImageUrl}
+								alt="Enlarged poster"
+								className="size-full object-contain"
+							/>
+						</div>
 					</div>
 				</div>
 			)}

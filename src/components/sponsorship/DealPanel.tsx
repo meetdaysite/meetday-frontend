@@ -123,7 +123,7 @@ export const PAYMENT_STATUS_COLOR: Record<DealPaymentDisplayStatus, string> = {
 // sides see the same thing, regardless of how far back the actual deal-related chat messages are.
 export function DealBanner({
 	deal,
-	role,
+	role: roleProp,
 	onLock,
 	onEdit,
 	onView,
@@ -133,7 +133,7 @@ export function DealBanner({
 	isCampaign = false,
 }: {
 	deal: SponsorshipDeal | null
-	role: "HOST" | "BRAND"
+	role: "HOST" | "SPACE" | "BRAND"
 	onLock?: () => void
 	onEdit?: () => void
 	onView: () => void
@@ -142,6 +142,9 @@ export function DealBanner({
 	report?: SponsorshipDealReport | null
 	isCampaign?: boolean
 }) {
+	// A Space Partner is the proposal owner exactly like a Host — normalize once here so every
+	// existing `role === "HOST"` owner-side check below applies to Space too, without touching each.
+	const role: "HOST" | "BRAND" = roleProp === "SPACE" ? "HOST" : roleProp
 	const canLockOrEdit = isCampaign ? role === "BRAND" : role === "HOST"
 
 	if (!deal) {
@@ -396,6 +399,11 @@ export function DealFormModal({
 				? await updateSponsorshipDeal(interestId, payload)
 				: await createSponsorshipDeal(interestId, payload)
 
+			await sendSponsorshipChatMessage(interestId, {
+				content: isCampaignDeal ? "📄 A new campaign deal was shared for approval." : "📄 A new deal proposal was shared for approval.",
+				messageType: "SYSTEM" as any,
+			}).catch(() => {})
+
 			toast.success(deal ? "Deal updated." : "Deal locked — waiting for approval.")
 			onSaved(saved)
 			onClose()
@@ -597,7 +605,7 @@ export function DealFormModal({
 export function DealDetailsModal({
 	interestId,
 	deal,
-	role,
+	role: roleProp,
 	isCampaign = false,
 	campaignId,
 	onClose,
@@ -605,12 +613,15 @@ export function DealDetailsModal({
 }: {
 	interestId: string
 	deal: SponsorshipDeal
-	role: "HOST" | "BRAND"
+	role: "HOST" | "SPACE" | "BRAND"
 	isCampaign?: boolean
 	campaignId?: string
 	onClose: () => void
 	onUpdated: (deal: SponsorshipDeal) => void
 }) {
+	// A Space Partner is the proposal owner exactly like a Host — normalize once here so every
+	// existing `role === "HOST"` owner-side check below applies to Space too, without touching each.
+	const role: "HOST" | "BRAND" = roleProp === "SPACE" ? "HOST" : roleProp
 	const [requestingChanges, setRequestingChanges] = useState(false)
 	const [note, setNote] = useState("")
 	const [busy, setBusy] = useState(false)
@@ -661,6 +672,11 @@ export function DealDetailsModal({
 		try {
 			const updated = await approveSponsorshipDeal(interestId)
 
+			await sendSponsorshipChatMessage(interestId, {
+				content: "🔒 The deal is officially locked and confirmed!",
+				messageType: "SYSTEM" as any,
+			}).catch(() => {})
+
 			toast.success("🎉 Deal approved and locked!")
 
 			// Trigger confetti locally in the chat canvas
@@ -690,6 +706,12 @@ export function DealDetailsModal({
 		setBusy(true)
 		try {
 			const updated = await requestSponsorshipDealChanges(interestId, { note: note.trim() || undefined })
+
+			await sendSponsorshipChatMessage(interestId, {
+				content: `⚠️ Changes were requested on the deal.${note.trim() ? ` Note: "${note.trim()}"` : ""}`,
+				messageType: "SYSTEM" as any,
+			}).catch(() => {})
+
 			toast.success("Requested changes to the deal.")
 			onUpdated(updated)
 			onClose()
@@ -865,13 +887,16 @@ export function DealDetailsModal({
 // it read-only via the same modal.
 export function DealReportModal({
 	interestId,
-	role,
+	role: roleProp,
 	onClose,
 }: {
 	interestId: string
-	role: "HOST" | "BRAND"
+	role: "HOST" | "SPACE" | "BRAND"
 	onClose: () => void
 }) {
+	// A Space Partner is the proposal owner exactly like a Host — normalize once here so every
+	// existing `role === "HOST"` owner-side check below applies to Space too, without touching each.
+	const role: "HOST" | "BRAND" = roleProp === "SPACE" ? "HOST" : roleProp
 	const [loading, setLoading] = useState(true)
 	const [report, setReport] = useState<SponsorshipDealReport | null>(null)
 	const [deal, setDeal] = useState<SponsorshipDeal | null>(null)
@@ -1029,6 +1054,10 @@ export function DealReportModal({
 				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
 			})
 			toast.success(report ? "Report resubmitted for review." : "Report submitted for review.")
+			await sendSponsorshipChatMessage(interestId, {
+				content: "📋 The deliverables report was submitted for review.",
+				messageType: "SYSTEM" as any,
+			}).catch(() => null)
 			setReport(saved)
 			setReportStatus("PENDING")
 			setRevisionNote("")
@@ -1076,7 +1105,10 @@ export function DealReportModal({
 				proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
 			})
 			if (status === "APPROVED") {
-				await sendSponsorshipChatMessage(interestId, { content: "report approved, deal is closed", messageType: "SYSTEM" }).catch(() => null)
+				await sendSponsorshipChatMessage(interestId, {
+					content: "✅ Congratulations! The deal is officially completed and closed!",
+					messageType: "SYSTEM" as any,
+				}).catch(() => null)
 				// Trigger confetti sparkle animation locally in the chat canvas
 				const canvas = document.getElementById("chat-confetti-canvas") as HTMLCanvasElement | null
 				if (canvas) {
@@ -1090,6 +1122,11 @@ export function DealReportModal({
 						origin: { y: 0.6 }
 					})
 				}
+			} else if (status === "REVISION_REQUESTED") {
+				await sendSponsorshipChatMessage(interestId, {
+					content: `⚠️ Revision was requested on the deliverables report.${note ? ` Note: "${note}"` : ""}`,
+					messageType: "SYSTEM" as any,
+				}).catch(() => null)
 			}
 			toast.success(status === "APPROVED" ? "Report approved, deal is closed!" : "Revision request sent.")
 			setReport(saved)

@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/Skeleton"
 import {
 	getAllPublishedSponsorships,
 	getBrandCommunities,
+	getCommunitySpacesBrowse,
 	getSponsorshipBilling,
 	getMySponsorshipChats,
 	getSponsorshipDeal,
@@ -18,16 +19,19 @@ import {
 	getMyCampaigns,
 	type PublishedSponsorshipProposal,
 	type BrandCommunity,
+	type BrowseSpaceCommunity,
 	type SponsorshipDealBillingRow,
 	type SponsorshipDeal,
 	type Campaign,
 } from "@/lib/api"
 import clsx from "clsx"
+import { formatProposalDateRange } from "@/lib/eventForm"
 
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
 import DocumentTextSvg from "@/icons/outlined/document-text.svg"
 import UsersGroupSvg from "@/icons/outlined/users-group-2.svg"
 import { CommunityCard } from "./communities/page"
+import { SpaceCard } from "@/components/spaces/CommunitySpacesBrowse"
 import { DealDetailsModal, DealReportModal } from "@/components/sponsorship/DealPanel"
 
 
@@ -38,6 +42,7 @@ export default function BrandDashboardWelcomePage() {
 
 	const [proposals, setProposals] = useState<PublishedSponsorshipProposal[]>([])
 	const [communities, setCommunities] = useState<BrandCommunity[]>([])
+	const [communitySpaces, setCommunitySpaces] = useState<BrowseSpaceCommunity[]>([])
 	const [lockedDeals, setLockedDeals] = useState<(SponsorshipDealBillingRow & { communityLogo?: string | null; hasReport?: boolean })[]>([])
 
 	// Modal states for Lock Deal and Report forms
@@ -46,6 +51,7 @@ export default function BrandDashboardWelcomePage() {
 	const [loadingDealDetailId, setLoadingDealDetailId] = useState<string | null>(null)
 	const [loadingProposals, setLoadingProposals] = useState(true)
 	const [loadingCommunities, setLoadingCommunities] = useState(true)
+	const [loadingCommunitySpaces, setLoadingCommunitySpaces] = useState(true)
 	const [loadingLockedDeals, setLoadingLockedDeals] = useState(true)
 	const [campaigns, setCampaigns] = useState<Campaign[]>([])
 	const [loadingCampaigns, setLoadingCampaigns] = useState(true)
@@ -73,6 +79,18 @@ export default function BrandDashboardWelcomePage() {
 			})
 			.finally(() => {
 				setLoadingCommunities(false)
+			})
+
+		setLoadingCommunitySpaces(true)
+		getCommunitySpacesBrowse()
+			.then((res) => {
+				setCommunitySpaces(res.spaces || [])
+			})
+			.catch((err) => {
+				console.error("Failed to fetch community spaces for dashboard", err)
+			})
+			.finally(() => {
+				setLoadingCommunitySpaces(false)
 			})
 
 		setLoadingLockedDeals(true)
@@ -123,7 +141,7 @@ export default function BrandDashboardWelcomePage() {
 	return (
 		<div className="flex flex-col min-h-full bg-white">
 			{/* Top Nav / Subheader */}
-			<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
+			<div className="hidden sm:flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
 				<p className="text-sm font-semibold text-black/50 mx-auto">
 					Welcome to <span className="text-[#EE2C2C] font-bold">Meetday</span>
 				</p>
@@ -142,18 +160,18 @@ export default function BrandDashboardWelcomePage() {
 
 				{/* Two CTAs grid */}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-					{/* CTA 1: Browse Proposals */}
+					{/* CTA 1: Curated Experiences */}
 					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
 						<div className="flex items-center justify-between w-full mb-4">
 							<h2 className="text-lg font-heading font-black text-black">
-								Browse Proposals
+								Curated Experiences
 							</h2>
 							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
 								LIVE
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
-							Browse active sponsorship proposals from top communities and secure offline marketing opportunities.
+							Browse hand-picked, curated experiences from top communities and secure offline marketing opportunities.
 						</p>
 						<Link
 							href="/brand/dashboard/proposals"
@@ -280,15 +298,15 @@ export default function BrandDashboardWelcomePage() {
 						</div>
 					)}
 
-					{/* Row 1: Proposals */}
+					{/* Row 1: Curated Experiences */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
 							<div>
-								<h2 className="text-xl font-heading font-black text-black">Proposals</h2>
-								<p className="text-xs font-semibold text-black/50 mt-1">Browse active sponsorship proposals.</p>
+								<h2 className="text-xl font-heading font-black text-black">Curated Experiences</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Browse active curated experiences and sponsorship proposals.</p>
 							</div>
 							<Link href="/brand/dashboard/proposals" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
-								View All Proposals &gt;
+								View All Curated Experiences &gt;
 							</Link>
 						</div>
 
@@ -306,14 +324,14 @@ export default function BrandDashboardWelcomePage() {
 							</div>
 						) : proposals.length === 0 ? (
 							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
-								<p className="text-sm font-black text-black/80">No active sponsorships yet</p>
-								<p className="text-[11px] font-semibold text-black/40">Check back later for new sponsorship opportunities.</p>
+								<p className="text-sm font-black text-black/80">No curated experiences yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Check back later for new experiences and sponsorship opportunities.</p>
 							</div>
 						) : (
 							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
 								{proposals.map((prop) => {
 									const imgUrl = prop.imageUrl || null
-									const displayDate = prop.eventDate ? new Date(prop.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""
+									const displayDate = formatProposalDateRange(prop.eventDate, prop.eventEndDate)
 
 									return (
 										<Link
@@ -419,6 +437,46 @@ export default function BrandDashboardWelcomePage() {
 								{communities.map((comm) => (
 									<Link key={comm.id} href={`/brand/dashboard/communities?communityId=${comm.id}`} className="block shrink-0 w-[180px]">
 										<CommunityCard community={comm} />
+									</Link>
+								))}
+							</div>
+						)}
+					</div>
+
+					{/* Row 3: Active Community Hubs */}
+					<div className="flex flex-col w-full">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
+							<div>
+								<h2 className="text-xl font-heading font-black text-black">Active Community Hubs</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Discover venues and hubs for offline activations and community events.</p>
+							</div>
+							<Link href="/brand/dashboard/community-spaces" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+								View All Hubs &gt;
+							</Link>
+						</div>
+
+						{loadingCommunitySpaces ? (
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+								{Array.from({ length: 2 }).map((_, i) => (
+									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
+										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
+										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
+											<div className="h-4 bg-black/5 rounded w-32" />
+											<div className="h-3 bg-black/5 rounded w-20" />
+										</div>
+									</div>
+								))}
+							</div>
+						) : communitySpaces.length === 0 ? (
+							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
+								<p className="text-sm font-black text-black/80">No community hubs available yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Check back later for newly listed hubs and venues.</p>
+							</div>
+						) : (
+							<div className="flex flex-row overflow-x-auto gap-6 pb-6 pt-2 px-2 w-full custom-scrollbar">
+								{communitySpaces.map((space) => (
+									<Link key={space.id} href={`/brand/dashboard/community-spaces?spaceId=${space.id}`} className="block shrink-0 w-[180px]">
+										<SpaceCard space={space} />
 									</Link>
 								))}
 							</div>

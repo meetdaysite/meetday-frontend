@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/Icon"
 import { useBrandStore } from "@/store/brandStore"
 import { useToastStore } from "@/store/toastStore"
 import { useState, useEffect, type ComponentType, type SVGProps } from "react"
-import { getMySponsorshipChats } from "@/lib/api"
+import { getMySponsorshipChats, getMySpaceChats } from "@/lib/api"
 import { useNotificationStore } from "@/store/notificationStore"
 
 import UserSvg from "@/icons/outlined/user.svg"
@@ -24,22 +24,23 @@ import ChatFillSvg from "@/icons/filled/chat.svg"
 import DollarSvg from "@/icons/outlined/dollar.svg"
 import LockOutSvg from "@/icons/outlined/lock.svg"
 import LockFillSvg from "@/icons/filled/lock.svg"
+import CalendarOutSvg from "@/icons/outlined/calendar.svg"
+import CalendarFillSvg from "@/icons/filled/calendar.svg"
 
 type SvgIcon = ComponentType<SVGProps<SVGSVGElement>>
 
-type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; exact?: boolean; chatType?: "sponsorship" | "campaign" }
+type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon; exact?: boolean; chatType?: "sponsorship" | "campaign" | "spaces" }
 
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
 	{ label: "My Campaigns", href: "/brand/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
-	{ label: "Proposals", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Curated Experiences", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
+	{ label: "Community Hubs", href: "/brand/dashboard/community-spaces", outlined: CalendarOutSvg, filled: CalendarFillSvg },
 	{ label: "Locked Deals", href: "/brand/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
 ]
 
 const SECONDARY_NAV: NavItem[] = [
-	{ label: "Sponsorship Chats", href: "/brand/dashboard/chats?type=sponsorship", chatType: "sponsorship", outlined: ChatOutSvg, filled: ChatFillSvg },
-	{ label: "Campaign Chats", href: "/brand/dashboard/chats?type=campaign", chatType: "campaign", outlined: ChatOutSvg, filled: ChatFillSvg },
 	{ label: "Billing", href: "/brand/dashboard/billing", outlined: DollarSvg, filled: DollarSvg },
 	{ label: "Support Chat", href: "/brand/dashboard/support", outlined: HeadphonesSvg, filled: HeadphonesSvg },
 	{ label: "Notifications", href: "/brand/dashboard/notifications", outlined: BellSvg, filled: BellSvg },
@@ -74,13 +75,62 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 	const avatarUrl = profile?.logoUrl
 	const [unreadSponsorshipChatsCount, setUnreadSponsorshipChatsCount] = useState(0)
 	const [unreadCampaignChatsCount, setUnreadCampaignChatsCount] = useState(0)
+	const [unreadSpaceChatsCount, setUnreadSpaceChatsCount] = useState(0)
 	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
+	const [chatsOpen, setChatsOpen] = useState(false)
+
+	const isChatsRoute = pathname.startsWith("/brand/dashboard/chats") || pathname.startsWith("/brand/dashboard/space-chats")
+	const isSponsorshipChat = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") === "sponsorship"
+	const isCampaignChat = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") !== "sponsorship"
+	const isSpacesChat = pathname.startsWith("/brand/dashboard/space-chats")
+	const totalChatsBadge = unreadSponsorshipChatsCount + unreadCampaignChatsCount + unreadSpaceChatsCount
 
 	const { notifications, init: initNotifs } = useNotificationStore()
 
 	useEffect(() => {
 		initNotifs()
 	}, [initNotifs])
+
+	// Spaces Chats badge — same fold-in pattern as sponsorship/campaign, but for space_* notifications
+	// (chat messages, deal lock/update/approve, interest accepted) not yet reflected in a thread's own unreadCount.
+	useEffect(() => {
+		if (!profile?.id) return
+
+		const updateSpaceCount = () => {
+			getMySpaceChats(undefined, "BRAND").catch(() => []).then((threads) => {
+				const isSpaceChatNotification = (n: (typeof notifications)[0]) =>
+					n.type === "space_chat_message" ||
+					n.type === "space_deal_locked" ||
+					n.type === "space_deal_updated" ||
+					n.type === "space_deal_approved" ||
+					n.type === "space_deal_changes_requested" ||
+					n.type === "space_interest_accepted"
+
+				const threadCount = threads.reduce((sum, t) => {
+					const notifCount = notifications.filter(n => {
+						if (n.isRead || !isSpaceChatNotification(n)) return false
+						const m = (n.metadata as Record<string, unknown>) || {}
+						const tId = m.spaceInterestId || m.interestId || m.threadId
+						return tId === t.id
+					}).length
+					return sum + Math.max(t.unreadCount || 0, notifCount)
+				}, 0)
+
+				const standaloneCount = notifications.filter(n => {
+					if (n.isRead || !isSpaceChatNotification(n)) return false
+					const m = (n.metadata as Record<string, unknown>) || {}
+					const tId = m.spaceInterestId || m.interestId || m.threadId
+					return !tId || !threads.some(t => t.id === tId)
+				}).length
+
+				setUnreadSpaceChatsCount(threadCount + standaloneCount)
+			}).catch(() => {})
+		}
+
+		updateSpaceCount()
+		const interval = setInterval(updateSpaceCount, 8000)
+		return () => clearInterval(interval)
+	}, [profile?.id, notifications])
 
 	useEffect(() => {
 		if (!profile?.id) return
@@ -258,23 +308,34 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 
 			{/* Navigation Bottom Items */}
 			<div className="px-4 pb-4 flex flex-col gap-1 mt-auto shrink-0">
-				{SECONDARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled, chatType }) => {
-					let isActive = false
-					if (chatType === "campaign") {
-						isActive = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") === "campaign"
-					} else if (chatType === "sponsorship") {
-						isActive = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") !== "campaign"
-					} else {
-						isActive = pathname.startsWith(href)
-					}
+				{/* Chats Direct Link to 2-Step Chat Hub */}
+				<Link
+					href="/brand/dashboard/chats"
+					onClick={onClose}
+					className={clsx(
+						"flex items-center gap-2.5 px-4 py-2 rounded-2xl transition-all text-sm font-normal",
+						isChatsRoute
+							? "bg-[#D12525] text-white"
+							: "text-white/90 hover:bg-[#D12525]/50 hover:text-white"
+					)}
+				>
+					<Icon
+						as={isChatsRoute ? ChatFillSvg : ChatOutSvg}
+						size="md"
+						className="text-white shrink-0"
+					/>
+					<span className="flex-1 whitespace-nowrap">Chats</span>
+					{totalChatsBadge > 0 && (
+						<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
+							{totalChatsBadge > 9 ? "9+" : totalChatsBadge}
+						</span>
+					)}
+				</Link>
 
-					const badgeCount = chatType === "sponsorship"
-						? unreadSponsorshipChatsCount
-						: chatType === "campaign"
-						? unreadCampaignChatsCount
-						: label === "Support Chat"
-						? unreadSupportCount
-						: 0
+
+				{SECONDARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled }) => {
+					const isActive = pathname.startsWith(href)
+					const badgeCount = label === "Support Chat" ? unreadSupportCount : 0
 
 					return (
 						<Link

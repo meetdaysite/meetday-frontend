@@ -34,8 +34,11 @@ function formatDateRange(start: string | null, end: string | null): string {
 function ProposalCard({ proposal, onClick }: { proposal: PublishedSponsorshipProposal; onClick: () => void }) {
 	const hostName =
 		proposal.hostProfile?.displayName ||
+		proposal.spaceProfile?.businessName ||
 		[proposal.hostProfile?.user?.firstName, proposal.hostProfile?.user?.lastName].filter(Boolean).join(" ") ||
+		[proposal.spaceProfile?.user?.firstName, proposal.spaceProfile?.user?.lastName].filter(Boolean).join(" ") ||
 		"Host"
+	const categories = proposal.hostProfile?.categories ?? proposal.spaceProfile?.categories ?? []
 
 	return (
 		<button
@@ -60,9 +63,9 @@ function ProposalCard({ proposal, onClick }: { proposal: PublishedSponsorshipPro
 					<span>{formatDateRange(proposal.eventDate, proposal.eventEndDate)}</span>
 					{proposal.city && <span>{proposal.city}</span>}
 				</div>
-				{proposal.hostProfile?.categories?.length > 0 && (
+				{categories.length > 0 && (
 					<div className="flex flex-wrap gap-2 mt-1">
-						{proposal.hostProfile.categories.map((c) => (
+						{categories.map((c) => (
 							<span key={c.id} className="px-2 py-0.5 rounded-full bg-surface-card-muted text-text-muted text-caption">
 								{c.name}
 							</span>
@@ -110,7 +113,9 @@ export default function PublicDataRoomPage() {
 
 	const categoriesWithProposals = useMemo(() => {
 		if (selectedCategoryId !== null) return categories
-		const idsInUse = new Set(proposals.flatMap((p) => p.hostProfile?.categories?.map((c) => c.id) ?? []))
+		const idsInUse = new Set(
+			proposals.flatMap((p) => (p.hostProfile?.categories ?? p.spaceProfile?.categories ?? []).map((c) => c.id)),
+		)
 		return categories.filter((c) => idsInUse.has(c.id))
 	}, [categories, proposals, selectedCategoryId])
 

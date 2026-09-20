@@ -152,10 +152,10 @@ export function DMThread({
 							)}
 							<div className={`flex flex-col gap-0.5 max-w-[75%] ${isOwn ? "items-end" : ""}`}>
 								<div
-									className={`px-3 py-2 rounded-2xl text-label-sm leading-snug ${
+									className={`px-3 py-2 rounded-2xl text-label-sm leading-snug border shadow-xs ${
 										isOwn
-											? "bg-violet-600 text-white rounded-tr-sm"
-											: "bg-surface-card border border-border-default text-text-primary rounded-tl-sm"
+											? "bg-black text-white rounded-tr-sm border-black"
+											: "bg-[#FFC940] text-black rounded-tl-sm border-[#FFC940]"
 									}`}
 								>
 									{msg.content ? <LinkifiedText text={msg.content} /> : <span className="italic opacity-60">Message unavailable</span>}

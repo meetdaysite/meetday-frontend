@@ -1,16 +1,16 @@
 import React from "react"
-import clsx from "clsx"
 
 export function SystemMessageBubble({ content, isCampaign }: { content: string; isCampaign?: boolean }) {
 	const lower = content.toLowerCase()
 	const effectiveIsCampaign = isCampaign ?? (lower.includes("campaign") && !lower.includes("sponsorship proposal"))
 
-	// 1. Report Approved / Deal Closed (Check first so "report approved" isn't shadowed by generic "approved")
+	// 1. Report Approved / Deal Closed / Completed (Check first)
 	if (
 		lower.includes("report approved") ||
 		lower.includes("deliverables approved") ||
 		lower.includes("deal is closed") ||
 		lower.includes("closed") ||
+		lower.includes("completed") ||
 		(lower.includes("approved") && (lower.includes("deliverables") || lower.includes("report")))
 	) {
 		return (
@@ -21,13 +21,13 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 					</svg>
 				</div>
 				<span className="leading-snug">
-					Congratulations! The <strong className="font-black">deal is officially closed</strong>!
+					Congratulations! The <strong className="font-black">deal is officially completed and closed</strong>!
 				</span>
 			</div>
 		)
 	}
 
-	// 2. Deliverables Report Revision Requested (Check before generic report submitted)
+	// 2. Deliverables Report Revision Requested
 	if (
 		(lower.includes("deliverables") || lower.includes("report")) &&
 		(lower.includes("revision") || lower.includes("requested change") || lower.includes("requested changes"))
@@ -151,7 +151,7 @@ export function SystemMessageBubble({ content, isCampaign }: { content: string; 
 	}
 
 	// 8. Generic Fallback
-	const cleaned = content.replace(/^[📝✏️🎉🔒💳🔁⚠️📄✅🎟️\s]+/, "").trim()
+	const cleaned = content.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}]/gu, "").trim()
 	return (
 		<div className="self-center max-w-[95%] sm:max-w-[85%] my-2 px-4 py-2 rounded-2xl bg-neutral-100 border-2 border-black text-black/80 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs sm:text-sm font-bold text-center">
 			{cleaned}

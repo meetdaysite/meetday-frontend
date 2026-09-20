@@ -282,7 +282,7 @@ function MyEventsPageContent() {
 			<div className="flex flex-col min-h-screen bg-white">
 
 				{/* Top Nav / Subheader */}
-				<div className="flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0 bg-white">
+				<div className="hidden sm:flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0 bg-white">
 					<p className="text-sm font-semibold text-black/50 mx-auto">
 						Welcome to <span className="text-[#EE2C2C] font-bold">Meetday</span>
 					</p>

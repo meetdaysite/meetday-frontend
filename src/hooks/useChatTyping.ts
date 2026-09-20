@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { io, type Socket } from "socket.io-client"
 import { auth } from "@/lib/firebase"
 
-export type ChatSenderType = "HOST" | "BRAND" | "ADMIN"
+export type ChatSenderType = "HOST" | "SPACE" | "BRAND" | "ADMIN"
 
 function getOrigin(): string {
 	const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? ""

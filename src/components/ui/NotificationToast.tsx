@@ -4,6 +4,7 @@ import { toast } from "sonner"
 import clsx from "clsx"
 import type { ComponentType, SVGProps } from "react"
 import type { Notification, NotificationType } from "@/types/notification"
+import { useToastStore } from "@/store/toastStore"
 
 import BellSvg from "@/icons/outlined/bell.svg"
 import CheckCircleSvg from "@/icons/outlined/check-circle.svg"
@@ -89,5 +90,9 @@ function ToastContent({ notif }: { notif: Notification }) {
 }
 
 export function showNotificationToast(notif: Notification) {
+	const isError = notif.type.includes("rejected") || notif.type.includes("cancelled")
+	useToastStore.getState().addToast(notif.title, notif.body, isError ? "error" : "success")
 	toast.custom(() => <ToastContent notif={notif} />, { duration: 5000 })
 }
+
+
