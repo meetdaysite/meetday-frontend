@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 import clsx from "clsx"
 import { Icon } from "@/components/ui/Icon"
 import { useSpaceStore } from "@/store/spaceStore"
+import { useAuthStore } from "@/store/authStore"
 import { useToastStore } from "@/store/toastStore"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useState, useEffect, type ComponentType, type SVGProps } from "react"
@@ -57,9 +58,13 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 	const pathname = usePathname()
 	const searchParams = useSearchParams()
 	const { profile } = useSpaceStore()
+	const { user } = useAuthStore()
 	const { toasts, removeToast } = useToastStore()
 	const { unreadCount, init: initNotifs, notifications } = useNotificationStore()
-	const businessName = profile?.businessName || "Hub Partner"
+	const fullName = [
+		profile?.user?.firstName,
+		profile?.user?.lastName,
+	].filter(Boolean).join(" ") || user?.displayName || "Hub Partner"
 	const avatarUrl = profile?.user?.avatarUrl
 	const [unreadCommunityChatsCount, setUnreadCommunityChatsCount] = useState(0)
 	const [unreadBrandChatsCount, setUnreadBrandChatsCount] = useState(0)
@@ -283,7 +288,7 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 						<div className="relative size-7 rounded-full overflow-hidden border-2 border-black bg-white shrink-0">
 							<Image
 								src={avatarUrl}
-								alt={businessName}
+								alt={fullName}
 								fill
 								sizes="28px"
 								className="object-cover"
@@ -296,7 +301,7 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 							</svg>
 						</div>
 					)}
-					<span className="flex-1 truncate font-bold">{businessName}</span>
+					<span className="flex-1 truncate font-bold">{fullName}</span>
 					<div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-r from-transparent to-white/20 skew-x-[25deg] pointer-events-none" />
 				</Link>
 			</div>

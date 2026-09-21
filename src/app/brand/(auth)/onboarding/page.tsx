@@ -501,7 +501,7 @@ export default function OnboardingPage() {
 								)}
 							</div>
 							<div className="flex flex-col gap-1.5">
-								<label htmlFor="about-company" className="text-label-sm font-medium text-text-primary">About the Company</label>
+								<label htmlFor="about-company" className="text-label-sm font-medium text-text-primary">About The Company</label>
 								<textarea
 									id="about-company"
 									value={aboutCompany}

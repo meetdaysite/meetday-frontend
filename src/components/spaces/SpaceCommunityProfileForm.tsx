@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import Link from "next/link"
 import { toast } from "@/lib/toast"
 import { Button } from "@/components/ui/Button"
 import { Icon } from "@/components/ui/Icon"
@@ -500,10 +501,21 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 	return (
 		<div className="bg-white flex flex-col h-full w-full px-6 py-6 overflow-y-auto">
 			{/* Panel Header */}
-			<div className="flex justify-between items-center pb-4 mb-4 border-b border-black/10 shrink-0">
-				<h2 className="text-xl font-heading font-black text-black">
-					{community && !editing ? "Community Hubs Profile" : community ? "Edit Hub Details" : "Activate Hub Profile"}
-				</h2>
+			<div className="flex justify-between items-center pb-4 mb-4 border-b border-black/10 shrink-0 gap-3">
+				<div className="flex items-center gap-3 flex-wrap">
+					<h2 className="text-xl font-heading font-black text-black">
+						{community && !editing ? "Community Hubs Profile" : community ? "Edit Hub Details" : "Activate Hub Profile"}
+					</h2>
+					{community && !editing && (
+						<Link
+							href="/spaces/dashboard/profile/preview?from=profile"
+							className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-[#FFC940] hover:bg-[#ffbe1a] text-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+						>
+							<span>Brand preview</span>
+							<span className="text-xs font-black">→</span>
+						</Link>
+					)}
+				</div>
 				{onClose && (
 					<button
 						type="button"
@@ -547,9 +559,9 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 						</div>
 					</div>
 
-					{/* About the hub */}
+					{/* About The Hub */}
 					<div className="flex flex-col gap-1.5">
-						<span className="text-xs font-bold text-black/50">About the hub</span>
+						<span className="text-xs font-bold text-black/50">About The Hub</span>
 						<p className="text-sm font-semibold text-black/75 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-black/5 whitespace-pre-wrap">
 							{community.about}
 						</p>
@@ -746,8 +758,8 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 						</div>
 					)}
 
-					{/* Edit Button Footer */}
-					<div className="mt-4 pt-4 border-t border-black/10 shrink-0">
+					{/* Edit & Brand Preview Button Footer */}
+					<div className="mt-4 pt-4 border-t border-black/10 shrink-0 flex flex-col gap-2.5">
 						<button
 							type="button"
 							onClick={() => setEditing(true)}
@@ -755,6 +767,13 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 						>
 							EDIT HUB PROFILE
 						</button>
+						<Link
+							href="/spaces/dashboard/profile/preview?from=profile"
+							className="w-full py-2.5 bg-white hover:bg-black/5 text-black border-2 border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center justify-center gap-1.5 select-none"
+						>
+							<span>VIEW BRAND PREVIEW</span>
+							<span className="font-black text-xs">→</span>
+						</Link>
 					</div>
 				</div>
 			) : (
@@ -779,9 +798,9 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 						/>
 					</div>
 
-					{/* About Hub */}
+					{/* About The Hub */}
 					<div className="flex flex-col gap-1.5">
-						<label className="text-xs font-bold text-black">About the hub *</label>
+						<label className="text-xs font-bold text-black">About The Hub *</label>
 						<textarea
 							required
 							value={about}

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Icon } from "@/components/ui/Icon"
 import type { SpaceCommunityProfile } from "@/lib/api"
 import UploadSvg from "@/icons/outlined/upload.svg"
@@ -17,6 +18,8 @@ interface SpaceCommunityProfileDetailsPanelProps {
 	onEdit?: () => void
 	onClose?: () => void
 	hideStatus?: boolean
+	viewBrandPreviewHref?: string
+	onViewBrandPreview?: () => void
 }
 
 const STATUS_CONFIG: Record<SpaceCommunityProfile["approvalStatus"], { label: string; className: string }> = {
@@ -50,19 +53,41 @@ export function SpaceCommunityProfileDetailsPanel({
 	onEdit,
 	onClose,
 	hideStatus = false,
+	viewBrandPreviewHref,
+	onViewBrandPreview,
 }: SpaceCommunityProfileDetailsPanelProps) {
 	const statusConfig = STATUS_CONFIG[community.approvalStatus]
 
 	return (
 		<div className="w-full h-full flex flex-col bg-white p-6 overflow-y-auto animate-in fade-in duration-150">
 			{/* Panel Header */}
-			<div className="flex justify-between items-center pb-4 mb-4 border-b border-black/10 shrink-0">
-				<h2 className="text-xl font-heading font-black text-black">Community Hub Profile</h2>
+			<div className="flex justify-between items-center pb-4 mb-4 border-b border-black/10 shrink-0 gap-3">
+				<div className="flex items-center gap-3 flex-wrap">
+					<h2 className="text-xl font-heading font-black text-black">Community Hub Profile</h2>
+					{viewBrandPreviewHref ? (
+						<Link
+							href={viewBrandPreviewHref}
+							className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-[#FFC940] hover:bg-[#ffbe1a] text-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+						>
+							<span>Brand preview</span>
+							<span className="text-xs font-black">→</span>
+						</Link>
+					) : onViewBrandPreview ? (
+						<button
+							type="button"
+							onClick={onViewBrandPreview}
+							className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-black bg-[#FFC940] hover:bg-[#ffbe1a] text-black border-2 border-black rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] transition-all cursor-pointer"
+						>
+							<span>Brand preview</span>
+							<span className="text-xs font-black">→</span>
+						</button>
+					) : null}
+				</div>
 				{onClose && (
 					<button
 						type="button"
 						onClick={onClose}
-						className="text-black/60 hover:text-black size-8 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors font-bold text-sm"
+						className="text-black/60 hover:text-black size-8 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors font-bold text-sm cursor-pointer"
 					>
 						✕
 					</button>
@@ -106,7 +131,7 @@ export function SpaceCommunityProfileDetailsPanel({
 
 				{/* About */}
 				<div className="flex flex-col gap-1.5">
-					<span className="text-xs font-bold text-black/50">About the hub</span>
+					<span className="text-xs font-bold text-black/50">About The Hub</span>
 					<p className="text-sm font-semibold text-black/75 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-black/5 whitespace-pre-wrap">
 						{community.about}
 					</p>

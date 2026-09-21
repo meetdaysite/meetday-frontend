@@ -312,7 +312,7 @@ export function EditBrandProfilePanel({ onClose, onSuccess }: EditBrandProfilePa
 					</div>
 
 					<div className="flex flex-col gap-1.5 w-full">
-						<label htmlFor="about-company" className="text-xs font-bold text-black">About the Company</label>
+						<label htmlFor="about-company" className="text-xs font-bold text-black">About The Company</label>
 						<textarea
 							id="about-company"
 							value={aboutCompany}

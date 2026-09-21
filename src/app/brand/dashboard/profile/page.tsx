@@ -115,19 +115,19 @@ export default function BrandProfilePage() {
 						{/* Info Rows */}
 						<div className="flex flex-col gap-3">
 							<div className="flex gap-2 text-sm font-semibold">
-								<span className="text-black/50 w-24">Email ID :</span>
+								<span className="text-black/50 w-36 shrink-0">Email ID :</span>
 								<span className="text-[#6C32D1] font-bold truncate max-w-[280px]">
 									{email || "Not specified"}
 								</span>
 							</div>
 							<div className="flex gap-2 text-sm font-semibold">
-								<span className="text-black/50 w-24">Phone No :</span>
+								<span className="text-black/50 w-36 shrink-0">Phone No :</span>
 								<span className="text-[#6C32D1] font-bold">
 									{phone || "Not specified"}
 								</span>
 							</div>
 							<div className="flex gap-2 text-sm font-semibold">
-								<span className="text-black/50 w-24">About :</span>
+								<span className="text-black/50 w-36 shrink-0">About The Company :</span>
 								<span className="text-[#6C32D1] font-bold truncate max-w-[280px]">
 									{profile?.aboutCompany || "Not specified"}
 								</span>

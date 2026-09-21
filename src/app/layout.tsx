@@ -21,10 +21,10 @@ const bricolage = Bricolage_Grotesque({
 
 export const metadata: Metadata = {
 	title: "Meetday",
-	description: "The social network that happens in real life.",
+	description: "Connecting brands with communities, experiences, and community hubs in the real world.",
 	openGraph: {
 		title: "meetday.ai",
-		description: "A unified platform for brands and communities to partner.",
+		description: "Connecting brands with communities, experiences, and community hubs in the real world.",
 		images: [
 			{
 				url: "/images/Image.png",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 	twitter: {
 		card: "summary_large_image",
 		title: "meetday.ai",
-		description: "A unified platform for brands and communities to partner.",
+		description: "Connecting brands with communities, experiences, and community hubs in the real world.",
 		images: ["/images/Image.png"],
 	},
 }

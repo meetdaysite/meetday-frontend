@@ -576,7 +576,7 @@ export default function SpaceProposalsPage() {
 								</div>
 
 								<div className="bg-white border border-black/10 rounded-action p-5">
-									<h4 className="text-sm font-bold text-black mb-2">About the Hub</h4>
+									<h4 className="text-sm font-bold text-black mb-2">About The Hub</h4>
 									<p className="text-body-sm text-black/70 leading-relaxed whitespace-pre-wrap break-words">
 										{selectedProposal.about}
 									</p>
@@ -745,7 +745,7 @@ export default function SpaceProposalsPage() {
 								</div>
 
 								<div className="flex flex-col gap-1.5">
-									<label className="text-xs font-bold text-black">About the hub *</label>
+									<label className="text-xs font-bold text-black">About The Hub *</label>
 									<textarea
 										required
 										value={projAbout}
@@ -1083,7 +1083,12 @@ export default function SpaceProposalsPage() {
 				{isSplitLayout && (
 					<div className="hidden md:flex flex-col h-full w-full bg-white animate-in fade-in duration-150 shrink-0 overflow-hidden">
 						{community && (
-							<SpaceCommunityProfileDetailsPanel community={community} operatingCities={profile?.operatingCities} socialLinks={profile?.socialLinks ?? undefined} />
+							<SpaceCommunityProfileDetailsPanel
+								community={community}
+								operatingCities={profile?.operatingCities}
+								socialLinks={profile?.socialLinks ?? undefined}
+								viewBrandPreviewHref="/spaces/dashboard/profile/preview?from=proposal"
+							/>
 						)}
 					</div>
 				)}

@@ -42,7 +42,10 @@ export default function SpacesProfilePage() {
 		await signOut()
 	}
 
-	const businessName = profile?.businessName || "Hub Partner"
+	const fullName = [
+		profile?.user?.firstName,
+		profile?.user?.lastName,
+	].filter(Boolean).join(" ") || user?.displayName || "Hub Partner"
 	const email = user?.email || profile?.user?.email || ""
 	const phone = profile?.phone || profile?.user?.phone || ""
 	const cities = profile?.operatingCities || []
@@ -87,14 +90,14 @@ export default function SpacesProfilePage() {
 								<div className="relative size-16 rounded-2xl border-[3px] border-black overflow-hidden bg-slate-50 flex items-center justify-center shrink-0">
 									{avatarUrl ? (
 										// eslint-disable-next-line @next/next/no-img-element
-										<img src={avatarUrl} alt={businessName} className="size-full object-cover" />
+										<img src={avatarUrl} alt={fullName} className="size-full object-cover" />
 									) : (
 										<Icon as={UserSvg} size="lg" className="text-black size-8" />
 									)}
 								</div>
 
 								<div className="flex flex-col gap-1.5">
-									<p className="text-xl font-heading font-black text-black leading-none">{businessName}</p>
+									<p className="text-xl font-heading font-black text-black leading-none">{fullName}</p>
 									<span className="inline-block bg-[#1E1B4B] text-white text-[8px] font-black px-2.5 py-0.5 rounded-lg uppercase tracking-wider w-max">
 										Venue / Hub Partner
 									</span>

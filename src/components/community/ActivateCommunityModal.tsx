@@ -452,7 +452,7 @@ export function ActivateCommunityModal({
 
 				{/* About Community */}
 				<div className="flex flex-col gap-1.5">
-					<label className="text-xs font-bold text-black">About the community *</label>
+					<label className="text-xs font-bold text-black">About The Community *</label>
 					<textarea
 						required
 						value={aboutCommunity}

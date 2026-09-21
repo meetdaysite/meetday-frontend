@@ -357,7 +357,7 @@ export function BrandCommunityDetailView({
 										{/* About Section */}
 										{community.about && (
 											<div className="flex flex-col gap-1.5 w-full">
-												<span className="text-xs font-bold text-black/50">About the community</span>
+												<span className="text-xs font-bold text-black/50">About The Community</span>
 												<p className="text-sm font-semibold text-black/75 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-black/5 whitespace-pre-wrap w-full">
 													{community.about}
 												</p>
