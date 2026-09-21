@@ -371,9 +371,9 @@ export default function DashboardWelcomePage() {
 								))}
 							</div>
 						) : communitySpaces.length === 0 ? (
-							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
-								<p className="text-sm font-black text-black/80">No community hubs available yet</p>
-								<p className="text-[11px] font-semibold text-black/40">Check back later for newly listed hubs and venues.</p>
+							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[20px] bg-transparent py-10 flex flex-col items-center justify-center text-center gap-2">
+								<p className="font-heading font-black text-black/40 text-lg">No community hubs found</p>
+								<p className="text-sm font-semibold text-black/30 max-w-sm">Check back later for newly listed partner hubs and event venues.</p>
 							</div>
 						) : (
 							<div className="flex flex-row overflow-x-auto gap-6 pb-6 pt-2 px-2 w-full custom-scrollbar">

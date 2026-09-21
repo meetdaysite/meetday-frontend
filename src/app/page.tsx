@@ -715,7 +715,7 @@ export default function RootPage() {
 				</div>
 
 				<p className="mt-2 text-black/80 text-sm sm:text-lg md:text-xl font-medium leading-relaxed max-w-2xl font-sans text-center z-10 px-8 sm:px-0">
-					Whether you’re looking <span className="inline-block hover:scale-125 transition-transform duration-200">👀</span> to <strong>market</strong> your products, <strong>monetize</strong> your IRL community, or explore how we’re building <span className="inline-block hover:scale-125 transition-transform duration-200">💪</span> the real-world social layer, you’re in the right place.
+					Whether you’re looking <span className="inline-block hover:scale-125 transition-transform duration-200">👀</span> to <strong>market</strong> your products, <strong>monetize</strong> your IRL community, or explore how we’re building <span className="inline-block hover:scale-125 transition-transform duration-200">💪</span> the infrastructure layer for real-world, you’re in the right place.
 				</p>
 
 				{/* Cards Container */}
@@ -775,14 +775,14 @@ export default function RootPage() {
 						</Link>
 					</div>
 
-					{/* Community Hubs Card */}
+					{/* Community Hub Card */}
 					<div className="bg-white border-[2px] md:border-[4px] border-black rounded-[20px] md:rounded-[36px] p-2.5 md:p-5 flex flex-col items-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-transform duration-300 hover:-translate-y-1">
 						
 						{/* Image */}
 						<div className="relative w-full aspect-[4/3] border-[2px] md:border-[3px] border-black rounded-lg md:rounded-2xl overflow-hidden bg-slate-100 group">
 							<Image
 								src="/images/spaces.png"
-								alt="Community Hubs"
+								alt="Community Hub"
 								fill
 								sizes="(max-width: 768px) 100vw, 350px"
 								className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
@@ -798,7 +798,7 @@ export default function RootPage() {
 							href="/spaces"
 							className="w-full mt-3 md:mt-5 py-2 md:py-3.5 bg-[#EE2C2C] text-white border-[2px] md:border-[3px] border-black rounded-xl md:rounded-2xl font-bold text-center text-xs md:text-base shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] transition-all"
 						>
-							Community Hubs
+							Community Hub
 						</Link>
 					</div>
 				</div>

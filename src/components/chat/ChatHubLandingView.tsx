@@ -68,15 +68,65 @@ function getCategoryBadgeColor(cat: ChatCategoryKey) {
 		case "sponsorships":
 			return "bg-[#FFC940] text-black border-black/20"
 		case "campaigns":
-			return "bg-[#3B82F6]/15 text-[#1D4ED8] border-[#3B82F6]/30"
+			return "bg-[#EE2C2C]/15 text-[#EE2C2C] border-[#EE2C2C]/30"
 		case "spaces":
-			return "bg-[#8B5CF6]/15 text-[#6D28D9] border-[#8B5CF6]/30"
+			return "bg-black/10 text-black border-black/20"
 		case "communities":
-			return "bg-[#10B981]/15 text-[#047857] border-[#10B981]/30"
+			return "bg-[#FFC940]/25 text-black border-black/20"
 		case "brands":
-			return "bg-[#F97316]/15 text-[#C2410C] border-[#F97316]/30"
+			return "bg-[#EE2C2C]/15 text-[#EE2C2C] border-[#EE2C2C]/30"
 		default:
 			return "bg-black/10 text-black border-black/20"
+	}
+}
+
+function getCategoryCardIconStyles(key: ChatCategoryKey): { bg: string; iconColor: string } {
+	switch (key) {
+		case "sponsorships":
+		case "communities":
+			return { bg: "bg-[#FFC940]", iconColor: "text-black" }
+		case "campaigns":
+		case "brands":
+			return { bg: "bg-[#EE2C2C]", iconColor: "text-white" }
+		case "spaces":
+		default:
+			return { bg: "bg-black", iconColor: "text-white" }
+	}
+}
+
+function getCategoryFilterPillStyles(key: string, isSelected: boolean): string {
+	if (!isSelected) {
+		return "bg-white text-black/60 border-black/10 hover:border-black/25"
+	}
+	switch (key) {
+		case "sponsorships":
+		case "communities":
+			return "bg-[#FFC940] text-black border-black font-black"
+		case "campaigns":
+		case "brands":
+			return "bg-[#EE2C2C] text-white border-black font-black"
+		case "ALL":
+		case "spaces":
+		default:
+			return "bg-black text-white border-black font-black"
+	}
+}
+
+function getCategoryFilterCountBadgeStyles(key: string, isSelected: boolean): string {
+	if (!isSelected) {
+		return "bg-black/10 text-black/70"
+	}
+	switch (key) {
+		case "sponsorships":
+		case "communities":
+			return "bg-black text-white"
+		case "campaigns":
+		case "brands":
+			return "bg-white text-[#EE2C2C]"
+		case "ALL":
+		case "spaces":
+		default:
+			return "bg-[#FFC940] text-black"
 	}
 }
 
@@ -165,6 +215,7 @@ export function ChatHubLandingView({
 							const hasPending = (cat.pendingRequestsCount || 0) > 0
 							const isDisabled = !!cat.disabled
 							const IconComponent = getCategoryIcon(cat.key)
+							const cardIconStyles = getCategoryCardIconStyles(cat.key)
 
 							if (isDisabled) {
 								return (
@@ -204,8 +255,8 @@ export function ChatHubLandingView({
 									{/* Top Row: Icon + Title + Unread Badge */}
 									<div className="flex items-start justify-between gap-3">
 										<div className="flex items-center gap-3 min-w-0">
-											<div className="size-11 rounded-2xl bg-[#FFC940] border-[2.5px] border-black flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-												<Icon as={IconComponent} size="md" className="text-black" />
+											<div className={clsx("size-11 rounded-2xl border-[2.5px] border-black flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform", cardIconStyles.bg)}>
+												<Icon as={IconComponent} size="md" className={cardIconStyles.iconColor} />
 											</div>
 											<div className="min-w-0">
 												<h3 className="text-base sm:text-lg font-heading font-black truncate leading-tight group-hover:text-[#EE2C2C] transition-colors">
@@ -355,10 +406,8 @@ export function ChatHubLandingView({
 												type="button"
 												onClick={() => setCategoryFilter(c.key)}
 												className={clsx(
-													"px-2.5 py-1 rounded-xl text-xs font-bold transition-all border-2 flex items-center gap-1 cursor-pointer",
-													isSelected
-														? "bg-black text-white border-black"
-														: "bg-white text-black/60 border-black/10 hover:border-black/25"
+													"px-2.5 py-1 rounded-xl text-xs transition-all border-2 flex items-center gap-1 cursor-pointer",
+													getCategoryFilterPillStyles(c.key, isSelected)
 												)}
 											>
 												<span>{c.label}</span>
@@ -366,9 +415,7 @@ export function ChatHubLandingView({
 													<span
 														className={clsx(
 															"px-1.5 py-0.2 rounded-full text-[9px] font-black",
-															isSelected
-																? "bg-[#FFC940] text-black"
-																: "bg-black/10 text-black/70"
+															getCategoryFilterCountBadgeStyles(c.key, isSelected)
 														)}
 													>
 														{count}

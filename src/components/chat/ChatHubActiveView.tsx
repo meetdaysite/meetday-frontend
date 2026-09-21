@@ -141,6 +141,40 @@ function getCategoryHeading(cat: ChatCategoryKey, role: ChatRole): { title: stri
 	}
 }
 
+function getCategoryTabStyles(key: ChatCategoryKey, isSelected: boolean): string {
+	if (!isSelected) {
+		return "text-black/60 hover:text-black hover:bg-black/5"
+	}
+	switch (key) {
+		case "sponsorships":
+		case "communities":
+			return "bg-[#FFC940] text-black shadow-sm font-black"
+		case "campaigns":
+		case "brands":
+			return "bg-[#EE2C2C] text-white shadow-sm font-black"
+		case "spaces":
+		default:
+			return "bg-black text-white shadow-sm font-black"
+	}
+}
+
+function getCategoryTabBadgeStyles(key: ChatCategoryKey, isSelected: boolean): string {
+	if (!isSelected) {
+		return "bg-[#EE2C2C] text-white border-white"
+	}
+	switch (key) {
+		case "sponsorships":
+		case "communities":
+			return "bg-black text-white border-transparent"
+		case "campaigns":
+		case "brands":
+			return "bg-white text-[#EE2C2C] border-transparent"
+		case "spaces":
+		default:
+			return "bg-[#EE2C2C] text-white border-transparent"
+	}
+}
+
 interface ChatHubActiveViewProps {
 	role: ChatRole
 	activeCategory: ChatCategoryKey
@@ -242,10 +276,8 @@ export function ChatHubActiveView({
 										onSelectThreadId(null)
 									}}
 									className={clsx(
-										"px-3.5 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer select-none",
-										isSelected
-											? "bg-black text-white shadow-sm"
-											: "text-black/60 hover:text-black"
+										"px-3.5 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer select-none",
+										getCategoryTabStyles(cat.key, isSelected)
 									)}
 								>
 									<span>{cat.label}</span>
@@ -253,9 +285,7 @@ export function ChatHubActiveView({
 										<span
 											className={clsx(
 												"min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black flex items-center justify-center border",
-												isSelected
-													? "bg-[#EE2C2C] text-white border-transparent"
-													: "bg-[#EE2C2C] text-white border-white"
+												getCategoryTabBadgeStyles(cat.key, isSelected)
 											)}
 										>
 											{cat.badgeCount! > 9 ? "9+" : cat.badgeCount}

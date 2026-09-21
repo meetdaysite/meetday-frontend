@@ -643,7 +643,27 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 							)}
 
 							{spaces && spaces.length === 0 && (
-								<p className="text-sm font-bold text-black/50">No community hubs available yet.</p>
+								<div className="border-[3px] border-dashed border-black/30 rounded-[20px] p-12 flex flex-col items-center justify-center text-center gap-4 bg-transparent mt-2 w-full">
+									<p className="font-heading font-black text-black/40 text-lg">
+										No community hubs found
+									</p>
+									<p className="text-sm font-semibold text-black/30 max-w-md">
+										Discover co-working spaces, partner venues, and community hubs onboarded to Meetday for offline activations and events. Newly listed hubs will appear here.
+									</p>
+									<button
+										type="button"
+										onClick={() => {
+											setSpaces(null)
+											setError(null)
+											getCommunitySpacesBrowse()
+												.then((r) => setSpaces(r.spaces))
+												.catch((e) => setError(getApiErrorMessage(e)))
+										}}
+										className="bg-[#EE2C2C] text-white text-[9px] font-black px-4 py-2.5 rounded-lg uppercase tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[#1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] transition-all select-none cursor-pointer"
+									>
+										Refresh Hubs
+									</button>
+								</div>
 							)}
 
 							{spaces && spaces.length > 0 && (
