@@ -8,6 +8,7 @@ const HEADINGS = [
 	{ prefix: "Offline", suffix: "Communities" },
 	{ prefix: "Curated", suffix: "Experiences" },
 	{ prefix: "Modern", suffix: "Brands" },
+	{ prefix: "Community", suffix: "Hubs" },
 ]
 
 interface BubbleProps {
@@ -49,7 +50,7 @@ export default function RootPage() {
 	const [index, setIndex] = useState(0)
 	const [animationState, setAnimationState] = useState<"normal" | "leaving" | "entering">("normal")
 	const [isPricingOpen, setIsPricingOpen] = useState(false)
-	const [activeCategory, setActiveCategory] = useState<"host" | "brand" | null>(null)
+	const [activeCategory, setActiveCategory] = useState<"host" | "brand" | "hub" | null>(null)
 	const [activeSub, setActiveSub] = useState<string | null>(null)
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -195,9 +196,6 @@ export default function RootPage() {
 
 													{activeSub === "matchmaking" && (
 														<div className="bg-white text-black p-3.5 rounded-xl border-2 border-black font-bold text-[10px] sm:text-[11px] leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-1.5 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-100">
-															<span className="text-[#EE2C2C] font-black uppercase text-[9px] tracking-wider bg-[#EE2C2C]/10 px-2 py-0.5 rounded border border-[#EE2C2C]/20 w-fit">
-																Performance Fee
-															</span>
 															<p className="font-extrabold text-black">
 																15% – 30% commission tiered by raise amount:
 															</p>
@@ -245,9 +243,6 @@ export default function RootPage() {
 
 													{activeSub === "co_created" && (
 														<div className="bg-white text-black p-3.5 rounded-xl border-2 border-black font-bold text-[10px] sm:text-[11px] leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-1.5 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-100">
-															<span className="text-[#EE2C2C] font-black uppercase text-[9px] tracking-wider bg-[#EE2C2C]/10 px-2 py-0.5 rounded border border-[#EE2C2C]/20 w-fit">
-																Revenue Share
-															</span>
 															<p className="font-extrabold text-black">
 																20% Revenue Share Split
 															</p>
@@ -316,9 +311,6 @@ export default function RootPage() {
 
 													{activeSub === "barter" && (
 														<div className="bg-white text-black p-3.5 rounded-xl border-2 border-black font-bold text-[10px] sm:text-[11px] leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-1.5 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-100">
-															<span className="text-[#6C32D1] font-black uppercase text-[9px] tracking-wider bg-[#6C32D1]/10 px-2 py-0.5 rounded border border-[#6C32D1]/20 w-fit">
-																Barter & Sampling
-															</span>
 															<p className="font-extrabold text-black">
 																Flat ₹5,000 per Transaction
 															</p>
@@ -366,15 +358,135 @@ export default function RootPage() {
 
 													{activeSub === "campaign" && (
 														<div className="bg-white text-black p-3.5 rounded-xl border-2 border-black font-bold text-[10px] sm:text-[11px] leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-1.5 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-100">
-															<span className="text-[#6C32D1] font-black uppercase text-[9px] tracking-wider bg-[#6C32D1]/10 px-2 py-0.5 rounded border border-[#6C32D1]/20 w-fit">
-																Experiential Campaign
-															</span>
 															<p className="font-extrabold text-black">
 																10% of Total Campaign Budget
 															</p>
 															<p className="text-black/75 leading-relaxed font-semibold">
 																Custom experiential campaign strategy, curator sourcing, host brief development, and multi-city rollout design tailored to your target audience.
 															</p>
+														</div>
+													)}
+												</div>
+											</div>
+										)}
+									</div>
+
+									{/* Category 3: For Community Hub */}
+									<div className="flex flex-col">
+										<button
+											onClick={() => {
+												setActiveCategory(activeCategory === "hub" ? null : "hub");
+												setActiveSub(null); // Reset sub when category toggles
+											}}
+											className={`w-full text-left font-black uppercase text-[11px] sm:text-xs flex items-center justify-between py-2.5 px-3.5 border-[2.5px] border-black rounded-[16px] cursor-pointer transition-all duration-150 ${
+												activeCategory === "hub"
+													? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+													: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+											}`}
+										>
+											<span>For Community Hub</span>
+											<svg
+												className={`w-3.5 h-3.5 transition-transform duration-200 ${
+													activeCategory === "hub" ? "rotate-180" : ""
+												}`}
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="3"
+												viewBox="0 0 24 24"
+											>
+												<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+											</svg>
+										</button>
+
+										{activeCategory === "hub" && (
+											<div className="flex flex-col gap-2 mt-2.5 pl-2.5 border-l-2 border-white/30">
+												{/* Sub 1: Tiered Commission Structure */}
+												<div className="flex flex-col">
+													<button
+														onClick={() => setActiveSub(activeSub === "hub_commission" ? null : "hub_commission")}
+														className={`w-full text-left font-extrabold uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-xl cursor-pointer transition-all duration-150 ${
+															activeSub === "hub_commission"
+																? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+																: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+														}`}
+													>
+														<span>Tiered Commission Structure</span>
+														<svg
+															className={`w-3.5 h-3.5 transition-transform duration-200 ${
+																activeSub === "hub_commission" ? "rotate-180" : ""
+															}`}
+															fill="none"
+															stroke="currentColor"
+															strokeWidth="3"
+															viewBox="0 0 24 24"
+														>
+															<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+														</svg>
+													</button>
+
+													{activeSub === "hub_commission" && (
+														<div className="bg-white text-black p-3.5 rounded-xl border-2 border-black font-bold text-[10px] sm:text-[11px] leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-1.5 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-100">
+															<p className="font-extrabold text-black">
+																Tiered by Campaign Budget:
+															</p>
+															<ul className="list-none space-y-1.5 pl-1 text-black/75">
+																<li className="flex items-start gap-1.5">
+																	<span className="w-1.5 h-1.5 rounded-full bg-black shrink-0 mt-1.5" />
+																	<span>Up to 25L Campaign Budget: <span className="font-black text-[#EE2C2C]">20% commission</span> <span className="text-black/60 text-[9px] block">(Subject to a minimum floor fee of ₹5,000 per booking)</span></span>
+																</li>
+																<li className="flex items-start gap-1.5">
+																	<span className="w-1.5 h-1.5 rounded-full bg-black shrink-0 mt-1.5" />
+																	<span>25L to 50L Campaign Budget: <span className="font-black text-[#EE2C2C]">15% commission</span> <span className="text-black/60 text-[9px] block">(Pure percentage-based deal flow)</span></span>
+																</li>
+																<li className="flex items-start gap-1.5">
+																	<span className="w-1.5 h-1.5 rounded-full bg-black shrink-0 mt-1.5" />
+																	<span>Above 50L Campaign Budget: <span className="font-black text-[#EE2C2C]">10% commission</span> <span className="text-black/60 text-[9px] block">(Pure percentage-based enterprise tier)</span></span>
+																</li>
+															</ul>
+														</div>
+													)}
+												</div>
+
+												{/* Sub 2: Included Marketplace Features */}
+												<div className="flex flex-col">
+													<button
+														onClick={() => setActiveSub(activeSub === "hub_features" ? null : "hub_features")}
+														className={`w-full text-left font-extrabold uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-xl cursor-pointer transition-all duration-150 ${
+															activeSub === "hub_features"
+																? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+																: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+														}`}
+													>
+														<span>Included Marketplace Features</span>
+														<svg
+															className={`w-3.5 h-3.5 transition-transform duration-200 ${
+																activeSub === "hub_features" ? "rotate-180" : ""
+															}`}
+															fill="none"
+															stroke="currentColor"
+															strokeWidth="3"
+															viewBox="0 0 24 24"
+														>
+															<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+														</svg>
+													</button>
+
+													{activeSub === "hub_features" && (
+														<div className="bg-white text-black p-3.5 rounded-xl border-2 border-black font-bold text-[10px] sm:text-[11px] leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-1.5 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-100">
+															<ul className="list-none space-y-1.5 pl-1 text-black/75">
+																<li className="flex items-start gap-1.5">
+																	<span className="w-1.5 h-1.5 rounded-full bg-black shrink-0 mt-1.5" />
+																	<span>AI-driven deal matching and automated proposal generation</span>
+																</li>
+																<li className="flex items-start gap-1.5">
+																	<span className="w-1.5 h-1.5 rounded-full bg-black shrink-0 mt-1.5" />
+																	<span>Closed-loop footfall analytics, audience sentiment, and ROI reporting</span>
+																</li>
+																<li className="flex items-start gap-1.5">
+																	<span className="w-1.5 h-1.5 rounded-full bg-black shrink-0 mt-1.5" />
+																	<span>Dedicated digital contracting, deal rooms, and dispute management</span>
+																</li>
+															</ul>
 														</div>
 													)}
 												</div>
@@ -492,7 +604,6 @@ export default function RootPage() {
 													</button>
 													{activeSub === "matchmaking" && (
 														<div className="bg-white text-black p-2.5 rounded-lg border border-black text-[10px] mt-1 flex flex-col gap-1 leading-normal font-bold">
-															<span className="text-[#EE2C2C] font-black uppercase text-[8px] tracking-wider">Performance Fee</span>
 															<p>15% – 30% commission tiered by raise amount:</p>
 															<ul className="list-disc list-inside text-black/75">
 																<li>Up to ₹10L Raise: <span className="font-black text-[#EE2C2C]">30% commission</span></li>
@@ -515,7 +626,6 @@ export default function RootPage() {
 													</button>
 													{activeSub === "co_created" && (
 														<div className="bg-white text-black p-2.5 rounded-lg border border-black text-[10px] mt-1 flex flex-col gap-1 leading-normal font-bold">
-															<span className="text-[#EE2C2C] font-black uppercase text-[8px] tracking-wider">Revenue Share</span>
 															<p className="font-black">20% revenue share split</p>
 															<p className="text-black/75">Co-design, market, support, and split event revenue 20/80.</p>
 														</div>
@@ -564,7 +674,6 @@ export default function RootPage() {
 													</button>
 													{activeSub === "barter" && (
 														<div className="bg-white text-black p-2.5 rounded-lg border border-black text-[10px] mt-1 flex flex-col gap-1 leading-normal font-bold">
-															<span className="text-[#6C32D1] font-black uppercase text-[8px] tracking-wider">Sampling</span>
 															<p className="font-black">Flat ₹5,000 per Transaction</p>
 															<p className="text-black/75">Product placement, coordinate direct deal support with zero commission.</p>
 														</div>
@@ -583,9 +692,81 @@ export default function RootPage() {
 													</button>
 													{activeSub === "campaign" && (
 														<div className="bg-white text-black p-2.5 rounded-lg border border-black text-[10px] mt-1 flex flex-col gap-1 leading-normal font-bold">
-															<span className="text-[#6C32D1] font-black uppercase text-[8px] tracking-wider">experiential strategy</span>
 															<p className="font-black">10% of Campaign Budget</p>
 															<p className="text-black/75">Multi-city rollout design, curator sourcing, and host brief development.</p>
+														</div>
+													)}
+												</div>
+											</div>
+										)}
+									</div>
+
+									{/* Category 3: For Community Hub */}
+									<div className="flex flex-col mt-2.5">
+										<button
+											onClick={() => {
+												setActiveCategory(activeCategory === "hub" ? null : "hub");
+												setActiveSub(null);
+											}}
+											className={`w-full text-left font-black uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-lg cursor-pointer transition-all duration-150 ${
+												activeCategory === "hub"
+													? "bg-[#FFCE29] text-black"
+													: "bg-white text-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+											}`}
+										>
+											<span>For Community Hub</span>
+											<svg
+												className={`w-3.5 h-3.5 transition-transform duration-200 ${activeCategory === "hub" ? "rotate-180" : ""}`}
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="3"
+												viewBox="0 0 24 24"
+											>
+												<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+											</svg>
+										</button>
+
+										{activeCategory === "hub" && (
+											<div className="flex flex-col gap-2 mt-2 pl-2 border-l border-white/30">
+												{/* Commission */}
+												<div className="flex flex-col">
+													<button
+														onClick={() => setActiveSub(activeSub === "hub_commission" ? null : "hub_commission")}
+														className={`w-full text-left font-extrabold uppercase text-[9px] sm:text-[10px] flex items-center justify-between py-1.5 px-2.5 border border-black rounded-md cursor-pointer transition-all duration-150 ${
+															activeSub === "hub_commission" ? "bg-[#FFCE29] text-black" : "bg-white text-black"
+														}`}
+													>
+														<span>Tiered Commission Structure</span>
+													</button>
+													{activeSub === "hub_commission" && (
+														<div className="bg-white text-black p-2.5 rounded-lg border border-black text-[10px] mt-1 flex flex-col gap-1 leading-normal font-bold">
+															<p className="font-extrabold">Tiered by Campaign Budget:</p>
+															<ul className="list-disc list-inside text-black/75 space-y-0.5">
+																<li>Up to 25L: <span className="font-black text-[#EE2C2C]">20% commission</span> (Min ₹5,000 floor fee)</li>
+																<li>25L to 50L: <span className="font-black text-[#EE2C2C]">15% commission</span> (Pure percentage-based)</li>
+																<li>Above 50L: <span className="font-black text-[#EE2C2C]">10% commission</span> (Enterprise tier)</li>
+															</ul>
+														</div>
+													)}
+												</div>
+												
+												{/* Features */}
+												<div className="flex flex-col mt-2">
+													<button
+														onClick={() => setActiveSub(activeSub === "hub_features" ? null : "hub_features")}
+														className={`w-full text-left font-extrabold uppercase text-[9px] sm:text-[10px] flex items-center justify-between py-1.5 px-2.5 border border-black rounded-md cursor-pointer transition-all duration-150 ${
+															activeSub === "hub_features" ? "bg-[#FFCE29] text-black" : "bg-white text-black"
+														}`}
+													>
+														<span>Included Marketplace Features</span>
+													</button>
+													{activeSub === "hub_features" && (
+														<div className="bg-white text-black p-2.5 rounded-lg border border-black text-[10px] mt-1 flex flex-col gap-1 leading-normal font-bold">
+															<ul className="list-disc list-inside text-black/75 space-y-1">
+																<li>AI-driven deal matching & automated proposal generation</li>
+																<li>Closed-loop footfall analytics, audience sentiment, and ROI reporting</li>
+																<li>Dedicated digital contracting, deal rooms, and dispute management</li>
+															</ul>
 														</div>
 													)}
 												</div>
@@ -617,7 +798,7 @@ export default function RootPage() {
 					bg="#F8EFE2" 
 					textColor="#EE2C2C" 
 					rotation="rotate-[-8deg]" 
-					positionClass="left-[6%] 2xl:left-[8%] top-[14%]" 
+					positionClass="left-[6%] 2xl:left-[8%] top-[12%]" 
 					tailOffset="left-5"
 					animationClass="animate-float-1"
 				/>
@@ -626,16 +807,25 @@ export default function RootPage() {
 					bg="#FFD9D9" 
 					textColor="#000000" 
 					rotation="rotate-[6deg]" 
-					positionClass="left-[9%] 2xl:left-[12%] top-[30%]" 
+					positionClass="left-[9%] 2xl:left-[12%] top-[27%]" 
 					tailOffset="left-6"
 					animationClass="animate-float-3"
+				/>
+				<SpeechBubble 
+					text="MONETIZE COMMUNITY" 
+					bg="#FFCE29" 
+					textColor="#000000" 
+					rotation="rotate-[-6deg]" 
+					positionClass="left-[5%] 2xl:left-[7.5%] top-[43%]" 
+					tailOffset="left-5"
+					animationClass="animate-float-4"
 				/>
 				<SpeechBubble 
 					text="BACKED BY DATA" 
 					bg="#F8EFE2" 
 					textColor="#EE2C2C" 
-					rotation="rotate-[-4deg]" 
-					positionClass="left-[4%] 2xl:left-[6%] top-[51%]" 
+					rotation="rotate-[5deg]" 
+					positionClass="left-[9%] 2xl:left-[11%] top-[59%]" 
 					tailOffset="left-5"
 					animationClass="animate-float-2"
 				/>
@@ -643,10 +833,10 @@ export default function RootPage() {
 					text="VERIFIED USERS" 
 					bg="#FFCE29" 
 					textColor="#000000" 
-					rotation="rotate-[9deg]" 
-					positionClass="left-[6%] 2xl:left-[8.5%] top-[71%]" 
-					tailOffset="left-4"
-					animationClass="animate-float-4"
+					rotation="rotate-[-7deg]" 
+					positionClass="left-[6%] 2xl:left-[8.5%] top-[75%]" 
+					tailOffset="left-4" 
+					animationClass="animate-float-1"
 				/>
 
 				{/* Right Side Bubbles */}
@@ -655,7 +845,7 @@ export default function RootPage() {
 					bg="#FFD9D9" 
 					textColor="#000000" 
 					rotation="rotate-[7deg]" 
-					positionClass="right-[6%] 2xl:right-[8%] top-[15%]" 
+					positionClass="right-[6%] 2xl:right-[8%] top-[13%]" 
 					tailOffset="right-5"
 					animationClass="animate-float-2"
 				/>
@@ -664,16 +854,25 @@ export default function RootPage() {
 					bg="#F8EFE2" 
 					textColor="#EE2C2C" 
 					rotation="rotate-[-5deg]" 
-					positionClass="right-[9%] 2xl:right-[12%] top-[31%]" 
+					positionClass="right-[9%] 2xl:right-[12%] top-[28%]" 
 					tailOffset="right-5"
 					animationClass="animate-float-4"
+				/>
+				<SpeechBubble 
+					text="LIST COMMUNITY HUBS" 
+					bg="#FFCE29" 
+					textColor="#000000" 
+					rotation="rotate-[6deg]" 
+					positionClass="right-[5%] 2xl:right-[7.5%] top-[44%]" 
+					tailOffset="right-5"
+					animationClass="animate-float-3"
 				/>
 				<SpeechBubble 
 					text="TRUSTED PAYMENTS" 
 					bg="#FFD9D9" 
 					textColor="#000000" 
-					rotation="rotate-[5deg]" 
-					positionClass="right-[4%] 2xl:right-[6%] top-[52%]" 
+					rotation="rotate-[-6deg]" 
+					positionClass="right-[9%] 2xl:right-[11%] top-[60%]" 
 					tailOffset="right-6"
 					animationClass="animate-float-1"
 				/>
@@ -681,10 +880,10 @@ export default function RootPage() {
 					text="GROW COMMUNITY" 
 					bg="#FFCE29" 
 					textColor="#000000" 
-					rotation="rotate-[-8deg]" 
-					positionClass="right-[6%] 2xl:right-[8.5%] top-[69%]" 
+					rotation="rotate-[8deg]" 
+					positionClass="right-[6%] 2xl:right-[8.5%] top-[76%]" 
 					tailOffset="right-4"
-					animationClass="animate-float-3"
+					animationClass="animate-float-2"
 				/>
 
 				{/* Hero Header Section */}
