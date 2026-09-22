@@ -136,7 +136,7 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 	useEffect(() => {
 		if (!profile?.id) return
 		const updateCount = () => {
-			getMyBrandCommunityCollaborationChats()
+			getMyBrandCommunityCollaborationChats(undefined, "BRAND")
 				.then((threads) => {
 					const count = (threads || []).reduce((sum, thread) => {
 						const isIncomingPending = thread.direction === "INCOMING" && thread.chatStatus === "REQUESTED"

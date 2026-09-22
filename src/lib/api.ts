@@ -2172,33 +2172,37 @@ export async function markBrandCommunityCollaborationInterest(
 
 export async function getMyBrandCommunityCollaborationChats(
 	status?: CommunityCollaborationStatus,
+	asRole?: "BRAND" | "COMMUNITY",
 ): Promise<BrandCommunityCollaborationThread[]> {
 	const { data } = await apiClient.get<{ success: boolean; data: BrandCommunityCollaborationThread[] }>(
 		"/brand-community-collaboration/chats",
-		{ params: status ? { status } : undefined },
+		{ params: status || asRole ? { ...(status ? { status } : {}), ...(asRole ? { asRole } : {}) } : undefined },
 	)
 	return data.data
 }
 
-export async function getBrandCommunityCollaborationChatMessages(interestId: string) {
+export async function getBrandCommunityCollaborationChatMessages(interestId: string, asRole?: "BRAND" | "COMMUNITY") {
 	const { data } = await apiClient.get<{ success: boolean; data: { messages: CommunityCollaborationMessage[]; chatStatus: CommunityCollaborationStatus; mySenderType: "REQUESTER" | "TARGET"; counterpartName: string; counterpartAvatarUrl: string | null } }>(
 		`/brand-community-collaboration/chats/${interestId}/messages`,
+		{ params: asRole ? { asRole } : undefined },
 	)
 	return data.data
 }
 
-export async function acceptBrandCommunityCollaborationRequest(interestId: string) {
+export async function acceptBrandCommunityCollaborationRequest(interestId: string, asRole?: "BRAND" | "COMMUNITY") {
 	const { data } = await apiClient.post<{ success: boolean; data: { message: string; chatStatus: CommunityCollaborationStatus } }>(
 		`/brand-community-collaboration/chats/${interestId}/accept`,
 		{},
+		{ params: asRole ? { asRole } : undefined },
 	)
 	return data.data
 }
 
-export async function declineBrandCommunityCollaborationRequest(interestId: string) {
+export async function declineBrandCommunityCollaborationRequest(interestId: string, asRole?: "BRAND" | "COMMUNITY") {
 	const { data } = await apiClient.post<{ success: boolean; data: { message: string; chatStatus: CommunityCollaborationStatus } }>(
 		`/brand-community-collaboration/chats/${interestId}/decline`,
 		{},
+		{ params: asRole ? { asRole } : undefined },
 	)
 	return data.data
 }
@@ -2206,10 +2210,12 @@ export async function declineBrandCommunityCollaborationRequest(interestId: stri
 export async function sendBrandCommunityCollaborationMessage(
 	interestId: string,
 	payload: { content?: string; mediaKey?: string; replyToId?: string },
+	asRole?: "BRAND" | "COMMUNITY",
 ) {
 	const { data } = await apiClient.post<{ success: boolean; data: CommunityCollaborationMessage }>(
 		`/brand-community-collaboration/chats/${interestId}/messages`,
 		payload,
+		{ params: asRole ? { asRole } : undefined },
 	)
 	return data.data
 }

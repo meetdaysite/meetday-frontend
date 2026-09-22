@@ -623,7 +623,7 @@ function ActiveConversationPane({
 				setSpaceHostReport(repRes)
 			} else if (thread.kind === "COMMUNITY_COLLAB") {
 				const res = thread.rawThread?.collaborationType === "BRAND_COMMUNITY"
-					? await getBrandCommunityCollaborationChatMessages(thread.id)
+					? await getBrandCommunityCollaborationChatMessages(thread.id, role === "BRAND" ? "BRAND" : "COMMUNITY")
 					: await getCommunityCollaborationChatMessages(thread.id)
 				if (res.mySenderType) {
 					setCollabMySenderType(res.mySenderType)
@@ -762,7 +762,7 @@ function ActiveConversationPane({
 				const msg = await send(thread.id, {
 					content: input.trim(),
 					replyToId: replyingTo?.id,
-				})
+				}, role === "BRAND" ? "BRAND" : "COMMUNITY")
 				setMessages((prev) => [...prev, msg])
 			}
 
@@ -813,10 +813,13 @@ function ActiveConversationPane({
 				setMessages(data.messages)
 			} else if (thread.kind === "COMMUNITY_COLLAB") {
 				const mediaKey = await uploadCommunityCollaborationChatImage(file, thread.id)
-				const msg = await sendCommunityCollaborationMessage(thread.id, {
+				const send = thread.rawThread?.collaborationType === "BRAND_COMMUNITY"
+					? sendBrandCommunityCollaborationMessage
+					: sendCommunityCollaborationMessage
+				const msg = await send(thread.id, {
 					mediaKey,
 					replyToId: replyingTo?.id,
-				})
+				}, role === "BRAND" ? "BRAND" : "COMMUNITY")
 				setMessages((prev) => [...prev, msg])
 			}
 

@@ -123,7 +123,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	useEffect(() => {
 		if (!profile?.id) return
 		const updateCount = () => {
-			getMyBrandCommunityCollaborationChats()
+			getMyBrandCommunityCollaborationChats(undefined, "COMMUNITY")
 				.then((threads) => {
 					const count = (threads || []).reduce((sum, thread) => {
 						const isIncomingPending = thread.direction === "INCOMING" && thread.chatStatus === "REQUESTED"

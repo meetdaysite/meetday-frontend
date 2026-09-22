@@ -123,7 +123,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 
 			const [sAccepted, sReq, spThreads, spHostThreads, cCollab] = await Promise.all(promises)
 			const brandCommunity = role === "BRAND" || role === "COMMUNITY"
-				? await getMyBrandCommunityCollaborationChats().catch(() => [])
+					? await getMyBrandCommunityCollaborationChats(undefined, role === "BRAND" ? "BRAND" : "COMMUNITY").catch(() => [])
 				: []
 
 			if (seq !== fetchSeq.current) return
@@ -824,7 +824,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 				const spaceHostRole = role === "SPACE" ? "SPACE" : "HOST"
 				await acceptSpaceHostChatRequest(req.id, spaceHostRole)
 			} else if (req.kind === "COMMUNITY_COLLAB") {
-				if (req.rawItem?.collaborationType === "BRAND_COMMUNITY") await acceptBrandCommunityCollaborationRequest(req.id)
+				if (req.rawItem?.collaborationType === "BRAND_COMMUNITY") await acceptBrandCommunityCollaborationRequest(req.id, role === "BRAND" ? "BRAND" : "COMMUNITY")
 				else await acceptCommunityCollaborationRequest(req.id)
 			}
 
@@ -851,7 +851,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 				const spaceHostRole = role === "SPACE" ? "SPACE" : "HOST"
 				await declineSpaceHostChatRequest(req.id, spaceHostRole)
 			} else if (req.kind === "COMMUNITY_COLLAB") {
-				if (req.rawItem?.collaborationType === "BRAND_COMMUNITY") await declineBrandCommunityCollaborationRequest(req.id)
+				if (req.rawItem?.collaborationType === "BRAND_COMMUNITY") await declineBrandCommunityCollaborationRequest(req.id, role === "BRAND" ? "BRAND" : "COMMUNITY")
 				else await declineCommunityCollaborationRequest(req.id)
 			}
 			toast.success("Request declined.")
