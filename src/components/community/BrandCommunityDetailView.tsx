@@ -146,6 +146,8 @@ interface BrandCommunityDetailViewProps {
 	backLabel?: string
 	isBrandPreview?: boolean
 	onProposalClick?: (proposalId: string) => void
+	onInterest?: () => void
+	interestState?: "idle" | "sending" | "sent"
 }
 
 export function BrandCommunityDetailView({
@@ -156,6 +158,8 @@ export function BrandCommunityDetailView({
 	backLabel = "Back to Communities",
 	isBrandPreview = false,
 	onProposalClick,
+	onInterest,
+	interestState = "idle",
 }: BrandCommunityDetailViewProps) {
 	const [isPosterEnlarged, setIsPosterEnlarged] = useState(false)
 	const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null)
@@ -231,7 +235,7 @@ export function BrandCommunityDetailView({
 						</div>
 					)}
 
-					<div>
+					<div className="flex items-center justify-between gap-3">
 						<button
 							type="button"
 							onClick={onBack}
@@ -242,6 +246,16 @@ export function BrandCommunityDetailView({
 							</svg>
 							{backLabel}
 						</button>
+						{onInterest && (
+							<button
+								type="button"
+								onClick={onInterest}
+								disabled={interestState !== "idle"}
+								className="shrink-0 px-4 py-2 bg-[#FFC940] border-2 border-black rounded-xl text-xs font-black uppercase tracking-wide shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-60"
+							>
+								{interestState === "sent" ? "Interested ✓" : interestState === "sending" ? "Sending…" : "I'm Interested"}
+							</button>
+						)}
 					</div>
 				</div>
 

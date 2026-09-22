@@ -33,9 +33,13 @@ import {
 	type SpaceChatThread,
 	type SpaceHostChatThread,
 	getMyCommunityCollaborationChats,
+	getMyBrandCommunityCollaborationChats,
+	acceptBrandCommunityCollaborationRequest,
+	declineBrandCommunityCollaborationRequest,
 	acceptCommunityCollaborationRequest,
 	declineCommunityCollaborationRequest,
 	type CommunityCollaborationThread,
+	type BrandCommunityCollaborationThread,
 } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 
@@ -84,6 +88,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 	const [spaceThreads, setSpaceThreads] = useState<SpaceChatThread[]>([])
 	const [spaceHostThreads, setSpaceHostThreads] = useState<SpaceHostChatThread[]>([])
 	const [communityCollabThreads, setCommunityCollabThreads] = useState<CommunityCollaborationThread[]>([])
+	const [brandCommunityThreads, setBrandCommunityThreads] = useState<BrandCommunityCollaborationThread[]>([])
 
 	// ─── Fetch All Data ──────────────────────────────────────────────────────────
 
@@ -117,6 +122,9 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			]
 
 			const [sAccepted, sReq, spThreads, spHostThreads, cCollab] = await Promise.all(promises)
+			const brandCommunity = role === "BRAND" || role === "COMMUNITY"
+				? await getMyBrandCommunityCollaborationChats().catch(() => [])
+				: []
 
 			if (seq !== fetchSeq.current) return
 
@@ -125,6 +133,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			setSpaceThreads(spThreads || [])
 			setSpaceHostThreads(spHostThreads || [])
 			setCommunityCollabThreads(cCollab || [])
+			setBrandCommunityThreads(brandCommunity || [])
 		} catch {
 			// silent poll refresh
 		} finally {
@@ -310,6 +319,26 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			})
 		})
 
+		brandCommunityThreads.forEach((t) => {
+			if (t.chatStatus !== "ACCEPTED") return
+			const category: ChatCategoryKey = role === "BRAND" ? "communities" : "brands"
+			result[category].push({
+				id: t.id,
+				category,
+				kind: "COMMUNITY_COLLAB",
+				counterpartName: t.counterpartName,
+				counterpartAvatarUrl: t.counterpartAvatarUrl,
+				counterpartType: role === "BRAND" ? "COMMUNITY" : "BRAND",
+				title: role === "BRAND" ? "Community Collaboration" : "Brand Collaboration",
+				subtitle: t.counterpartName,
+				lastMessagePreview: t.lastMessagePreview,
+				lastMessageAt: t.lastMessageAt,
+				createdAt: t.createdAt,
+				unreadCount: t.unreadCount || 0,
+				rawThread: t,
+			})
+		})
+
 		// Sort each active category list by recency
 		const sortByDate = (a: UnifiedActiveThread, b: UnifiedActiveThread) => {
 			const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0)
@@ -322,7 +351,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 		})
 
 		return result
-	}, [sponsorshipAccepted, spaceThreads, spaceHostThreads, communityCollabThreads, role])
+	}, [sponsorshipAccepted, spaceThreads, spaceHostThreads, communityCollabThreads, brandCommunityThreads, role])
 
 	// ─── Aggregate Unified Requests (Incoming & Sent) ──────────────────────────
 
@@ -439,6 +468,27 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 						rawItem: t,
 					})
 				}
+			})
+
+			brandCommunityThreads.forEach((t) => {
+				if (t.chatStatus !== "REQUESTED") return
+				const isIncoming = role === "COMMUNITY"
+				list.push({
+					id: t.id,
+					category: "brands",
+					kind: "COMMUNITY_COLLAB",
+					direction: isIncoming ? "INCOMING" : "OUTGOING",
+					status: "REQUESTED",
+					counterpartName: t.counterpartName,
+					counterpartAvatarUrl: t.counterpartAvatarUrl,
+					counterpartType: "BRAND",
+					title: "Brand Collaboration",
+					description: isIncoming ? "This brand wants to collaborate with your community." : "You sent a collaboration request to this community.",
+					createdAt: t.createdAt,
+					lastMessagePreview: t.lastMessagePreview,
+					isIncoming,
+					rawItem: t,
+				})
 			})
 		} else if (role === "SPACE") {
 			// 1. Sponsorships:
@@ -568,6 +618,28 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 					})
 				}
 			})
+
+			// 3. Community collaboration requests sent by Brand
+			brandCommunityThreads.forEach((t) => {
+				if (t.chatStatus === "REQUESTED") {
+					list.push({
+						id: t.id,
+						category: "communities",
+						kind: "COMMUNITY_COLLAB",
+						direction: "OUTGOING",
+						status: "REQUESTED",
+						counterpartName: t.counterpartName,
+						counterpartAvatarUrl: t.counterpartAvatarUrl,
+						counterpartType: "COMMUNITY",
+						title: "Community Collaboration",
+						description: "You sent a collaboration request to this community.",
+						createdAt: t.createdAt,
+						lastMessagePreview: t.lastMessagePreview,
+						isIncoming: false,
+						rawItem: t,
+					})
+				}
+			})
 		}
 
 
@@ -576,7 +648,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0
 			return tB - tA
 		})
-	}, [role, sponsorshipRequested, spaceThreads, spaceHostThreads, communityCollabThreads])
+		}, [role, sponsorshipRequested, spaceThreads, spaceHostThreads, communityCollabThreads, brandCommunityThreads])
 
 	// Counts
 	const incomingRequestsCount = useMemo(() => {
@@ -595,11 +667,13 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			const cpUnread = activeThreadsByCategory.campaigns.reduce((sum, t) => sum + t.unreadCount, 0)
 			const spcUnread = activeThreadsByCategory.spaces.reduce((sum, t) => sum + t.unreadCount, 0)
 			const comUnread = activeThreadsByCategory.communities.reduce((sum, t) => sum + t.unreadCount, 0)
+			const brUnread = activeThreadsByCategory.brands.reduce((sum, t) => sum + t.unreadCount, 0)
 
 			const spPending = allUnifiedRequests.filter((r) => r.category === "sponsorships" && r.direction === "INCOMING").length
 			const cpPending = allUnifiedRequests.filter((r) => r.category === "campaigns" && r.direction === "OUTGOING").length
 			const spcPending = allUnifiedRequests.filter((r) => r.category === "spaces" && r.direction === "INCOMING").length
 			const comPending = allUnifiedRequests.filter((r) => r.category === "communities" && r.direction === "INCOMING").length
+			const brPending = allUnifiedRequests.filter((r) => r.category === "brands" && r.direction === "INCOMING").length
 
 			return [
 				{
@@ -633,6 +707,14 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 					badgeCount: comUnread,
 					activeCount: activeThreadsByCategory.communities.length,
 					pendingRequestsCount: comPending,
+				},
+				{
+					key: "brands",
+					label: "Brands",
+					description: "Manage collaboration requests from brands.",
+					badgeCount: brUnread,
+					activeCount: activeThreadsByCategory.brands.length,
+					pendingRequestsCount: brPending,
 				},
 			]
 		} else if (role === "SPACE") {
@@ -684,10 +766,12 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			const cpUnread = activeThreadsByCategory.campaigns.reduce((sum, t) => sum + t.unreadCount, 0)
 			const spUnread = activeThreadsByCategory.sponsorships.reduce((sum, t) => sum + t.unreadCount, 0)
 			const spcUnread = activeThreadsByCategory.spaces.reduce((sum, t) => sum + t.unreadCount, 0)
+			const comUnread = activeThreadsByCategory.communities.reduce((sum, t) => sum + t.unreadCount, 0)
 
 			const cpPending = allUnifiedRequests.filter((r) => r.category === "campaigns" && r.direction === "INCOMING").length
 			const spPending = allUnifiedRequests.filter((r) => r.category === "sponsorships" && r.direction === "OUTGOING").length
 			const spcPending = allUnifiedRequests.filter((r) => r.category === "spaces" && r.direction === "OUTGOING").length
+			const comPending = allUnifiedRequests.filter((r) => r.category === "communities" && r.direction === "OUTGOING").length
 
 			return [
 				{
@@ -706,15 +790,14 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 					activeCount: activeThreadsByCategory.sponsorships.length,
 					pendingRequestsCount: spPending,
 				},
-				/* {
+				{
 					key: "communities",
 					label: "Communities",
-					description: "Direct outreach with community leaders.",
-					disabled: true,
-					badgeCount: 0,
-					activeCount: 0,
-					pendingRequestsCount: 0,
-				}, */
+					description: "Manage collaboration requests from communities.",
+					badgeCount: comUnread,
+					activeCount: activeThreadsByCategory.communities.length,
+					pendingRequestsCount: comPending,
+				},
 				{
 					key: "spaces",
 					label: "Hubs",
@@ -741,7 +824,8 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 				const spaceHostRole = role === "SPACE" ? "SPACE" : "HOST"
 				await acceptSpaceHostChatRequest(req.id, spaceHostRole)
 			} else if (req.kind === "COMMUNITY_COLLAB") {
-				await acceptCommunityCollaborationRequest(req.id)
+				if (req.rawItem?.collaborationType === "BRAND_COMMUNITY") await acceptBrandCommunityCollaborationRequest(req.id)
+				else await acceptCommunityCollaborationRequest(req.id)
 			}
 
 			toast.success("Request accepted — chat is now open!")
@@ -767,7 +851,8 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 				const spaceHostRole = role === "SPACE" ? "SPACE" : "HOST"
 				await declineSpaceHostChatRequest(req.id, spaceHostRole)
 			} else if (req.kind === "COMMUNITY_COLLAB") {
-				await declineCommunityCollaborationRequest(req.id)
+				if (req.rawItem?.collaborationType === "BRAND_COMMUNITY") await declineBrandCommunityCollaborationRequest(req.id)
+				else await declineCommunityCollaborationRequest(req.id)
 			}
 			toast.success("Request declined.")
 			await fetchAllChatData(true)

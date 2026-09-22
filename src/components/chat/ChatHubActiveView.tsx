@@ -75,6 +75,8 @@ import { uploadSpaceChatImage, uploadSpaceHostChatImage } from "@/lib/uploadMedi
 import {
 	getCommunityCollaborationChatMessages,
 	sendCommunityCollaborationMessage,
+	getBrandCommunityCollaborationChatMessages,
+	sendBrandCommunityCollaborationMessage,
 } from "@/lib/api"
 import { uploadCommunityCollaborationChatImage } from "@/lib/uploadMedia"
 import { useChatTyping } from "@/hooks/useChatTyping"
@@ -620,7 +622,9 @@ function ActiveConversationPane({
 				setSpaceHostDeal(dealRes)
 				setSpaceHostReport(repRes)
 			} else if (thread.kind === "COMMUNITY_COLLAB") {
-				const res = await getCommunityCollaborationChatMessages(thread.id)
+				const res = thread.rawThread?.collaborationType === "BRAND_COMMUNITY"
+					? await getBrandCommunityCollaborationChatMessages(thread.id)
+					: await getCommunityCollaborationChatMessages(thread.id)
 				if (res.mySenderType) {
 					setCollabMySenderType(res.mySenderType)
 				}
@@ -752,7 +756,10 @@ function ActiveConversationPane({
 				const data = await getSpaceHostChatMessages(thread.id, spaceHostRole)
 				setMessages(data.messages)
 			} else if (thread.kind === "COMMUNITY_COLLAB") {
-				const msg = await sendCommunityCollaborationMessage(thread.id, {
+				const send = thread.rawThread?.collaborationType === "BRAND_COMMUNITY"
+					? sendBrandCommunityCollaborationMessage
+					: sendCommunityCollaborationMessage
+				const msg = await send(thread.id, {
 					content: input.trim(),
 					replyToId: replyingTo?.id,
 				})

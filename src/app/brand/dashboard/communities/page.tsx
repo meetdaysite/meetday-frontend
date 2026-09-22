@@ -4,9 +4,11 @@ import { useEffect, useState, Suspense } from "react"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Skeleton } from "@/components/ui/Skeleton"
+import { toast } from "sonner"
 import {
 	getBrandCommunities,
 	getAllPublishedSponsorships,
+	markBrandCommunityCollaborationInterest,
 	type BrandCommunity,
 	type PublishedSponsorshipProposal,
 } from "@/lib/api"
@@ -143,6 +145,7 @@ function BrandCommunitiesContent() {
 	const [selectedCommunity, setSelectedCommunity] = useState<BrandCommunity | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
+	const [interestState, setInterestState] = useState<"idle" | "sending" | "sent">("idle")
 
 	useEffect(() => {
 		if (urlCommunityId && communities.length > 0) {
@@ -228,6 +231,18 @@ function BrandCommunitiesContent() {
 				}}
 				backLabel="Back to Communities"
 				onProposalClick={(id) => router.push(`/brand/dashboard/proposal/${id}`)}
+				onInterest={async () => {
+					setInterestState("sending")
+					try {
+						const result = await markBrandCommunityCollaborationInterest(selectedCommunity.id)
+						setInterestState("sent")
+						toast.success(result.alreadyInterested ? "You already sent an interest request." : "Interest request sent to the community.")
+					} catch (e) {
+						setInterestState("idle")
+						toast.error(getApiErrorMessage(e) || "Failed to send interest request.")
+					}
+				}}
+				interestState={interestState}
 			/>
 		)
 	}

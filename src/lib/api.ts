@@ -2155,6 +2155,65 @@ export async function getCommunityCollaborationChatByPartner(
 	return data.data
 }
 
+export type BrandCommunityCollaborationThread = CommunityCollaborationThread & {
+	collaborationType: "BRAND_COMMUNITY"
+	requesterBrandId: string
+	targetCommunityId: string
+}
+
+export async function markBrandCommunityCollaborationInterest(
+	targetCommunityId: string,
+): Promise<{ message: string; alreadyInterested: boolean; interestId: string; chatStatus: CommunityCollaborationStatus }> {
+	const { data } = await apiClient.post<{ success: boolean; data: { message: string; alreadyInterested: boolean; interestId: string; chatStatus: CommunityCollaborationStatus } }>(
+		`/brand-community-collaboration/interest/${targetCommunityId}`,
+	)
+	return data.data
+}
+
+export async function getMyBrandCommunityCollaborationChats(
+	status?: CommunityCollaborationStatus,
+): Promise<BrandCommunityCollaborationThread[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: BrandCommunityCollaborationThread[] }>(
+		"/brand-community-collaboration/chats",
+		{ params: status ? { status } : undefined },
+	)
+	return data.data
+}
+
+export async function getBrandCommunityCollaborationChatMessages(interestId: string) {
+	const { data } = await apiClient.get<{ success: boolean; data: { messages: CommunityCollaborationMessage[]; chatStatus: CommunityCollaborationStatus; mySenderType: "REQUESTER" | "TARGET"; counterpartName: string; counterpartAvatarUrl: string | null } }>(
+		`/brand-community-collaboration/chats/${interestId}/messages`,
+	)
+	return data.data
+}
+
+export async function acceptBrandCommunityCollaborationRequest(interestId: string) {
+	const { data } = await apiClient.post<{ success: boolean; data: { message: string; chatStatus: CommunityCollaborationStatus } }>(
+		`/brand-community-collaboration/chats/${interestId}/accept`,
+		{},
+	)
+	return data.data
+}
+
+export async function declineBrandCommunityCollaborationRequest(interestId: string) {
+	const { data } = await apiClient.post<{ success: boolean; data: { message: string; chatStatus: CommunityCollaborationStatus } }>(
+		`/brand-community-collaboration/chats/${interestId}/decline`,
+		{},
+	)
+	return data.data
+}
+
+export async function sendBrandCommunityCollaborationMessage(
+	interestId: string,
+	payload: { content?: string; mediaKey?: string; replyToId?: string },
+) {
+	const { data } = await apiClient.post<{ success: boolean; data: CommunityCollaborationMessage }>(
+		`/brand-community-collaboration/chats/${interestId}/messages`,
+		payload,
+	)
+	return data.data
+}
+
 
 export async function getHostTeamMembers(): Promise<TeamMembersList> {
 	const { data } = await apiClient.get<{ success: boolean; data: TeamMembersList }>("/hosts/community/members")

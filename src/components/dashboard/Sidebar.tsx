@@ -8,7 +8,7 @@ import clsx from "clsx"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
 import { useHostStore } from "@/store/hostStore"
-import { getHostCommunityProfile, getMySponsorshipProposals, getMySponsorshipChats, getMySpaceChats, getMySpaceHostChats, getMyCommunityCollaborationChats } from "@/lib/api"
+import { getHostCommunityProfile, getMySponsorshipProposals, getMySponsorshipChats, getMySpaceChats, getMySpaceHostChats, getMyCommunityCollaborationChats, getMyBrandCommunityCollaborationChats } from "@/lib/api"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useToastStore } from "@/store/toastStore"
 import type { ComponentType, SVGProps } from "react"
@@ -81,6 +81,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 	const [unreadSpaceChatsCount, setUnreadSpaceChatsCount] = useState(0)
 	const [unreadCommunityRequestsCount, setUnreadCommunityRequestsCount] = useState(0)
 	const [unreadCommunityCollaborationChatsCount, setUnreadCommunityCollaborationChatsCount] = useState(0)
+	const [unreadBrandChatsCount, setUnreadBrandChatsCount] = useState(0)
 	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
 	const [chatsOpen, setChatsOpen] = useState(false)
 
@@ -103,6 +104,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 		unreadSpaceChatsCount +
 		unreadCommunityRequestsCount +
 		unreadCommunityCollaborationChatsCount
+		+ unreadBrandChatsCount
 
 	const { notifications, unreadCount, init: initNotifs, markRead } = useNotificationStore()
 	const [dismissedNotifIds, setDismissedNotifIds] = useState<string[]>([])
@@ -116,6 +118,24 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 				.then(res => setProposals(res.proposals || []))
 				.catch(() => {})
 		}
+	}, [profile?.id])
+
+	useEffect(() => {
+		if (!profile?.id) return
+		const updateCount = () => {
+			getMyBrandCommunityCollaborationChats()
+				.then((threads) => {
+					const count = (threads || []).reduce((sum, thread) => {
+						const isIncomingPending = thread.direction === "INCOMING" && thread.chatStatus === "REQUESTED"
+						return sum + (thread.unreadCount || 0) + (isIncomingPending ? 1 : 0)
+					}, 0)
+					setUnreadBrandChatsCount(count)
+				})
+				.catch(() => {})
+		}
+		updateCount()
+		const interval = setInterval(updateCount, 8000)
+		return () => clearInterval(interval)
 	}, [profile?.id])
 
 	useEffect(() => {

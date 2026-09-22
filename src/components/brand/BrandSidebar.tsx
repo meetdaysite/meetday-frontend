@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/Icon"
 import { useBrandStore } from "@/store/brandStore"
 import { useToastStore } from "@/store/toastStore"
 import { useState, useEffect, type ComponentType, type SVGProps } from "react"
-import { getMySponsorshipChats, getMySpaceChats } from "@/lib/api"
+import { getMySponsorshipChats, getMySpaceChats, getMyBrandCommunityCollaborationChats } from "@/lib/api"
 import { useNotificationStore } from "@/store/notificationStore"
 
 import UserSvg from "@/icons/outlined/user.svg"
@@ -76,6 +76,7 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 	const [unreadSponsorshipChatsCount, setUnreadSponsorshipChatsCount] = useState(0)
 	const [unreadCampaignChatsCount, setUnreadCampaignChatsCount] = useState(0)
 	const [unreadSpaceChatsCount, setUnreadSpaceChatsCount] = useState(0)
+	const [unreadCommunityChatsCount, setUnreadCommunityChatsCount] = useState(0)
 	const [unreadSupportCount, setUnreadSupportCount] = useState(0)
 	const [chatsOpen, setChatsOpen] = useState(false)
 
@@ -83,7 +84,7 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 	const isSponsorshipChat = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") === "sponsorship"
 	const isCampaignChat = pathname.startsWith("/brand/dashboard/chats") && searchParams.get("type") !== "sponsorship"
 	const isSpacesChat = pathname.startsWith("/brand/dashboard/space-chats")
-	const totalChatsBadge = unreadSponsorshipChatsCount + unreadCampaignChatsCount + unreadSpaceChatsCount
+	const totalChatsBadge = unreadSponsorshipChatsCount + unreadCampaignChatsCount + unreadSpaceChatsCount + unreadCommunityChatsCount
 
 	const { notifications, init: initNotifs } = useNotificationStore()
 
@@ -131,6 +132,24 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 		const interval = setInterval(updateSpaceCount, 8000)
 		return () => clearInterval(interval)
 	}, [profile?.id, notifications])
+
+	useEffect(() => {
+		if (!profile?.id) return
+		const updateCount = () => {
+			getMyBrandCommunityCollaborationChats()
+				.then((threads) => {
+					const count = (threads || []).reduce((sum, thread) => {
+						const isIncomingPending = thread.direction === "INCOMING" && thread.chatStatus === "REQUESTED"
+						return sum + (thread.unreadCount || 0) + (isIncomingPending ? 1 : 0)
+					}, 0)
+					setUnreadCommunityChatsCount(count)
+				})
+				.catch(() => {})
+		}
+		updateCount()
+		const interval = setInterval(updateCount, 8000)
+		return () => clearInterval(interval)
+	}, [profile?.id])
 
 	useEffect(() => {
 		if (!profile?.id) return
