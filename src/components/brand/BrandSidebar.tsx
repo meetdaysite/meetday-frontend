@@ -138,18 +138,31 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 		const updateCount = () => {
 			getMyBrandCommunityCollaborationChats(undefined, "BRAND")
 				.then((threads) => {
+					const isCollaborationNotification = (notification: (typeof notifications)[0]) =>
+						notification.type === "brand_community_chat_message"
 					const count = (threads || []).reduce((sum, thread) => {
 						const isIncomingPending = thread.direction === "INCOMING" && thread.chatStatus === "REQUESTED"
-						return sum + (thread.unreadCount || 0) + (isIncomingPending ? 1 : 0)
+						const unreadMessages = notifications.filter((notification) => {
+							if (notification.isRead || !isCollaborationNotification(notification)) return false
+							const metadata = (notification.metadata as Record<string, unknown>) || {}
+							return (metadata.brandCommunityInterestId || metadata.interestId || metadata.threadId) === thread.id
+						}).length
+						return sum + Math.max(thread.unreadCount || 0, unreadMessages) + (isIncomingPending ? 1 : 0)
 					}, 0)
-					setUnreadCommunityChatsCount(count)
+					const standaloneCount = notifications.filter((notification) => {
+						if (notification.isRead || !isCollaborationNotification(notification)) return false
+						const metadata = (notification.metadata as Record<string, unknown>) || {}
+						const threadId = metadata.brandCommunityInterestId || metadata.interestId || metadata.threadId
+						return !threadId || !(threads || []).some((thread) => thread.id === threadId)
+					}).length
+					setUnreadCommunityChatsCount(count + standaloneCount)
 				})
 				.catch(() => {})
 		}
 		updateCount()
 		const interval = setInterval(updateCount, 8000)
 		return () => clearInterval(interval)
-	}, [profile?.id])
+	}, [profile?.id, notifications])
 
 	useEffect(() => {
 		if (!profile?.id) return
