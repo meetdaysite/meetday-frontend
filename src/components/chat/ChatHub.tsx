@@ -659,6 +659,16 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 		return allUnifiedRequests.filter((r) => r.direction === "OUTGOING").length
 	}, [allUnifiedRequests])
 
+	const unreadCountForThreads = (threads: UnifiedActiveThread[]) =>
+		threads.reduce((sum, thread) => {
+			const notificationCount = notifications.filter((notification) => {
+				if (notification.isRead || notification.type !== "brand_community_chat_message") return false
+				const metadata = (notification.metadata as Record<string, unknown>) || {}
+				return (metadata.brandCommunityInterestId || metadata.interestId || metadata.threadId) === thread.id
+			}).length
+			return sum + Math.max(thread.unreadCount || 0, notificationCount)
+		}, 0)
+
 	// ─── Categories Definition List by Role ────────────────────────────────────
 
 	const categories: CategoryDefinition[] = useMemo(() => {
@@ -666,8 +676,8 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			const spUnread = activeThreadsByCategory.sponsorships.reduce((sum, t) => sum + t.unreadCount, 0)
 			const cpUnread = activeThreadsByCategory.campaigns.reduce((sum, t) => sum + t.unreadCount, 0)
 			const spcUnread = activeThreadsByCategory.spaces.reduce((sum, t) => sum + t.unreadCount, 0)
-			const comUnread = activeThreadsByCategory.communities.reduce((sum, t) => sum + t.unreadCount, 0)
-			const brUnread = activeThreadsByCategory.brands.reduce((sum, t) => sum + t.unreadCount, 0)
+			const comUnread = unreadCountForThreads(activeThreadsByCategory.communities)
+			const brUnread = unreadCountForThreads(activeThreadsByCategory.brands)
 
 			const spPending = allUnifiedRequests.filter((r) => r.category === "sponsorships" && r.direction === "INCOMING").length
 			const cpPending = allUnifiedRequests.filter((r) => r.category === "campaigns" && r.direction === "OUTGOING").length
@@ -719,8 +729,8 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			]
 		} else if (role === "SPACE") {
 			const spUnread = activeThreadsByCategory.sponsorships.reduce((sum, t) => sum + t.unreadCount, 0)
-			const comUnread = activeThreadsByCategory.communities.reduce((sum, t) => sum + t.unreadCount, 0)
-			const brUnread = activeThreadsByCategory.brands.reduce((sum, t) => sum + t.unreadCount, 0)
+			const comUnread = unreadCountForThreads(activeThreadsByCategory.communities)
+			const brUnread = unreadCountForThreads(activeThreadsByCategory.brands)
 
 			const spPending = allUnifiedRequests.filter((r) => r.category === "sponsorships" && r.direction === "INCOMING").length
 			const comPending = allUnifiedRequests.filter((r) => r.category === "communities" && r.direction === "INCOMING").length
@@ -766,7 +776,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			const cpUnread = activeThreadsByCategory.campaigns.reduce((sum, t) => sum + t.unreadCount, 0)
 			const spUnread = activeThreadsByCategory.sponsorships.reduce((sum, t) => sum + t.unreadCount, 0)
 			const spcUnread = activeThreadsByCategory.spaces.reduce((sum, t) => sum + t.unreadCount, 0)
-			const comUnread = activeThreadsByCategory.communities.reduce((sum, t) => sum + t.unreadCount, 0)
+			const comUnread = unreadCountForThreads(activeThreadsByCategory.communities)
 
 			const cpPending = allUnifiedRequests.filter((r) => r.category === "campaigns" && r.direction === "INCOMING").length
 			const spPending = allUnifiedRequests.filter((r) => r.category === "sponsorships" && r.direction === "OUTGOING").length
@@ -808,7 +818,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 				},
 			]
 		}
-	}, [role, activeThreadsByCategory, allUnifiedRequests])
+	}, [role, activeThreadsByCategory, allUnifiedRequests, notifications])
 
 	// ─── Accept / Decline Request Handlers ─────────────────────────────────────
 
