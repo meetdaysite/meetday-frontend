@@ -985,17 +985,20 @@ function ActiveConversationPane({
 							(m.senderType as string) === "BOT" ||
 							(m.senderType as string) === "SYSTEM"
 
+						const isBrandCommunityMessage = thread.kind === "COMMUNITY_COLLAB" && thread.rawThread?.collaborationType === "BRAND_COMMUNITY"
 						const isBrand =
 							!isAdmin &&
-							(m.senderType === "BRAND" ||
-								(!m.senderType && isMine && role === "BRAND") ||
-								(!m.senderType &&
-									!isMine &&
-									((role === "COMMUNITY" && (thread.kind === "SPONSORSHIP" || thread.kind === "CAMPAIGN")) ||
-										(role === "SPACE" &&
-											(thread.kind === "SPONSORSHIP" ||
-												(thread.kind === "SPACE_INTEREST" &&
-													(thread.category === "brands" || thread.rawThread?.brandId)))))))
+							(isBrandCommunityMessage
+								? m.senderType === "REQUESTER"
+								: m.senderType === "BRAND" ||
+									(!m.senderType && isMine && role === "BRAND") ||
+									(!m.senderType &&
+										!isMine &&
+										((role === "COMMUNITY" && (thread.kind === "SPONSORSHIP" || thread.kind === "CAMPAIGN")) ||
+											(role === "SPACE" &&
+												(thread.kind === "SPONSORSHIP" ||
+													(thread.kind === "SPACE_INTEREST" &&
+														(thread.category === "brands" || thread.rawThread?.brandId)))))))
 
 						const isSpaceMsg =
 							!isAdmin &&

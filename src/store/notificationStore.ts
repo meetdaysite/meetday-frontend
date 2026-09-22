@@ -34,6 +34,7 @@ const CHAT_MESSAGE_NOTIFICATION_TYPES = new Set([
 	"space_interest_confirmed",
 	"space_interest_accepted",
 	"space_chat_message",
+	"brand_community_chat_message",
 	"space_deal_locked",
 	"space_deal_updated",
 	"space_deal_approved",
