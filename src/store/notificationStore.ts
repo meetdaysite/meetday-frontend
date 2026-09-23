@@ -196,10 +196,11 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 		let countMarked = 0
 		set((s) => {
 			const updated = s.notifications.map((n) => {
-				const m = (n.metadata as any) || {}
+				const m = (n.metadata as Record<string, unknown> | undefined) ?? {}
 				const tId =
 					m.spaceInterestId ||
 					m.sponsorshipInterestId ||
+					m.brandCommunityInterestId ||
 					m.threadId ||
 					m.interestId ||
 					m.chatId ||
