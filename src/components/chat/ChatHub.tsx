@@ -322,6 +322,12 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 		brandCommunityThreads.forEach((t) => {
 			if (t.chatStatus !== "ACCEPTED") return
 			const category: ChatCategoryKey = role === "BRAND" ? "communities" : "brands"
+			const notificationCount = notifications.filter((notification) => {
+				if (notification.isRead || notification.type !== "brand_community_chat_message") return false
+				const metadata = (notification.metadata as Record<string, unknown>) || {}
+				return (metadata.brandCommunityInterestId || metadata.interestId || metadata.threadId) === t.id
+			}).length
+			const unread = Math.max(t.unreadCount || 0, notificationCount)
 			result[category].push({
 				id: t.id,
 				category,
@@ -334,7 +340,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 				lastMessagePreview: t.lastMessagePreview,
 				lastMessageAt: t.lastMessageAt,
 				createdAt: t.createdAt,
-				unreadCount: t.unreadCount || 0,
+				unreadCount: unread,
 				rawThread: t,
 			})
 		})
@@ -351,7 +357,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 		})
 
 		return result
-	}, [sponsorshipAccepted, spaceThreads, spaceHostThreads, communityCollabThreads, brandCommunityThreads, role])
+	}, [sponsorshipAccepted, spaceThreads, spaceHostThreads, communityCollabThreads, brandCommunityThreads, role, notifications])
 
 	// ─── Aggregate Unified Requests (Incoming & Sent) ──────────────────────────
 
