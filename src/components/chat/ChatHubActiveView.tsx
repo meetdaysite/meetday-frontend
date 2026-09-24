@@ -1010,7 +1010,10 @@ function ActiveConversationPane({
 										(role === "BRAND" && thread.kind === "SPACE_INTEREST"))))
 
 						const isCommunity = !isAdmin && !isBrand && !isSpaceMsg
-						const isCommunityCollabReceived = thread.kind === "COMMUNITY_COLLAB" && !isMine
+						const isCommunityCollabReceived =
+							thread.kind === "COMMUNITY_COLLAB" &&
+							thread.rawThread?.collaborationType !== "BRAND_COMMUNITY" &&
+							!isMine
 						const isDarkBubble = isBrand || isSpaceMsg || isCommunityCollabReceived
 						const isDeleted = Boolean(m.deletedAt)
 
