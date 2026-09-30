@@ -149,8 +149,8 @@ export default function RootPage() {
 												setActiveSub(null); // Reset sub when category toggles
 											}}
 											className={`w-full text-left font-black uppercase text-[11px] sm:text-xs flex items-center justify-between py-2.5 px-3.5 border-[2.5px] border-black rounded-[16px] cursor-pointer transition-all duration-150 ${activeCategory === "host"
-													? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
-													: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+												? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+												: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
 												}`}
 										>
 											<span>For Community & Host</span>
@@ -173,8 +173,8 @@ export default function RootPage() {
 													<button
 														onClick={() => setActiveSub(activeSub === "matchmaking" ? null : "matchmaking")}
 														className={`w-full text-left font-extrabold uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-xl cursor-pointer transition-all duration-150 ${activeSub === "matchmaking"
-																? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
-																: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+															? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+															: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
 															}`}
 													>
 														<span>Sponsorship Matchmaking</span>
@@ -193,7 +193,7 @@ export default function RootPage() {
 													{activeSub === "matchmaking" && (
 														<div className="bg-white text-black p-3.5 rounded-xl border-2 border-black font-bold text-[10px] sm:text-[11px] leading-relaxed shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mt-1.5 flex flex-col gap-1.5 animate-in fade-in zoom-in-95 duration-100">
 															<p className="font-extrabold text-black">
-																15% – 30% commission tiered by raise amount:
+																20% – 30% commission tiered by raise amount:
 															</p>
 															<ul className="list-none space-y-1 pl-1 text-black/75">
 																<li className="flex items-center gap-1.5">
@@ -218,8 +218,8 @@ export default function RootPage() {
 													<button
 														onClick={() => setActiveSub(activeSub === "co_created" ? null : "co_created")}
 														className={`w-full text-left font-extrabold uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-xl cursor-pointer transition-all duration-150 ${activeSub === "co_created"
-																? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
-																: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+															? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+															: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
 															}`}
 													>
 														<span>Co-Created Experiences</span>
@@ -258,8 +258,8 @@ export default function RootPage() {
 												setActiveSub(null); // Reset sub when category toggles
 											}}
 											className={`w-full text-left font-black uppercase text-[11px] sm:text-xs flex items-center justify-between py-2.5 px-3.5 border-[2.5px] border-black rounded-[16px] cursor-pointer transition-all duration-150 ${activeCategory === "brand"
-													? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
-													: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+												? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+												: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
 												}`}
 										>
 											<span>For Brand & Agency</span>
@@ -282,8 +282,8 @@ export default function RootPage() {
 													<button
 														onClick={() => setActiveSub(activeSub === "barter" ? null : "barter")}
 														className={`w-full text-left font-extrabold uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-xl cursor-pointer transition-all duration-150 ${activeSub === "barter"
-																? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
-																: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+															? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+															: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
 															}`}
 													>
 														<span>Barter & Sampling</span>
@@ -327,8 +327,8 @@ export default function RootPage() {
 													<button
 														onClick={() => setActiveSub(activeSub === "campaign" ? null : "campaign")}
 														className={`w-full text-left font-extrabold uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-xl cursor-pointer transition-all duration-150 ${activeSub === "campaign"
-																? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
-																: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+															? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+															: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
 															}`}
 													>
 														<span>Campaign Design</span>
@@ -367,8 +367,8 @@ export default function RootPage() {
 												setActiveSub(null); // Reset sub when category toggles
 											}}
 											className={`w-full text-left font-black uppercase text-[11px] sm:text-xs flex items-center justify-between py-2.5 px-3.5 border-[2.5px] border-black rounded-[16px] cursor-pointer transition-all duration-150 ${activeCategory === "hub"
-													? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
-													: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+												? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+												: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
 												}`}
 										>
 											<span>For Community Hub</span>
@@ -391,8 +391,8 @@ export default function RootPage() {
 													<button
 														onClick={() => setActiveSub(activeSub === "hub_commission" ? null : "hub_commission")}
 														className={`w-full text-left font-extrabold uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-xl cursor-pointer transition-all duration-150 ${activeSub === "hub_commission"
-																? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
-																: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+															? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+															: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
 															}`}
 													>
 														<span>Tiered Commission Structure</span>
@@ -436,8 +436,8 @@ export default function RootPage() {
 													<button
 														onClick={() => setActiveSub(activeSub === "hub_features" ? null : "hub_features")}
 														className={`w-full text-left font-extrabold uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-xl cursor-pointer transition-all duration-150 ${activeSub === "hub_features"
-																? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
-																: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+															? "bg-[#FFCE29] text-black translate-x-[1px] translate-y-[1px] shadow-none"
+															: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[0.5px] hover:translate-y-[0.5px] hover:shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
 															}`}
 													>
 														<span>Included Marketplace Features</span>
@@ -555,8 +555,8 @@ export default function RootPage() {
 												setActiveSub(null);
 											}}
 											className={`w-full text-left font-black uppercase text-[10px] sm:text-xs flex items-center justify-between py-2 px-3 border-2 border-black rounded-lg cursor-pointer transition-all duration-150 ${activeCategory === "host"
-													? "bg-[#FFCE29] text-black"
-													: "bg-white text-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+												? "bg-[#FFCE29] text-black"
+												: "bg-white text-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
 												}`}
 										>
 											<span>For Community & Host</span>
@@ -622,8 +622,8 @@ export default function RootPage() {
 												setActiveSub(null);
 											}}
 											className={`w-full text-left font-black uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-lg cursor-pointer transition-all duration-150 ${activeCategory === "brand"
-													? "bg-[#FFCE29] text-black"
-													: "bg-white text-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+												? "bg-[#FFCE29] text-black"
+												: "bg-white text-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
 												}`}
 										>
 											<span>For Brand & Agency</span>
@@ -685,8 +685,8 @@ export default function RootPage() {
 												setActiveSub(null);
 											}}
 											className={`w-full text-left font-black uppercase text-[10px] sm:text-[11px] flex items-center justify-between py-2 px-3 border-2 border-black rounded-lg cursor-pointer transition-all duration-150 ${activeCategory === "hub"
-													? "bg-[#FFCE29] text-black"
-													: "bg-white text-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+												? "bg-[#FFCE29] text-black"
+												: "bg-white text-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
 												}`}
 										>
 											<span>For Community Hub</span>
