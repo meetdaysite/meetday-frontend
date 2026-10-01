@@ -77,10 +77,14 @@ export default function ProposalDetailPage() {
 	}
 
 	const hostName = proposal
-		? proposal.hostProfile?.displayName ||
+		? proposal.brandProfile?.brandName ||
+			proposal.hostProfile?.displayName ||
+			proposal.spaceProfile?.businessName ||
 			[proposal.hostProfile?.user?.firstName, proposal.hostProfile?.user?.lastName].filter(Boolean).join(" ") ||
 			"Host"
 		: ""
+
+	const isBrandProposal = !!proposal?.brandProfile
 
 	return (
 		<div className="flex flex-col min-h-full bg-white">
