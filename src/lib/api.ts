@@ -651,13 +651,14 @@ export type SponsorshipProposalPayload = {
 	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
 	// Disambiguates which profile to create/act as when the account has BOTH a Host and a Space
 	// Partner profile under the same login — only meaningful on create.
-	actorType?: "HOST" | "SPACE"
+	actorType?: "HOST" | "SPACE" | "BRAND"
 }
 
 export type SponsorshipProposal = {
 	id: string
 	hostProfileId: string | null
 	spaceProfileId?: string | null
+	brandProfileId?: string | null
 	name: string | null
 	about: string | null
 	imageKey: string | null
@@ -721,7 +722,7 @@ export async function getMySponsorshipProposals(params?: {
 	limit?: number
 	// Disambiguates which profile's proposals to list when the account has BOTH a Host and a Space
 	// Partner profile under the same login.
-	actorType?: "HOST" | "SPACE"
+	actorType?: "HOST" | "SPACE" | "BRAND"
 }): Promise<SponsorshipProposalsListResponse> {
 	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipProposalsListResponse }>(
 		"/sponsorships/me",
@@ -751,7 +752,7 @@ export async function deleteSponsorshipProposal(id: string): Promise<void> {
 // ─── Brand: browse published sponsorship proposals ────────────────────────────
 
 export type PublishedSponsorshipProposal = SponsorshipProposal & {
-	ownerType?: "HOST" | "SPACE"
+	ownerType?: "HOST" | "SPACE" | "BRAND"
 	hostProfile: {
 		id: string
 		displayName?: string
@@ -764,6 +765,14 @@ export type PublishedSponsorshipProposal = SponsorshipProposal & {
 		user: { firstName: string; lastName: string }
 		categories: Category[]
 	} | null
+	brandProfile?: {
+		id: string
+		brandName?: string
+		logoKey?: string | null
+		logoUrl?: string | null
+		categories: Category[]
+	} | null
+	isOwnProposal?: boolean
 }
 
 export type PublishedSponsorshipsResponse = {
@@ -793,7 +802,7 @@ export type SponsorshipCommunityProfile = {
 }
 
 export type PublishedSponsorshipDetail = SponsorshipProposal & {
-	ownerType?: "HOST" | "SPACE"
+	ownerType?: "HOST" | "SPACE" | "BRAND"
 	hostProfile: {
 		id: string
 		displayName?: string
@@ -818,8 +827,21 @@ export type PublishedSponsorshipDetail = SponsorshipProposal & {
 		} | null
 		user: { firstName: string; lastName: string }
 	} | null
+	brandProfile?: {
+		id: string
+		brandName?: string
+		logoKey?: string | null
+		logoUrl?: string | null
+		socialLinks?: {
+			instagram?: string
+			linkedin?: string
+			youtube?: string
+			website?: string
+		} | null
+	} | null
 	community: SponsorshipCommunityProfile | null
 	alreadyInterested?: boolean
+	isOwnProposal?: boolean
 }
 
 export async function getPublishedSponsorshipDetail(id: string): Promise<PublishedSponsorshipDetail> {
@@ -866,7 +888,8 @@ export type SponsorshipChatThread = {
 	counterpartName: string
 	counterpartAvatarUrl?: string | null
 	// Whether the proposal owner (from the Brand's point of view) is a Community or a Space.
-	counterpartType?: "HOST" | "SPACE"
+	counterpartType?: "HOST" | "SPACE" | "BRAND"
+	isOwner?: boolean
 	unreadCount: number
 	hasUnreadMention?: boolean
 	sponsorshipProposalId?: string | null

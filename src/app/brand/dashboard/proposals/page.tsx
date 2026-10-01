@@ -142,7 +142,9 @@ function ProposalCard({
 	onClick: () => void
 }) {
 	const hostName =
+		proposal.brandProfile?.brandName ||
 		proposal.hostProfile?.displayName ||
+		proposal.spaceProfile?.businessName ||
 		[proposal.hostProfile?.user?.firstName, proposal.hostProfile?.user?.lastName].filter(Boolean).join(" ") ||
 		"Host"
 	const displayDate = proposal.eventDate ? new Date(proposal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""
@@ -266,9 +268,14 @@ export default function ProposalsPage() {
 
 	// Only show category tabs for categories that actually have at least one published proposal,
 	// computed from the unfiltered "All" list the first time it loads.
+	// Include categories from host, space, and brand profiles
 	const categoriesWithProposals = useMemo(() => {
 		if (selectedCategoryId !== null) return categories
-		const idsInUse = new Set(proposals.flatMap((p) => p.hostProfile?.categories?.map((c) => c.id) ?? []))
+		const idsInUse = new Set(proposals.flatMap((p) => [
+			...(p.hostProfile?.categories?.map((c) => c.id) ?? []),
+			...(p.spaceProfile?.categories?.map((c) => c.id) ?? []),
+			...(p.brandProfile?.categories?.map((c) => c.id) ?? []),
+		]))
 		return categories.filter((c) => idsInUse.has(c.id))
 	}, [categories, proposals, selectedCategoryId])
 
