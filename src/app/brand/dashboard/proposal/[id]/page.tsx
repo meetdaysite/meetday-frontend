@@ -85,6 +85,7 @@ export default function ProposalDetailPage() {
 		: ""
 
 	const isBrandProposal = !!proposal?.brandProfile
+	const isOwnProposal = !!proposal?.isOwnProposal
 
 	return (
 		<div className="flex flex-col min-h-full bg-white">
@@ -118,14 +119,14 @@ export default function ProposalDetailPage() {
 								`}</style>
 								<button
 									type="button"
-									disabled={isInterested || isSubmittingInterest || brandProfile?.approvalStatus !== "APPROVED"}
+											disabled={isOwnProposal || isInterested || isSubmittingInterest || brandProfile?.approvalStatus !== "APPROVED"}
 									onClick={handleInterested}
 									className={clsx(
 										"py-3 px-6 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider transition-all select-none whitespace-nowrap",
-										!isInterested && !isSubmittingInterest && brandProfile?.approvalStatus === "APPROVED" ? "btn-pop shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]" : "opacity-60 cursor-not-allowed"
+												!isOwnProposal && !isInterested && !isSubmittingInterest && brandProfile?.approvalStatus === "APPROVED" ? "btn-pop shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]" : "opacity-60 cursor-not-allowed"
 									)}
 								>
-									{isInterested ? "Community Notified ✓" : isSubmittingInterest ? "Sending…" : "I am Interested"}
+									{isOwnProposal ? "Your Proposal" : isInterested ? isBrandProposal ? "Brand Notified ✓" : "Community Notified ✓" : isSubmittingInterest ? "Sending…" : "I am Interested"}
 								</button>
 								{brandProfile && brandProfile.approvalStatus !== "APPROVED" && (
 									<span className="block mt-2 text-[11px] font-black text-[#EE2C2C] uppercase tracking-wider text-right">

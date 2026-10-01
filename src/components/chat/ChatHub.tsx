@@ -193,7 +193,8 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 		// 1. Sponsorships & Campaigns (from getMySponsorshipChats ACCEPTED)
 		sponsorshipAccepted.forEach((t) => {
 			const isCampaign = !!t.campaignId
-			const catKey: ChatCategoryKey = isCampaign ? "campaigns" : "sponsorships"
+			const isBrandCollaboration = role === "BRAND" && t.counterpartType === "BRAND"
+			const catKey: ChatCategoryKey = isCampaign ? "campaigns" : isBrandCollaboration ? "brands" : "sponsorships"
 			const unread = Math.max(t.unreadCount || 0, 0)
 
 			result[catKey].push({
@@ -584,20 +585,26 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 					})
 				} else {
 					// Sent by Brand
+					const isBrandCollaboration = t.counterpartType === "BRAND"
+					const isIncomingBrandProposal = isBrandCollaboration && t.isOwner
 					list.push({
 						id: t.id,
-						category: "sponsorships",
+						category: isBrandCollaboration ? "brands" : "sponsorships",
 						kind: "SPONSORSHIP",
-						direction: "OUTGOING",
+						direction: isIncomingBrandProposal ? "INCOMING" : "OUTGOING",
 						status: "REQUESTED",
 						counterpartName: t.counterpartName,
 						counterpartAvatarUrl: t.counterpartAvatarUrl,
-						counterpartType: "COMMUNITY",
+						counterpartType: isBrandCollaboration ? "BRAND" : "COMMUNITY",
 						title: t.proposalName || "Sponsorship Interest",
-						description: "You expressed interest in this proposal. Awaiting community acceptance.",
+						description: isIncomingBrandProposal
+							? "This brand expressed interest in your proposal."
+							: isBrandCollaboration
+								? "You expressed interest in this brand proposal. Awaiting brand acceptance."
+							: "You expressed interest in this proposal. Awaiting community acceptance.",
 						createdAt: t.createdAt,
 						lastMessagePreview: t.lastMessagePreview,
-						isIncoming: false,
+						isIncoming: !!isIncomingBrandProposal,
 						rawItem: t,
 					})
 				}
@@ -781,11 +788,13 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			// BRAND role
 			const cpUnread = activeThreadsByCategory.campaigns.reduce((sum, t) => sum + t.unreadCount, 0)
 			const spUnread = activeThreadsByCategory.sponsorships.reduce((sum, t) => sum + t.unreadCount, 0)
+			const brUnread = unreadCountForThreads(activeThreadsByCategory.brands)
 			const spcUnread = activeThreadsByCategory.spaces.reduce((sum, t) => sum + t.unreadCount, 0)
 			const comUnread = unreadCountForThreads(activeThreadsByCategory.communities)
 
 			const cpPending = allUnifiedRequests.filter((r) => r.category === "campaigns" && r.direction === "INCOMING").length
 			const spPending = allUnifiedRequests.filter((r) => r.category === "sponsorships" && r.direction === "OUTGOING").length
+			const brPending = allUnifiedRequests.filter((r) => r.category === "brands" && r.direction === "INCOMING").length
 			const spcPending = allUnifiedRequests.filter((r) => r.category === "spaces" && r.direction === "OUTGOING").length
 			const comPending = allUnifiedRequests.filter((r) => r.category === "communities" && r.direction === "OUTGOING").length
 
@@ -801,10 +810,18 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 				{
 					key: "sponsorships",
 					label: "Sponsorships",
-					description: "Talk to communities about experience proposals you requested.",
+					description: "Talk to communities and hubs about experience proposals.",
 					badgeCount: spUnread,
 					activeCount: activeThreadsByCategory.sponsorships.length,
 					pendingRequestsCount: spPending,
+				},
+				{
+					key: "brands",
+					label: "Brands",
+					description: "Collaborate with other brands on shared proposals.",
+					badgeCount: brUnread,
+					activeCount: activeThreadsByCategory.brands.length,
+					pendingRequestsCount: brPending,
 				},
 				{
 					key: "communities",
