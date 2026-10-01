@@ -524,7 +524,7 @@ export default function BrandProposalsPage() {
 								</div>
 
 								<div className="bg-white border border-black/10 rounded-action p-5">
-									<h4 className="text-sm font-bold text-black mb-2">About The Hub</h4>
+										<h4 className="text-sm font-bold text-black mb-2">About the Proposal</h4>
 									<p className="text-body-sm text-black/70 leading-relaxed whitespace-pre-wrap break-words">
 										{selectedProposal.about}
 									</p>
@@ -555,7 +555,7 @@ export default function BrandProposalsPage() {
 											{selectedProposal ? "Edit Proposal" : "Create Proposal"}
 										</h1>
 									</div>
-									<p className="text-xs sm:text-sm font-semibold text-black/50">Provide details about your hub and offerings</p>
+									<p className="text-xs sm:text-sm font-semibold text-black/50">Share the collaboration opportunity and event details</p>
 								</div>
 								<div className="flex items-center gap-2 w-full sm:w-auto justify-end">
 									<button
@@ -595,7 +595,7 @@ export default function BrandProposalsPage() {
 															Start with our <span className="text-[#EE2C2C]">AI Companion</span>
 														</h3>
 														<p className="text-[11px] sm:text-xs font-semibold text-black/65 mt-0.5">
-															Describe your hub in a few words, we fill the rest.
+																		Describe your collaboration idea and we will draft the proposal.
 														</p>
 													</div>
 												</div>
@@ -629,12 +629,12 @@ export default function BrandProposalsPage() {
 												</div>
 												<div className="flex flex-col gap-2">
 													<label className="text-xs sm:text-sm font-bold text-black">
-														Describe your hub in a minimum of 20 words to continue
+																		Describe the collaboration in at least 20 words to continue
 													</label>
 													<textarea
 														value={copilotPrompt}
 														onChange={(e) => setCopilotPrompt(e.target.value)}
-														placeholder="e.g. We run a 5000 sq ft rooftop event hub in Bangalore that hosts pop-ups, launches, and branded activations for 150-300 guests."
+																		placeholder="e.g. We are co-funding a rooftop music showcase in Bengaluru for 200 emerging creators and founders."
 														rows={5}
 														disabled={copilotLoading}
 														className="px-4 py-2.5 rounded-xl border-2 border-black/30 bg-white/80 text-black outline-none focus:border-black text-sm transition-colors resize-none disabled:opacity-50"
@@ -687,18 +687,18 @@ export default function BrandProposalsPage() {
 										required
 										value={projName}
 										onChange={(e) => setProjName(e.target.value)}
-										placeholder="e.g. Rooftop Pop-up Hub"
+																		placeholder="e.g. Brand A x Brand B Creator Showcase"
 										className="h-10 px-4 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors"
 									/>
 								</div>
 
 								<div className="flex flex-col gap-1.5">
-									<label className="text-xs font-bold text-black">About The Hub *</label>
+																	<label className="text-xs font-bold text-black">About the Proposal *</label>
 									<textarea
 										required
 										value={projAbout}
 										onChange={(e) => setProjAbout(e.target.value)}
-										placeholder="Describe your hub's details, format, and what brands can do here..."
+																		placeholder="Describe the experience, collaboration plan, and what participating brands will contribute..."
 										rows={8}
 										className="p-3 rounded-xl border border-black/10 bg-slate-50 text-black outline-none focus:border-black hover:border-black/30 text-sm transition-colors resize-none"
 									/>
@@ -1011,7 +1011,7 @@ export default function BrandProposalsPage() {
 							) : (
 								<div className="border-[3px] border-dashed border-black/30 rounded-[20px] p-12 text-center w-full flex flex-col items-center justify-center gap-2">
 									<h2 className="font-heading font-black text-black text-lg">No active proposals</h2>
-									<p className="text-xs font-semibold text-black/50 mb-3">Create a proposal detailing your hub&apos;s offerings.</p>
+																	<p className="text-xs font-semibold text-black/50 mb-3">Create a proposal for a brand-led event or collaboration.</p>
 									<button
 										onClick={() => openProposalForm()}
 										title={!isBrandApproved ? "Your brand profile must be admin-approved first" : undefined}
