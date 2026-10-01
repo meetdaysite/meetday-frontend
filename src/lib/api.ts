@@ -772,6 +772,7 @@ export type PublishedSponsorshipProposal = SponsorshipProposal & {
 		logoUrl?: string | null
 		categories: Category[]
 	} | null
+	isOwnProposal?: boolean
 }
 
 export type PublishedSponsorshipsResponse = {
@@ -840,6 +841,7 @@ export type PublishedSponsorshipDetail = SponsorshipProposal & {
 	} | null
 	community: SponsorshipCommunityProfile | null
 	alreadyInterested?: boolean
+	isOwnProposal?: boolean
 }
 
 export async function getPublishedSponsorshipDetail(id: string): Promise<PublishedSponsorshipDetail> {
@@ -886,7 +888,8 @@ export type SponsorshipChatThread = {
 	counterpartName: string
 	counterpartAvatarUrl?: string | null
 	// Whether the proposal owner (from the Brand's point of view) is a Community or a Space.
-	counterpartType?: "HOST" | "SPACE"
+	counterpartType?: "HOST" | "SPACE" | "BRAND"
+	isOwner?: boolean
 	unreadCount: number
 	hasUnreadMention?: boolean
 	sponsorshipProposalId?: string | null
