@@ -339,7 +339,7 @@ export default function BrandProposalsPage() {
 				sponsorshipType: projSponsorshipType,
 				sponsorTiers: projSponsorshipType === "BARTER" ? [] : sponsorPrices,
 				...(projVideoUrl.trim() && { videoUrl: projVideoUrl.trim() }),
-				actorType: "SPACE",
+				actorType: "BRAND",
 			}
 			if (projImage) {
 				payload.imageKey = await uploadFileAndGetKey(projImage)
