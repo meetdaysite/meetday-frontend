@@ -204,20 +204,18 @@ export default function DashboardWelcomePage() {
 								Explore Campaigns
 							</h2>
 							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider">
-								SOON
+								LIVE
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
 							Browse active marketing and sponsorship campaign briefs posted by brands, review requirements, and contact them to collaborate.
 						</p>
-						<button
-							type="button"
-							disabled
-							className="w-full py-3 bg-black/10 text-black/40 border-[3px] border-black/20 rounded-2xl font-black text-center text-xs tracking-wider cursor-not-allowed flex items-center justify-center gap-2 select-none"
+						<Link
+							href="/community/dashboard/campaigns"
+							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
 						>
-							EXPLORE CAMPAIGNS
-							<span className="text-[9px] font-black uppercase tracking-wider bg-black/15 px-1.5 py-0.5 rounded ml-1">Soon</span>
-						</button>
+							EXPLORE CAMPAIGNS <span className="text-base font-bold">➔</span>
+						</Link>
 					</div>
 				</div>
 
