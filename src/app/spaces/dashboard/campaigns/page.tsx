@@ -1,7 +1,15 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { getPublishedCampaigns, type Campaign } from "@/lib/api"
+import Link from "next/link"
+import { toast } from "sonner"
+import {
+	getMySponsorshipChats,
+	getPublishedCampaigns,
+	getSpaceCommunityProfile,
+	markCampaignInterest,
+	type Campaign,
+} from "@/lib/api"
 
 export default function SpaceCampaignsPage() {
 	const [campaigns, setCampaigns] = useState<Campaign[]>([])
@@ -9,6 +17,9 @@ export default function SpaceCampaignsPage() {
 	const [search, setSearch] = useState("")
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState(false)
+	const [hubApproved, setHubApproved] = useState(false)
+	const [interestedCampaignIds, setInterestedCampaignIds] = useState<Set<string>>(new Set())
+	const [submittingInterest, setSubmittingInterest] = useState(false)
 
 	useEffect(() => {
 		let cancelled = false
@@ -27,6 +38,37 @@ export default function SpaceCampaignsPage() {
 			cancelled = true
 		}
 	}, [])
+
+	useEffect(() => {
+		getSpaceCommunityProfile()
+			.then((profile) => setHubApproved(profile?.approvalStatus === "APPROVED"))
+			.catch(() => setHubApproved(false))
+
+		Promise.all([
+			getMySponsorshipChats("REQUESTED", "SPACE").catch(() => []),
+			getMySponsorshipChats("ACCEPTED", "SPACE").catch(() => []),
+		]).then(([requested, accepted]) => {
+			setInterestedCampaignIds(new Set([...requested, ...accepted].flatMap((thread) => thread.campaignId ? [thread.campaignId] : [])))
+		})
+	}, [])
+
+	async function handleExpressInterest(campaign: Campaign) {
+		if (!hubApproved) {
+			toast.error("Your Hub profile must be approved before expressing interest.")
+			return
+		}
+		setSubmittingInterest(true)
+		try {
+			const result = await markCampaignInterest(campaign.id, "SPACE")
+			setInterestedCampaignIds((current) => new Set([...current, campaign.id]))
+			toast.success(result.alreadyInterested ? "Interest was already sent." : "Interest sent to the brand.")
+		} catch (cause) {
+			console.error("Failed to express Hub interest in campaign", cause)
+			toast.error("Could not express interest. Check that your Hub profile is approved.")
+		} finally {
+			setSubmittingInterest(false)
+		}
+	}
 
 	const filteredCampaigns = useMemo(() => {
 		const query = search.trim().toLowerCase()
@@ -115,8 +157,21 @@ export default function SpaceCampaignsPage() {
 										<div><dt className="font-black">Run dates</dt><dd>{new Date(selectedCampaign.startDate).toLocaleDateString("en-IN")} – {new Date(selectedCampaign.endDate).toLocaleDateString("en-IN")}</dd></div>
 										{selectedCampaign.description && <div><dt className="font-black">Details</dt><dd className="whitespace-pre-wrap">{selectedCampaign.description}</dd></div>}
 									</dl>
-									<div className="mt-6 border-[2px] border-dashed border-black/40 bg-[#FFF8F3] p-4 text-sm font-bold text-black/65">
-										Hub campaign interest, chat, deal locking, and reporting are not available yet. No request will be sent.
+									<div className="mt-6 border-t-[3px] border-black pt-4">
+										{interestedCampaignIds.has(selectedCampaign.id) ? (
+											<Link href="/spaces/dashboard/sponsorship-chats" className="block w-full border-[3px] border-black bg-[#FFC940] p-3 text-center text-xs font-black shadow-[3px_3px_0_0_#000]">
+												REQUEST SENT · OPEN SPONSORSHIP CHATS
+											</Link>
+										) : (
+											<button
+												type="button"
+												disabled={!hubApproved || submittingInterest}
+												onClick={() => handleExpressInterest(selectedCampaign)}
+												className="w-full border-[3px] border-black bg-[#EE2C2C] p-3 text-center text-xs font-black text-white shadow-[3px_3px_0_0_#000] disabled:cursor-not-allowed disabled:bg-black/10 disabled:text-black/45 disabled:shadow-none"
+											>
+												{!hubApproved ? "APPROVED HUB PROFILE REQUIRED" : submittingInterest ? "SENDING..." : "I'M INTERESTED"}
+											</button>
+										)}
 									</div>
 								</>
 							) : (

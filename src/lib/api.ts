@@ -863,11 +863,12 @@ export async function markSponsorshipInterest(
 
 export async function markCampaignInterest(
 	id: string,
+	role: "HOST" | "SPACE" = "HOST",
 ): Promise<{ message: string; alreadyInterested: boolean; interestId?: string }> {
 	const { data } = await apiClient.post<{
 		success: boolean
 		data: { message: string; alreadyInterested: boolean; interestId?: string }
-	}>(`/campaigns/published/${id}/interest`)
+	}>(`/campaigns/published/${id}/interest`, undefined, { params: { role } })
 	return data.data
 }
 
