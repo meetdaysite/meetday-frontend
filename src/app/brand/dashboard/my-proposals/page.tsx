@@ -41,6 +41,11 @@ interface StoredProposal {
 	adminRejectionRemark?: string | null
 	sponsorPrices: SponsorTier[]
 	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
+	docKey?: string | null
+	docName?: string | null
+	docType?: string | null
+	docSize?: number | null
+	docUrl?: string | null
 	pendingRevision?: Record<string, unknown> | null
 	updatedAt: string
 }
@@ -63,6 +68,11 @@ function mapApiProposalToStored(p: ApiSponsorshipProposal): StoredProposal {
 		adminRejectionRemark: p.adminRejectionRemark,
 		sponsorshipType: p.sponsorshipType || "CASH",
 		sponsorPrices: p.sponsorTiers || [],
+		docKey: p.docKey,
+		docName: p.docName,
+		docType: p.docType,
+		docSize: p.docSize,
+		docUrl: p.docUrl,
 		pendingRevision: p.pendingRevision,
 		updatedAt: p.updatedAt,
 	}
@@ -72,9 +82,13 @@ function padVenueCities(venues: string[], cities: string[]): string[] {
 	return venues.map((_, i) => cities[i] ?? "")
 }
 
-async function uploadFileAndGetKey(file: File): Promise<string> {
-	const { url, key } = await getUploadUrl({ context: "SPONSORSHIP_MEDIA", contentType: file.type })
-	await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
+async function uploadFileAndGetKey(
+	file: File,
+	context: "SPONSORSHIP_MEDIA" | "SPONSORSHIP_DOCUMENT" = "SPONSORSHIP_MEDIA",
+): Promise<string> {
+	const { url, key } = await getUploadUrl({ context, contentType: file.type })
+	const response = await fetch(url, { method: "PUT", headers: { "Content-Type": file.type }, body: file })
+	if (!response.ok) throw new Error("File upload failed. Please try again.")
 	return key
 }
 
@@ -94,6 +108,14 @@ export default function BrandProposalsPage() {
 	const [projAbout, setProjAbout] = useState("")
 	const [projImage, setProjImage] = useState<File | null>(null)
 	const [projImagePreview, setProjImagePreview] = useState<string | null>(null)
+	const [projDocFile, setProjDocFile] = useState<File | null>(null)
+	const [proposalDocument, setProposalDocument] = useState<{
+		key: string
+		name: string
+		type: string
+		size: number
+		url?: string | null
+	} | null>(null)
 	const [projDate, setProjDate] = useState("")
 	const [projEndDate, setProjEndDate] = useState("")
 	const [projVenues, setProjVenues] = useState<string[]>([""])
@@ -107,6 +129,7 @@ export default function BrandProposalsPage() {
 	const [sponsorPrices, setSponsorPrices] = useState<SponsorTier[]>([{ name: "", price: "" }])
 
 	const projImageInputRef = useRef<HTMLInputElement>(null)
+	const projDocInputRef = useRef<HTMLInputElement>(null)
 
 	// AI copilot
 	const [copilotOpen, setCopilotOpen] = useState(false)
@@ -188,6 +211,8 @@ export default function BrandProposalsPage() {
 		setProjName("")
 		setProjAbout("")
 		setProjImage(null)
+		setProjDocFile(null)
+		setProposalDocument(null)
 		setProjDate("")
 		setProjEndDate("")
 		setProjVenues([""])
@@ -216,6 +241,15 @@ export default function BrandProposalsPage() {
 			setProjName(data.name)
 			setProjAbout(data.about)
 			setProjImage(null)
+			setProjDocFile(null)
+			const docKey = data.docKey || p.docKey
+			setProposalDocument(docKey ? {
+				key: docKey,
+				name: data.docName || p.docName || "Proposal document",
+				type: data.docType || p.docType || "",
+				size: data.docSize || p.docSize || 0,
+				url: data.docUrl || p.docUrl,
+			} : null)
 			setProjDate(data.date)
 			setProjEndDate(data.endDate)
 			setProjVenues(data.venues && data.venues.length > 0 ? data.venues : [""])
@@ -247,6 +281,28 @@ export default function BrandProposalsPage() {
 			return
 		}
 		setProjImage(file)
+	}
+
+	function handleProposalDocumentChange(e: React.ChangeEvent<HTMLInputElement>) {
+		const file = e.target.files?.[0]
+		e.target.value = ""
+		if (!file) return
+		const allowedTypes = [
+			"application/pdf",
+			"application/msword",
+			"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+			"application/vnd.ms-powerpoint",
+			"application/vnd.openxmlformats-officedocument.presentationml.presentation",
+		]
+		if (!allowedTypes.includes(file.type)) {
+			toast.error("Only PDF, Word, and PowerPoint documents are accepted.")
+			return
+		}
+		if (file.size > 10 * 1024 * 1024) {
+			toast.error("Proposal document cannot exceed 10MB.")
+			return
+		}
+		setProjDocFile(file)
 	}
 
 	async function handleCopilotDocPick(e: React.ChangeEvent<HTMLInputElement>) {
@@ -313,6 +369,7 @@ export default function BrandProposalsPage() {
 		if (!projName.trim()) return toast.error("Project Name is required.")
 		if (!projAbout.trim()) return toast.error("About description is required.")
 		if (!projImage && !selectedProposal?.image) return toast.error("Project Image is required.")
+		if (!projDocFile && !proposalDocument?.key) return toast.error("Proposal document is required.")
 		if (!projDate) return toast.error("Date is required.")
 		if (!projEndDate) return toast.error("End date is required.")
 		if (projEndDate < projDate) return toast.error("End date cannot be before the start date.")
@@ -343,6 +400,17 @@ export default function BrandProposalsPage() {
 			}
 			if (projImage) {
 				payload.imageKey = await uploadFileAndGetKey(projImage)
+			}
+			if (projDocFile) {
+				payload.docKey = await uploadFileAndGetKey(projDocFile, "SPONSORSHIP_DOCUMENT")
+				payload.docName = projDocFile.name
+				payload.docType = projDocFile.type
+				payload.docSize = projDocFile.size
+			} else if (proposalDocument) {
+				payload.docKey = proposalDocument.key
+				payload.docName = proposalDocument.name
+				payload.docType = proposalDocument.type
+				payload.docSize = proposalDocument.size
 			}
 
 			let saved: ApiSponsorshipProposal
@@ -724,6 +792,40 @@ export default function BrandProposalsPage() {
 											<span className="text-[10px] text-black/40">JPEG, JPG, PNG accepted (1:1, max 5MB).</span>
 										</div>
 									</div>
+								</div>
+
+								<div className="flex flex-col gap-1.5">
+									<label className="text-xs font-bold text-black">Proposal Document *</label>
+									<div className="flex flex-wrap items-center gap-3">
+										<input
+											ref={projDocInputRef}
+											type="file"
+											accept=".pdf,.doc,.docx,.ppt,.pptx"
+											className="hidden"
+											onChange={handleProposalDocumentChange}
+										/>
+										<button
+											type="button"
+											onClick={() => projDocInputRef.current?.click()}
+											className="px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors"
+										>
+											{projDocFile || proposalDocument ? "Replace Document" : "Choose Document"}
+										</button>
+										<span className="text-xs font-semibold text-black/65 truncate max-w-full">
+											{projDocFile?.name || proposalDocument?.name || "No document selected"}
+										</span>
+										{projDocFile && (
+											<button type="button" onClick={() => setProjDocFile(null)} className="text-xs font-bold text-black/50 hover:text-black">
+												Remove selection
+											</button>
+										)}
+										{!projDocFile && proposalDocument?.url && (
+											<a href={proposalDocument.url} target="_blank" rel="noreferrer" className="text-xs font-bold text-[#EE2C2C] hover:underline">
+												View current document
+											</a>
+										)}
+									</div>
+									<span className="text-[10px] text-black/40">PDF, Word, or PowerPoint; max 10MB.</span>
 								</div>
 
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
