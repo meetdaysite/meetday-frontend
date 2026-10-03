@@ -38,7 +38,7 @@ type NavItem = {
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/spaces/dashboard", outlined: WidgetsSvg, filled: WidgetSvg, exact: true },
 	{ label: "Experience Proposals", href: "/spaces/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
-	{ label: "Brand Campaigns", href: "/spaces/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg, disabled: true },
+	{ label: "Brand Campaigns", href: "/spaces/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
 	{ label: "Communities", href: "/spaces/dashboard/communities", outlined: WidgetsSvg, filled: WidgetSvg },
 	{ label: "Locked Deals", href: "/spaces/dashboard/deals", outlined: LockOutSvg, filled: LockFillSvg },
 ]
@@ -145,23 +145,8 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 
 			{/* Navigation Top Items */}
 			<div className="px-4 flex flex-col gap-1 mt-1 shrink-0">
-				{PRIMARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled, exact, disabled }) => {
+				{PRIMARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled, exact }) => {
 					const isActive = exact ? pathname === href : pathname.startsWith(href)
-
-					if (disabled) {
-						return (
-							<button
-								key={label}
-								type="button"
-								disabled
-								className="flex items-center gap-2.5 px-4 py-2 rounded-2xl transition-all text-sm font-normal text-white/50 cursor-not-allowed text-left w-full select-none"
-							>
-								<Icon as={Outlined} size="md" className="text-white/50 shrink-0" />
-								<span className="flex-1 text-left whitespace-nowrap">{label}</span>
-								<span className="text-[9px] font-black uppercase tracking-wider bg-white/15 px-1.5 py-0.5 rounded shrink-0">Soon</span>
-							</button>
-						)
-					}
 
 					return (
 						<Link

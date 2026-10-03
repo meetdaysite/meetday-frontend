@@ -651,7 +651,7 @@ export type SponsorshipProposalPayload = {
 	sponsorshipType?: "CASH" | "BARTER" | "BOTH"
 	// Disambiguates which profile to create/act as when the account has BOTH a Host and a Space
 	// Partner profile under the same login — only meaningful on create.
-	actorType?: "HOST" | "SPACE"
+	actorType?: "HOST" | "SPACE" | "BRAND"
 }
 
 export type SponsorshipProposal = {
@@ -721,7 +721,7 @@ export async function getMySponsorshipProposals(params?: {
 	limit?: number
 	// Disambiguates which profile's proposals to list when the account has BOTH a Host and a Space
 	// Partner profile under the same login.
-	actorType?: "HOST" | "SPACE"
+	actorType?: "HOST" | "SPACE" | "BRAND"
 }): Promise<SponsorshipProposalsListResponse> {
 	const { data } = await apiClient.get<{ success: boolean; data: SponsorshipProposalsListResponse }>(
 		"/sponsorships/me",
@@ -841,11 +841,12 @@ export async function markSponsorshipInterest(
 
 export async function markCampaignInterest(
 	id: string,
+	role: "HOST" | "SPACE" = "HOST",
 ): Promise<{ message: string; alreadyInterested: boolean; interestId?: string }> {
 	const { data } = await apiClient.post<{
 		success: boolean
 		data: { message: string; alreadyInterested: boolean; interestId?: string }
-	}>(`/campaigns/published/${id}/interest`)
+	}>(`/campaigns/published/${id}/interest`, undefined, { params: { role } })
 	return data.data
 }
 
@@ -866,7 +867,8 @@ export type SponsorshipChatThread = {
 	counterpartName: string
 	counterpartAvatarUrl?: string | null
 	// Whether the proposal owner (from the Brand's point of view) is a Community or a Space.
-	counterpartType?: "HOST" | "SPACE"
+	counterpartType?: "HOST" | "SPACE" | "BRAND"
+	isOwner?: boolean
 	unreadCount: number
 	hasUnreadMention?: boolean
 	sponsorshipProposalId?: string | null

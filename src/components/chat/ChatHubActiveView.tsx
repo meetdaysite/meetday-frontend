@@ -207,16 +207,23 @@ export function ChatHubActiveView({
 	onRefreshThreads,
 }: ChatHubActiveViewProps) {
 	const [searchQuery, setSearchQuery] = useState("")
+	const [sponsorshipParty, setSponsorshipParty] = useState<"COMMUNITY" | "HUBS" | "BRANDS">("COMMUNITY")
 
 	const headingInfo = useMemo(() => {
 		return getCategoryHeading(activeCategory, role)
 	}, [activeCategory, role])
 
+	const sponsorshipThreads = useMemo(() => {
+		if (role !== "BRAND" || activeCategory !== "sponsorships") return activeThreads
+		const counterpartType = sponsorshipParty === "COMMUNITY" ? "HOST" : sponsorshipParty === "HUBS" ? "SPACE" : "BRAND"
+		return activeThreads.filter((thread) => thread.counterpartType === counterpartType)
+	}, [activeThreads, activeCategory, role, sponsorshipParty])
+
 	// Filter threads by search query
 	const filteredThreads = useMemo(() => {
-		if (!searchQuery.trim()) return activeThreads
+		if (!searchQuery.trim()) return sponsorshipThreads
 		const q = searchQuery.toLowerCase()
-		return activeThreads.filter((t) => {
+		return sponsorshipThreads.filter((t) => {
 			return (
 				t.counterpartName.toLowerCase().includes(q) ||
 				t.title.toLowerCase().includes(q) ||
@@ -224,7 +231,7 @@ export function ChatHubActiveView({
 				(t.lastMessagePreview || "").toLowerCase().includes(q)
 			)
 		})
-	}, [activeThreads, searchQuery])
+	}, [sponsorshipThreads, searchQuery])
 
 	const selectedThread = useMemo(() => {
 		return activeThreads.find((t) => t.id === selectedThreadId) || null
@@ -298,6 +305,36 @@ export function ChatHubActiveView({
 						})}
 					</div>
 				</div>
+
+				{role === "BRAND" && activeCategory === "sponsorships" && (
+					<div className="flex w-full sm:w-fit border-2 border-black/10 rounded-xl p-1 bg-black/5">
+						{([
+							{ key: "COMMUNITY", label: "Community", type: "HOST" },
+							{ key: "HUBS", label: "Hubs", type: "SPACE" },
+							{ key: "BRANDS", label: "Brands", type: "BRAND" },
+						] as const).map((tab) => {
+							const isSelected = sponsorshipParty === tab.key
+							const count = activeThreads.filter((thread) => thread.counterpartType === tab.type).length
+							return (
+								<button
+									key={tab.key}
+									type="button"
+									onClick={() => {
+										setSponsorshipParty(tab.key)
+										setSearchQuery("")
+										onSelectThreadId(null)
+									}}
+									className={clsx(
+										"flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-black transition-colors",
+										isSelected ? "bg-[#FFC940] text-black shadow-sm" : "text-black/55 hover:bg-white/70 hover:text-black",
+									)}
+								>
+									{tab.label}{count > 0 ? ` (${count})` : ""}
+								</button>
+							)
+						})}
+					</div>
+				)}
 			</div>
 
 			{/* ═════════════════════════════════════════════════════════════
