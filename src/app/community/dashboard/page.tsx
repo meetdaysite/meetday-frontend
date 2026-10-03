@@ -18,11 +18,17 @@ import {
 	getSponsorshipDeal,
 	getSponsorshipDealReport,
 	getCommunitySpacesBrowse,
+	getPublishedCampaigns,
+	getCommunityCollaborationCommunities,
 	type SponsorshipDeal,
 	type BrowseSpaceCommunity,
+	type Campaign,
+	type BrandCommunity,
 } from "@/lib/api"
 import { DealDetailsModal, DealReportModal } from "@/components/sponsorship/DealPanel"
 import { SpaceCard } from "@/components/spaces/CommunitySpacesBrowse"
+import { DashboardCampaignCard } from "@/components/campaigns/DashboardCampaignCard"
+import { CommunityCard } from "@/app/community/dashboard/communities/page"
 import clsx from "clsx"
 
 import CalendarOutSvg from "@/icons/outlined/calendar.svg"
@@ -48,9 +54,13 @@ export default function DashboardWelcomePage() {
 	const [proposals, setProposals] = useState<StoredProposal[]>([])
 	const [lockedDeals, setLockedDeals] = useState<(SponsorshipDeal & { proposalName?: string | null; brandName: string; brandLogo: string | null | undefined; sponsorshipInterestId: string; hasReport: boolean })[]>([])
 	const [communitySpaces, setCommunitySpaces] = useState<BrowseSpaceCommunity[]>([])
+	const [campaigns, setCampaigns] = useState<Campaign[]>([])
+	const [communities, setCommunities] = useState<BrandCommunity[]>([])
 	const [loadingProposals, setLoadingProposals] = useState(true)
 	const [loadingLockedDeals, setLoadingLockedDeals] = useState(true)
 	const [loadingCommunitySpaces, setLoadingCommunitySpaces] = useState(true)
+	const [loadingCampaigns, setLoadingCampaigns] = useState(true)
+	const [loadingCommunities, setLoadingCommunities] = useState(true)
 	const [hasCommunityProfile, setHasCommunityProfile] = useState<boolean>(false)
 	const [loadingCommunity, setLoadingCommunity] = useState(true)
 
@@ -145,6 +155,34 @@ export default function DashboardWelcomePage() {
 			})
 			.finally(() => {
 				setLoadingCommunitySpaces(false)
+			})
+	}, [])
+
+	useEffect(() => {
+		setLoadingCampaigns(true)
+		getPublishedCampaigns()
+			.then((res) => {
+				setCampaigns(res || [])
+			})
+			.catch((err) => {
+				console.error("Failed to fetch campaigns for community dashboard", err)
+			})
+			.finally(() => {
+				setLoadingCampaigns(false)
+			})
+	}, [])
+
+	useEffect(() => {
+		setLoadingCommunities(true)
+		getCommunityCollaborationCommunities()
+			.then((res) => {
+				setCommunities(res?.communities || [])
+			})
+			.catch((err) => {
+				console.error("Failed to fetch communities for community dashboard", err)
+			})
+			.finally(() => {
+				setLoadingCommunities(false)
 			})
 	}, [])
 
@@ -340,6 +378,88 @@ export default function DashboardWelcomePage() {
 										</Link>
 									)
 								})}
+							</div>
+						)}
+					</div>
+
+					{/* Row 2: Brand Campaigns */}
+					<div className="flex flex-col w-full">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
+							<div>
+								<h2 className="text-xl font-heading font-black text-black">Brand Campaigns</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Browse active brand briefs and sponsorship opportunities.</p>
+							</div>
+							<Link href="/community/dashboard/campaigns" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+								View All Campaigns &gt;
+							</Link>
+						</div>
+
+						{loadingCampaigns ? (
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+								{Array.from({ length: 2 }).map((_, i) => (
+									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
+										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
+										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
+											<div className="h-4 bg-black/5 rounded w-32" />
+											<div className="h-3 bg-black/5 rounded w-20" />
+										</div>
+									</div>
+								))}
+							</div>
+						) : campaigns.length === 0 ? (
+							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
+								<p className="text-sm font-black text-black/80">No active brand campaigns yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Check back later for newly published briefs from partner brands.</p>
+							</div>
+						) : (
+							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
+								{campaigns.map((camp) => (
+									<DashboardCampaignCard
+										key={camp.id}
+										campaign={camp}
+										href={`/community/dashboard/campaigns?campaignId=${camp.id}`}
+									/>
+								))}
+							</div>
+						)}
+					</div>
+
+					{/* Row 3: Active Communities */}
+					<div className="flex flex-col w-full">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
+							<div>
+								<h2 className="text-xl font-heading font-black text-black">Active Communities</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Discover other partner communities and creators to collaborate with.</p>
+							</div>
+							<Link href="/community/dashboard/communities" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+								View All Communities &gt;
+							</Link>
+						</div>
+
+						{loadingCommunities ? (
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+								{Array.from({ length: 2 }).map((_, i) => (
+									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
+										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
+										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
+											<div className="h-4 bg-black/5 rounded w-32" />
+											<div className="h-3 bg-black/5 rounded w-20" />
+										</div>
+									</div>
+								))}
+							</div>
+						) : communities.length === 0 ? (
+							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
+								<p className="text-sm font-black text-black/80">No communities active yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Check back later for newly onboarded communities.</p>
+							</div>
+						) : (
+							<div className="flex flex-row overflow-x-auto gap-6 pb-6 pt-2 px-2 w-full custom-scrollbar">
+								{communities.map((comm) => (
+									<Link key={comm.id} href={`/community/dashboard/communities?communityId=${comm.id}`} className="block shrink-0 w-[180px]">
+										<CommunityCard community={comm} />
+									</Link>
+								))}
 							</div>
 						)}
 					</div>

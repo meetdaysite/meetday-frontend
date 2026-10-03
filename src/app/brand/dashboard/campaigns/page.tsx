@@ -9,6 +9,7 @@ import clsx from "clsx"
 import { DashboardTopBar } from "@/components/ui/DashboardTopBar"
 import { Icon } from "@/components/ui/Icon"
 import { useBrandStore } from "@/store/brandStore"
+import { CampaignDetailView } from "@/components/campaigns/CampaignDetailView"
 import {
 	createCampaign,
 	getMyCampaigns,
@@ -52,6 +53,7 @@ const GOAL_OPTIONS = [
 ]
 
 export default function CampaignsPage() {
+	const router = useRouter()
 	const { profile } = useBrandStore()
 	const brandId = profile?.id || ""
 	const searchParams = useSearchParams()
@@ -120,7 +122,22 @@ export default function CampaignsPage() {
 	const [loading, setLoading] = useState(true)
 	const [isSaving, setIsSaving] = useState(false)
 
-	const isSplitLayout = !!selectedCampaign && !showForm
+	const [isSubmittingApproval, setIsSubmittingApproval] = useState(false)
+
+	async function handleSubmitForApproval(c: Campaign) {
+		setIsSubmittingApproval(true)
+		try {
+			const updated = await updateCampaign(c.id, { status: "UNDER_REVIEW" })
+			toast.success("Campaign brief submitted for approval!")
+			setSelectedCampaign(updated)
+			setCampaigns(prev => prev.map(item => item.id === updated.id ? updated : item))
+		} catch (e) {
+			console.error(e)
+			toast.error("Failed to submit campaign for approval.")
+		} finally {
+			setIsSubmittingApproval(false)
+		}
+	}
 
 	const filteredCampaigns = useMemo(() => {
 		return campaigns.filter(c => {
@@ -409,6 +426,37 @@ export default function CampaignsPage() {
 		}
 	}
 
+	if (selectedCampaign && !showForm) {
+		return (
+			<CampaignDetailView
+				campaign={{
+					...selectedCampaign,
+					brandProfile: selectedCampaign.brandProfile || (profile ? {
+						id: profile.id,
+						brandName: profile.brandName,
+						logoUrl: profile.logoUrl,
+						user: {
+							firstName: profile.firstName || "",
+							lastName: profile.lastName || "",
+							email: profile.email || "",
+						},
+					} : undefined)
+				}}
+				role="brand"
+				onBack={() => {
+					setSelectedCampaign(null)
+					if (urlCampaignId) {
+						router.replace("/brand/dashboard/campaigns")
+					}
+				}}
+				onEdit={() => openForm(selectedCampaign)}
+				onDelete={() => handleDeleteCampaign(selectedCampaign.id)}
+				onSubmitForApproval={() => handleSubmitForApproval(selectedCampaign)}
+				isSubmittingForApproval={isSubmittingApproval}
+			/>
+		)
+	}
+
 	return (
 		<div className="flex flex-col min-h-screen bg-white text-black">
 			{/* Top Bar */}
@@ -418,15 +466,9 @@ export default function CampaignsPage() {
 				</p>
 			</div>
 
-			<div className={clsx(
-				"flex-1 min-h-0 w-full overflow-hidden relative bg-white",
-				isSplitLayout ? "md:grid md:grid-cols-[60%_40%]" : "flex flex-col"
-			)}>
+			<div className="flex-1 min-h-0 w-full overflow-hidden relative bg-white flex flex-col">
 				{/* Left / Main Panel */}
-				<div className={clsx(
-					"px-4 lg:px-6 py-6 lg:py-8 flex-1 flex flex-col gap-6 overflow-y-auto h-full transition-all duration-300 w-full mx-auto",
-					isSplitLayout ? "max-w-none" : "max-w-6xl"
-				)}>
+				<div className="px-4 lg:px-6 py-6 lg:py-8 flex-1 flex flex-col gap-6 overflow-y-auto h-full transition-all duration-300 w-full mx-auto max-w-6xl">
 					{loading ? (
 						<div className="flex flex-col gap-4 w-full">
 							<h1 className="text-3xl font-heading font-black">Campaigns</h1>
@@ -909,10 +951,7 @@ export default function CampaignsPage() {
 										</button>
 									</div>
 								) : (
-									<div className={clsx(
-										"grid gap-6",
-										isSplitLayout ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"
-									)}>
+									<div className="grid gap-6 grid-cols-1 md:grid-cols-2">
 										{filteredCampaigns.map((c) => {
 											const isSelected = selectedCampaign?.id === c.id
 											return (
@@ -996,115 +1035,6 @@ export default function CampaignsPage() {
 						</div>
 					)}
 				</div>
-
-				{/* Right Panel: DETAILS VIEW */}
-				{isSplitLayout && selectedCampaign && (
-					<div className="border-t-[3px] md:border-t-0 md:border-l-[3px] border-black bg-slate-50 overflow-y-auto h-full p-6 animate-in slide-in-from-right duration-200">
-						<div className="flex flex-col gap-6">
-							<div className="flex justify-between items-center border-b border-black/10 pb-4">
-								<h2 className="font-heading font-black text-lg text-black">Campaign Details</h2>
-								<button
-									onClick={() => setSelectedCampaign(null)}
-									className="text-xs font-bold text-black/50 hover:text-black"
-								>
-									Close ✕
-								</button>
-							</div>
-
-							<div className="flex flex-col gap-5">
-								<h3 className="font-heading font-black text-xl text-black leading-snug">
-									{selectedCampaign.name}
-								</h3>
-
-								{/* Status and Action Buttons */}
-								<div className="flex flex-wrap gap-2">
-									<button
-										onClick={() => openForm(selectedCampaign)}
-										className="flex-1 py-2 bg-[#FFC940] text-black border-2 border-black rounded-xl text-[10px] font-black tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none text-center"
-									>
-										Edit Brief
-									</button>
-									<button
-										onClick={() => handleDeleteCampaign(selectedCampaign.id)}
-										className="py-2 px-3 bg-red-50 text-[#EE2C2C] border-2 border-black rounded-xl text-[10px] font-black tracking-wider shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all select-none text-center"
-									>
-										Delete
-									</button>
-								</div>
-
-								<div className="bg-white border-2 border-black rounded-2xl p-4 flex flex-col gap-3.5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-									<div>
-										<p className="text-[9px] text-black/40 font-bold uppercase tracking-wider">Goal</p>
-										<p className="text-xs font-extrabold text-black mt-0.5">{selectedCampaign.goal}</p>
-									</div>
-
-									<div>
-										<p className="text-[9px] text-black/40 font-bold uppercase tracking-wider">Locations</p>
-										<div className="flex flex-wrap gap-1 mt-1">
-											{selectedCampaign.locations.map((loc, i) => (
-												<span key={i} className="text-[10px] font-black bg-[#EE2C2C] text-white px-2 py-0.5 border border-black rounded-full shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-													{loc}
-												</span>
-											))}
-										</div>
-									</div>
-
-									<div>
-										<p className="text-[9px] text-black/40 font-bold uppercase tracking-wider">Target Audience</p>
-										<div className="flex flex-wrap gap-1.5 mt-1">
-											{selectedCampaign.audience.map((aud, i) => (
-												<span key={i} className="text-[10px] font-black bg-[#6C32D1] text-white px-2.5 py-0.5 border border-black rounded-full shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-													{aud}
-												</span>
-											))}
-										</div>
-									</div>
-
-									<div>
-										<p className="text-[9px] text-black/40 font-bold uppercase tracking-wider">Run Dates</p>
-										<p className="text-xs font-black text-black mt-0.5">
-											{new Date(selectedCampaign.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })} - {new Date(selectedCampaign.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-										</p>
-									</div>
-
-									<div>
-										<p className="text-[9px] text-black/40 font-bold uppercase tracking-wider">Budget & Offer</p>
-										<p className="text-xs font-black text-[#EE2C2C] mt-0.5">
-											{selectedCampaign.offerType === "BARTER"
-												? "BARTER"
-												: `${selectedCampaign.budgetCurrency} ${Number(selectedCampaign.budgetAmount).toLocaleString()} (${selectedCampaign.offerType})`}
-										</p>
-									</div>
-
-									{selectedCampaign.barterElements && (
-										<div>
-											<p className="text-[9px] text-black/40 font-bold uppercase tracking-wider">Barter Elements</p>
-											<p className="text-xs font-semibold text-black mt-0.5 leading-relaxed">{selectedCampaign.barterElements}</p>
-										</div>
-									)}
-								</div>
-
-								{selectedCampaign.description && (
-									<div className="bg-white border-2 border-black rounded-2xl p-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-										<p className="text-[9px] text-black/40 font-bold uppercase tracking-wider mb-1">Tell us more</p>
-										<p className="text-xs font-semibold text-black/80 leading-relaxed whitespace-pre-wrap break-words">
-											{selectedCampaign.description}
-										</p>
-									</div>
-								)}
-
-								{selectedCampaign.status === "REJECTED" && selectedCampaign.adminRejectionRemark && (
-									<div className="bg-red-50 border-2 border-[#EE2C2C] rounded-2xl p-4 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-										<p className="text-[9px] text-[#EE2C2C] font-bold uppercase tracking-wider mb-1">Admin Remark</p>
-										<p className="text-xs font-semibold text-black leading-relaxed whitespace-pre-wrap break-words">
-											{selectedCampaign.adminRejectionRemark}
-										</p>
-									</div>
-								)}
-							</div>
-						</div>
-					</div>
-				)}
 			</div>
 		</div>
 	)

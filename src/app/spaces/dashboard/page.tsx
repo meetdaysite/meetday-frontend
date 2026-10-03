@@ -9,13 +9,16 @@ import {
 	getSpaceDeal,
 	getSpaceDealReport,
 	getBrandCommunities,
+	getPublishedCampaigns,
 	type SpaceCommunityProfile,
 	type SpaceDeal,
 	type SpaceChatThread,
 	type BrandCommunity,
+	type Campaign,
 } from "@/lib/api"
 import { SpaceDealDetailsModal, SpaceDealReportModal } from "@/components/spaces/SpaceDealPanel"
 import { CommunityCard } from "@/app/spaces/dashboard/communities/page"
+import { DashboardCampaignCard } from "@/components/campaigns/DashboardCampaignCard"
 import { toast } from "sonner"
 import Link from "next/link"
 import clsx from "clsx"
@@ -37,12 +40,28 @@ export default function SpacesDashboardPage() {
 
 	const [communities, setCommunities] = useState<BrandCommunity[]>([])
 	const [loadingCommunities, setLoadingCommunities] = useState(true)
+	const [campaigns, setCampaigns] = useState<Campaign[]>([])
+	const [loadingCampaigns, setLoadingCampaigns] = useState(true)
 
 	const [lockedDeals, setLockedDeals] = useState<LockedSpaceDealItem[]>([])
 	const [loadingLockedDeals, setLoadingLockedDeals] = useState(true)
 	const [loadingDealDetailId, setLoadingDealDetailId] = useState<string | null>(null)
 	const [selectedDeal, setSelectedDeal] = useState<{ deal: SpaceDeal; thread: SpaceChatThread } | null>(null)
 	const [selectedReportThread, setSelectedReportThread] = useState<{ deal: SpaceDeal; thread: SpaceChatThread } | null>(null)
+
+	useEffect(() => {
+		setLoadingCampaigns(true)
+		getPublishedCampaigns()
+			.then((res) => {
+				setCampaigns(res || [])
+			})
+			.catch((err) => {
+				console.error("Failed to fetch campaigns for spaces dashboard", err)
+			})
+			.finally(() => {
+				setLoadingCampaigns(false)
+			})
+	}, [])
 
 	useEffect(() => {
 		setLoadingCommunities(true)
@@ -183,6 +202,48 @@ export default function SpacesDashboardPage() {
 
 				{/* Overview Section */}
 				<div className="flex flex-col gap-10 pb-8">
+					{/* Brand Campaigns Section */}
+					<div className="flex flex-col w-full">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
+							<div>
+								<h2 className="text-xl font-heading font-black text-black">Brand Campaigns</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Browse active brand briefs and sponsorship opportunities.</p>
+							</div>
+							<Link href="/spaces/dashboard/campaigns" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+								View All Campaigns &gt;
+							</Link>
+						</div>
+
+						{loadingCampaigns ? (
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+								{Array.from({ length: 2 }).map((_, i) => (
+									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
+										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
+										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
+											<div className="h-4 bg-black/5 rounded w-32" />
+											<div className="h-3 bg-black/5 rounded w-20" />
+										</div>
+									</div>
+								))}
+							</div>
+						) : campaigns.length === 0 ? (
+							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
+								<p className="text-sm font-black text-black/80">No active brand campaigns yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Check back later for newly published briefs from partner brands.</p>
+							</div>
+						) : (
+							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
+								{campaigns.map((camp) => (
+									<DashboardCampaignCard
+										key={camp.id}
+										campaign={camp}
+										href={`/spaces/dashboard/campaigns?campaignId=${camp.id}`}
+									/>
+								))}
+							</div>
+						)}
+					</div>
+
 					{/* Active Communities Section */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
