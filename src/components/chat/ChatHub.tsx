@@ -14,6 +14,7 @@ import type {
 } from "./ChatHubTypes"
 import { ChatHubLandingView } from "./ChatHubLandingView"
 import { ChatHubActiveView } from "./ChatHubActiveView"
+import { mapCampaignRequest } from "./ChatHubQueue"
 import { useNotificationStore } from "@/store/notificationStore"
 import { useHostStore } from "@/store/hostStore"
 import { useBrandStore } from "@/store/brandStore"
@@ -202,7 +203,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 				kind: isCampaign ? "CAMPAIGN" : "SPONSORSHIP",
 				counterpartName: t.counterpartName,
 				counterpartAvatarUrl: t.counterpartAvatarUrl,
-				counterpartType: t.counterpartType || (role === "BRAND" ? "COMMUNITY" : "BRAND"),
+				counterpartType: isCampaign && role !== "BRAND" ? "BRAND" : t.counterpartType || (role === "BRAND" ? "COMMUNITY" : "BRAND"),
 				title: t.proposalName || (isCampaign ? "Campaign Chat" : "Sponsorship"),
 				subtitle: t.counterpartName,
 				lastMessagePreview: t.lastMessagePreview,
@@ -387,22 +388,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 					})
 				} else {
 					// - Sent: Host applied to Brand Campaign
-					list.push({
-						id: t.id,
-						category: "campaigns",
-						kind: "CAMPAIGN",
-						direction: "OUTGOING",
-						status: "REQUESTED",
-						counterpartName: t.counterpartName,
-						counterpartAvatarUrl: t.counterpartAvatarUrl,
-						counterpartType: "BRAND",
-						title: t.proposalName || "Brand Campaign",
-						description: "You showed interest in this campaign. Awaiting brand approval.",
-						createdAt: t.createdAt,
-						lastMessagePreview: t.lastMessagePreview,
-						isIncoming: false,
-						rawItem: t,
-					})
+					list.push(mapCampaignRequest("COMMUNITY", t))
 				}
 			})
 
@@ -499,6 +485,10 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 		} else if (role === "SPACE") {
 			// 1. Sponsorships:
 			sponsorshipRequested.forEach((t) => {
+				if (t.campaignId) {
+					list.push(mapCampaignRequest("SPACE", t))
+					return
+				}
 				list.push({
 					id: t.id,
 					category: "sponsorships",
@@ -566,22 +556,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			sponsorshipRequested.forEach((t) => {
 				if (t.campaignId) {
 					// Incoming to Brand
-					list.push({
-						id: t.id,
-						category: "campaigns",
-						kind: "CAMPAIGN",
-						direction: "INCOMING",
-						status: "REQUESTED",
-						counterpartName: t.counterpartName,
-						counterpartAvatarUrl: t.counterpartAvatarUrl,
-						counterpartType: "COMMUNITY",
-						title: t.proposalName || "Campaign Application",
-						description: "This community applied to your campaign.",
-						createdAt: t.createdAt,
-						lastMessagePreview: t.lastMessagePreview,
-						isIncoming: true,
-						rawItem: t,
-					})
+					list.push(mapCampaignRequest("BRAND", t))
 				} else {
 					const isBrandCollaboration = t.counterpartType === "BRAND"
 					const isIncomingBrandProposal = isBrandCollaboration && t.isOwner
@@ -707,14 +682,14 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 					activeCount: activeThreadsByCategory.sponsorships.length,
 					pendingRequestsCount: spPending,
 				},
-				/* {
+				{
 					key: "campaigns",
 					label: "Campaigns",
-					description: "Talk to brands about campaigns you applied to.",
+					description: "Track Community applications to brand campaigns and manage accepted chats.",
 					badgeCount: cpUnread,
 					activeCount: activeThreadsByCategory.campaigns.length,
 					pendingRequestsCount: cpPending,
-				}, */
+				},
 				{
 					key: "spaces",
 					label: "Hubs",
@@ -742,10 +717,12 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			]
 		} else if (role === "SPACE") {
 			const spUnread = activeThreadsByCategory.sponsorships.reduce((sum, t) => sum + t.unreadCount, 0)
+			const cpUnread = activeThreadsByCategory.campaigns.reduce((sum, t) => sum + t.unreadCount, 0)
 			const comUnread = unreadCountForThreads(activeThreadsByCategory.communities)
 			const brUnread = unreadCountForThreads(activeThreadsByCategory.brands)
 
 			const spPending = allUnifiedRequests.filter((r) => r.category === "sponsorships" && r.direction === "INCOMING").length
+			const cpPending = allUnifiedRequests.filter((r) => r.category === "campaigns" && r.direction === "OUTGOING").length
 			const comPending = allUnifiedRequests.filter((r) => r.category === "communities" && r.direction === "INCOMING").length
 			const brPending = allUnifiedRequests.filter((r) => r.category === "brands" && r.direction === "INCOMING").length
 
@@ -758,15 +735,14 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 					activeCount: activeThreadsByCategory.sponsorships.length,
 					pendingRequestsCount: spPending,
 				},
-				/* {
+				{
 					key: "campaigns",
 					label: "Campaigns",
-					description: "Brand campaign venue partnerships.",
-					disabled: true,
-					badgeCount: 0,
-					activeCount: 0,
-					pendingRequestsCount: 0,
-				}, */
+					description: "Track Hub applications to brand campaigns and manage accepted chats.",
+					badgeCount: cpUnread,
+					activeCount: activeThreadsByCategory.campaigns.length,
+					pendingRequestsCount: cpPending,
+				},
 				{
 					key: "communities",
 					label: "Communities",
@@ -804,6 +780,14 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 					badgeCount: cpUnread,
 					activeCount: activeThreadsByCategory.campaigns.length,
 					pendingRequestsCount: cpPending,
+				},
+				{
+					key: "sponsorships",
+					label: "Sponsorships",
+					description: "Review sponsorship requests and active chats with communities, hubs, and brands.",
+					badgeCount: spUnread,
+					activeCount: activeThreadsByCategory.sponsorships.length,
+					pendingRequestsCount: spPending,
 				},
 				{
 					key: "communities",
