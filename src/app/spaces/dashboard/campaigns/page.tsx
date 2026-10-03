@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import clsx from "clsx"
 import Link from "next/link"
 import { toast } from "sonner"
+import { CampaignCard } from "@/components/campaigns/CampaignCard"
 import {
 	getMySponsorshipChats,
 	getPublishedCampaigns,
@@ -80,23 +82,24 @@ export default function SpaceCampaignsPage() {
 			campaign.goal.toLowerCase().includes(query),
 		)
 	}, [campaigns, search])
+	const isSplitLayout = !!selectedCampaign
 
 	return (
-		<main className="min-h-screen bg-white px-4 py-6 sm:px-6 lg:px-8">
-			<div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+		<div className="flex min-h-screen flex-col bg-white">
+			<div className={clsx("flex-1 min-h-0 w-full bg-white", isSplitLayout && "md:grid md:grid-cols-[58%_42%] md:overflow-hidden")}>
+			<div className={clsx("px-4 lg:px-6 py-6 flex flex-col gap-6", isSplitLayout ? "md:max-w-none" : "mx-auto w-full max-w-6xl")}>
 				<header>
-					<p className="text-xs font-black uppercase text-[#EE2C2C]">Hub Partner</p>
-					<h1 className="mt-1 text-3xl font-heading font-black text-black">Brand Campaigns</h1>
-					<p className="mt-2 text-sm font-semibold text-black/55">
-						Browse published campaigns from brands and review their requirements.
+					<h1 className="text-3xl font-heading font-black tracking-tight text-black leading-tight">Brand Campaigns</h1>
+					<p className="mt-1.5 text-sm font-semibold text-black/50">
+						Explore and match with active campaign briefs from brands looking for sponsorships.
 					</p>
 				</header>
 
 				<input
 					value={search}
 					onChange={(event) => setSearch(event.target.value)}
-					placeholder="Search campaigns, brands, locations, or goals..."
-					className="h-11 w-full rounded-xl border-[3px] border-black px-4 text-sm font-bold text-black shadow-[3px_3px_0_0_#000] outline-none focus:translate-x-[3px] focus:translate-y-[3px] focus:shadow-none"
+					placeholder="Search by campaign name, brand, location or goal..."
+					className="h-11 w-full rounded-xl border-[3px] border-black bg-white px-4 text-sm font-bold text-black shadow-[3px_3px_0_0_#000] outline-none placeholder:text-black/40 transition-all focus:translate-x-[3px] focus:translate-y-[3px] focus:shadow-none"
 				/>
 
 				{error ? (
@@ -107,46 +110,37 @@ export default function SpaceCampaignsPage() {
 						</button>
 					</div>
 				) : loading ? (
-					<div className="border-[3px] border-dashed border-black/30 p-10 text-center font-semibold text-black/50">
+					<div className="rounded-[20px] border-[3px] border-dashed border-black/30 p-12 text-center font-semibold text-black/50">
 						Loading campaigns...
 					</div>
 				) : filteredCampaigns.length === 0 ? (
-					<div className="border-[3px] border-dashed border-black/30 p-10 text-center">
-						<p className="text-lg font-black text-black/60">No published campaigns found</p>
+					<div className="flex flex-col items-center justify-center gap-4 rounded-[20px] border-[3px] border-dashed border-black/30 p-12 text-center">
+						<p className="text-lg font-black text-black/60">No campaigns found</p>
+						<p className="max-w-sm text-sm font-semibold text-black/30">There are no active campaigns right now. Check back later!</p>
 					</div>
 				) : (
-					<div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)]">
-						<div className="grid content-start gap-3 sm:grid-cols-2 lg:grid-cols-1">
+					<div className={clsx("grid gap-6", isSplitLayout ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2")}>
 							{filteredCampaigns.map((campaign) => {
 								const selected = selectedCampaign?.id === campaign.id
 								return (
-									<button
+									<CampaignCard
 										key={campaign.id}
-										type="button"
+										campaign={campaign}
 										onClick={() => setSelectedCampaign(selected ? null : campaign)}
-										className={`flex min-h-28 w-full gap-3 border-[3px] border-black p-3 text-left shadow-[3px_3px_0_0_#000] ${selected ? "bg-[#FFF3C4]" : "bg-white"}`}
-									>
-										<div
-											role="img"
-											aria-label={`${campaign.brandProfile?.brandName ?? "Brand"} logo`}
-											className="flex size-16 shrink-0 items-center justify-center overflow-hidden border-2 border-black bg-[#EE2C2C] bg-cover bg-center font-black text-white"
-											style={campaign.brandProfile?.logoUrl ? { backgroundImage: `url(${JSON.stringify(campaign.brandProfile.logoUrl)})` } : undefined}
-										>
-											{(campaign.brandProfile?.brandName ?? "B").slice(0, 1).toUpperCase()}
-										</div>
-										<div className="min-w-0 flex-1">
-											<p className="truncate text-base font-black text-black">{campaign.name}</p>
-											<p className="mt-1 truncate text-xs font-bold text-black/55">{campaign.brandProfile?.brandName ?? "Brand"}</p>
-											<p className="mt-2 line-clamp-2 text-xs font-semibold text-black/70">{campaign.goal}</p>
-										</div>
-									</button>
+									/>
 								)
 							})}
 						</div>
+				)}
+			</div>
 
-						<section className="border-[3px] border-black bg-white p-5 shadow-[4px_4px_0_0_#000]">
-							{selectedCampaign ? (
-								<>
+			{selectedCampaign && (
+				<section className="flex flex-col border-t-[3px] border-black bg-white md:h-full md:overflow-y-auto md:border-l-[3px] md:border-t-0">
+					<div className="flex items-center justify-between border-b border-black/10 px-6 py-4">
+						<h2 className="text-xl font-heading font-black text-black">Campaign Details</h2>
+						<button type="button" onClick={() => setSelectedCampaign(null)} aria-label="Close campaign details" className="flex size-8 items-center justify-center rounded-full text-sm font-bold text-black/60 transition-colors hover:bg-black/5 hover:text-black">✕</button>
+					</div>
+					<div className="flex flex-col gap-5 p-6">
 									<p className="text-xs font-black uppercase text-[#EE2C2C]">{selectedCampaign.brandProfile?.brandName ?? "Brand"}</p>
 									<h2 className="mt-1 text-xl font-heading font-black text-black">{selectedCampaign.name}</h2>
 									<dl className="mt-5 grid gap-4 text-sm">
@@ -159,8 +153,8 @@ export default function SpaceCampaignsPage() {
 									</dl>
 									<div className="mt-6 border-t-[3px] border-black pt-4">
 										{interestedCampaignIds.has(selectedCampaign.id) ? (
-											<Link href="/spaces/dashboard/sponsorship-chats" className="block w-full border-[3px] border-black bg-[#FFC940] p-3 text-center text-xs font-black shadow-[3px_3px_0_0_#000]">
-												REQUEST SENT · OPEN SPONSORSHIP CHATS
+											<Link href="/spaces/dashboard/sponsorship-chats?type=campaign" className="block w-full border-[3px] border-black bg-[#FFC940] p-3 text-center text-xs font-black shadow-[3px_3px_0_0_#000]">
+												REQUEST SENT · OPEN CAMPAIGN CHAT
 											</Link>
 										) : (
 											<button
@@ -173,14 +167,10 @@ export default function SpaceCampaignsPage() {
 											</button>
 										)}
 									</div>
-								</>
-							) : (
-								<p className="font-semibold text-black/50">Select a campaign to view its details.</p>
-							)}
-						</section>
 					</div>
-				)}
+						</section>
+			)}
 			</div>
-		</main>
+		</div>
 	)
 }

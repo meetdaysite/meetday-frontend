@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { Icon } from "@/components/ui/Icon"
+import { CampaignCard } from "@/components/campaigns/CampaignCard"
 import { getPublishedCampaigns, markCampaignInterest, getMySponsorshipChats, type Campaign } from "@/lib/api"
 import { useHostStore } from "@/store/hostStore"
 import clsx from "clsx"
@@ -161,58 +162,11 @@ export default function ExploreCampaignsPage() {
 							{filteredCampaigns.map((c) => {
 								const isSelected = selectedCampaign?.id === c.id
 								return (
-									<button
+									<CampaignCard
 										key={c.id}
-										type="button"
+										campaign={c}
 										onClick={() => setSelectedCampaign(isSelected ? null : c)}
-										className="group text-left relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-full h-[150px]"
-									>
-										{/* Image / Logo on the left */}
-										<div className="relative w-[150px] h-full shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
-											{c.brandProfile?.logoUrl ? (
-												<img
-													src={c.brandProfile.logoUrl}
-													alt={c.name || "Campaign"}
-													className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
-												/>
-											) : (
-												<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
-													{c.brandProfile?.brandName ? c.brandProfile.brandName.substring(0, 2).toUpperCase() : "MD"}
-												</div>
-											)}
-
-											{/* Offer Type Badge */}
-											<span className="absolute top-2 left-2 text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black">
-												{c.offerType}
-											</span>
-										</div>
-
-										{/* Content & Footer info */}
-										<div className="flex-1 p-3 flex flex-col justify-between min-w-0">
-											<div className="flex flex-col gap-1">
-												<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors leading-snug">
-													{c.name}
-												</h3>
-												<p className="text-[11px] font-bold text-black/50 truncate">
-													Brand: {c.brandProfile?.brandName ?? "Brand"} {c.locations?.length > 0 && `• ${c.locations.slice(0, 2).join(", ")}`}{c.locations?.length > 2 ? ` +${c.locations.length - 2}` : ""}
-												</p>
-												{c.description && (
-													<p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">
-														{c.description}
-													</p>
-												)}
-											</div>
-
-											<div className="flex flex-wrap gap-1.5 mt-2">
-												<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-													{new Date(c.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} – {new Date(c.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })}
-												</span>
-												<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-													{c.offerType === "BARTER" ? "BARTER" : `${c.budgetCurrency} ${Number(c.budgetAmount).toLocaleString()}`}
-												</span>
-											</div>
-										</div>
-									</button>
+									/>
 								)
 							})}
 						</div>
