@@ -262,7 +262,7 @@ function BrandCommunitiesContent() {
 						Communities
 					</h1>
 					<p className="text-sm font-semibold text-black/50 mt-2">
-						Communities onboarded on Meetday, available for sponsorship.
+						Communities onboarded on Meetday, available for collaboration.
 					</p>
 				</div>
 
