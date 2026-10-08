@@ -155,8 +155,18 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 		const catParam = searchParams.get("category")
 		const interestIdParam = searchParams.get("interestId") || searchParams.get("threadId")
 		const viewParam = searchParams.get("view")
+		const queueParam = searchParams.get("queue")
+		const requestCategoryParam = searchParams.get("requestCategory")
 
-		if (interestIdParam) {
+		if (viewParam === "requests") {
+			setViewMode("landing")
+			if (queueParam === "INCOMING" || queueParam === "OUTGOING") {
+				setActiveQueue(queueParam)
+			}
+			if (requestCategoryParam) {
+				setCategoryFilter(requestCategoryParam)
+			}
+		} else if (interestIdParam) {
 			setSelectedThreadId(interestIdParam)
 			setViewMode("active")
 		} else if (viewParam === "active" || catParam) {

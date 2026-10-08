@@ -22,6 +22,7 @@ export default function SpaceCampaignsPage() {
 	const [error, setError] = useState(false)
 	const [hubApproved, setHubApproved] = useState(false)
 	const [interestedCampaignIds, setInterestedCampaignIds] = useState<Set<string>>(new Set())
+	const [acceptedCampaignChatIds, setAcceptedCampaignChatIds] = useState<Map<string, string>>(new Map())
 	const [submittingInterest, setSubmittingInterest] = useState(false)
 
 	useEffect(() => {
@@ -52,6 +53,7 @@ export default function SpaceCampaignsPage() {
 			getMySponsorshipChats("ACCEPTED", "SPACE").catch(() => []),
 		]).then(([requested, accepted]) => {
 			setInterestedCampaignIds(new Set([...requested, ...accepted].flatMap((thread) => thread.campaignId ? [thread.campaignId] : [])))
+			setAcceptedCampaignChatIds(new Map(accepted.flatMap((thread) => thread.campaignId ? [[thread.campaignId, thread.id]] : [])))
 		})
 	}, [])
 
@@ -83,6 +85,7 @@ export default function SpaceCampaignsPage() {
 			campaign.goal.toLowerCase().includes(query),
 		)
 	}, [campaigns, search])
+	const acceptedInterestId = selectedCampaign ? acceptedCampaignChatIds.get(selectedCampaign.id) : undefined
 
 	return selectedCampaign ? (
 		<CampaignDetailView
@@ -91,9 +94,12 @@ export default function SpaceCampaignsPage() {
 			onBack={() => setSelectedCampaign(null)}
 			isApproved={hubApproved}
 			isInterested={interestedCampaignIds.has(selectedCampaign.id)}
+			isChatAccepted={Boolean(acceptedInterestId)}
 			isSubmittingInterest={submittingInterest}
 			onExpressInterest={() => handleExpressInterest(selectedCampaign)}
-			chatHref="/spaces/dashboard/sponsorship-chats?type=campaign"
+			chatHref={acceptedInterestId
+				? `/spaces/dashboard/sponsorship-chats?interestId=${encodeURIComponent(acceptedInterestId)}`
+				: "/spaces/dashboard/sponsorship-chats?view=requests&queue=OUTGOING&requestCategory=campaigns"}
 		/>
 	) : (
 		<div className="flex min-h-screen flex-col bg-white">

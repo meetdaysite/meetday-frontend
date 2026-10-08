@@ -12,6 +12,7 @@ export interface CampaignDetailViewProps {
 	// For viewers (community & space):
 	isApproved?: boolean
 	isInterested?: boolean
+	isChatAccepted?: boolean
 	isSubmittingInterest?: boolean
 	onExpressInterest?: () => void
 	chatHref?: string
@@ -41,6 +42,7 @@ export function CampaignDetailView({
 	role,
 	isApproved = true,
 	isInterested = false,
+	isChatAccepted = false,
 	isSubmittingInterest = false,
 	onExpressInterest,
 	chatHref,
@@ -85,7 +87,7 @@ export function CampaignDetailView({
 										href={chatHref}
 										className="py-3 px-6 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider transition-all select-none whitespace-nowrap shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] block uppercase"
 									>
-										REQUEST SENT · OPEN CHAT
+										{isChatAccepted ? "OPEN CAMPAIGN CHAT" : "REQUEST SENT · VIEW REQUEST"}
 									</Link>
 								) : (
 									<button

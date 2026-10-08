@@ -23,6 +23,7 @@ export default function ExploreCampaignsPage() {
 	const [searchQuery, setSearchQuery] = useState("")
 	const [submittingInterest, setSubmittingInterest] = useState(false)
 	const [interestedCampaignIds, setInterestedCampaignIds] = useState<Set<string>>(new Set())
+	const [acceptedCampaignChatIds, setAcceptedCampaignChatIds] = useState<Map<string, string>>(new Map())
 
 	const isHostApproved = profile?.approvalStatus === "APPROVED"
 
@@ -76,6 +77,7 @@ export default function ExploreCampaignsPage() {
 				}
 			})
 			setInterestedCampaignIds(ids)
+			setAcceptedCampaignChatIds(new Map(acc.flatMap((thread) => thread.campaignId ? [[thread.campaignId, thread.id]] : [])))
 		}).catch(err => {
 			console.error("Failed to load existing chat interests", err)
 		})
@@ -100,6 +102,7 @@ export default function ExploreCampaignsPage() {
 			c.goal.toLowerCase().includes(query)
 		)
 	}, [campaigns, searchQuery])
+	const acceptedInterestId = selectedCampaign ? acceptedCampaignChatIds.get(selectedCampaign.id) : undefined
 
 	return selectedCampaign ? (
 		<CampaignDetailView
@@ -113,8 +116,12 @@ export default function ExploreCampaignsPage() {
 			}}
 			isApproved={isHostApproved}
 			isInterested={interestedCampaignIds.has(selectedCampaign.id)}
+			isChatAccepted={Boolean(acceptedInterestId)}
 			isSubmittingInterest={submittingInterest}
 			onExpressInterest={handleExpressInterest}
+			chatHref={acceptedInterestId
+				? `/community/dashboard/chats?interestId=${encodeURIComponent(acceptedInterestId)}`
+				: "/community/dashboard/chats?view=requests&queue=OUTGOING&requestCategory=campaigns"}
 		/>
 	) : (
 		<div className="flex flex-col min-h-screen">
