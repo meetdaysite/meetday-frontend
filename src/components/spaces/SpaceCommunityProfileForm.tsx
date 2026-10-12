@@ -116,8 +116,6 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 	const [communitySize, setCommunitySize] = useState("")
 	const [experiencesPerYear, setExperiencesPerYear] = useState("")
 	const [categoryIds, setCategoryIds] = useState<string[]>([])
-	const [isOtherCategorySelected, setIsOtherCategorySelected] = useState(false)
-	const [otherCategoryInput, setOtherCategoryInput] = useState("")
 	const [activeLocations, setActiveLocations] = useState<string[]>([])
 	const [locationInput, setLocationInput] = useState("")
 	const [locationSuggestions, setLocationSuggestions] = useState<PlaceSuggestion[]>([])
@@ -402,7 +400,7 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 		if (!venueCapacity.trim()) return toast.error("Venue capacity is required.")
 		if (!communitySize.trim()) return toast.error("Community size is required.")
 		if (!experiencesPerYear.trim()) return toast.error("Experiences/year is required.")
-		if (categoryIds.length === 0 && (!isOtherCategorySelected || !otherCategoryInput.trim())) {
+		if (categoryIds.length === 0) {
 			return toast.error("At least one category must be selected.")
 		}
 
@@ -933,7 +931,9 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 					<div className="flex flex-col gap-1.5">
 						<label className="text-xs font-bold text-black">Categories *</label>
 						<div className="flex flex-wrap gap-2">
-							{categories.map((cat) => {
+							{categories
+								.filter((cat) => !["other", "others"].includes(cat.name.trim().toLowerCase()))
+								.map((cat) => {
 								const active = categoryIds.includes(cat.id)
 								return (
 									<button
@@ -955,28 +955,31 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 									</button>
 								)
 							})}
-							<button
-								type="button"
-								onClick={() => setIsOtherCategorySelected((prev) => !prev)}
-								className={clsx(
-									"px-3 py-1.5 rounded-full text-xs font-bold transition-all border-2 border-black cursor-pointer",
-									isOtherCategorySelected
-										? "bg-[#FFC940] text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-										: "bg-white text-black hover:bg-black/5",
-								)}
-							>
-								Other
-							</button>
+							{(() => {
+								const otherCat = categories.find((c) => ["other", "others"].includes(c.name.trim().toLowerCase()))
+								if (!otherCat) return null
+								const active = categoryIds.includes(otherCat.id)
+								return (
+									<button
+										key={otherCat.id}
+										type="button"
+										onClick={() => {
+											setCategoryIds((prev) =>
+												prev.includes(otherCat.id) ? prev.filter((id) => id !== otherCat.id) : [...prev, otherCat.id],
+											)
+										}}
+										className={clsx(
+											"px-3 py-1.5 rounded-full text-xs font-bold transition-all border-2 border-black cursor-pointer",
+											active
+												? "bg-[#FFC940] text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+												: "bg-white text-black hover:bg-black/5",
+										)}
+									>
+										Other
+									</button>
+								)
+							})()}
 						</div>
-						{isOtherCategorySelected && (
-							<input
-								type="text"
-								value={otherCategoryInput}
-								onChange={(e) => setOtherCategoryInput(e.target.value)}
-								placeholder="Please specify other category..."
-								className="h-10 px-4 rounded-xl border border-black/15 focus:border-black/35 bg-white text-black outline-none text-sm transition-colors w-full placeholder:text-black/30 mt-1"
-							/>
-						)}
 					</div>
 
 					{/* Active Locations */}

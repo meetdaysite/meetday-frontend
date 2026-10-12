@@ -555,7 +555,7 @@ export default function BrandProposalsPage() {
 										<img
 											src={selectedProposal.image}
 											alt={selectedProposal.name}
-											className="size-16 sm:size-36 object-cover rounded-xl border border-black/10 shadow-sm shrink-0"
+											className="w-16 sm:w-28 aspect-[4/5] object-cover rounded-xl border border-black/10 shadow-sm shrink-0"
 										/>
 									)}
 									<div className="flex-1 bg-slate-50 border border-black/10 rounded-action p-4 w-full flex flex-col gap-3 min-w-0">
@@ -777,19 +777,19 @@ export default function BrandProposalsPage() {
 									<div className="flex items-center gap-3">
 										{projImagePreview ? (
 											// eslint-disable-next-line @next/next/no-img-element
-											<img src={projImagePreview} alt="Preview" className="size-16 rounded-xl object-cover border border-black/10 shrink-0" />
+											<img src={projImagePreview} alt="Preview" className="w-[64px] h-[80px] rounded-xl object-cover border border-black/10 shrink-0" />
 										) : selectedProposal?.image ? (
 											// eslint-disable-next-line @next/next/no-img-element
-											<img src={selectedProposal.image} alt="Current" className="size-16 rounded-xl object-cover border border-black/10 shrink-0" />
+											<img src={selectedProposal.image} alt="Current" className="w-[64px] h-[80px] rounded-xl object-cover border border-black/10 shrink-0" />
 										) : (
-											<div className="size-16 rounded-xl bg-slate-50 border border-dashed border-black/20 flex items-center justify-center text-black/30 text-xs shrink-0">No Image</div>
+											<div className="w-[64px] h-[80px] rounded-xl bg-slate-50 border border-dashed border-black/20 flex items-center justify-center text-black/30 text-xs shrink-0">No Image</div>
 										)}
 										<div className="flex flex-col gap-1">
 											<input ref={projImageInputRef} type="file" accept="image/jpeg,image/jpg,image/png" className="hidden" onChange={handleProjImageChange} />
 											<button type="button" onClick={() => projImageInputRef.current?.click()} className="self-start px-4 py-2 bg-white border border-black rounded-xl text-xs font-bold shadow-sm hover:bg-slate-50 transition-colors">
 												Choose Image
 											</button>
-											<span className="text-[10px] text-black/40">JPEG, JPG, PNG accepted (1:1, max 5MB).</span>
+											<span className="text-[10px] text-black/40">JPEG, JPG, PNG accepted (4:5 ratio, max 5MB).</span>
 										</div>
 									</div>
 								</div>
@@ -1069,7 +1069,7 @@ export default function BrandProposalsPage() {
 														onClick={() => setSelectedProposal(p)}
 														className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-full"
 													>
-														<div className="relative w-[120px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
+														<div className="relative w-[120px] aspect-[4/5] shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
 															{p.image ? (
 																// eslint-disable-next-line @next/next/no-img-element
 																<img src={p.image} alt={p.name} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]" />

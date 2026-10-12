@@ -156,7 +156,7 @@ export default function ProposalDetailPage() {
 							{/* Title Section — side by side on mobile: logo left, name right */}
 							<div className="flex flex-row items-start gap-4 pb-4 border-b border-black/10">
 								{proposal.imageUrl && (
-									<div className="relative size-16 sm:size-36 shrink-0 rounded-xl overflow-hidden border border-border-default shadow-sm bg-slate-50">
+									<div className="relative w-16 sm:w-28 aspect-[4/5] shrink-0 rounded-xl overflow-hidden border border-border-default shadow-sm bg-slate-50">
 										{/* eslint-disable-next-line @next/next/no-img-element */}
 										<img src={proposal.imageUrl} alt={proposal.name || "Proposal"} className="size-full object-cover" />
 									</div>

@@ -205,6 +205,8 @@ export default function ProposalPage() {
     const [projAbout, setProjAbout] = useState("")
     const [projImage, setProjImage] = useState<File | null>(null)
     const [projImagePreview, setProjImagePreview] = useState<string | null>(null)
+    const [cropSource, setCropSource] = useState<string | null>(null)
+    const [cropFileMeta, setCropFileMeta] = useState<{ name: string; type: string; originalFile: File } | null>(null)
     const [projDate, setProjDate] = useState("")
     const [projEndDate, setProjEndDate] = useState("")
     const [projVenues, setProjVenues] = useState<string[]>([""])
@@ -631,8 +633,31 @@ export default function ProposalPage() {
                 toast.error("Image file size cannot exceed 5MB.")
                 return
             }
-            setProjImage(file)
+            setCropSource(URL.createObjectURL(file))
+            setCropFileMeta({ name: file.name, type: file.type, originalFile: file })
+            e.target.value = ""
         }
+    }
+
+    const handleCroppedImage = (croppedFile: File, previewUrl: string) => {
+        setProjImage(croppedFile)
+        setProjImagePreview(previewUrl)
+        setCropSource(null)
+        setCropFileMeta(null)
+        toast.success("Logo fitted to 4:5 successfully!")
+    }
+
+    const handleKeepOriginalImage = () => {
+        if (cropFileMeta) {
+            setProjImage(cropFileMeta.originalFile)
+        }
+        setCropSource(null)
+        setCropFileMeta(null)
+    }
+
+    const handleCloseCrop = () => {
+        setCropSource(null)
+        setCropFileMeta(null)
     }
 
     const handleProjDocChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -907,6 +932,8 @@ export default function ProposalPage() {
         setProjName("")
         setProjAbout("")
         setProjImage(null)
+        setCropSource(null)
+        setCropFileMeta(null)
         setProjDate("")
         setProjEndDate("")
         setProjVenues([""])
@@ -1388,7 +1415,7 @@ export default function ProposalPage() {
                                 <div className="flex flex-row gap-4 items-start">
                                     {projectImageUrl && (
                                         // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={projectImageUrl} alt={displayDetails?.name} className="size-16 sm:size-36 object-cover rounded-xl border border-border-default shadow-sm shrink-0" />
+                                        <img src={projectImageUrl} alt={displayDetails?.name} className="w-16 sm:w-28 aspect-[4/5] object-cover rounded-xl border border-border-default shadow-sm shrink-0" />
                                     )}
                                     <div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-4 w-full flex flex-col justify-between gap-4 min-w-0">
                                         {/* Row 1: Start date | End date, Row 2: Venue & City */}
@@ -1816,12 +1843,12 @@ export default function ProposalPage() {
                                             <div className="flex items-center gap-4">
                                                 {projImagePreview ? (
                                                     // eslint-disable-next-line @next/next/no-img-element
-                                                    <img src={projImagePreview} alt="Preview" className="size-16 rounded-xl object-cover border border-black/10" />
+                                                    <img src={projImagePreview} alt="Preview" className="w-[64px] h-[80px] rounded-xl object-cover border border-black/10 shrink-0" />
                                                 ) : selectedProposal?.image ? (
                                                     // eslint-disable-next-line @next/next/no-img-element
-                                                    <img src={typeof selectedProposal.image === "string" ? selectedProposal.image : URL.createObjectURL(selectedProposal.image)} alt="Current" className="size-16 rounded-xl object-cover border border-black/10" />
+                                                    <img src={typeof selectedProposal.image === "string" ? selectedProposal.image : URL.createObjectURL(selectedProposal.image)} alt="Current" className="w-[64px] h-[80px] rounded-xl object-cover border border-black/10 shrink-0" />
                                                 ) : (
-                                                    <div className="size-16 rounded-xl bg-slate-50 border border-dashed border-black/10 flex items-center justify-center text-black/30 text-xs">
+                                                    <div className="w-[64px] h-[80px] rounded-xl bg-slate-50 border border-dashed border-black/10 flex items-center justify-center text-black/30 text-[11px] font-semibold text-center px-1 shrink-0">
                                                         No Image
                                                     </div>
                                                 )}
@@ -1840,7 +1867,7 @@ export default function ProposalPage() {
                                                     >
                                                         Choose Image
                                                     </button>
-                                                    <span className="text-[10px] text-black/40">JPEG, JPG, PNG accepted (1:1 ratio, max 5MB).</span>
+                                                    <span className="text-[10px] text-black/40">JPEG, JPG, PNG accepted (4:5 ratio, max 5MB).</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -2289,7 +2316,7 @@ export default function ProposalPage() {
                                                                     className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-full"
                                                                 >
                                                                     {/* Image / Logo */}
-                                                                    <div className="relative w-[120px] aspect-square shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
+                                                                    <div className="relative w-[120px] aspect-[4/5] shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
                                                                         {imgUrl ? (
                                                                             // eslint-disable-next-line @next/next/no-img-element
                                                                             <img
@@ -2485,6 +2512,209 @@ export default function ProposalPage() {
                     </div>
                 </>
             )}
+            {cropSource && cropFileMeta && (
+                <ProposalLogoCropModal
+                    src={cropSource}
+                    fileName={cropFileMeta.name}
+                    fileType={cropFileMeta.type}
+                    originalFile={cropFileMeta.originalFile}
+                    onClose={handleCloseCrop}
+                    onCrop={handleCroppedImage}
+                    onKeepOriginal={handleKeepOriginalImage}
+                />
+            )}
+        </div>
+    )
+}
+
+interface ProposalLogoCropModalProps {
+    src: string
+    fileName: string
+    fileType: string
+    originalFile: File
+    onClose: () => void
+    onCrop: (croppedFile: File, previewUrl: string) => void
+    onKeepOriginal: () => void
+}
+
+function ProposalLogoCropModal({
+    src,
+    fileName,
+    fileType,
+    onClose,
+    onCrop,
+    onKeepOriginal,
+}: ProposalLogoCropModalProps) {
+    const [zoom, setZoom] = useState(1)
+    const [offset, setOffset] = useState({ x: 0, y: 0 })
+    const [isDragging, setIsDragging] = useState(false)
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+    const imgRef = useRef<HTMLImageElement>(null)
+    const [imgSize, setImgSize] = useState({ dw: 180, dh: 240 })
+
+    function handleMouseDown(e: React.MouseEvent) {
+        setIsDragging(true)
+        setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y })
+    }
+
+    function handleMouseMove(e: React.MouseEvent) {
+        if (!isDragging) return
+        setOffset({
+            x: e.clientX - dragStart.x,
+            y: e.clientY - dragStart.y,
+        })
+    }
+
+    function handleMouseUp() {
+        setIsDragging(false)
+    }
+
+    function handleTouchStart(e: React.TouchEvent) {
+        if (e.touches.length !== 1) return
+        setIsDragging(true)
+        setDragStart({ x: e.touches[0].clientX - offset.x, y: e.touches[0].clientY - offset.y })
+    }
+
+    function handleTouchMove(e: React.TouchEvent) {
+        if (!isDragging || e.touches.length !== 1) return
+        setOffset({
+            x: e.touches[0].clientX - dragStart.x,
+            y: e.touches[0].clientY - dragStart.y,
+        })
+    }
+
+    const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+        const target = e.currentTarget
+        const aspect = target.naturalWidth / target.naturalHeight
+        // Target 4:5 aspect ratio = 0.8
+        let dw = 200
+        let dh = 250
+        if (aspect > 0.8) {
+            dh = 250
+            dw = 250 * aspect
+        } else {
+            dw = 200
+            dh = 200 / aspect
+        }
+        setImgSize({ dw, dh })
+    }
+
+    function handleApply() {
+        const img = imgRef.current
+        if (!img) return
+
+        const canvas = document.createElement("canvas")
+        canvas.width = 800
+        canvas.height = 1000
+        const ctx = canvas.getContext("2d")
+        if (!ctx) return
+
+        ctx.fillStyle = "#ffffff"
+        ctx.fillRect(0, 0, 800, 1000)
+
+        // Viewport is 200x250, canvas is 800x1000 -> scale factor 800/200 = 4
+        const scale = 800 / 200
+        ctx.translate(400 + offset.x * scale, 500 + offset.y * scale)
+        ctx.scale(zoom * scale, zoom * scale)
+
+        ctx.drawImage(img, -imgSize.dw / 2, -imgSize.dh / 2, imgSize.dw, imgSize.dh)
+
+        const outputType = fileType || "image/jpeg"
+        canvas.toBlob((blob) => {
+            if (!blob) return
+            const croppedFile = new File([blob], fileName, { type: outputType })
+            const previewUrl = URL.createObjectURL(blob)
+            onCrop(croppedFile, previewUrl)
+        }, outputType, 0.92)
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-sm flex flex-col p-6 gap-4">
+                <div className="flex items-center justify-between border-b-2 border-black pb-2">
+                    <h3 className="font-heading font-black text-base text-black">📐 Fit Project Logo (4:5 Ratio)</h3>
+                    <button type="button" onClick={onClose} className="text-xl font-black text-black/40 hover:text-black">×</button>
+                </div>
+
+                <p className="text-xs text-black/50 font-semibold leading-normal">
+                    Drag the image to position it. Use the slider to zoom. The logo will be saved in 4:5 aspect ratio.
+                </p>
+
+                <div
+                    className="w-[200px] h-[250px] rounded-2xl border-[3px] border-black overflow-hidden relative bg-neutral-100 flex items-center justify-center cursor-move select-none mx-auto shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleMouseUp}
+                >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        ref={imgRef}
+                        src={src}
+                        alt="Source"
+                        onLoad={onImageLoad}
+                        draggable={false}
+                        style={{
+                            transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+                            maxWidth: "none",
+                            maxHeight: "none",
+                            width: `${imgSize.dw}px`,
+                            height: `${imgSize.dh}px`,
+                        }}
+                        className="pointer-events-none transition-transform duration-75 origin-center"
+                    />
+                    <div className="absolute inset-0 pointer-events-none border border-black/10 rounded-2xl" />
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-black/60 shrink-0">Zoom</span>
+                    <input
+                        type="range"
+                        min="0.5"
+                        max="3"
+                        step="0.05"
+                        value={zoom}
+                        onChange={(e) => setZoom(parseFloat(e.target.value))}
+                        className="flex-1 accent-black cursor-pointer"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => { setZoom(1); setOffset({ x: 0, y: 0 }) }}
+                        className="text-[10px] font-bold text-black/60 underline hover:text-black shrink-0"
+                    >
+                        Reset
+                    </button>
+                </div>
+
+                <div className="flex flex-col gap-2 pt-2">
+                    <button
+                        type="button"
+                        onClick={handleApply}
+                        className="w-full py-2.5 bg-[#FFC940] text-black border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
+                    >
+                        Apply &amp; Crop (4:5)
+                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={onKeepOriginal}
+                            className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-black border border-black/20 rounded-xl text-xs font-bold transition-colors"
+                        >
+                            Use As-Is
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 bg-white hover:bg-slate-50 text-black/60 border border-black/20 rounded-xl text-xs font-bold transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }
