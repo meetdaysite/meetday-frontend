@@ -161,6 +161,8 @@ export default function OnboardingPage() {
 
 	const [brandName, setBrandName] = useState("")
 	const [brandNameError, setBrandNameError] = useState<string | null>(null)
+	const [contactPhoneError, setContactPhoneError] = useState<string | null>(null)
+	const [websiteError, setWebsiteError] = useState<string | null>(null)
 	const [categoryIds, setCategoryIds] = useState<string[]>([])
 	const [website, setWebsite] = useState("")
 	const [instagram, setInstagram] = useState("")
@@ -196,11 +198,75 @@ export default function OnboardingPage() {
 		}
 	}
 
+	function normalizeUrl(url: string): string {
+		const trimmed = url.trim()
+		if (!trimmed) return ""
+		if (/^https?:\/\//i.test(trimmed)) return trimmed
+		return `https://${trimmed}`
+	}
+
+	function isValidUrl(url: string): boolean {
+		try {
+			const parsed = new URL(normalizeUrl(url))
+			return parsed.protocol === "http:" || parsed.protocol === "https:"
+		} catch {
+			return false
+		}
+	}
+
+	function normalizePhone(raw: string): string {
+		const trimmed = raw.trim()
+		if (!trimmed) return ""
+		if (trimmed.startsWith("+")) return trimmed
+		// Default to +91 if 10-digit indian mobile number
+		const digits = trimmed.replace(/\D/g, "")
+		if (digits.length === 10) return `+91${digits}`
+		if (digits.length > 10 && !trimmed.startsWith("+")) return `+${digits}`
+		return trimmed
+	}
+
 	async function finishSignup() {
+		let hasError = false
+
 		if (!brandName.trim()) {
 			setBrandNameError("Brand name is required to continue")
+			hasError = true
+		} else {
+			setBrandNameError(null)
+		}
+
+		const cleanPhone = contactPhone.trim()
+		if (!cleanPhone) {
+			setContactPhoneError("Phone number is required")
+			hasError = true
+		} else {
+			const digits = cleanPhone.replace(/\D/g, "")
+			if (digits.length < 10 || digits.length > 15) {
+				setContactPhoneError("Please enter a valid phone number (min 10 digits)")
+				hasError = true
+			} else {
+				setContactPhoneError(null)
+			}
+		}
+
+		const cleanWebsite = website.trim()
+		if (!cleanWebsite) {
+			setWebsiteError("Website is required")
+			hasError = true
+		} else if (!isValidUrl(cleanWebsite)) {
+			setWebsiteError("Please enter a valid website URL (e.g. https://yourbrand.com)")
+			hasError = true
+		} else {
+			setWebsiteError(null)
+		}
+
+		if (hasError) {
 			return
 		}
+
+		const formattedPhone = normalizePhone(contactPhone)
+		const formattedWebsite = normalizeUrl(website)
+
 		setLoadingMessage("Setting up your brand profile…")
 		try {
 			try {
@@ -208,11 +274,15 @@ export default function OnboardingPage() {
 					firstName: "Brand",
 					lastName: brandName,
 					email: sessionEmail || "",
-					phone: phone || undefined,
+					phone: phone || formattedPhone || undefined,
 					accountType: "BRAND",
 					brandName,
 					categoryIds,
-					socialLinks: { website: website || undefined, instagram: instagram || undefined, linkedin: linkedin || undefined },
+					socialLinks: {
+						website: formattedWebsite,
+						instagram: instagram || undefined,
+						linkedin: linkedin || undefined,
+					},
 				})
 			} catch (e) {
 				// 409 = brand already registered — treat as success
@@ -221,12 +291,12 @@ export default function OnboardingPage() {
 
 			// Persist the Step-2-only fields (not part of /auth/register) via a follow-up profile update.
 			const resolvedIndustry = industry === "Custom" ? customIndustry : industry
-			const hasExtra = workEmail || contactPhone || logoKey || companyType || aboutCompany || resolvedIndustry
+			const hasExtra = workEmail || formattedPhone || logoKey || companyType || aboutCompany || resolvedIndustry
 			if (hasExtra) {
 				try {
 					await updateBrandProfile({
 						workEmail: workEmail || undefined,
-						contactPhone: contactPhone || undefined,
+						contactPhone: formattedPhone || undefined,
 						logoKey: logoKey || undefined,
 						companyType: companyType || undefined,
 						aboutCompany: aboutCompany || undefined,
@@ -398,7 +468,7 @@ export default function OnboardingPage() {
 						Set up your Brand profile
 					</h2>
 					<p className="text-sm font-semibold text-black/60 max-w-md mx-auto leading-relaxed">
-						Brand name is required — everything else below is optional and can be added later from your profile.
+						Brand name, phone number, and website are required — other fields can be added or updated later from your profile.
 					</p>
 				</div>
 
@@ -524,23 +594,71 @@ export default function OnboardingPage() {
 								onChange={(e) => setWorkEmail(e.target.value)}
 								placeholder="you@company.com"
 							/>
-							<TextField
-								label="Phone Number (optional)"
-								value={contactPhone}
-								onChange={(e) => setContactPhone(e.target.value)}
-								placeholder="+919876543210"
-							/>
+							<div className="flex flex-col gap-1.5">
+								<div className="flex items-center justify-between gap-2">
+									<label htmlFor="contact-phone-input" className="text-label-sm font-semibold text-text-primary">
+										Phone Number <span className="text-[#EE2C2C] font-bold">*</span>
+									</label>
+								</div>
+								<div className={clsx(
+									"group flex items-center rounded-input border transition-colors duration-120 h-[var(--size-input-md)] px-4 gap-2 text-sm bg-surface-canvas",
+									contactPhoneError
+										? "border-[#EE2C2C] bg-surface-brand-soft"
+										: "border-border-default hover:border-border-strong focus-within:border-border-focused"
+								)}>
+									<input
+										id="contact-phone-input"
+										type="tel"
+										value={contactPhone}
+										onChange={(e) => {
+											setContactPhone(e.target.value)
+											if (contactPhoneError) setContactPhoneError(null)
+										}}
+										placeholder="+91 98765 43210"
+										className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-text-muted text-text-primary font-medium"
+									/>
+								</div>
+								{contactPhoneError && (
+									<p className="text-caption text-text-danger">
+										{contactPhoneError}
+									</p>
+								)}
+							</div>
 						</div>
 					</SectionCard>
 
 					<SectionCard title="Website / Social Links">
 						<div className="flex flex-col gap-4">
-							<TextField
-								label="Website"
-								value={website}
-								onChange={(e) => setWebsite(e.target.value)}
-								placeholder="https://yourbrand.com"
-							/>
+							<div className="flex flex-col gap-1.5">
+								<div className="flex items-center justify-between gap-2">
+									<label htmlFor="website-input" className="text-label-sm font-semibold text-text-primary">
+										Website <span className="text-[#EE2C2C] font-bold">*</span>
+									</label>
+								</div>
+								<div className={clsx(
+									"group flex items-center rounded-input border transition-colors duration-120 h-[var(--size-input-md)] px-4 gap-2 text-sm bg-surface-canvas",
+									websiteError
+										? "border-[#EE2C2C] bg-surface-brand-soft"
+										: "border-border-default hover:border-border-strong focus-within:border-border-focused"
+								)}>
+									<input
+										id="website-input"
+										type="url"
+										value={website}
+										onChange={(e) => {
+											setWebsite(e.target.value)
+											if (websiteError) setWebsiteError(null)
+										}}
+										placeholder="https://yourbrand.com"
+										className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-text-muted text-text-primary font-medium"
+									/>
+								</div>
+								{websiteError && (
+									<p className="text-caption text-text-danger">
+										{websiteError}
+									</p>
+								)}
+							</div>
 							<TextField
 								label="Instagram"
 								value={instagram}
