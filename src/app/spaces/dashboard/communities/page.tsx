@@ -315,6 +315,16 @@ function SpaceCommunitiesBrowseContent() {
 																	Exp / Yr
 																</span>
 															</div>
+															{selected.audienceAge && (
+																<div className="flex items-center gap-1.5">
+																	<span className="inline-block bg-[#F5C343] text-black border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] text-[10px] sm:text-xs font-black px-2 py-0.5 sm:px-3 sm:py-1 rounded-md uppercase tracking-wider">
+																		{selected.audienceAge}
+																	</span>
+																	<span className="text-[10px] sm:text-xs font-black text-black/60 uppercase tracking-wider">
+																		Audience Age
+																	</span>
+																</div>
+															)}
 														</div>
 													</div>
 												</div>

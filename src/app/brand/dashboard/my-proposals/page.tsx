@@ -23,6 +23,7 @@ import { AddressAutocompleteInput } from "@/components/eventForm/AddressAutocomp
 import UploadSvg from "@/icons/outlined/upload.svg"
 import AiAvatarSvg from "@/assets/ai-avatar.svg"
 import MagicStickSvg from "@/icons/duotone/magic-stick-3.svg"
+import { ImageCropModal } from "@/components/ui/ImageCropModal"
 
 interface StoredProposal {
 	id: string
@@ -108,6 +109,8 @@ export default function BrandProposalsPage() {
 	const [projAbout, setProjAbout] = useState("")
 	const [projImage, setProjImage] = useState<File | null>(null)
 	const [projImagePreview, setProjImagePreview] = useState<string | null>(null)
+	const [cropSource, setCropSource] = useState<string | null>(null)
+	const [cropFileMeta, setCropFileMeta] = useState<{ name: string; type: string; originalFile: File } | null>(null)
 	const [projDocFile, setProjDocFile] = useState<File | null>(null)
 	const [proposalDocument, setProposalDocument] = useState<{
 		key: string
@@ -280,7 +283,9 @@ export default function BrandProposalsPage() {
 			toast.error("Image file size cannot exceed 5MB.")
 			return
 		}
-		setProjImage(file)
+		setCropSource(URL.createObjectURL(file))
+		setCropFileMeta({ name: file.name, type: file.type, originalFile: file })
+		e.target.value = ""
 	}
 
 	function handleProposalDocumentChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1130,6 +1135,36 @@ export default function BrandProposalsPage() {
 					)}
 				</div>
 			</div>
+
+			{cropSource && cropFileMeta && (
+				<ImageCropModal
+					src={cropSource}
+					fileName={cropFileMeta.name}
+					fileType={cropFileMeta.type}
+					title="📐 Fit Event Poster (4:5 Ratio)"
+					description="Drag to position. Use slider to zoom. The poster will be saved in 4:5 aspect ratio."
+					aspectRatio={0.8}
+					viewportWidth={200}
+					onClose={() => {
+						setCropSource(null)
+						setCropFileMeta(null)
+					}}
+					onCrop={(croppedFile, previewUrl) => {
+						setProjImage(croppedFile)
+						setProjImagePreview(previewUrl)
+						setCropSource(null)
+						setCropFileMeta(null)
+					}}
+					onKeepOriginal={() => {
+						if (cropFileMeta) {
+							setProjImage(cropFileMeta.originalFile)
+							setProjImagePreview(cropSource)
+						}
+						setCropSource(null)
+						setCropFileMeta(null)
+					}}
+				/>
+			)}
 		</div>
 	)
 }

@@ -205,6 +205,7 @@ export default function ProposalPage() {
     const [projAbout, setProjAbout] = useState("")
     const [projImage, setProjImage] = useState<File | null>(null)
     const [projImagePreview, setProjImagePreview] = useState<string | null>(null)
+    const [zoomedImageUrl, setZoomedImageUrl] = useState<string | null>(null)
     const [cropSource, setCropSource] = useState<string | null>(null)
     const [cropFileMeta, setCropFileMeta] = useState<{ name: string; type: string; originalFile: File } | null>(null)
     const [projDate, setProjDate] = useState("")
@@ -753,7 +754,7 @@ export default function ProposalPage() {
             return
         }
         if (!projImage && !selectedProposal?.image) {
-            toast.error("Project Image is required.")
+            toast.error("Event Poster is required.")
             return
         }
         if (!projDate) {
@@ -1414,8 +1415,17 @@ export default function ProposalPage() {
                                 {/* Top Row: Logo left, Metadata right — always side by side */}
                                 <div className="flex flex-row gap-4 items-start">
                                     {projectImageUrl && (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={projectImageUrl} alt={displayDetails?.name} className="w-16 sm:w-28 aspect-[4/5] object-cover rounded-xl border border-border-default shadow-sm shrink-0" />
+                                        <div
+                                            onClick={() => setZoomedImageUrl(projectImageUrl)}
+                                            className="relative group w-16 sm:w-28 aspect-[4/5] rounded-xl overflow-hidden border border-border-default shadow-sm shrink-0 cursor-pointer hover:border-black hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all"
+                                            title="Click to view zoomed poster"
+                                        >
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={projectImageUrl} alt={displayDetails?.name} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                <span className="text-white text-[10px] sm:text-xs font-bold">🔍 Zoom</span>
+                                            </div>
+                                        </div>
                                     )}
                                     <div className="flex-1 bg-surface-card-muted border border-border-default rounded-action p-4 w-full flex flex-col justify-between gap-4 min-w-0">
                                         {/* Row 1: Start date | End date, Row 2: Venue & City */}
@@ -1839,17 +1849,45 @@ export default function ProposalPage() {
 
                                         {/* Logo/Image Upload */}
                                         <div className="flex flex-col gap-1.5">
-                                            <label className="text-xs font-bold text-black">Project Logo *</label>
+                                            <label className="text-xs font-bold text-black">Event Poster *</label>
                                             <div className="flex items-center gap-4">
                                                 {projImagePreview ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img src={projImagePreview} alt="Preview" className="w-[64px] h-[80px] rounded-xl object-cover border border-black/10 shrink-0" />
+                                                    <div
+                                                        onClick={() => setZoomedImageUrl(projImagePreview)}
+                                                        className="relative group w-[64px] h-[80px] rounded-xl overflow-hidden border-2 border-black shrink-0 cursor-pointer shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:scale-105 transition-transform"
+                                                        title="Click to view zoomed image"
+                                                    >
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img src={projImagePreview} alt="Event Poster Preview" className="w-full h-full object-cover" />
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                            <span className="text-white text-[10px] font-bold">🔍 Zoom</span>
+                                                        </div>
+                                                    </div>
                                                 ) : selectedProposal?.image ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img src={typeof selectedProposal.image === "string" ? selectedProposal.image : URL.createObjectURL(selectedProposal.image)} alt="Current" className="w-[64px] h-[80px] rounded-xl object-cover border border-black/10 shrink-0" />
+                                                    <div
+                                                        onClick={() => {
+                                                            if (typeof selectedProposal.image === "string") {
+                                                                setZoomedImageUrl(selectedProposal.image)
+                                                            } else if (selectedProposal.image instanceof Blob) {
+                                                                setZoomedImageUrl(URL.createObjectURL(selectedProposal.image))
+                                                            }
+                                                        }}
+                                                        className="relative group w-[64px] h-[80px] rounded-xl overflow-hidden border-2 border-black shrink-0 cursor-pointer shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:scale-105 transition-transform"
+                                                        title="Click to view zoomed image"
+                                                    >
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img
+                                                            src={typeof selectedProposal.image === "string" ? selectedProposal.image : (selectedProposal.image instanceof Blob ? URL.createObjectURL(selectedProposal.image) : "")}
+                                                            alt="Current Event Poster"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                            <span className="text-white text-[10px] font-bold">🔍 Zoom</span>
+                                                        </div>
+                                                    </div>
                                                 ) : (
-                                                    <div className="w-[64px] h-[80px] rounded-xl bg-slate-50 border border-dashed border-black/10 flex items-center justify-center text-black/30 text-[11px] font-semibold text-center px-1 shrink-0">
-                                                        No Image
+                                                    <div className="w-[64px] h-[80px] rounded-xl bg-slate-50 border-2 border-dashed border-black/20 flex items-center justify-center text-black/40 text-[11px] font-semibold text-center px-1 shrink-0">
+                                                        No Poster
                                                     </div>
                                                 )}
                                                 <div className="flex flex-col gap-1">
@@ -2523,6 +2561,49 @@ export default function ProposalPage() {
                     onKeepOriginal={handleKeepOriginalImage}
                 />
             )}
+
+            {/* Zoomed Event Poster Modal */}
+            {zoomedImageUrl && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+                    onClick={() => setZoomedImageUrl(null)}
+                >
+                    <div
+                        className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] max-w-lg w-full max-h-[90vh] flex flex-col p-5 gap-3 relative animate-in fade-in zoom-in-95 duration-150"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between border-b-2 border-black pb-2">
+                            <h3 className="font-heading font-black text-base text-black flex items-center gap-2">
+                                <span>🖼️</span> Event Poster Preview
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setZoomedImageUrl(null)}
+                                className="w-8 h-8 rounded-full border-2 border-black bg-white hover:bg-slate-100 flex items-center justify-center text-lg font-black text-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px]"
+                            >
+                                ×
+                            </button>
+                        </div>
+                        <div className="relative rounded-2xl border-2 border-black overflow-hidden bg-neutral-100 flex items-center justify-center max-h-[70vh]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={zoomedImageUrl}
+                                alt="Event Poster Zoomed"
+                                className="w-full h-auto max-h-[68vh] object-contain"
+                            />
+                        </div>
+                        <div className="flex justify-end pt-1">
+                            <button
+                                type="button"
+                                onClick={() => setZoomedImageUrl(null)}
+                                className="px-5 py-2 bg-[#FFC940] hover:bg-[#ffbf20] text-black border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] transition-all"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
@@ -2632,12 +2713,12 @@ function ProposalLogoCropModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-sm flex flex-col p-6 gap-4">
                 <div className="flex items-center justify-between border-b-2 border-black pb-2">
-                    <h3 className="font-heading font-black text-base text-black">📐 Fit Project Logo (4:5 Ratio)</h3>
+                    <h3 className="font-heading font-black text-base text-black">📐 Fit Event Poster (4:5 Ratio)</h3>
                     <button type="button" onClick={onClose} className="text-xl font-black text-black/40 hover:text-black">×</button>
                 </div>
 
                 <p className="text-xs text-black/50 font-semibold leading-normal">
-                    Drag the image to position it. Use the slider to zoom. The logo will be saved in 4:5 aspect ratio.
+                    Drag the image to position it. Use the slider to zoom. The poster will be saved in 4:5 aspect ratio.
                 </p>
 
                 <div

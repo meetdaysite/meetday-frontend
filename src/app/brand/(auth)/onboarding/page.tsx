@@ -18,6 +18,7 @@ import {
 import { useBrandStore } from "@/store/brandStore"
 import { useAuthSessionStore, useAuthSessionHydrated } from "@/store/authSessionStore"
 import { useAuth } from "@/context/AuthContext"
+import { ImageCropModal } from "@/components/ui/ImageCropModal"
 import { AuthShell } from "@/components/auth/AuthShell"
 import { Button } from "@/components/ui/Button"
 import { TextField } from "@/components/ui/TextField"
@@ -175,6 +176,8 @@ export default function OnboardingPage() {
 	const [customIndustry, setCustomIndustry] = useState("")
 	const [logoKey, setLogoKey] = useState<string | null>(null)
 	const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null)
+	const [cropSource, setCropSource] = useState<string | null>(null)
+	const [cropFileMeta, setCropFileMeta] = useState<{ name: string; type: string; originalFile: File } | null>(null)
 	const [logoUploading, setLogoUploading] = useState(false)
 	const [categories, setCategories] = useState<Category[]>([])
 
@@ -182,15 +185,31 @@ export default function OnboardingPage() {
 		getCategories().then(setCategories).catch(() => {})
 	}, [])
 
-	async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+	function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const file = e.target.files?.[0]
 		if (!file) return
+		if (!file.type.startsWith("image/")) {
+			toast.error("Only image files are accepted for the logo.")
+			return
+		}
+		if (file.size > 5 * 1024 * 1024) {
+			toast.error("Logo file size cannot exceed 5MB.")
+			return
+		}
+		setCropSource(URL.createObjectURL(file))
+		setCropFileMeta({ name: file.name, type: file.type, originalFile: file })
+		e.target.value = ""
+	}
+
+	async function uploadCroppedLogo(file: File, previewUrl: string) {
+		setCropSource(null)
+		setCropFileMeta(null)
 		setLogoUploading(true)
 		try {
 			const { url, key } = await getUploadUrl({ context: "USER_AVATAR", contentType: file.type })
 			await fetch(url, { method: "PUT", body: file, headers: { "Content-Type": file.type } })
 			setLogoKey(key)
-			setLogoPreviewUrl(URL.createObjectURL(file))
+			setLogoPreviewUrl(previewUrl)
 		} catch (err) {
 			toast.error(getApiErrorMessage(err))
 		} finally {
@@ -519,7 +538,7 @@ export default function OnboardingPage() {
 									</div>
 									<label className="text-label-sm font-medium text-text-brand cursor-pointer">
 										{logoUploading ? "Uploading…" : "Upload logo"}
-										<input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={logoUploading} />
+										<input type="file" accept="image/*" className="hidden" onChange={handleLogoChange} disabled={logoUploading} />
 									</label>
 								</div>
 							</div>
@@ -690,6 +709,24 @@ export default function OnboardingPage() {
 					</div>
 				</div>
 			</div>
+
+			{cropSource && cropFileMeta && (
+				<ImageCropModal
+					src={cropSource}
+					fileName={cropFileMeta.name}
+					fileType={cropFileMeta.type}
+					title="📐 Fit Company Logo (1:1 Ratio)"
+					description="Drag to position. Use slider to zoom. The logo will be saved in 1:1 square ratio."
+					aspectRatio={1}
+					onClose={() => {
+						setCropSource(null)
+						setCropFileMeta(null)
+					}}
+					onCrop={(croppedFile, previewUrl) => {
+						uploadCroppedLogo(croppedFile, previewUrl)
+					}}
+				/>
+			)}
 		</AuthShell>
 	)
 }

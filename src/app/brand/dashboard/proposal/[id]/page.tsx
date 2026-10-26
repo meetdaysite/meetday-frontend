@@ -29,6 +29,7 @@ export default function ProposalDetailPage() {
 	const [isInterested, setIsInterested] = useState(false)
 	const [isSubmittingInterest, setIsSubmittingInterest] = useState(false)
 	const [showIncompleteProfileModal, setShowIncompleteProfileModal] = useState(false)
+	const [isImageZoomed, setIsImageZoomed] = useState(false)
 
 	useEffect(() => {
 		getBrandProfile()
@@ -100,37 +101,6 @@ export default function ProposalDetailPage() {
 					"px-4 lg:px-6 py-6 lg:py-8 flex-1 flex flex-col gap-6 overflow-y-auto h-full min-h-0 transition-all duration-300 relative",
 					proposal?.community ? "max-w-3xl w-full mx-auto" : "max-w-2xl mx-auto w-full"
 				)}>
-					{!isLoading && !error && proposal && (
-						<div className="fixed bottom-6 right-6 z-40 sm:sticky sm:top-0 sm:self-end sm:z-30 sm:h-0 sm:w-0 sm:relative">
-							<div className="sm:absolute sm:top-0 sm:right-0">
-								<style>{`
-									@keyframes pop-animation {
-										0%, 100% { transform: scale(1); }
-										50% { transform: scale(1.04); }
-									}
-									.btn-pop {
-										animation: pop-animation 2s infinite ease-in-out;
-									}
-								`}</style>
-								<button
-									type="button"
-									disabled={isInterested || isSubmittingInterest || brandProfile?.approvalStatus !== "APPROVED"}
-									onClick={handleInterested}
-									className={clsx(
-										"py-3 px-6 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider transition-all select-none whitespace-nowrap",
-										!isInterested && !isSubmittingInterest && brandProfile?.approvalStatus === "APPROVED" ? "btn-pop shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]" : "opacity-60 cursor-not-allowed"
-									)}
-								>
-									{isInterested ? "Community Notified ✓" : isSubmittingInterest ? "Sending…" : "I am Interested"}
-								</button>
-								{brandProfile && brandProfile.approvalStatus !== "APPROVED" && (
-									<span className="block mt-2 text-[11px] font-black text-[#EE2C2C] uppercase tracking-wider text-right">
-										Waiting for profile approval
-									</span>
-								)}
-							</div>
-						</div>
-					)}
 					<button
 						type="button"
 						onClick={() => router.push("/brand/dashboard/proposals")}
@@ -152,20 +122,80 @@ export default function ProposalDetailPage() {
 						<p className="text-sm font-bold text-red-600">{error ?? "Proposal not found."}</p>
 					) : (
 						<>
+							<style>{`
+								@keyframes pop-animation {
+									0%, 100% { transform: scale(1); }
+									50% { transform: scale(1.04); }
+								}
+								.btn-pop {
+									animation: pop-animation 2s infinite ease-in-out;
+								}
+							`}</style>
 
-							{/* Title Section — side by side on mobile: logo left, name right */}
-							<div className="flex flex-row items-start gap-4 pb-4 border-b border-black/10">
-								{proposal.imageUrl && (
-									<div className="relative w-16 sm:w-28 aspect-[4/5] shrink-0 rounded-xl overflow-hidden border border-border-default shadow-sm bg-slate-50">
-										{/* eslint-disable-next-line @next/next/no-img-element */}
-										<img src={proposal.imageUrl} alt={proposal.name || "Proposal"} className="size-full object-cover" />
+							{/* Title Section — side by side: logo left, name right; I'm Interested button at end right-aligned just above line separator */}
+							<div className="flex flex-col gap-4 pb-6 border-b border-black/10">
+								<div className="flex flex-row items-start gap-4 sm:gap-6">
+									{proposal.imageUrl && (
+										<div
+											onClick={() => setIsImageZoomed(true)}
+											className="relative group w-28 sm:w-44 md:w-52 aspect-[4/5] shrink-0 rounded-2xl overflow-hidden border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] bg-slate-50 cursor-pointer hover:shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all"
+											title="Click to view full poster"
+										>
+											{/* eslint-disable-next-line @next/next/no-img-element */}
+											<img src={proposal.imageUrl} alt={proposal.name || "Proposal"} className="size-full object-cover group-hover:scale-105 transition-transform duration-200" />
+											<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+												<span className="text-white text-xs sm:text-sm font-bold bg-black/60 px-2.5 py-1 rounded-lg border border-white/30 backdrop-blur-xs">🔍 Click to Zoom</span>
+											</div>
+										</div>
+									)}
+									<div className="flex-1 min-w-0 flex flex-col justify-between self-stretch">
+										<div>
+											<h1 className="text-xl sm:text-3xl font-heading font-black text-black leading-tight">
+												{proposal.name || "Untitled Proposal"}
+											</h1>
+											<p className="text-sm font-semibold text-black/50 mt-1">Hosted by {hostName}</p>
+										</div>
+
+										{/* I'm Interested Button on desktop/tablet right-aligned just above the line separator */}
+										<div className="hidden sm:flex flex-col items-end self-end mt-4">
+											<button
+												type="button"
+												disabled={isInterested || isSubmittingInterest || brandProfile?.approvalStatus !== "APPROVED"}
+												onClick={handleInterested}
+												className={clsx(
+													"py-2.5 px-6 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider transition-all select-none whitespace-nowrap",
+													!isInterested && !isSubmittingInterest && brandProfile?.approvalStatus === "APPROVED" ? "btn-pop shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]" : "opacity-60 cursor-not-allowed"
+												)}
+											>
+												{isInterested ? "Community Notified ✓" : isSubmittingInterest ? "Sending…" : "I am Interested"}
+											</button>
+											{brandProfile && brandProfile.approvalStatus !== "APPROVED" && (
+												<span className="block mt-1 text-[11px] font-black text-[#EE2C2C] uppercase tracking-wider text-right">
+													Waiting for profile approval
+												</span>
+											)}
+										</div>
 									</div>
-								)}
-								<div className="flex-1 min-w-0">
-									<h1 className="text-xl sm:text-3xl font-heading font-black text-black leading-tight">
-										{proposal.name || "Untitled Proposal"}
-									</h1>
-									<p className="text-sm font-semibold text-black/50 mt-1">Hosted by {hostName}</p>
+								</div>
+
+								{/* Mobile view: I'm Interested button right-aligned right above the line separator */}
+								<div className="sm:hidden flex flex-col items-end pt-2">
+									<button
+										type="button"
+										disabled={isInterested || isSubmittingInterest || brandProfile?.approvalStatus !== "APPROVED"}
+										onClick={handleInterested}
+										className={clsx(
+											"w-full py-3 px-6 bg-[#EE2C2C] text-white border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider transition-all select-none whitespace-nowrap",
+											!isInterested && !isSubmittingInterest && brandProfile?.approvalStatus === "APPROVED" ? "btn-pop shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px]" : "opacity-60 cursor-not-allowed"
+										)}
+									>
+										{isInterested ? "Community Notified ✓" : isSubmittingInterest ? "Sending…" : "I am Interested"}
+									</button>
+									{brandProfile && brandProfile.approvalStatus !== "APPROVED" && (
+										<span className="block mt-1 text-[11px] font-black text-[#EE2C2C] uppercase tracking-wider text-right">
+											Waiting for profile approval
+										</span>
+									)}
 								</div>
 							</div>
 
@@ -420,6 +450,49 @@ export default function ProposalDetailPage() {
 							<Link href="/brand/dashboard/profile/edit">
 								<Button size="sm">Complete Profile</Button>
 							</Link>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Zoomed Event Poster Lightbox */}
+			{isImageZoomed && proposal?.imageUrl && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+					onClick={() => setIsImageZoomed(false)}
+				>
+					<div
+						className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] max-w-lg w-full max-h-[90vh] flex flex-col p-5 gap-3 relative animate-in fade-in zoom-in-95 duration-150"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<div className="flex items-center justify-between border-b-2 border-black pb-2">
+							<h3 className="font-heading font-black text-base text-black flex items-center gap-2 truncate pr-2">
+								<span>🖼️</span> {proposal.name || "Event Poster"}
+							</h3>
+							<button
+								type="button"
+								onClick={() => setIsImageZoomed(false)}
+								className="w-8 h-8 rounded-full border-2 border-black bg-white hover:bg-slate-100 flex items-center justify-center text-lg font-black text-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] shrink-0"
+							>
+								×
+							</button>
+						</div>
+						<div className="relative rounded-2xl border-2 border-black overflow-hidden bg-neutral-100 flex items-center justify-center max-h-[70vh]">
+							{/* eslint-disable-next-line @next/next/no-img-element */}
+							<img
+								src={proposal.imageUrl}
+								alt={proposal.name || "Event Poster Zoomed"}
+								className="w-full h-auto max-h-[68vh] object-contain"
+							/>
+						</div>
+						<div className="flex justify-end pt-1">
+							<button
+								type="button"
+								onClick={() => setIsImageZoomed(false)}
+								className="px-5 py-2 bg-[#FFC940] hover:bg-[#ffbf20] text-black border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] transition-all"
+							>
+								Close
+							</button>
 						</div>
 					</div>
 				</div>

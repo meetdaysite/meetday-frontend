@@ -26,6 +26,7 @@ export default function SharedProposalPage() {
 	const [error, setError] = useState<string | null>(null)
 	const [showAuthGate, setShowAuthGate] = useState(false)
 	const [authMode, setAuthMode] = useState<"signup" | "login">("signup")
+	const [isImageZoomed, setIsImageZoomed] = useState(false)
 	const redirectPath = `/brand/dashboard/proposal/${params.id}`
 	const { loading: googleLoading, handleGoogleSignIn } = useGoogleSignIn(authMode, "brand", redirectPath, { seamless: true })
 
@@ -95,11 +96,18 @@ export default function SharedProposalPage() {
 						<p className="text-sm font-bold text-red-600">{error ?? "Proposal not found."}</p>
 					) : (
 						<>
-							<div className="flex flex-row items-start gap-4 pb-4 border-b border-black/10">
+							<div className="flex flex-row items-start gap-4 sm:gap-6 pb-6 border-b border-black/10">
 								{proposal.imageUrl && (
-									<div className="relative w-16 sm:w-28 aspect-[4/5] shrink-0 rounded-xl overflow-hidden border border-border-default shadow-sm bg-slate-50">
+									<div
+										onClick={() => setIsImageZoomed(true)}
+										className="relative w-28 sm:w-44 md:w-52 aspect-[4/5] shrink-0 rounded-2xl overflow-hidden border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] bg-slate-50 cursor-pointer group hover:shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-0.5 hover:-translate-y-0.5 transition-all"
+										title="Click to view full poster"
+									>
 										{/* eslint-disable-next-line @next/next/no-img-element */}
-										<img src={proposal.imageUrl} alt={proposal.name || "Proposal"} className="size-full object-cover" />
+										<img src={proposal.imageUrl} alt={proposal.name || "Proposal"} className="size-full object-cover group-hover:scale-105 transition-transform duration-200" />
+										<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+											<span className="text-white text-xs sm:text-sm font-bold bg-black/60 px-2.5 py-1 rounded-lg border border-white/30 backdrop-blur-xs">🔍 Click to Zoom</span>
+										</div>
 									</div>
 								)}
 								<div className="flex-1 min-w-0">
@@ -283,6 +291,49 @@ export default function SharedProposalPage() {
 							))}
 						</div>
 						<GoogleSignInButton onClick={handleGoogleSignIn} loading={googleLoading} />
+					</div>
+				</div>
+			)}
+
+			{/* Zoomed Event Poster Lightbox */}
+			{isImageZoomed && proposal?.imageUrl && (
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+					onClick={() => setIsImageZoomed(false)}
+				>
+					<div
+						className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] max-w-lg w-full max-h-[90vh] flex flex-col p-5 gap-3 relative animate-in fade-in zoom-in-95 duration-150"
+						onClick={(e) => e.stopPropagation()}
+					>
+						<div className="flex items-center justify-between border-b-2 border-black pb-2">
+							<h3 className="font-heading font-black text-base text-black flex items-center gap-2 truncate pr-2">
+								<span>🖼️</span> {proposal.name || "Event Poster"}
+							</h3>
+							<button
+								type="button"
+								onClick={() => setIsImageZoomed(false)}
+								className="w-8 h-8 rounded-full border-2 border-black bg-white hover:bg-slate-100 flex items-center justify-center text-lg font-black text-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] shrink-0"
+							>
+								×
+							</button>
+						</div>
+						<div className="relative rounded-2xl border-2 border-black overflow-hidden bg-neutral-100 flex items-center justify-center max-h-[70vh]">
+							{/* eslint-disable-next-line @next/next/no-img-element */}
+							<img
+								src={proposal.imageUrl}
+								alt={proposal.name || "Event Poster Zoomed"}
+								className="w-full h-auto max-h-[68vh] object-contain"
+							/>
+						</div>
+						<div className="flex justify-end pt-1">
+							<button
+								type="button"
+								onClick={() => setIsImageZoomed(false)}
+								className="px-5 py-2 bg-[#FFC940] hover:bg-[#ffbf20] text-black border-2 border-black rounded-xl text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[1px] active:translate-y-[1px] transition-all"
+							>
+								Close
+							</button>
+						</div>
 					</div>
 				</div>
 			)}

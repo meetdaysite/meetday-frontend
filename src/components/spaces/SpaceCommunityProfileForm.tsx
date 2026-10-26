@@ -18,6 +18,7 @@ import {
 } from "@/lib/api"
 import UploadSvg from "@/icons/outlined/upload.svg"
 import clsx from "clsx"
+import { ImageCropModal } from "@/components/ui/ImageCropModal"
 
 const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 let googleMapsOptionsSet = false
@@ -108,6 +109,8 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 	const [about, setAbout] = useState("")
 	const [logoFile, setLogoFile] = useState<File | null>(null)
 	const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null)
+	const [cropSource, setCropSource] = useState<string | null>(null)
+	const [cropFileMeta, setCropFileMeta] = useState<{ name: string; type: string; originalFile: File } | null>(null)
 	const [posterFile, setPosterFile] = useState<File | null>(null)
 	const [posterPreviewUrl, setPosterPreviewUrl] = useState<string | null>(null)
 	const [posterRemoved, setPosterRemoved] = useState(false)
@@ -305,8 +308,13 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 			toast.error("Only image files are accepted for the logo.")
 			return
 		}
-		setLogoFile(file)
-		setLogoPreviewUrl(URL.createObjectURL(file))
+		if (file.size > 5 * 1024 * 1024) {
+			toast.error("Logo file size cannot exceed 5MB.")
+			return
+		}
+		setCropSource(URL.createObjectURL(file))
+		setCropFileMeta({ name: file.name, type: file.type, originalFile: file })
+		e.target.value = ""
 	}
 
 	function handlePosterChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1340,6 +1348,35 @@ export function SpaceCommunityProfileForm({ onClose, onSaved }: SpaceCommunityPr
 						</button>
 					</div>
 				</form>
+			)}
+
+			{cropSource && cropFileMeta && (
+				<ImageCropModal
+					src={cropSource}
+					fileName={cropFileMeta.name}
+					fileType={cropFileMeta.type}
+					title="📐 Fit Space Logo (1:1 Ratio)"
+					description="Drag to position. Use slider to zoom. The logo will be saved in 1:1 square ratio."
+					aspectRatio={1}
+					onClose={() => {
+						setCropSource(null)
+						setCropFileMeta(null)
+					}}
+					onCrop={(croppedFile, previewUrl) => {
+						setLogoFile(croppedFile)
+						setLogoPreviewUrl(previewUrl)
+						setCropSource(null)
+						setCropFileMeta(null)
+					}}
+					onKeepOriginal={() => {
+						if (cropFileMeta) {
+							setLogoFile(cropFileMeta.originalFile)
+							setLogoPreviewUrl(cropSource)
+						}
+						setCropSource(null)
+						setCropFileMeta(null)
+					}}
+				/>
 			)}
 		</div>
 	)

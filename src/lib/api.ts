@@ -290,6 +290,7 @@ export type BrandCommunity = {
 	size: string
 	avgGuestCount: string
 	experiencesPerYear: string
+	audienceAge?: string | null
 	operatingCities: string[]
 	socialLinks?: {
 		instagram?: string
@@ -789,6 +790,7 @@ export type SponsorshipCommunityProfile = {
 	size: string
 	avgGuestCount: string
 	experiencesPerYear: string
+	audienceAge?: string | null
 	categories: Category[]
 }
 
@@ -1290,6 +1292,7 @@ export type HostCommunityProfilePayload = {
 	size: string
 	avgGuestCount: string
 	experiencesPerYear: string
+	audienceAge?: string | null
 	categoryIds: string[]
 	secondaryImageKey?: string | null
 	pastEvents?: PastEventPayload[]
@@ -1334,6 +1337,7 @@ export type HostCommunityProfile = {
 	size: string
 	avgGuestCount: string
 	experiencesPerYear: string
+	audienceAge?: string | null
 	categories: Category[]
 	pastEvents?: PastEvent[]
 	brandsWorkedWith?: BrandWorkedWith[]

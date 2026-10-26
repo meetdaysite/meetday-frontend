@@ -347,7 +347,7 @@ export function CommunityProfileDetailsPanel({
 				)}
 
 				{/* Statistics / Numbers Grid */}
-				<div className="grid grid-cols-2 gap-4">
+				<div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
 					<div className="p-3.5 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-1">
 						<span className="text-[10px] font-bold text-black/40 uppercase">Avg Guest Count</span>
 						<span className="text-lg font-heading font-black text-black">{community.avgGuestCount} guests</span>
@@ -356,6 +356,12 @@ export function CommunityProfileDetailsPanel({
 						<span className="text-[10px] font-bold text-black/40 uppercase">Experiences / Yr</span>
 						<span className="text-lg font-heading font-black text-black">{community.experiencesPerYear} events</span>
 					</div>
+					{community.audienceAge && (
+						<div className="p-3.5 bg-slate-50 rounded-2xl border border-black/5 flex flex-col gap-1">
+							<span className="text-[10px] font-bold text-black/40 uppercase">Audience Age</span>
+							<span className="text-lg font-heading font-black text-black">{community.audienceAge}</span>
+						</div>
+					)}
 				</div>
 
 				{/* Categories */}

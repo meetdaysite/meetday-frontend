@@ -101,6 +101,7 @@ function BrandPreviewContent() {
 		size: community.size,
 		avgGuestCount: community.avgGuestCount,
 		experiencesPerYear: community.experiencesPerYear,
+		audienceAge: community.audienceAge,
 		operatingCities: profile?.operatingCities || [],
 		socialLinks: profile?.socialLinks || null,
 		categories: community.categories || [],

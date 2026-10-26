@@ -17,6 +17,8 @@ import UploadSvg from "@/icons/outlined/upload.svg"
 import PenSvg from "@/icons/outlined/pen.svg"
 import CloseSvg from "@/icons/outlined/close.svg"
 import clsx from "clsx"
+import { AudienceAgeInput } from "@/components/community/AudienceAgeInput"
+import { ImageCropModal } from "@/components/ui/ImageCropModal"
 
 // Re-exported so existing imports elsewhere (ActivatedCommunity) keep working.
 export type ActivatedCommunity = HostCommunityProfile
@@ -94,9 +96,12 @@ export function ActivateCommunityModal({
 	const [aboutCommunity, setAboutCommunity] = useState("")
 	const [logoFile, setLogoFile] = useState<File | null>(null)
 	const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null)
+	const [cropSource, setCropSource] = useState<string | null>(null)
+	const [cropFileMeta, setCropFileMeta] = useState<{ name: string; type: string; originalFile: File } | null>(null)
 	const [communitySize, setCommunitySize] = useState("")
 	const [avgGuestCount, setAvgGuestCount] = useState("")
 	const [experiencesPerYear, setExperiencesPerYear] = useState("")
+	const [audienceAge, setAudienceAge] = useState("")
 	const [categoryIds, setCategoryIds] = useState<string[]>([])
 	const [instagram, setInstagram] = useState("")
 	const [linkedin, setLinkedin] = useState("")
@@ -133,6 +138,7 @@ export function ActivateCommunityModal({
 					setCommunitySize(existing.size)
 					setAvgGuestCount(existing.avgGuestCount)
 					setExperiencesPerYear(existing.experiencesPerYear)
+					setAudienceAge(existing.audienceAge || "")
 					setCategoryIds(existing.categories.map((c) => c.id))
 					setLogoPreviewUrl(existing.logoUrl)
 					setSecondaryImagePreviewUrl(existing.secondaryImageUrl || null)
@@ -215,14 +221,15 @@ export function ActivateCommunityModal({
 				return
 			}
 
-			const maxLogoSize = 3 * 1024 * 1024 // 3MB
+			const maxLogoSize = 5 * 1024 * 1024 // 5MB
 			if (file.size > maxLogoSize) {
-				toast.error("Logo file size cannot exceed 3MB.")
+				toast.error("Logo file size cannot exceed 5MB.")
 				return
 			}
 
-			setLogoFile(file)
-			setLogoPreviewUrl(URL.createObjectURL(file))
+			setCropSource(URL.createObjectURL(file))
+			setCropFileMeta({ name: file.name, type: file.type, originalFile: file })
+			e.target.value = ""
 		}
 	}
 
@@ -361,6 +368,7 @@ export function ActivateCommunityModal({
 				size: communitySize.trim(),
 				avgGuestCount: avgGuestCount.trim(),
 				experiencesPerYear: experiencesPerYear.trim(),
+				audienceAge: audienceAge.trim() || undefined,
 				categoryIds,
 				pastEvents: pastEventsPayload,
 				brandsWorkedWith: brandsWorkedWithPayload,
@@ -781,6 +789,13 @@ export function ActivateCommunityModal({
 					/>
 				</div>
 
+				{/* Audience Age */}
+				<AudienceAgeInput
+					value={audienceAge}
+					onChange={setAudienceAge}
+					inline={inline}
+				/>
+
 				{/* Categories */}
 				<div className="flex flex-col gap-1.5">
 					<div className="flex items-center justify-between">
@@ -954,12 +969,72 @@ export function ActivateCommunityModal({
 	)
 
 	if (inline) {
-		return content
+		return (
+			<>
+				{content}
+				{cropSource && cropFileMeta && (
+					<ImageCropModal
+						src={cropSource}
+						fileName={cropFileMeta.name}
+						fileType={cropFileMeta.type}
+						title="📐 Fit Community Logo (1:1 Ratio)"
+						description="Drag to position. Use slider to zoom. The logo will be saved in 1:1 square ratio."
+						aspectRatio={1}
+						onClose={() => {
+							setCropSource(null)
+							setCropFileMeta(null)
+						}}
+						onCrop={(croppedFile, previewUrl) => {
+							setLogoFile(croppedFile)
+							setLogoPreviewUrl(previewUrl)
+							setCropSource(null)
+							setCropFileMeta(null)
+						}}
+						onKeepOriginal={() => {
+							if (cropFileMeta) {
+								setLogoFile(cropFileMeta.originalFile)
+								setLogoPreviewUrl(cropSource)
+							}
+							setCropSource(null)
+							setCropFileMeta(null)
+						}}
+					/>
+				)}
+			</>
+		)
 	}
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto">
 			{content}
+			{cropSource && cropFileMeta && (
+				<ImageCropModal
+					src={cropSource}
+					fileName={cropFileMeta.name}
+					fileType={cropFileMeta.type}
+					title="📐 Fit Community Logo (1:1 Ratio)"
+					description="Drag to position. Use slider to zoom. The logo will be saved in 1:1 square ratio."
+					aspectRatio={1}
+					onClose={() => {
+						setCropSource(null)
+						setCropFileMeta(null)
+					}}
+					onCrop={(croppedFile, previewUrl) => {
+						setLogoFile(croppedFile)
+						setLogoPreviewUrl(previewUrl)
+						setCropSource(null)
+						setCropFileMeta(null)
+					}}
+					onKeepOriginal={() => {
+						if (cropFileMeta) {
+							setLogoFile(cropFileMeta.originalFile)
+							setLogoPreviewUrl(cropSource)
+						}
+						setCropSource(null)
+						setCropFileMeta(null)
+					}}
+				/>
+			)}
 		</div>
 	)
 }
