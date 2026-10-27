@@ -306,8 +306,8 @@ export default function SharedProposalPage() {
 						onClick={(e) => e.stopPropagation()}
 					>
 						<div className="flex items-center justify-between border-b-2 border-black pb-2">
-							<h3 className="font-heading font-black text-base text-black flex items-center gap-2 truncate pr-2">
-								<span>🖼️</span> {proposal.name || "Event Poster"}
+							<h3 className="font-heading font-black text-base text-black truncate pr-2">
+								{proposal.name || "Event Poster"}
 							</h3>
 							<button
 								type="button"

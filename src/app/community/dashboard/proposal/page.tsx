@@ -2573,8 +2573,8 @@ export default function ProposalPage() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between border-b-2 border-black pb-2">
-                            <h3 className="font-heading font-black text-base text-black flex items-center gap-2">
-                                <span>🖼️</span> Event Poster Preview
+                            <h3 className="font-heading font-black text-base text-black">
+                                Event Poster Preview
                             </h3>
                             <button
                                 type="button"
