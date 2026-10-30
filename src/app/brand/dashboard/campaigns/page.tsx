@@ -384,7 +384,7 @@ export default function CampaignsPage() {
 			budgetCurrency: offerType === "BARTER" ? "INR" : budgetCurrency,
 			barterElements: (offerType === "BARTER" || offerType === "BOTH") ? barterElements : undefined,
 			description: description.trim() || undefined,
-			status: forceStatus || (isEditing ? selectedCampaign?.status : "DRAFT"),
+			status: forceStatus || (isEditing ? undefined : "DRAFT"),
 		}
 
 		try {
