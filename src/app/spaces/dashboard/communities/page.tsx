@@ -1,10 +1,20 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState, useMemo, useRef, Suspense } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { getBrandCommunities, getMySpaceChats, getMySpaceHostChats, markSpaceHostInterest, type BrandCommunity, type SpaceChatThread, type SpaceHostChatThread } from "@/lib/api"
+import {
+	getBrandCommunities,
+	getMySpaceChats,
+	getMySpaceHostChats,
+	markSpaceHostInterest,
+	getCategories,
+	type BrandCommunity,
+	type SpaceChatThread,
+	type SpaceHostChatThread,
+	type Category,
+} from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import { toast } from "@/lib/toast"
 import { Skeleton } from "@/components/ui/Skeleton"
@@ -15,6 +25,128 @@ function formatExternalUrl(url?: string | null) {
 	const trimmed = url.trim()
 	if (!trimmed) return null
 	return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
+}
+
+const SIZE_PRESETS = [
+	{ label: "All Sizes", value: "ALL" },
+	{ label: "< 500", value: "UNDER_500", min: 0, max: 499 },
+	{ label: "500 - 1,000", value: "500_1000", min: 500, max: 1000 },
+	{ label: "1,000 - 5,000", value: "1000_5000", min: 1000, max: 5000 },
+	{ label: "5,000 - 10,000", value: "5000_10000", min: 5000, max: 10000 },
+	{ label: "10,000 - 20,000", value: "10000_20000", min: 10000, max: 20000 },
+	{ label: "20,000 - 30,000", value: "20000_30000", min: 20000, max: 30000 },
+	{ label: "30,000+", value: "OVER_30000", min: 30000, max: Infinity },
+]
+
+function parseCommunitySize(sizeStr?: string | null): number | null {
+	if (!sizeStr) return null
+	const cleaned = sizeStr.replace(/,/g, "").trim().toLowerCase()
+	const match = cleaned.match(/(\d+(?:\.\d+)?)\s*(k|m)?/)
+	if (!match) return null
+	let num = parseFloat(match[1])
+	if (match[2] === "k") num *= 1000
+	if (match[2] === "m") num *= 1000000
+	return isNaN(num) ? null : num
+}
+
+function FilterDropdown({
+	label,
+	selectedText,
+	isActive,
+	onClear,
+	children,
+	searchPlaceholder,
+	searchValue,
+	onSearchChange,
+	closeOnSelect = true,
+}: {
+	label: string
+	selectedText: string
+	isActive: boolean
+	onClear?: () => void
+	children: React.ReactNode
+	searchPlaceholder?: string
+	searchValue?: string
+	onSearchChange?: (val: string) => void
+	closeOnSelect?: boolean
+}) {
+	const [isOpen, setIsOpen] = useState(false)
+	const dropdownRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		if (!isOpen) return
+		const handle = (e: MouseEvent) => {
+			if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+				setIsOpen(false)
+			}
+		}
+		window.addEventListener("mousedown", handle)
+		return () => window.removeEventListener("mousedown", handle)
+	}, [isOpen])
+
+	return (
+		<div className="relative" ref={dropdownRef}>
+			<button
+				type="button"
+				onClick={() => setIsOpen(!isOpen)}
+				className={clsx(
+					"flex items-center gap-2 h-10 px-3.5 rounded-[14px] border-[2.5px] border-black text-xs font-black transition-all cursor-pointer select-none",
+					isActive
+						? "bg-[#FFC940] text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+						: "bg-white text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-slate-50"
+				)}
+			>
+				<span className="text-black/50 font-bold uppercase tracking-wider text-[10px]">{label}:</span>
+				<span className="truncate max-w-[130px]">{selectedText}</span>
+				{isActive && onClear ? (
+					<span
+						onClick={(e) => {
+							e.stopPropagation()
+							onClear()
+						}}
+						className="ml-0.5 size-4 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center text-[10px] text-black"
+						title="Clear filter"
+					>
+						✕
+					</span>
+				) : (
+					<svg
+						className={clsx("w-3.5 h-3.5 text-black shrink-0 transition-transform", isOpen ? "rotate-180" : "")}
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" />
+					</svg>
+				)}
+			</button>
+
+			{isOpen && (
+				<div className="absolute top-full left-0 mt-2 bg-white border-[2.5px] border-black rounded-[18px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-40 overflow-hidden flex flex-col w-72 max-h-[320px] animate-in fade-in zoom-in-95 duration-100">
+					{searchPlaceholder && onSearchChange !== undefined && (
+						<div className="p-2 border-b-2 border-black bg-slate-50 shrink-0">
+							<input
+								type="text"
+								placeholder={searchPlaceholder}
+								value={searchValue || ""}
+								onChange={(e) => onSearchChange(e.target.value)}
+								className="w-full h-8 px-3 rounded-lg border-[1.5px] border-black bg-white text-xs font-semibold text-black outline-none placeholder:text-black/40"
+								autoFocus
+							/>
+						</div>
+					)}
+					<div
+						className="overflow-y-auto divide-y divide-black/10 flex-1 p-1"
+						onClick={() => {
+							if (closeOnSelect) setIsOpen(false)
+						}}
+					>
+						{children}
+					</div>
+				</div>
+			)}
+		</div>
+	)
 }
 
 export function CommunityCard({ community, onClick }: { community: BrandCommunity; onClick?: () => void }) {
@@ -98,9 +230,141 @@ function SpaceCommunitiesBrowseContent() {
 			.catch(() => {})
 	}
 
+	const [selectedSizes, setSelectedSizes] = useState<string[]>([])
+	const [selectedCities, setSelectedCities] = useState<string[]>([])
+	const [citySearch, setCitySearch] = useState<string>("")
+	const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([])
+	const [categorySearch, setCategorySearch] = useState<string>("")
+
+	// Extract unique available cities from communities
+	const availableCities = useMemo(() => {
+		const set = new Set<string>()
+		;(communities || []).forEach((c) => {
+			if (Array.isArray(c.operatingCities)) {
+				c.operatingCities.forEach((city) => {
+					const trimmed = city?.trim()
+					if (trimmed) set.add(trimmed)
+				})
+			}
+		})
+		return Array.from(set).sort((a, b) => a.localeCompare(b))
+	}, [communities])
+
+	const filteredCitiesList = useMemo(() => {
+		if (!citySearch.trim()) return availableCities
+		const lower = citySearch.toLowerCase()
+		return availableCities.filter((city) => city.toLowerCase().includes(lower))
+	}, [availableCities, citySearch])
+
+	const [allCategories, setAllCategories] = useState<Category[]>([])
+
 	useEffect(() => {
-		fetchConnectedThreads()
+		getCategories()
+			.then((cats) => {
+				if (Array.isArray(cats)) setAllCategories(cats)
+			})
+			.catch(() => {})
 	}, [])
+
+	// Extract unique available categories from allCategories + communities
+	const availableCategories = useMemo(() => {
+		const map = new Map<string, Category>()
+		allCategories.forEach((c) => {
+			if (c && c.id && !map.has(c.id)) {
+				map.set(c.id, c)
+			}
+		})
+		;(communities || []).forEach((c) => {
+			if (Array.isArray(c.categories)) {
+				c.categories.forEach((cat) => {
+					if (cat && cat.id && !map.has(cat.id)) {
+						map.set(cat.id, cat)
+					}
+				})
+			}
+		})
+		return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
+	}, [allCategories, communities])
+
+	const filteredCategoriesList = useMemo(() => {
+		if (!categorySearch.trim()) return availableCategories
+		const lower = categorySearch.toLowerCase()
+		return availableCategories.filter((cat) => cat.name.toLowerCase().includes(lower))
+	}, [availableCategories, categorySearch])
+
+	// Filter communities by sizes, cities, and categories (all multi-select)
+	const filteredCommunities = useMemo(() => {
+		if (!communities) return []
+		return communities.filter((community) => {
+			// Size filter
+			if (selectedSizes.length > 0) {
+				const parsedSize = parseCommunitySize(community.size)
+				if (parsedSize === null) return false
+				const matchesAnySize = selectedSizes.some((val) => {
+					const preset = SIZE_PRESETS.find((p) => p.value === val)
+					if (!preset) return false
+					return parsedSize >= preset.min! && parsedSize <= preset.max!
+				})
+				if (!matchesAnySize) return false
+			}
+
+			// City filter
+			if (selectedCities.length > 0) {
+				const commCities = Array.isArray(community.operatingCities)
+					? community.operatingCities.map((c) => c.toLowerCase().trim())
+					: []
+				const matchesAnyCity = selectedCities.some((city) =>
+					commCities.includes(city.toLowerCase().trim())
+				)
+				if (!matchesAnyCity) return false
+			}
+
+			// Category filter
+			if (selectedCategoryIds.length > 0) {
+				const selectedCatObjects = availableCategories.filter((c) => selectedCategoryIds.includes(c.id))
+				const selectedNames = new Set(selectedCatObjects.map((c) => c.name.toLowerCase().trim()))
+
+				const communityCats = Array.isArray(community.categories) ? community.categories : []
+				const hasCat = communityCats.some((c: any) => {
+					if (!c) return false
+					const id = typeof c === "string" ? c : c.id
+					const name = typeof c === "string" ? c : c.name
+					if (id && selectedCategoryIds.includes(id)) return true
+					if (name && selectedNames.has(name.toLowerCase().trim())) return true
+					return false
+				})
+				if (!hasCat) return false
+			}
+
+			return true
+		})
+	}, [communities, selectedSizes, selectedCities, selectedCategoryIds, availableCategories])
+
+	const hasActiveFilters = selectedSizes.length > 0 || selectedCities.length > 0 || selectedCategoryIds.length > 0
+
+	const handleToggleSize = (value: string) => {
+		setSelectedSizes((prev) =>
+			prev.includes(value) ? prev.filter((item) => item !== value) : [...prev, value]
+		)
+	}
+
+	const handleToggleCity = (city: string) => {
+		setSelectedCities((prev) =>
+			prev.includes(city) ? prev.filter((item) => item !== city) : [...prev, city]
+		)
+	}
+
+	const handleToggleCategory = (id: string) => {
+		setSelectedCategoryIds((prev) =>
+			prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+		)
+	}
+
+	const handleResetFilters = () => {
+		setSelectedSizes([])
+		setSelectedCities([])
+		setSelectedCategoryIds([])
+	}
 
 	async function handleMarkInterest() {
 		if (!selected || sendingId) return
@@ -533,13 +797,213 @@ function SpaceCommunitiesBrowseContent() {
 					</>
 				) : (
 					<>
-						<div>
-							<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
-								Communities
-							</h1>
-							<p className="text-sm font-semibold text-black/50 mt-2">
-								Browse onboarded communities and express interest in partnering with them.
-							</p>
+						<div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+							<div>
+								<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
+									Communities
+								</h1>
+								<p className="text-sm font-semibold text-black/50 mt-1">
+									Browse onboarded communities and express interest in partnering with them.
+								</p>
+							</div>
+
+							{/* Filters Bar */}
+							<div className="flex flex-wrap items-center gap-2.5">
+								{/* Size Filter (Multi-select) */}
+								<FilterDropdown
+									label="Size"
+									selectedText={
+										selectedSizes.length === 0
+											? "All Sizes"
+											: selectedSizes.length === 1
+											? SIZE_PRESETS.find((p) => p.value === selectedSizes[0])?.label || "1 Size"
+											: `${selectedSizes.length} Selected`
+									}
+									isActive={selectedSizes.length > 0}
+									onClear={() => setSelectedSizes([])}
+									closeOnSelect={false}
+								>
+									<div className="flex items-center justify-between px-3 py-2 border-b border-black/10 bg-slate-50/50">
+										<span className="text-[10px] font-black uppercase text-black/50">Select Sizes</span>
+										{selectedSizes.length > 0 && (
+											<button
+												type="button"
+												onClick={() => setSelectedSizes([])}
+												className="text-[10px] font-black text-[#EE2C2C] hover:underline cursor-pointer"
+											>
+												Clear ({selectedSizes.length})
+											</button>
+										)}
+									</div>
+									{SIZE_PRESETS.filter((p) => p.value !== "ALL").map((preset) => {
+										const isSelected = selectedSizes.includes(preset.value)
+										return (
+											<button
+												key={preset.value}
+												type="button"
+												onClick={() => handleToggleSize(preset.value)}
+												className={clsx(
+													"w-full text-left px-3.5 py-2.5 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-between gap-3",
+													isSelected ? "bg-[#FFC940]/40 text-black font-black" : "text-black hover:bg-black/5"
+												)}
+											>
+												<span className="truncate flex-1">{preset.label}</span>
+												<div
+													className={clsx(
+														"w-5 h-5 min-w-[20px] min-h-[20px] rounded-[6px] border-2 border-black flex items-center justify-center shrink-0 transition-all shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+														isSelected ? "bg-[#EE2C2C] text-white" : "bg-white"
+													)}
+												>
+													{isSelected && (
+														<svg className="w-3.5 h-3.5 stroke-[3.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+														</svg>
+													)}
+												</div>
+											</button>
+										)
+									})}
+								</FilterDropdown>
+
+								{/* Cities Filter (Multi-select) */}
+								<FilterDropdown
+									label="City"
+									selectedText={
+										selectedCities.length === 0
+											? "All Cities"
+											: selectedCities.length === 1
+											? selectedCities[0]
+											: `${selectedCities.length} Selected`
+									}
+									isActive={selectedCities.length > 0}
+									onClear={() => setSelectedCities([])}
+									searchPlaceholder="Search cities..."
+									searchValue={citySearch}
+									onSearchChange={setCitySearch}
+									closeOnSelect={false}
+								>
+									<div className="flex items-center justify-between px-3 py-2 border-b border-black/10 bg-slate-50/50">
+										<span className="text-[10px] font-black uppercase text-black/50">Select Cities</span>
+										{selectedCities.length > 0 && (
+											<button
+												type="button"
+												onClick={() => setSelectedCities([])}
+												className="text-[10px] font-black text-[#EE2C2C] hover:underline cursor-pointer"
+											>
+												Clear ({selectedCities.length})
+											</button>
+										)}
+									</div>
+									{filteredCitiesList.map((city) => {
+										const isSelected = selectedCities.includes(city)
+										return (
+											<button
+												key={city}
+												type="button"
+												onClick={() => handleToggleCity(city)}
+												className={clsx(
+													"w-full text-left px-3.5 py-2.5 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-between gap-3",
+													isSelected ? "bg-[#FFC940]/40 text-black font-black" : "text-black hover:bg-black/5"
+												)}
+											>
+												<span className="truncate flex-1">{city}</span>
+												<div
+													className={clsx(
+														"w-5 h-5 min-w-[20px] min-h-[20px] rounded-[6px] border-2 border-black flex items-center justify-center shrink-0 transition-all shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+														isSelected ? "bg-[#EE2C2C] text-white" : "bg-white"
+													)}
+												>
+													{isSelected && (
+														<svg className="w-3.5 h-3.5 stroke-[3.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+														</svg>
+													)}
+												</div>
+											</button>
+										)
+									})}
+									{filteredCitiesList.length === 0 && (
+										<div className="px-3.5 py-3 text-xs font-bold text-black/40 text-center">
+											No cities found
+										</div>
+									)}
+								</FilterDropdown>
+
+								{/* Categories Filter (Multi-select) */}
+								<FilterDropdown
+									label="Categories"
+									selectedText={
+										selectedCategoryIds.length === 0
+											? "All Categories"
+											: selectedCategoryIds.length === 1
+											? availableCategories.find((c) => c.id === selectedCategoryIds[0])?.name || "1 Category"
+											: `${selectedCategoryIds.length} Selected`
+									}
+									isActive={selectedCategoryIds.length > 0}
+									onClear={() => setSelectedCategoryIds([])}
+									searchPlaceholder="Search categories..."
+									searchValue={categorySearch}
+									onSearchChange={setCategorySearch}
+									closeOnSelect={false}
+								>
+									<div className="flex items-center justify-between px-3 py-2 border-b border-black/10 bg-slate-50/50">
+										<span className="text-[10px] font-black uppercase text-black/50">Select Categories</span>
+										{selectedCategoryIds.length > 0 && (
+											<button
+												type="button"
+												onClick={() => setSelectedCategoryIds([])}
+												className="text-[10px] font-black text-[#EE2C2C] hover:underline cursor-pointer"
+											>
+												Clear ({selectedCategoryIds.length})
+											</button>
+										)}
+									</div>
+									{filteredCategoriesList.map((cat) => {
+										const isSelected = selectedCategoryIds.includes(cat.id)
+										return (
+											<button
+												key={cat.id}
+												type="button"
+												onClick={() => handleToggleCategory(cat.id)}
+												className={clsx(
+													"w-full text-left px-3.5 py-2.5 text-xs font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-between gap-3",
+													isSelected ? "bg-[#FFC940]/40 text-black font-black" : "text-black hover:bg-black/5"
+												)}
+											>
+												<span className="truncate flex-1">{cat.name}</span>
+												<div
+													className={clsx(
+														"w-5 h-5 min-w-[20px] min-h-[20px] rounded-[6px] border-2 border-black flex items-center justify-center shrink-0 transition-all shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]",
+														isSelected ? "bg-[#EE2C2C] text-white" : "bg-white"
+													)}
+												>
+													{isSelected && (
+														<svg className="w-3.5 h-3.5 stroke-[3.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+															<path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+														</svg>
+													)}
+												</div>
+											</button>
+										)
+									})}
+									{filteredCategoriesList.length === 0 && (
+										<div className="px-3.5 py-3 text-xs font-bold text-black/40 text-center">
+											No categories found
+										</div>
+									)}
+								</FilterDropdown>
+
+								{/* Reset all button */}
+								{hasActiveFilters && (
+									<button
+										type="button"
+										onClick={handleResetFilters}
+										className="h-10 px-3.5 rounded-[14px] border-[2.5px] border-black bg-white hover:bg-red-50 text-[#EE2C2C] text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer flex items-center gap-1.5"
+									>
+										<span>Reset</span>
+									</button>
+								)}
+							</div>
 						</div>
 
 						<div className="w-full">
@@ -557,9 +1021,23 @@ function SpaceCommunitiesBrowseContent() {
 								<p className="text-sm font-bold text-black/50">No communities available yet.</p>
 							)}
 
-							{communities && communities.length > 0 && (
+							{communities && communities.length > 0 && filteredCommunities.length === 0 && (
+								<div className="py-12 px-4 text-center border-[3px] border-dashed border-black/20 rounded-[24px] bg-slate-50/50 flex flex-col items-center justify-center gap-2">
+									<p className="text-base font-black text-black">No communities match your filters</p>
+									<p className="text-xs font-bold text-black/50">Try adjusting or clearing your size, city, or category filters.</p>
+									<button
+										type="button"
+										onClick={handleResetFilters}
+										className="mt-3 px-4 py-2 rounded-[12px] border-2 border-black bg-[#FFC940] text-black text-xs font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
+									>
+										Clear All Filters
+									</button>
+								</div>
+							)}
+
+							{communities && communities.length > 0 && filteredCommunities.length > 0 && (
 								<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 pt-2 px-2 pb-4">
-									{communities.map((c) => (
+									{filteredCommunities.map((c) => (
 										<CommunityCard key={c.id} community={c} onClick={() => setSelected(c)} />
 									))}
 								</div>
