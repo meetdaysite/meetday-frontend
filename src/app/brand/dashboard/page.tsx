@@ -178,11 +178,11 @@ export default function BrandDashboardWelcomePage() {
 
 				{/* Two CTAs grid */}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-					{/* CTA 1: Launch a Campaign */}
+					{/* CTA 1: Launch a Brand Campaign */}
 					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
 						<div className="flex items-center justify-between w-full mb-4">
 							<h2 className="text-lg font-heading font-black text-black">
-								Launch a Campaign
+								Launch a Brand Campaign
 							</h2>
 							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
 								LIVE
@@ -199,24 +199,24 @@ export default function BrandDashboardWelcomePage() {
 						</Link>
 					</div>
 
-					{/* CTA 2: Raise Sponsorship */}
+					{/* CTA 2: Find a Brand Partner */}
 					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
 						<div className="flex items-center justify-between w-full mb-4">
 							<h2 className="text-lg font-heading font-black text-black">
-								Raise Sponsorship
+								Find a Brand Partner
 							</h2>
 							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
 								LIVE
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
-							Build custom proposals, pitch relevant brand sponsors, and secure brand backing to scale your upcoming experiences.
+							Connect with a non-competing brand to partner and scale your brand’s community experience as content.
 						</p>
 						<Link
 							href="/brand/dashboard/my-proposals"
 							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
 						>
-							CREATE PROPOSAL
+							LIST AN EXPERIENCE
 							<span className="text-base font-bold">➔</span>
 						</Link>
 					</div>

@@ -616,7 +616,15 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
 									<span className="absolute -top-0.5 -right-0.5 block h-2.5 w-2.5 rounded-full ring-2 ring-[#EE2C2C] bg-[#FFC940]" />
 								)}
 							</div>
-							<span className="flex-1 whitespace-nowrap">{label}</span>
+							<span className="flex-1 whitespace-nowrap flex items-center gap-2">
+								{label}
+								{label === "Support Chat" && (
+									<span className="relative flex h-2 w-2">
+										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+										<span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+									</span>
+								)}
+							</span>
 							{badgeCount > 0 && (
 								<span className="shrink-0 min-w-[20px] h-[20px] px-1.5 rounded-full bg-[#FFC940] text-black text-[10px] font-black flex items-center justify-center">
 									{badgeCount > 9 ? "9+" : badgeCount}
