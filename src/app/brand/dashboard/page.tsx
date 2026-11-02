@@ -171,7 +171,7 @@ export default function BrandDashboardWelcomePage() {
 					<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
 						Unlock real-world reach across top <span className="text-[#EE2C2C]">IRL communities & hubs.</span>
 					</h1>
-					<p className="text-sm font-semibold text-black/50 mt-2 max-w-2xl mx-auto">
+					<p className="text-base sm:text-lg font-bold text-black/60 mt-2.5 max-w-2xl mx-auto">
 						1.5M+ real-world audience waiting for you to connect.
 					</p>
 				</div>
