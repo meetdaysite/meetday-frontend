@@ -659,6 +659,7 @@ export type SponsorshipProposal = {
 	id: string
 	hostProfileId: string | null
 	spaceProfileId?: string | null
+	brandProfileId?: string | null
 	name: string | null
 	about: string | null
 	imageKey: string | null
@@ -752,7 +753,7 @@ export async function deleteSponsorshipProposal(id: string): Promise<void> {
 // ─── Brand: browse published sponsorship proposals ────────────────────────────
 
 export type PublishedSponsorshipProposal = SponsorshipProposal & {
-	ownerType?: "HOST" | "SPACE"
+	ownerType?: "HOST" | "SPACE" | "BRAND"
 	hostProfile: {
 		id: string
 		displayName?: string
@@ -763,6 +764,12 @@ export type PublishedSponsorshipProposal = SponsorshipProposal & {
 		id: string
 		businessName?: string
 		user: { firstName: string; lastName: string }
+		categories: Category[]
+	} | null
+	brandProfile?: {
+		id: string
+		brandName: string
+		logoKey: string | null
 		categories: Category[]
 	} | null
 }
@@ -795,7 +802,7 @@ export type SponsorshipCommunityProfile = {
 }
 
 export type PublishedSponsorshipDetail = SponsorshipProposal & {
-	ownerType?: "HOST" | "SPACE"
+	ownerType?: "HOST" | "SPACE" | "BRAND"
 	hostProfile: {
 		id: string
 		displayName?: string
@@ -819,6 +826,21 @@ export type PublishedSponsorshipDetail = SponsorshipProposal & {
 			website?: string
 		} | null
 		user: { firstName: string; lastName: string }
+	} | null
+	brandProfile?: {
+		id: string
+		brandName: string
+		logoUrl?: string | null
+		companyType?: CompanyType | null
+		aboutCompany?: string | null
+		industry?: string | null
+		categories: Category[]
+		socialLinks?: {
+			instagram?: string
+			linkedin?: string
+			youtube?: string
+			website?: string
+		} | null
 	} | null
 	community: SponsorshipCommunityProfile | null
 	alreadyInterested?: boolean

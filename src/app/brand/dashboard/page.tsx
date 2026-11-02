@@ -61,7 +61,8 @@ export default function BrandDashboardWelcomePage() {
 		setLoadingProposals(true)
 		getAllPublishedSponsorships()
 			.then((res) => {
-				setProposals(res.proposals || [])
+				const all = res.proposals || []
+				setProposals(all)
 			})
 			.catch((err) => {
 				console.error("Failed to fetch proposals for dashboard", err)
@@ -292,14 +293,16 @@ export default function BrandDashboardWelcomePage() {
 									</div>
 								))}
 							</div>
-						) : proposals.length === 0 ? (
+						) : proposals.filter((p) => !profile?.id || (p.brandProfileId !== profile.id && p.brandProfile?.id !== profile.id)).length === 0 ? (
 							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
 								<p className="text-sm font-black text-black/80">No curated experiences yet</p>
 								<p className="text-[11px] font-semibold text-black/40">Check back later for new experiences and sponsorship opportunities.</p>
 							</div>
 						) : (
 							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
-								{proposals.map((prop) => {
+								{proposals
+									.filter((p) => !profile?.id || (p.brandProfileId !== profile.id && p.brandProfile?.id !== profile.id))
+									.map((prop) => {
 									const imgUrl = prop.imageUrl || null
 									const displayDate = formatProposalDateRange(prop.eventDate, prop.eventEndDate)
 

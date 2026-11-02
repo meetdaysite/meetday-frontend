@@ -15,10 +15,12 @@ import {
 	getUploadUrl,
 	generateProposalDraft,
 	extractProposalCopilotDocument,
+	getBrandProfile,
 	type SponsorshipProposal as ApiSponsorshipProposal,
 	type SponsorshipProposalPayload,
 	type SponsorTier,
 } from "@/lib/api"
+import { BrandProfileDetailsPanel } from "@/components/brand/BrandProfileDetailsPanel"
 import { AddressAutocompleteInput } from "@/components/eventForm/AddressAutocompleteInput"
 import UploadSvg from "@/icons/outlined/upload.svg"
 import AiAvatarSvg from "@/assets/ai-avatar.svg"
@@ -94,7 +96,7 @@ async function uploadFileAndGetKey(
 }
 
 export default function BrandProposalsPage() {
-	const { profile } = useBrandStore()
+	const { profile, setProfile } = useBrandStore()
 	const searchParams = useSearchParams()
 	const urlProposalId = searchParams ? searchParams.get("proposalId") : null
 	const [proposals, setProposals] = useState<StoredProposal[]>([])
@@ -163,6 +165,12 @@ export default function BrandProposalsPage() {
 		}
 		return () => clearInterval(interval)
 	}, [copilotLoading, loadingMessages])
+
+	useEffect(() => {
+		getBrandProfile()
+			.then(setProfile)
+			.catch(() => {})
+	}, [setProfile])
 
 	useEffect(() => {
 		setLoading(true)
@@ -486,6 +494,8 @@ export default function BrandProposalsPage() {
 			})
 	}
 
+	const isSplitLayout = !!profile
+
 	return (
 		<div className="flex flex-col min-h-screen">
 			<div className="hidden sm:flex justify-between items-center px-8 py-4 border-b border-black/10 shrink-0">
@@ -494,8 +504,14 @@ export default function BrandProposalsPage() {
 				</p>
 			</div>
 
-			<div className="flex-1 min-h-0 w-full overflow-hidden relative bg-white flex flex-col">
-				<div className="px-4 lg:px-6 py-6 lg:py-8 flex-1 flex flex-col gap-8 overflow-y-auto h-full transition-all duration-300 max-w-2xl mx-auto w-full">
+			<div className={clsx(
+				"flex-1 min-h-0 w-full overflow-hidden relative bg-white",
+				isSplitLayout ? "md:grid md:grid-cols-[65%_35%]" : "flex flex-col"
+			)}>
+				<div className={clsx(
+					"px-4 lg:px-6 py-6 lg:py-8 flex-1 flex flex-col gap-8 overflow-y-auto h-full transition-all duration-300",
+					isSplitLayout ? "max-w-3xl w-full mx-auto" : "max-w-2xl mx-auto w-full"
+				)}>
 					{loading ? (
 						<div className="bg-white border-2 border-black rounded-[20px] p-12 text-center max-w-2xl">
 							<p className="text-sm font-semibold text-black/50">Loading details...</p>
@@ -1014,8 +1030,8 @@ export default function BrandProposalsPage() {
 						<>
 							<div className="flex justify-between items-center mb-2">
 								<div>
-									<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight mt-1">My Proposals</h1>
-									<p className="text-sm font-semibold text-black/50 mt-1.5">Submit your experience proposals to brands</p>
+									<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight mt-1">My Experiences</h1>
+									<p className="text-sm font-semibold text-black/50 mt-1.5">Manage and track your created experience proposals</p>
 								</div>
 								{proposals.length > 0 && (
 									<button
@@ -1134,6 +1150,13 @@ export default function BrandProposalsPage() {
 						</>
 					)}
 				</div>
+
+				{/* Right Column: Brand Profile details (like Community Profile on community proposal page) */}
+				{!loading && profile && (
+					<div className="hidden md:flex flex-col border-l border-black/10 overflow-y-auto h-full min-h-0 shrink-0 w-full bg-white">
+						<BrandProfileDetailsPanel brand={profile} />
+					</div>
+				)}
 			</div>
 
 			{cropSource && cropFileMeta && (

@@ -141,7 +141,9 @@ function ProposalCard({
 	proposal: PublishedSponsorshipProposal
 	onClick: () => void
 }) {
-	const hostName =
+	const ownerLabel =
+		proposal.brandProfile?.brandName ||
+		proposal.spaceProfile?.businessName ||
 		proposal.hostProfile?.displayName ||
 		[proposal.hostProfile?.user?.firstName, proposal.hostProfile?.user?.lastName].filter(Boolean).join(" ") ||
 		"Host"
@@ -177,7 +179,7 @@ function ProposalCard({
 							{proposal.name}
 						</h3>
 						<p className="text-[11px] font-bold text-black/50 truncate">
-							Hosted by {hostName} {proposal.city && `• ${proposal.city}`}
+							By {ownerLabel} {proposal.city && `• ${proposal.city}`}
 						</p>
 						{proposal.about && (
 							<p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">
@@ -219,7 +221,7 @@ function ProposalCard({
 
 export default function ProposalsPage() {
 	const router = useRouter()
-	const { setProfile } = useBrandStore()
+	const { profile, setProfile } = useBrandStore()
 
 	const [categories, setCategories] = useState<Category[]>([])
 	const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
@@ -264,13 +266,30 @@ export default function ProposalsPage() {
 		}
 	}, [selectedCategoryId])
 
-	// Only show category tabs for categories that actually have at least one published proposal,
+	// Hide current brand's self-created proposals from the curated experiences list,
+	// while keeping proposals from other brands, hosts, and spaces visible.
+	const visibleProposals = useMemo(() => {
+		if (!profile?.id) return proposals
+		return proposals.filter(
+			(p) =>
+				p.brandProfileId !== profile.id &&
+				p.brandProfile?.id !== profile.id
+		)
+	}, [proposals, profile?.id])
+
+	// Only show category tabs for categories that actually have at least one visible published proposal,
 	// computed from the unfiltered "All" list the first time it loads.
 	const categoriesWithProposals = useMemo(() => {
 		if (selectedCategoryId !== null) return categories
-		const idsInUse = new Set(proposals.flatMap((p) => p.hostProfile?.categories?.map((c) => c.id) ?? []))
+		const idsInUse = new Set(
+			visibleProposals.flatMap((p) => [
+				...(p.hostProfile?.categories?.map((c) => c.id) ?? []),
+				...(p.spaceProfile?.categories?.map((c) => c.id) ?? []),
+				...(p.brandProfile?.categories?.map((c) => c.id) ?? []),
+			])
+		)
 		return categories.filter((c) => idsInUse.has(c.id))
-	}, [categories, proposals, selectedCategoryId])
+	}, [categories, visibleProposals, selectedCategoryId])
 
 	return (
 		<div className="flex flex-col min-h-full bg-white">
@@ -308,11 +327,11 @@ export default function ProposalsPage() {
 						</div>
 					) : error ? (
 						<p className="text-sm font-bold text-red-600">{error}</p>
-					) : proposals.length === 0 ? (
+					) : visibleProposals.length === 0 ? (
 						<p className="text-sm font-bold text-black/50">No sponsorship proposals found for this filter.</p>
 					) : (
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-							{proposals.map((proposal) => (
+							{visibleProposals.map((proposal) => (
 								<ProposalCard
 									key={proposal.id}
 									proposal={proposal}

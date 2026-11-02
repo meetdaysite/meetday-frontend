@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button"
 import { Skeleton } from "@/components/ui/Skeleton"
 import PdfViewer from "@/components/pdf/PdfViewer"
 import { CommunityProfileDetailsPanel } from "@/components/community/CommunityProfileDetailsPanel"
+import { BrandProfileDetailsPanel } from "@/components/brand/BrandProfileDetailsPanel"
 import {
 	getPublishedSponsorshipDetail,
 	markSponsorshipInterest,
@@ -77,11 +78,15 @@ export default function ProposalDetailPage() {
 		}
 	}
 
-	const hostName = proposal
-		? proposal.hostProfile?.displayName ||
+	const ownerLabel = proposal
+		? (proposal as any).brandProfile?.brandName ||
+			(proposal as any).spaceProfile?.businessName ||
+			proposal.hostProfile?.displayName ||
 			[proposal.hostProfile?.user?.firstName, proposal.hostProfile?.user?.lastName].filter(Boolean).join(" ") ||
 			"Host"
 		: ""
+
+	const hasRightPanel = Boolean(proposal?.community || proposal?.brandProfile)
 
 	return (
 		<div className="flex flex-col min-h-full bg-white">
@@ -94,12 +99,12 @@ export default function ProposalDetailPage() {
 
 			<div className={clsx(
 				"flex-1 min-h-0 w-full overflow-hidden relative bg-white",
-				proposal?.community ? "md:grid md:grid-cols-[65%_35%]" : "flex flex-col"
+				hasRightPanel ? "md:grid md:grid-cols-[65%_35%]" : "flex flex-col"
 			)}>
 				{/* Left Column: Proposal Details */}
 				<div className={clsx(
 					"px-4 lg:px-6 py-6 lg:py-8 flex-1 flex flex-col gap-6 overflow-y-auto h-full min-h-0 transition-all duration-300 relative",
-					proposal?.community ? "max-w-3xl w-full mx-auto" : "max-w-2xl mx-auto w-full"
+					hasRightPanel ? "max-w-3xl w-full mx-auto" : "max-w-2xl mx-auto w-full"
 				)}>
 					<button
 						type="button"
@@ -153,7 +158,7 @@ export default function ProposalDetailPage() {
 											<h1 className="text-xl sm:text-3xl font-heading font-black text-black leading-tight">
 												{proposal.name || "Untitled Proposal"}
 											</h1>
-											<p className="text-sm font-semibold text-black/50 mt-1">Hosted by {hostName}</p>
+											<p className="text-sm font-semibold text-black/50 mt-1">Hosted by {ownerLabel}</p>
 										</div>
 
 										{/* I'm Interested Button on desktop/tablet right-aligned just above the line separator */}
@@ -407,7 +412,7 @@ export default function ProposalDetailPage() {
 									</div>
 								)}
 
-								{/* Mobile-only Community Profile Panel */}
+								{/* Mobile-only Profile Panel (Community or Brand) */}
 								{proposal.community && (
 									<div className="md:hidden mt-4">
 										<CommunityProfileDetailsPanel
@@ -418,20 +423,29 @@ export default function ProposalDetailPage() {
 										/>
 									</div>
 								)}
+								{!proposal.community && proposal.brandProfile && (
+									<div className="md:hidden mt-4">
+										<BrandProfileDetailsPanel brand={proposal.brandProfile} />
+									</div>
+								)}
 							</div>
 						</>
 					)}
 				</div>
 
-				{/* Right Column: Community Profile details */}
-				{!isLoading && proposal?.community && (
+				{/* Right Column: Profile details */}
+				{!isLoading && (
 					<div className="hidden md:flex flex-col border-l border-black/10 overflow-y-auto h-full min-h-0 shrink-0 w-full bg-white">
-						<CommunityProfileDetailsPanel
-							community={{ ...proposal.community, approvalStatus: "APPROVED" } as any}
-							operatingCities={proposal.hostProfile?.operatingCities}
-							socialLinks={proposal.hostProfile?.socialLinks ?? undefined}
-							hideStatus={true}
-						/>
+						{proposal?.community ? (
+							<CommunityProfileDetailsPanel
+								community={{ ...proposal.community, approvalStatus: "APPROVED" } as any}
+								operatingCities={proposal.hostProfile?.operatingCities}
+								socialLinks={proposal.hostProfile?.socialLinks ?? undefined}
+								hideStatus={true}
+							/>
+						) : proposal?.brandProfile ? (
+							<BrandProfileDetailsPanel brand={proposal.brandProfile} />
+						) : null}
 					</div>
 				)}
 			</div>
