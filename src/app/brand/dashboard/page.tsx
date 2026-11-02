@@ -169,10 +169,10 @@ export default function BrandDashboardWelcomePage() {
 				{/* Welcome Header */}
 				<div className="text-center mt-2">
 					<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
-						Hey {displayName}, <span className="text-[#EE2C2C]">what are we sponsoring today?</span>
+						Unlock real-world reach across top <span className="text-[#EE2C2C]">IRL communities & hubs.</span>
 					</h1>
 					<p className="text-sm font-semibold text-black/50 mt-2 max-w-2xl mx-auto">
-						Browse sponsorship opportunities or check out communities!
+						1.5M+ real-world audience waiting for you to connect.
 					</p>
 				</div>
 
