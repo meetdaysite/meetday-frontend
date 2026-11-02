@@ -79,16 +79,19 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 	const totalChatsBadge = unreadCommunityChatsCount + unreadBrandChatsCount + unreadSponsorshipChatsCount + unreadCommunityRequestsCount
 
 	const unreadSupportCount = notifications.filter(n =>
-		!n.isRead &&
-		n.title === "Meetday" &&
-		!n.metadata?.threadId &&
-		!n.metadata?.thread_id &&
-		!n.metadata?.interestId &&
-		!n.metadata?.interest_id &&
-		!n.metadata?.chatId &&
-		!n.metadata?.chat_id &&
-		!n.metadata?.spaceInterestId &&
-		!n.metadata?.sponsorshipInterestId
+		!n.isRead && (
+			n.type === "meetday_chat_message" ||
+			(n.title === "Meetday" &&
+				!n.metadata?.threadId &&
+				!n.metadata?.thread_id &&
+				!n.metadata?.interestId &&
+				!n.metadata?.interest_id &&
+				!n.metadata?.chatId &&
+				!n.metadata?.chat_id &&
+				!n.metadata?.spaceInterestId &&
+				!n.metadata?.sponsorshipInterestId
+			)
+		)
 	).length
 
 	useEffect(() => {
@@ -256,9 +259,9 @@ function SpaceSidebarContent({ onClose }: { onClose: () => void }) {
 							<span className="flex-1 whitespace-nowrap flex items-center gap-2">
 								{label}
 								{label === "Support Chat" && (
-									<span className="relative flex h-2 w-2">
-										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-										<span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+									<span className="relative flex h-2.5 w-2.5 shrink-0">
+										<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00FF66] opacity-80" />
+										<span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#00FF66] border border-black/20 shadow-[0_0_10px_#00FF66]" />
 									</span>
 								)}
 							</span>
