@@ -10,6 +10,7 @@ import { useBrandStore } from "@/store/brandStore"
 import { Skeleton } from "@/components/ui/Skeleton"
 import {
 	getAllPublishedSponsorships,
+	getMySponsorshipProposals,
 	getBrandCommunities,
 	getCommunitySpacesBrowse,
 	getSponsorshipBilling,
@@ -18,6 +19,7 @@ import {
 	getSponsorshipDealReport,
 	getMyCampaigns,
 	type PublishedSponsorshipProposal,
+	type SponsorshipProposal,
 	type BrandCommunity,
 	type BrowseSpaceCommunity,
 	type SponsorshipDealBillingRow,
@@ -56,8 +58,22 @@ export default function BrandDashboardWelcomePage() {
 	const [loadingLockedDeals, setLoadingLockedDeals] = useState(true)
 	const [campaigns, setCampaigns] = useState<Campaign[]>([])
 	const [loadingCampaigns, setLoadingCampaigns] = useState(true)
+	const [myProposals, setMyProposals] = useState<SponsorshipProposal[]>([])
+	const [loadingMyProposals, setLoadingMyProposals] = useState(true)
 
 	useEffect(() => {
+		setLoadingMyProposals(true)
+		getMySponsorshipProposals({ actorType: "BRAND" })
+			.then((res) => {
+				const published = (res.proposals || []).filter((p) => p.status === "PUBLISHED")
+				setMyProposals(published)
+			})
+			.catch((err) => {
+				console.error("Failed to fetch my proposals for brand dashboard", err)
+			})
+			.finally(() => {
+				setLoadingMyProposals(false)
+			})
 		setLoadingProposals(true)
 		getAllPublishedSponsorships()
 			.then((res) => {
@@ -162,29 +178,7 @@ export default function BrandDashboardWelcomePage() {
 
 				{/* Two CTAs grid */}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-					{/* CTA 1: Curated Experiences */}
-					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
-						<div className="flex items-center justify-between w-full mb-4">
-							<h2 className="text-lg font-heading font-black text-black">
-								Curated Experiences
-							</h2>
-							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
-								LIVE
-							</span>
-						</div>
-						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
-							Browse hand-picked, curated experiences from top communities and secure offline marketing opportunities.
-						</p>
-						<Link
-							href="/brand/dashboard/proposals"
-							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
-						>
-							START EXPLORING
-							<span className="text-base font-bold">➔</span>
-						</Link>
-					</div>
-
-					{/* CTA 2: Create Campaign */}
+					{/* CTA 1: Launch a Campaign */}
 					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
 						<div className="flex items-center justify-between w-full mb-4">
 							<h2 className="text-lg font-heading font-black text-black">
@@ -202,6 +196,28 @@ export default function BrandDashboardWelcomePage() {
 							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
 						>
 							POST A BRIEF →
+						</Link>
+					</div>
+
+					{/* CTA 2: Raise Sponsorship */}
+					<div className="bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col relative h-full min-h-[220px] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200">
+						<div className="flex items-center justify-between w-full mb-4">
+							<h2 className="text-lg font-heading font-black text-black">
+								Raise Sponsorship
+							</h2>
+							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
+								LIVE
+							</span>
+						</div>
+						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
+							Build custom proposals, pitch relevant brand sponsors, and secure brand backing to scale your upcoming experiences.
+						</p>
+						<Link
+							href="/brand/dashboard/my-proposals"
+							className="w-full py-3 bg-[#FFC940] text-black border-[3px] border-black rounded-2xl font-black text-center text-xs tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[3px] hover:translate-y-[3px] hover:bg-[#EE2C2C] hover:text-white transition-all flex items-center justify-center gap-2 select-none"
+						>
+							CREATE PROPOSAL
+							<span className="text-base font-bold">➔</span>
 						</Link>
 					</div>
 				</div>
@@ -225,19 +241,19 @@ export default function BrandDashboardWelcomePage() {
 
 				{/* Overview Section */}
 				<div className="flex flex-col gap-10 pb-8">
-					{/* Row 0: Published Campaigns */}
+					{/* 1. Active Communities */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
 							<div>
-								<h2 className="text-xl font-heading font-black text-black">Published Campaigns</h2>
-								<p className="text-xs font-semibold text-black/50 mt-1">Your active and approved campaigns on Meetday.</p>
+								<h2 className="text-xl font-heading font-black text-black">Active Communities</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Discover communities on Meetday.</p>
 							</div>
-							<Link href="/brand/dashboard/campaigns" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
-								Manage Campaigns &gt;
+							<Link href="/brand/dashboard/communities" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+								View All Communities &gt;
 							</Link>
 						</div>
 
-						{loadingCampaigns ? (
+						{loadingCommunities ? (
 							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
 								{Array.from({ length: 2 }).map((_, i) => (
 									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
@@ -249,27 +265,23 @@ export default function BrandDashboardWelcomePage() {
 									</div>
 								))}
 							</div>
-						) : campaigns.length === 0 ? (
+						) : communities.length === 0 ? (
 							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
-								<p className="text-sm font-black text-black/80">No published campaigns yet</p>
-								<p className="text-[11px] font-semibold text-black/40">Create and publish a brand campaign to connect with communities and hubs.</p>
+								<p className="text-sm font-black text-black/80">No communities active yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Check back later for newly onboarded communities.</p>
 							</div>
 						) : (
-							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
-								{campaigns.map((c) => (
-									<DashboardCampaignCard
-										key={c.id}
-										campaign={c}
-										href={`/brand/dashboard/campaigns?campaignId=${c.id}`}
-										fallbackLogo={profile?.logoUrl}
-										fallbackBrandName={profile?.brandName}
-									/>
+							<div className="flex flex-row overflow-x-auto gap-6 pb-6 pt-2 px-2 w-full custom-scrollbar">
+								{communities.map((comm) => (
+									<Link key={comm.id} href={`/brand/dashboard/communities?communityId=${comm.id}`} className="block shrink-0 w-[180px]">
+										<CommunityCard community={comm} />
+									</Link>
 								))}
 							</div>
 						)}
 					</div>
 
-					{/* Row 1: Curated Experiences */}
+					{/* 2. Curated Experiences */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
 							<div>
@@ -376,47 +388,7 @@ export default function BrandDashboardWelcomePage() {
 						)}
 					</div>
 
-					{/* Row 2: Communities */}
-					<div className="flex flex-col w-full">
-						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
-							<div>
-								<h2 className="text-xl font-heading font-black text-black">Active Communities</h2>
-								<p className="text-xs font-semibold text-black/50 mt-1">Discover communities on Meetday.</p>
-							</div>
-							<Link href="/brand/dashboard/communities" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
-								View All Communities &gt;
-							</Link>
-						</div>
-
-						{loadingCommunities ? (
-							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-								{Array.from({ length: 2 }).map((_, i) => (
-									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
-										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
-										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
-											<div className="h-4 bg-black/5 rounded w-32" />
-											<div className="h-3 bg-black/5 rounded w-20" />
-										</div>
-									</div>
-								))}
-							</div>
-						) : communities.length === 0 ? (
-							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
-								<p className="text-sm font-black text-black/80">No communities active yet</p>
-								<p className="text-[11px] font-semibold text-black/40">Check back later for newly onboarded communities.</p>
-							</div>
-						) : (
-							<div className="flex flex-row overflow-x-auto gap-6 pb-6 pt-2 px-2 w-full custom-scrollbar">
-								{communities.map((comm) => (
-									<Link key={comm.id} href={`/brand/dashboard/communities?communityId=${comm.id}`} className="block shrink-0 w-[180px]">
-										<CommunityCard community={comm} />
-									</Link>
-								))}
-							</div>
-						)}
-					</div>
-
-					{/* Row 3: Active Community Hubs */}
+					{/* 3. Active Community Hubs */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
 							<div>
@@ -456,7 +428,156 @@ export default function BrandDashboardWelcomePage() {
 						)}
 					</div>
 
-					{/* Row 3: Locked Deals & Reports */}
+					{/* 4. Published Campaigns */}
+					<div className="flex flex-col w-full">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
+							<div>
+								<h2 className="text-xl font-heading font-black text-black">Published Campaigns</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Your active and approved campaigns on Meetday.</p>
+							</div>
+							<Link href="/brand/dashboard/campaigns" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+								Manage Campaigns &gt;
+							</Link>
+						</div>
+
+						{loadingCampaigns ? (
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+								{Array.from({ length: 2 }).map((_, i) => (
+									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
+										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
+										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
+											<div className="h-4 bg-black/5 rounded w-32" />
+											<div className="h-3 bg-black/5 rounded w-20" />
+										</div>
+									</div>
+								))}
+							</div>
+						) : campaigns.length === 0 ? (
+							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
+								<p className="text-sm font-black text-black/80">No published campaigns yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Create and publish a brand campaign to connect with communities and hubs.</p>
+							</div>
+						) : (
+							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
+								{campaigns.map((c) => (
+									<DashboardCampaignCard
+										key={c.id}
+										campaign={c}
+										href={`/brand/dashboard/campaigns?campaignId=${c.id}`}
+										fallbackLogo={profile?.logoUrl}
+										fallbackBrandName={profile?.brandName}
+									/>
+								))}
+							</div>
+						)}
+					</div>
+
+					{/* 5. Published Proposals */}
+					<div className="flex flex-col w-full">
+						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
+							<div>
+								<h2 className="text-xl font-heading font-black text-black">Published Proposals</h2>
+								<p className="text-xs font-semibold text-black/50 mt-1">Your active and approved experiences raising sponsorship on Meetday.</p>
+							</div>
+							<Link href="/brand/dashboard/my-proposals" className="text-xs font-black text-[#6C32D1] hover:text-[#6C32D1]/80 inline-flex items-center gap-1 self-start sm:self-auto">
+								Manage Experiences &gt;
+							</Link>
+						</div>
+
+						{loadingMyProposals ? (
+							<div className="flex flex-col divide-y divide-black/10 border-[3px] border-black rounded-[24px] bg-white overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+								{Array.from({ length: 2 }).map((_, i) => (
+									<div key={i} className="flex items-center gap-4 px-5 h-20 animate-pulse bg-white">
+										<div className="size-12 rounded-xl bg-black/5 shrink-0" />
+										<div className="flex-1 flex flex-col gap-1.5 min-w-0">
+											<div className="h-4 bg-black/5 rounded w-32" />
+											<div className="h-3 bg-black/5 rounded w-20" />
+										</div>
+									</div>
+								))}
+							</div>
+						) : myProposals.length === 0 ? (
+							<div className="w-full border-[3px] border-dashed border-black/30 rounded-[24px] bg-white py-12 flex flex-col items-center justify-center text-center gap-2">
+								<p className="text-sm font-black text-black/80">No published proposals yet</p>
+								<p className="text-[11px] font-semibold text-black/40">Submit and publish experiences to start receiving brand sponsorships.</p>
+							</div>
+						) : (
+							<div className="flex flex-row overflow-x-auto gap-4 pb-4 w-full">
+								{myProposals.map((prop) => {
+									const imgUrl = prop.imageUrl || null
+									const displayDate = formatProposalDateRange(prop.eventDate, prop.eventEndDate)
+
+									return (
+										<Link
+											key={prop.id}
+											href={`/brand/dashboard/my-proposals?proposalId=${prop.id}`}
+											className="group relative cursor-pointer bg-white border-[3px] border-black rounded-[20px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all overflow-hidden flex flex-row w-[380px] shrink-0"
+										>
+											{/* Image / Logo */}
+											<div className="relative w-[120px] aspect-[4/5] shrink-0 overflow-hidden bg-slate-50 border-r-[3px] border-black rounded-l-[17px]">
+												{imgUrl ? (
+													// eslint-disable-next-line @next/next/no-img-element
+													<img
+														src={imgUrl}
+														alt={prop.name || "Proposal"}
+														className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300 rounded-l-[14px]"
+													/>
+												) : (
+													<div className="w-full h-full bg-slate-100 flex items-center justify-center text-black/40 font-black text-sm">
+														{prop.name ? prop.name.substring(0, 2).toUpperCase() : "MD"}
+													</div>
+												)}
+
+												{/* Sponsorship Type Badge(s) */}
+												<div className="absolute top-2 left-2 flex flex-wrap gap-1 z-10">
+													{(prop.sponsorshipType === "CASH" || prop.sponsorshipType === "BOTH" || !prop.sponsorshipType) && (
+														<span className="text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-emerald-100 text-emerald-900">
+															Cash
+														</span>
+													)}
+													{(prop.sponsorshipType === "BARTER" || prop.sponsorshipType === "BOTH") && (
+														<span className="text-[7px] font-black px-1.5 py-0.5 border-[2px] border-black rounded-full uppercase tracking-wider shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] bg-[#FFC940] text-black">
+															Barter
+														</span>
+													)}
+												</div>
+											</div>
+
+											{/* Content & Footer info */}
+											<div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+												<div className="flex flex-col gap-1">
+													<h3 className="font-heading font-black text-base text-black truncate group-hover:text-[#EE2C2C] transition-colors">
+														{prop.name}
+													</h3>
+													<p className="text-[11px] font-bold text-black/50 truncate">
+														{prop.city || prop.venueCities?.[0]} {prop.venue || prop.venues?.[0] ? `• ${prop.venue || prop.venues?.[0]}` : ""}
+													</p>
+													<p className="text-[11px] font-semibold text-black/70 line-clamp-2 mt-0.5 leading-normal">
+														{prop.about}
+													</p>
+												</div>
+
+												<div className="flex flex-wrap gap-1.5 mt-2">
+													{displayDate && (
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#6C32D1] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+															{displayDate}
+														</span>
+													)}
+													{prop.guestCount && (
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+															{prop.guestCount} Guests
+														</span>
+													)}
+												</div>
+											</div>
+										</Link>
+									)
+								})}
+							</div>
+						)}
+					</div>
+
+					{/* 6. Locked Deals & Reports */}
 					<div className="flex flex-col w-full">
 						<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-4 gap-2 sm:gap-0">
 							<div>

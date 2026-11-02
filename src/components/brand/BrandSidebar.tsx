@@ -34,7 +34,7 @@ type NavItem = { label: string; href: string; outlined: SvgIcon; filled: SvgIcon
 const PRIMARY_NAV: NavItem[] = [
 	{ label: "Dashboard", href: "/brand/dashboard", outlined: WidgetsSvg, filled: WidgetFillSvg, exact: true },
 	{ label: "Communities", href: "/brand/dashboard/communities", outlined: UsersGroupSvg, filled: UsersGroupSvg },
-	{ label: "Curated Experiences", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
+	{ label: "Listed Experiences", href: "/brand/dashboard/proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
 	{ label: "Community Hubs", href: "/brand/dashboard/community-spaces", outlined: CalendarOutSvg, filled: CalendarFillSvg },
 	{ label: "My Campaigns", href: "/brand/dashboard/campaigns", outlined: RocketSvg, filled: RocketSvg },
 	{ label: "My Experiences", href: "/brand/dashboard/my-proposals", outlined: DocumentTextSvg, filled: DocumentTextSvg },
@@ -284,7 +284,7 @@ function BrandSidebarContent({ onClose, onSignOut }: { onClose: () => void; onSi
 			<div className="px-4 flex flex-col gap-1 mt-1 shrink-0">
 				{PRIMARY_NAV.map(({ label, href, outlined: Outlined, filled: Filled, exact }) => {
 					let isActive = exact ? pathname === href : pathname.startsWith(href)
-					if (label === "Curated Experiences" && pathname.startsWith("/brand/dashboard/proposal/")) {
+					if ((label === "Listed Experiences" || label === "Curated Experiences") && pathname.startsWith("/brand/dashboard/proposal/")) {
 						isActive = true
 					}
 					if (label === "My Experiences" && pathname.startsWith("/brand/dashboard/my-proposals")) {
