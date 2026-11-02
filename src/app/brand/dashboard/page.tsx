@@ -172,7 +172,7 @@ export default function BrandDashboardWelcomePage() {
 						Unlock real-world reach across top <span className="text-[#EE2C2C]">IRL communities & hubs.</span>
 					</h1>
 					<p className="text-base sm:text-lg font-bold text-black/60 mt-2.5 max-w-2xl mx-auto">
-						1.5M+ real-world audience waiting for you to connect.
+						1.5M+ real-world audience is waiting for you to connect.
 					</p>
 				</div>
 
@@ -210,7 +210,7 @@ export default function BrandDashboardWelcomePage() {
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
-							Connect with a non-competing brand to partner and scale your brand’s community experience as content.
+							Connect with a non-competing brand to partner and scale your brand’s community experience.
 						</p>
 						<Link
 							href="/brand/dashboard/my-proposals"
