@@ -18,20 +18,7 @@ import { getApiErrorMessage } from "@/lib/errors"
 import { useBrandStore } from "@/store/brandStore"
 import clsx from "clsx"
 
-function formatDate(value: string | null): string {
-	if (!value) return "Date TBD"
-	try {
-		return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-	} catch {
-		return value
-	}
-}
-
-function formatDateRange(start: string | null, end: string | null): string {
-	if (!start) return "Date TBD"
-	if (!end || end === start) return formatDate(start)
-	return `${formatDate(start)} - ${formatDate(end)}`
-}
+import { formatProposalDateRange } from "@/lib/eventForm"
 
 function CategorySearchDropdown({
 	categories,
@@ -147,7 +134,7 @@ function ProposalCard({
 		proposal.hostProfile?.displayName ||
 		[proposal.hostProfile?.user?.firstName, proposal.hostProfile?.user?.lastName].filter(Boolean).join(" ") ||
 		"Host"
-	const displayDate = proposal.eventDate ? new Date(proposal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""
+	const displayDate = formatProposalDateRange(proposal.eventDate, proposal.eventEndDate)
 
 	return (
 		<button
