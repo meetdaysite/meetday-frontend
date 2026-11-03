@@ -204,10 +204,10 @@ export default function DashboardWelcomePage() {
 				{/* Welcome Header */}
 				<div className="text-center mt-2">
 					<h1 className="text-3xl md:text-4xl font-heading font-black tracking-tight text-black leading-tight">
-						Hey {displayName}, <span className="text-[#EE2C2C]">what are we building today?</span>
+						Monetize your community through <span className="text-[#EE2C2C]">top brand partnerships.</span>
 					</h1>
-					<p className="text-sm font-semibold text-black/50 mt-2 max-w-2xl mx-auto">
-						Start something new or pick up where you left off!
+					<p className="text-base sm:text-lg font-bold text-black/60 mt-2.5 max-w-2xl mx-auto">
+						Connect your offline audience with curated enterprise opportunities.
 					</p>
 				</div>
 

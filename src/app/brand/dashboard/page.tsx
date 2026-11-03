@@ -176,6 +176,211 @@ export default function BrandDashboardWelcomePage() {
 					</p>
 				</div>
 
+				{/* Interactive Showcase Boxes: IRL Communities & Community Hubs */}
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full relative z-20">
+					{/* Box 1: IRL Communities */}
+					<div className="group bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 flex flex-col relative">
+						<div className="flex items-center justify-between w-full mb-4">
+							<Link
+								href="/brand/dashboard/communities"
+								className="text-lg font-heading font-black text-black group-hover:text-[#EE2C2C] transition-colors flex items-center gap-2"
+							>
+								IRL Communities
+								<span className="text-sm">→</span>
+							</Link>
+							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
+								OFFERINGS
+							</span>
+						</div>
+
+						{/* 2 rows of badges (2 per row) */}
+						<div className="grid grid-cols-2 gap-3 w-full">
+							{[
+								{
+									label: "Sponsorship",
+									desc: "Sponsor verified offline communities over targeted periods to deeply engage high-intent audiences.",
+									arrowAlign: "left",
+									openUp: false,
+								},
+								{
+									label: "Branded Content",
+									desc: "Co-create authentic branded content with trusted community leaders at live offline events.",
+									arrowAlign: "right",
+									openUp: false,
+								},
+								{
+									label: "Sampling",
+									desc: "Run targeted product trials and get real feedback directly from verified community members.",
+									arrowAlign: "left",
+									openUp: true,
+								},
+								{
+									label: "Curated Experiences",
+									desc: "Partner with curated events and bespoke experiences to acquire new customers.",
+									arrowAlign: "right",
+									openUp: true,
+								},
+							].map((item, idx) => (
+								<div key={idx} className="relative group/badge h-11">
+									{/* Default Badge in Flow: Meetday Yellow (#FFC940), enlarges when hovered */}
+									<div className="w-full h-full bg-[#FFC940] border-2 border-black rounded-xl px-3 flex items-center justify-center text-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 group-hover/badge:scale-105 group-hover/badge:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] group-hover/badge:bg-[#FFD566] select-none cursor-pointer">
+										<span className="text-xs sm:text-[13px] font-black text-black truncate">
+											{item.label}
+										</span>
+									</div>
+
+									{/* Hover Popover: positioned with protruding triangular arrow */}
+									<div
+										className={`absolute ${
+											item.openUp
+												? "bottom-[calc(100%+10px)] origin-bottom-right"
+												: "top-[calc(100%+10px)] origin-top-right"
+										} right-0 z-50 w-72 pointer-events-none group-hover/badge:pointer-events-auto opacity-0 group-hover/badge:opacity-100 scale-95 group-hover/badge:scale-100 transition-all duration-200 ease-out`}
+									>
+										{/* Triangle arrow pointing to the badge */}
+										{item.openUp ? (
+											<>
+												<div
+													className={`absolute -bottom-2 ${
+														item.arrowAlign === "left" ? "left-12" : "right-12"
+													} w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[8px] border-t-black`}
+												/>
+												<div
+													className={`absolute -bottom-[6px] ${
+														item.arrowAlign === "left" ? "left-[49px]" : "right-[49px]"
+													} w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[7px] border-t-[#EE2C2C] z-10`}
+												/>
+											</>
+										) : (
+											<>
+												<div
+													className={`absolute -top-2 ${
+														item.arrowAlign === "left" ? "left-12" : "right-12"
+													} w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-b-[8px] border-b-black`}
+												/>
+												<div
+													className={`absolute -top-[6px] ${
+														item.arrowAlign === "left" ? "left-[49px]" : "right-[49px]"
+													} w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[7px] border-b-[#EE2C2C] z-10`}
+												/>
+											</>
+										)}
+
+										<div className="bg-[#EE2C2C] text-white border-[2.5px] border-black rounded-2xl p-3 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)]">
+											<p className="text-xs font-semibold text-white leading-relaxed">
+												{item.desc}
+											</p>
+										</div>
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+
+					{/* Box 2: Community Hubs */}
+					<div className="group bg-white border-[3px] border-black rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 flex flex-col relative">
+						<div className="flex items-center justify-between w-full mb-4">
+							<Link
+								href="/brand/dashboard/community-spaces"
+								className="text-lg font-heading font-black text-black group-hover:text-[#EE2C2C] transition-colors flex items-center gap-2"
+							>
+								Community Hubs
+								<span className="text-sm">→</span>
+							</Link>
+							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
+								OFFERINGS
+							</span>
+						</div>
+
+						{/* 2 rows of badges (2 per row) */}
+						<div className="grid grid-cols-2 gap-3 w-full">
+							{[
+								{
+									label: "Naming Rights",
+									desc: "Build long-term brand equity with exclusive naming rights for premier community hubs.",
+									arrowAlign: "left",
+									openUp: false,
+								},
+								{
+									label: "Physical Branding",
+									desc: "Drive awareness through physical branding within high-footfall experiential spaces.",
+									arrowAlign: "right",
+									openUp: false,
+								},
+								{
+									label: "Sampling & Demo",
+									desc: "Demo and sample your products to high-intent audiences at active physical venues.",
+									arrowAlign: "left",
+									openUp: true,
+								},
+								{
+									label: "Pop-ups & Experiences",
+									desc: "Host sales pop-ups and experiential brand booths at live hubs & events.",
+									arrowAlign: "right",
+									openUp: true,
+								},
+							].map((item, idx) => (
+								<div key={idx} className="relative group/badge h-11">
+									{/* Default Badge in Flow: Meetday Yellow (#FFC940), enlarges when hovered */}
+									<div className="w-full h-full bg-[#FFC940] border-2 border-black rounded-xl px-3 flex items-center justify-center text-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 group-hover/badge:scale-105 group-hover/badge:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] group-hover/badge:bg-[#FFD566] select-none cursor-pointer">
+										<span className="text-xs sm:text-[13px] font-black text-black truncate">
+											{item.label}
+										</span>
+									</div>
+
+									{/* Hover Popover: positioned with protruding triangular arrow */}
+									<div
+										className={`absolute ${
+											item.openUp
+												? "bottom-[calc(100%+10px)] origin-bottom-right"
+												: "top-[calc(100%+10px)] origin-top-right"
+										} right-0 z-50 w-72 pointer-events-none group-hover/badge:pointer-events-auto opacity-0 group-hover/badge:opacity-100 scale-95 group-hover/badge:scale-100 transition-all duration-200 ease-out`}
+									>
+										{/* Triangle arrow pointing to the badge */}
+										{item.openUp ? (
+											<>
+												<div
+													className={`absolute -bottom-2 ${
+														item.arrowAlign === "left" ? "left-12" : "right-12"
+													} w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[8px] border-t-black`}
+												/>
+												<div
+													className={`absolute -bottom-[6px] ${
+														item.arrowAlign === "left" ? "left-[49px]" : "right-[49px]"
+													} w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[7px] border-t-[#EE2C2C] z-10`}
+												/>
+											</>
+										) : (
+											<>
+												<div
+													className={`absolute -top-2 ${
+														item.arrowAlign === "left" ? "left-12" : "right-12"
+													} w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-b-[8px] border-b-black`}
+												/>
+												<div
+													className={`absolute -top-[6px] ${
+														item.arrowAlign === "left" ? "left-[49px]" : "right-[49px]"
+													} w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[7px] border-b-[#EE2C2C] z-10`}
+												/>
+											</>
+										)}
+
+										<div className="bg-[#EE2C2C] text-white border-[2.5px] border-black rounded-2xl p-3 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)]">
+											<p className="text-xs font-semibold text-white leading-relaxed">
+												{item.desc}
+											</p>
+										</div>
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				</div>
+
+				<div className="w-full flex items-center justify-center my-2">
+					<div className="w-full border-t-2 border-black/20" />
+				</div>
+
 				{/* Two CTAs grid */}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
 					{/* CTA 1: Launch a Brand Campaign */}
