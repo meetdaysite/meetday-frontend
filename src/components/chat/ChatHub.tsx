@@ -41,10 +41,24 @@ import {
 	declineCommunityCollaborationRequest,
 	type CommunityCollaborationThread,
 	type BrandCommunityCollaborationThread,
+	type BrandCommunityInterestDomain,
 } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 
 const DATA_POLL_MS = 6000
+
+function getDomainLabel(domain?: BrandCommunityInterestDomain | string | null): string {
+	if (!domain) return "Sponsorship"
+	switch (domain.toUpperCase()) {
+		case "BRANDED_CONTENT":
+			return "Branded Content"
+		case "SAMPLING":
+			return "Sampling"
+		case "SPONSORSHIP":
+		default:
+			return "Sponsorship"
+	}
+}
 
 interface ChatHubProps {
 	role: ChatRole
@@ -339,6 +353,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 				return (metadata.brandCommunityInterestId || metadata.interestId || metadata.threadId) === t.id
 			}).length
 			const unread = Math.max(t.unreadCount || 0, notificationCount)
+			const domainLabel = getDomainLabel(t.interestDomain)
 			result[category].push({
 				id: t.id,
 				category,
@@ -346,7 +361,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 				counterpartName: t.counterpartName,
 				counterpartAvatarUrl: t.counterpartAvatarUrl,
 				counterpartType: role === "BRAND" ? "COMMUNITY" : "BRAND",
-				title: role === "BRAND" ? "Community Collaboration" : "Brand Collaboration",
+				title: `${domainLabel} Collaboration`,
 				subtitle: t.counterpartName,
 				lastMessagePreview: t.lastMessagePreview,
 				lastMessageAt: t.lastMessageAt,
@@ -475,6 +490,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			brandCommunityThreads.forEach((t) => {
 				if (t.chatStatus !== "REQUESTED") return
 				const isIncoming = role === "COMMUNITY"
+				const domainLabel = getDomainLabel(t.interestDomain)
 				list.push({
 					id: t.id,
 					category: "brands",
@@ -484,8 +500,8 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 					counterpartName: t.counterpartName,
 					counterpartAvatarUrl: t.counterpartAvatarUrl,
 					counterpartType: "BRAND",
-					title: "Brand Collaboration",
-					description: isIncoming ? "This brand wants to collaborate with your community." : "You sent a collaboration request to this community.",
+					title: `${domainLabel} Collaboration`,
+					description: isIncoming ? `This brand expressed interest in ${domainLabel.toLowerCase()} with your community.` : `You sent a ${domainLabel.toLowerCase()} collaboration request to this community.`,
 					createdAt: t.createdAt,
 					lastMessagePreview: t.lastMessagePreview,
 					isIncoming,
@@ -620,6 +636,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			// 3. Community collaboration requests sent by Brand
 			brandCommunityThreads.forEach((t) => {
 				if (t.chatStatus === "REQUESTED") {
+					const domainLabel = getDomainLabel(t.interestDomain)
 					list.push({
 						id: t.id,
 						category: "communities",
@@ -629,8 +646,8 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 						counterpartName: t.counterpartName,
 						counterpartAvatarUrl: t.counterpartAvatarUrl,
 						counterpartType: "COMMUNITY",
-						title: "Community Collaboration",
-						description: "You sent a collaboration request to this community.",
+						title: `${domainLabel} Collaboration`,
+						description: `You sent a ${domainLabel.toLowerCase()} collaboration request to this community.`,
 						createdAt: t.createdAt,
 						lastMessagePreview: t.lastMessagePreview,
 						isIncoming: false,

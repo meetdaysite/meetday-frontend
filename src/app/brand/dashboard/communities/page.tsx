@@ -9,10 +9,13 @@ import {
 	getBrandCommunities,
 	getAllPublishedSponsorships,
 	markBrandCommunityCollaborationInterest,
+	getMyBrandCommunityCollaborationChats,
 	getCategories,
 	type BrandCommunity,
 	type PublishedSponsorshipProposal,
 	type Category,
+	type BrandCommunityCollaborationThread,
+	type BrandCommunityInterestDomain,
 } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import { BrandCommunityDetailView } from "@/components/community/BrandCommunityDetailView"
@@ -269,9 +272,17 @@ function BrandCommunitiesContent() {
 	const [communities, setCommunities] = useState<BrandCommunity[]>([])
 	const [proposals, setProposals] = useState<PublishedSponsorshipProposal[]>([])
 	const [selectedCommunity, setSelectedCommunity] = useState<BrandCommunity | null>(null)
+	const [collaborationThreads, setCollaborationThreads] = useState<BrandCommunityCollaborationThread[]>([])
+	const [interestDomainSending, setInterestDomainSending] = useState<BrandCommunityInterestDomain | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const [interestState, setInterestState] = useState<"idle" | "sending" | "sent">("idle")
+
+	useEffect(() => {
+		getMyBrandCommunityCollaborationChats(undefined, "BRAND")
+			.then((threads) => setCollaborationThreads(threads || []))
+			.catch(() => {})
+	}, [])
 
 	useEffect(() => {
 		if (urlCommunityId && communities.length > 0) {
@@ -483,6 +494,10 @@ function BrandCommunitiesContent() {
 	}
 
 	if (selectedCommunity) {
+		const currentThread = collaborationThreads.find(
+			(t) => t.targetCommunityId === selectedCommunity.id
+		)
+
 		return (
 			<BrandCommunityDetailView
 				community={selectedCommunity}
@@ -494,18 +509,62 @@ function BrandCommunitiesContent() {
 				}}
 				backLabel="Back to Communities"
 				onProposalClick={(id) => router.push(`/brand/dashboard/proposal/${id}`)}
-				onInterest={async () => {
-					setInterestState("sending")
+				chatStatus={currentThread?.chatStatus || null}
+				chatId={currentThread?.id || null}
+				sentDomain={currentThread?.interestDomain || null}
+				interestDomainSending={interestDomainSending}
+				onGoToChannel={(chatId) => {
+					router.push(`/brand/dashboard/chats?tab=COMMUNITY_COLLABORATION&chatId=${chatId}`)
+				}}
+				onInterestDomain={async (domain) => {
+					setInterestDomainSending(domain)
 					try {
-						const result = await markBrandCommunityCollaborationInterest(selectedCommunity.id)
-						setInterestState("sent")
-						toast.success(result.alreadyInterested ? "You already sent an interest request." : "Interest request sent to the community.")
+						const result = await markBrandCommunityCollaborationInterest(selectedCommunity.id, domain)
+						setCollaborationThreads((prev) => {
+							const existingIdx = prev.findIndex((t) => t.id === result.interestId)
+							if (existingIdx >= 0) {
+								const copy = [...prev]
+								copy[existingIdx] = {
+									...copy[existingIdx],
+									chatStatus: result.chatStatus,
+									interestDomain: result.interestDomain || domain,
+								}
+								return copy
+							}
+							return [
+								...prev,
+								{
+									id: result.interestId,
+									collaborationType: "BRAND_COMMUNITY",
+									requesterBrandId: "",
+									targetCommunityId: selectedCommunity.id,
+									mySenderType: "REQUESTER",
+									direction: "OUTGOING",
+									counterpartName: selectedCommunity.name,
+									counterpartAvatarUrl: selectedCommunity.logoUrl || null,
+									chatStatus: result.chatStatus,
+									interestDomain: result.interestDomain || domain,
+									createdAt: new Date().toISOString(),
+									unreadCount: 0,
+								},
+							]
+						})
+						const domainLabels: Record<string, string> = {
+							SPONSORSHIP: "Sponsorship",
+							BRANDED_CONTENT: "Branded Content",
+							SAMPLING: "Sampling",
+						}
+						toast.success(
+							result.alreadyInterested
+								? `Interest updated to ${domainLabels[domain] || domain}.`
+								: `${domainLabels[domain] || domain} interest sent to ${selectedCommunity.name}!`
+						)
 					} catch (e) {
-						setInterestState("idle")
-						toast.error(getApiErrorMessage(e) || "Failed to send interest request.")
+						toast.error(getApiErrorMessage(e) || "Failed to send interest.")
+					} finally {
+						setInterestDomainSending(null)
 					}
 				}}
-				interestState={interestState}
 			/>
 		)
 	}

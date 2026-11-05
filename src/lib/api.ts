@@ -2183,17 +2183,32 @@ export async function getCommunityCollaborationChatByPartner(
 	return data.data
 }
 
-export type BrandCommunityCollaborationThread = CommunityCollaborationThread & {
+export type BrandCommunityInterestDomain = "SPONSORSHIP" | "BRANDED_CONTENT" | "SAMPLING"
+
+export type BrandCommunityCollaborationThread = {
+	id: string
 	collaborationType: "BRAND_COMMUNITY"
 	requesterBrandId: string
 	targetCommunityId: string
+	mySenderType: "REQUESTER" | "TARGET"
+	direction: "INCOMING" | "OUTGOING"
+	counterpartName: string
+	counterpartAvatarUrl: string | null
+	chatStatus: CommunityCollaborationStatus
+	interestDomain?: BrandCommunityInterestDomain
+	lastMessagePreview?: string | null
+	lastMessageAt?: string | null
+	createdAt: string
+	unreadCount: number
 }
 
 export async function markBrandCommunityCollaborationInterest(
 	targetCommunityId: string,
-): Promise<{ message: string; alreadyInterested: boolean; interestId: string; chatStatus: CommunityCollaborationStatus }> {
-	const { data } = await apiClient.post<{ success: boolean; data: { message: string; alreadyInterested: boolean; interestId: string; chatStatus: CommunityCollaborationStatus } }>(
+	domain?: BrandCommunityInterestDomain,
+): Promise<{ message: string; alreadyInterested: boolean; interestId: string; chatStatus: CommunityCollaborationStatus; interestDomain?: BrandCommunityInterestDomain }> {
+	const { data } = await apiClient.post<{ success: boolean; data: { message: string; alreadyInterested: boolean; interestId: string; chatStatus: CommunityCollaborationStatus; interestDomain?: BrandCommunityInterestDomain } }>(
 		`/brand-community-collaboration/interest/${targetCommunityId}`,
+		domain ? { domain } : {},
 	)
 	return data.data
 }

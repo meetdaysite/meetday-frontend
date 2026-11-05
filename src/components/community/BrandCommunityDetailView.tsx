@@ -139,6 +139,8 @@ export function ProposalCard({
 	)
 }
 
+import { BrandCommunityInterestDomain } from "@/lib/api"
+
 interface BrandCommunityDetailViewProps {
 	community: CommunityDetailData
 	activeProposals?: CommunityDetailProposal[]
@@ -149,6 +151,12 @@ interface BrandCommunityDetailViewProps {
 	onProposalClick?: (proposalId: string) => void
 	onInterest?: () => void
 	interestState?: "idle" | "sending" | "sent"
+	onInterestDomain?: (domain: BrandCommunityInterestDomain) => void
+	interestDomainSending?: BrandCommunityInterestDomain | null
+	sentDomain?: BrandCommunityInterestDomain | null
+	chatStatus?: string | null
+	chatId?: string | null
+	onGoToChannel?: (chatId: string) => void
 }
 
 export function BrandCommunityDetailView({
@@ -161,6 +169,12 @@ export function BrandCommunityDetailView({
 	onProposalClick,
 	onInterest,
 	interestState = "idle",
+	onInterestDomain,
+	interestDomainSending = null,
+	sentDomain = null,
+	chatStatus = null,
+	chatId = null,
+	onGoToChannel,
 }: BrandCommunityDetailViewProps) {
 	const [isPosterEnlarged, setIsPosterEnlarged] = useState(false)
 	const [selectedExperienceIndex, setSelectedExperienceIndex] = useState<number | null>(null)
@@ -236,7 +250,7 @@ export function BrandCommunityDetailView({
 						</div>
 					)}
 
-					<div className="flex items-center justify-between gap-3">
+					<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 						<button
 							type="button"
 							onClick={onBack}
@@ -247,16 +261,67 @@ export function BrandCommunityDetailView({
 							</svg>
 							{backLabel}
 						</button>
-						{onInterest && (
-							<button
-								type="button"
-								onClick={onInterest}
-								disabled={interestState !== "idle"}
-								className="shrink-0 px-4 py-2 bg-[#FFC940] border-2 border-black rounded-xl text-xs font-black uppercase tracking-wide shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-60"
-							>
-								{interestState === "sent" ? "Interested ✓" : interestState === "sending" ? "Sending…" : "I'm Interested"}
-							</button>
-						)}
+
+						{/* Domain options or Go to Channel */}
+						<div className="flex items-center gap-2 flex-wrap">
+							{chatStatus === "ACCEPTED" && chatId && onGoToChannel ? (
+								<button
+									type="button"
+									onClick={() => onGoToChannel(chatId)}
+									className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white border-2 border-black rounded-xl text-xs font-black uppercase tracking-wide shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center gap-1.5"
+								>
+									<span>Go to Channel</span>
+									<span>➔</span>
+								</button>
+							) : onInterestDomain ? (
+								<>
+									{(
+										[
+											{ domain: "SPONSORSHIP" as const, label: "Sponsorship" },
+											{ domain: "BRANDED_CONTENT" as const, label: "Branded Content" },
+											{ domain: "SAMPLING" as const, label: "Sampling" },
+										] as const
+									).map(({ domain, label }) => {
+										const isCurrentSent = sentDomain === domain
+										const isAnotherSent = sentDomain && sentDomain !== domain
+										const isSendingThis = interestDomainSending === domain
+										const isSendingAny = !!interestDomainSending
+
+										return (
+											<button
+												key={domain}
+												type="button"
+												onClick={() => onInterestDomain(domain)}
+												disabled={isSendingAny || isCurrentSent || !!isAnotherSent}
+												className={clsx(
+													"px-3.5 py-1.5 border-2 border-black rounded-xl text-xs font-black uppercase tracking-wide transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] select-none",
+													isCurrentSent
+														? "bg-emerald-100 text-emerald-800 border-emerald-900 cursor-default"
+														: isAnotherSent
+														? "bg-neutral-100 text-black/40 border-black/40 cursor-not-allowed opacity-60"
+														: "bg-[#EE2C2C] hover:bg-[#D12525] text-white hover:translate-x-[1px] hover:translate-y-[1px] cursor-pointer active:translate-x-[2px] active:translate-y-[2px]"
+												)}
+											>
+												{isSendingThis
+													? "Sending…"
+													: isCurrentSent
+													? `${label} Sent ✓`
+													: label}
+											</button>
+										)
+									})}
+								</>
+							) : onInterest ? (
+								<button
+									type="button"
+									onClick={onInterest}
+									disabled={interestState !== "idle"}
+									className="shrink-0 px-4 py-2 bg-[#EE2C2C] hover:bg-[#D12525] text-white border-2 border-black rounded-xl text-xs font-black uppercase tracking-wide shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] disabled:opacity-60"
+								>
+									{interestState === "sent" ? "Interested ✓" : interestState === "sending" ? "Sending…" : "I'm Interested"}
+								</button>
+							) : null}
+						</div>
 					</div>
 				</div>
 

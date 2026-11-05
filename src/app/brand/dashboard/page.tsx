@@ -390,7 +390,7 @@ export default function BrandDashboardWelcomePage() {
 								Launch a Brand Campaign
 							</h2>
 							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
-								LIVE
+								LIST NOW
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
@@ -411,7 +411,7 @@ export default function BrandDashboardWelcomePage() {
 								Find a Brand Partner
 							</h2>
 							<span className="bg-[#1E1B4B] text-white text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider badge-zoom-pulse">
-								LIVE
+								LIST NOW
 							</span>
 						</div>
 						<p className="text-xs font-semibold text-black/50 mb-8 flex-grow leading-relaxed">
