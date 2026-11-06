@@ -167,7 +167,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 	useEffect(() => {
 		const typeParam = searchParams.get("type")
 		const catParam = searchParams.get("category")
-		const interestIdParam = searchParams.get("interestId") || searchParams.get("threadId")
+		const interestIdParam = searchParams.get("interestId") || searchParams.get("threadId") || searchParams.get("chatId") || searchParams.get("id")
 		const viewParam = searchParams.get("view")
 		const queueParam = searchParams.get("queue")
 		const requestCategoryParam = searchParams.get("requestCategory")

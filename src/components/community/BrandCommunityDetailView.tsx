@@ -156,6 +156,7 @@ interface BrandCommunityDetailViewProps {
 	sentDomain?: BrandCommunityInterestDomain | null
 	chatStatus?: string | null
 	chatId?: string | null
+	onGoToChat?: (chatId: string) => void
 	onGoToChannel?: (chatId: string) => void
 }
 
@@ -174,6 +175,7 @@ export function BrandCommunityDetailView({
 	sentDomain = null,
 	chatStatus = null,
 	chatId = null,
+	onGoToChat,
 	onGoToChannel,
 }: BrandCommunityDetailViewProps) {
 	const [isPosterEnlarged, setIsPosterEnlarged] = useState(false)
@@ -262,15 +264,15 @@ export function BrandCommunityDetailView({
 							{backLabel}
 						</button>
 
-						{/* Domain options or Go to Channel */}
+						{/* Domain options or Go to Chat */}
 						<div className="flex items-center gap-2 flex-wrap">
-							{chatStatus === "ACCEPTED" && chatId && onGoToChannel ? (
+							{chatStatus === "ACCEPTED" && chatId && (onGoToChat || onGoToChannel) ? (
 								<button
 									type="button"
-									onClick={() => onGoToChannel(chatId)}
-									className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white border-2 border-black rounded-xl text-xs font-black uppercase tracking-wide shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center gap-1.5"
+									onClick={() => (onGoToChat || onGoToChannel)!(chatId)}
+									className="px-4 py-2 bg-[#EE2C2C] hover:bg-[#D12525] text-white border-2 border-black rounded-xl text-xs font-black uppercase tracking-wide shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center gap-1.5 cursor-pointer"
 								>
-									<span>Go to Channel</span>
+									<span>Go to Chat</span>
 									<span>➔</span>
 								</button>
 							) : onInterestDomain ? (

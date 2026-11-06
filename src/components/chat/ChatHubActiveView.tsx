@@ -77,7 +77,16 @@ import {
 	sendCommunityCollaborationMessage,
 	getBrandCommunityCollaborationChatMessages,
 	sendBrandCommunityCollaborationMessage,
+	getBrandCommunityDeal,
+	type BrandCommunityCollaborationDeal,
+	type BrandCommunityCollaborationDealReport,
 } from "@/lib/api"
+import {
+	BrandCommunityDealBanner,
+	BrandCommunityDealFormModal,
+	BrandCommunityDealDetailsModal,
+	BrandCommunityDealReportModal,
+} from "@/components/community/BrandCommunityDealPanel"
 import { uploadCommunityCollaborationChatImage } from "@/lib/uploadMedia"
 import { useChatTyping } from "@/hooks/useChatTyping"
 
@@ -564,6 +573,10 @@ function ActiveConversationPane({
 	const [spaceHostReport, setSpaceHostReport] = useState<SpaceHostDealReport | null>(null)
 	const [spaceHostModal, setSpaceHostModal] = useState<"form" | "details" | "report" | null>(null)
 
+	const [brandCommunityDeal, setBrandCommunityDeal] = useState<BrandCommunityCollaborationDeal | null>(null)
+	const [brandCommunityReport, setBrandCommunityReport] = useState<BrandCommunityCollaborationDealReport | null>(null)
+	const [brandCommunityModal, setBrandCommunityModal] = useState<"form" | "details" | "report" | null>(null)
+
 	// Community Collab sender role tracker
 	const [collabMySenderType, setCollabMySenderType] = useState<"REQUESTER" | "TARGET" | null>(
 		thread.rawThread?.mySenderType || null
@@ -659,9 +672,16 @@ function ActiveConversationPane({
 				setSpaceHostDeal(dealRes)
 				setSpaceHostReport(repRes)
 			} else if (thread.kind === "COMMUNITY_COLLAB") {
-				const res = thread.rawThread?.collaborationType === "BRAND_COMMUNITY"
-					? await getBrandCommunityCollaborationChatMessages(thread.id, role === "BRAND" ? "BRAND" : "COMMUNITY")
-					: await getCommunityCollaborationChatMessages(thread.id)
+				const isBrandCommunity = thread.rawThread?.collaborationType === "BRAND_COMMUNITY"
+				const asRole = role === "BRAND" ? "BRAND" : "COMMUNITY"
+				const [res, dealRes] = await Promise.all([
+					isBrandCommunity
+						? getBrandCommunityCollaborationChatMessages(thread.id, asRole)
+						: getCommunityCollaborationChatMessages(thread.id),
+					isBrandCommunity
+						? getBrandCommunityDeal(thread.id, asRole).catch(() => null)
+						: Promise.resolve(null),
+				])
 				if (res.mySenderType) {
 					setCollabMySenderType(res.mySenderType)
 				}
@@ -674,6 +694,8 @@ function ActiveConversationPane({
 				}
 				prevMsgCountRef.current = newMessages.length
 				setMessages(newMessages)
+				setBrandCommunityDeal(dealRes)
+				setBrandCommunityReport(dealRes?.report || null)
 			}
 		} catch {
 			// silent poll refresh
@@ -979,6 +1001,19 @@ function ActiveConversationPane({
 				/>
 			)}
 
+			{thread.kind === "COMMUNITY_COLLAB" && thread.rawThread?.collaborationType === "BRAND_COMMUNITY" && (
+				<BrandCommunityDealBanner
+					deal={brandCommunityDeal}
+					role={role === "BRAND" ? "BRAND" : "COMMUNITY"}
+					onLock={() => setBrandCommunityModal("form")}
+					onEdit={() => setBrandCommunityModal("form")}
+					onView={() => setBrandCommunityModal("details")}
+					onReport={() => setBrandCommunityModal("report")}
+					hasReport={Boolean(brandCommunityReport)}
+					report={brandCommunityReport}
+				/>
+			)}
+
 			{/* Message Feed Scroll Area */}
 			<div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 flex flex-col gap-3 min-h-0">
 				{loading ? (
@@ -997,10 +1032,15 @@ function ActiveConversationPane({
 							(m.senderType as string) === "SYSTEM" ||
 							m.content?.startsWith("[System]") ||
 							(typeof m.content === "string" &&
-								(m.content.toLowerCase().includes("deal is locked") ||
+								(m.content.toLowerCase().includes("deal proposal was shared") ||
+									m.content.toLowerCase().includes("campaign deal was shared") ||
+									m.content.toLowerCase().includes("deal is locked") ||
+									m.content.toLowerCase().includes("deal is officially locked") ||
+									m.content.toLowerCase().includes("changes were requested on the deal") ||
 									m.content.toLowerCase().includes("deal is closed") ||
 									m.content.toLowerCase().includes("report approved") ||
-									m.content.toLowerCase().includes("deliverables report was submitted")))
+									m.content.toLowerCase().includes("deliverables report was submitted") ||
+									m.content.toLowerCase().includes("revision was requested on the deliverables")))
 
 						if (isSystem) {
 							return <SystemMessageBubble key={m.id} content={m.content ?? ""} />
@@ -1467,6 +1507,49 @@ function ActiveConversationPane({
 					onReportUpdated={(updated) => {
 						setSpaceHostReport(updated)
 						loadMessagesAndDeals()
+					}}
+				/>
+			)}
+
+			{/* Brand Community Modals */}
+			{brandCommunityModal === "form" && (
+				<BrandCommunityDealFormModal
+					interestId={thread.id}
+					initialDomain={thread.rawThread?.interestDomain}
+					deal={brandCommunityDeal}
+					onClose={() => setBrandCommunityModal(null)}
+					onSaved={(saved) => {
+						setBrandCommunityDeal(saved)
+						setBrandCommunityModal(null)
+						loadMessagesAndDeals()
+						onRefreshThreads?.()
+					}}
+				/>
+			)}
+			{brandCommunityModal === "details" && brandCommunityDeal && (
+				<BrandCommunityDealDetailsModal
+					interestId={thread.id}
+					deal={brandCommunityDeal}
+					role={role === "BRAND" ? "BRAND" : "COMMUNITY"}
+					onClose={() => setBrandCommunityModal(null)}
+					onUpdated={(updated) => {
+						setBrandCommunityDeal(updated)
+						loadMessagesAndDeals()
+						onRefreshThreads?.()
+					}}
+				/>
+			)}
+			{brandCommunityModal === "report" && brandCommunityDeal && (
+				<BrandCommunityDealReportModal
+					interestId={thread.id}
+					deal={brandCommunityDeal}
+					report={brandCommunityReport}
+					role={role === "BRAND" ? "BRAND" : "COMMUNITY"}
+					onClose={() => setBrandCommunityModal(null)}
+					onSaved={(saved) => {
+						setBrandCommunityReport(saved)
+						loadMessagesAndDeals()
+						onRefreshThreads?.()
 					}}
 				/>
 			)}

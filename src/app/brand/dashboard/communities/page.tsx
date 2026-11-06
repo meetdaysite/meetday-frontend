@@ -513,8 +513,11 @@ function BrandCommunitiesContent() {
 				chatId={currentThread?.id || null}
 				sentDomain={currentThread?.interestDomain || null}
 				interestDomainSending={interestDomainSending}
+				onGoToChat={(chatId) => {
+					router.push(`/brand/dashboard/chats?category=communities&threadId=${chatId}&view=active`)
+				}}
 				onGoToChannel={(chatId) => {
-					router.push(`/brand/dashboard/chats?tab=COMMUNITY_COLLABORATION&chatId=${chatId}`)
+					router.push(`/brand/dashboard/chats?category=communities&threadId=${chatId}&view=active`)
 				}}
 				onInterestDomain={async (domain) => {
 					setInterestDomainSending(domain)

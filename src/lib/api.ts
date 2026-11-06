@@ -2263,6 +2263,115 @@ export async function sendBrandCommunityCollaborationMessage(
 	return data.data
 }
 
+export type BrandCommunityCollaborationDeal = {
+	id: string
+	collaborationInterestId: string
+	collaborationType: BrandCommunityInterestDomain
+	projectName: string
+	startDate: string
+	endDate?: string | null
+	time?: string | null
+	sponsorshipCategory?: string | null
+	sponsorshipAmount: number | string
+	venue: string
+	barterElements?: string | null
+	deliverables: string
+	otherTerms?: string | null
+	additionalNotes?: string | null
+	dealData?: any
+	status: SponsorshipDealStatus
+	version: number
+	changeRequestNote?: string | null
+	createdById: string
+	approvedAt?: string | null
+	createdAt: string
+	updatedAt: string
+	report?: BrandCommunityCollaborationDealReport | null
+}
+
+export type BrandCommunityCollaborationDealReport = {
+	id: string
+	dealId: string
+	projectName: string
+	eventDate: string
+	venue: string
+	time?: string | null
+	guestCount?: string | null
+	ageRange?: string | null
+	deliverables?: any
+	videoLinks?: string[]
+	socialLinks?: string[]
+	mediaKeys?: string[]
+	summary?: string | null
+	reportData?: any
+	status: string
+	revisionNote?: string | null
+	createdAt: string
+	updatedAt: string
+}
+
+export async function getBrandCommunityDeal(
+	interestId: string,
+	asRole?: "BRAND" | "COMMUNITY",
+): Promise<BrandCommunityCollaborationDeal | null> {
+	const { data } = await apiClient.get<{ success: boolean; data: BrandCommunityCollaborationDeal | null }>(
+		`/brand-community-collaboration/chats/${interestId}/deal`,
+		{ params: asRole ? { asRole } : undefined },
+	)
+	return data.data
+}
+
+export async function lockBrandCommunityDeal(
+	interestId: string,
+	payload: any,
+	asRole?: "BRAND" | "COMMUNITY",
+): Promise<BrandCommunityCollaborationDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: BrandCommunityCollaborationDeal }>(
+		`/brand-community-collaboration/chats/${interestId}/deal`,
+		payload,
+		{ params: asRole ? { asRole } : undefined },
+	)
+	return data.data
+}
+
+export async function approveBrandCommunityDeal(
+	interestId: string,
+	asRole?: "BRAND" | "COMMUNITY",
+): Promise<BrandCommunityCollaborationDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: BrandCommunityCollaborationDeal }>(
+		`/brand-community-collaboration/chats/${interestId}/deal/approve`,
+		{},
+		{ params: asRole ? { asRole } : undefined },
+	)
+	return data.data
+}
+
+export async function requestBrandCommunityDealChanges(
+	interestId: string,
+	payload: { note?: string },
+	asRole?: "BRAND" | "COMMUNITY",
+): Promise<BrandCommunityCollaborationDeal> {
+	const { data } = await apiClient.post<{ success: boolean; data: BrandCommunityCollaborationDeal }>(
+		`/brand-community-collaboration/chats/${interestId}/deal/request-changes`,
+		payload,
+		{ params: asRole ? { asRole } : undefined },
+	)
+	return data.data
+}
+
+export async function submitBrandCommunityDealReport(
+	interestId: string,
+	payload: any,
+	asRole?: "BRAND" | "COMMUNITY",
+): Promise<BrandCommunityCollaborationDealReport> {
+	const { data } = await apiClient.post<{ success: boolean; data: BrandCommunityCollaborationDealReport }>(
+		`/brand-community-collaboration/chats/${interestId}/deal/report`,
+		payload,
+		{ params: asRole ? { asRole } : undefined },
+	)
+	return data.data
+}
+
 
 export async function getHostTeamMembers(): Promise<TeamMembersList> {
 	const { data } = await apiClient.get<{ success: boolean; data: TeamMembersList }>("/hosts/community/members")
