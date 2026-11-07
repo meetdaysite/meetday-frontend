@@ -107,6 +107,21 @@ export async function uploadSpaceDealReportImage(file: File, interestId: string)
 	return key
 }
 
+export async function uploadBrandCommunityDealReportImage(file: File, interestId: string): Promise<string> {
+	const { url, key } = await getUploadUrl({
+		context: "BRAND_COMMUNITY_DEAL_REPORT_MEDIA",
+		contentType: file.type,
+		resourceId: interestId,
+	})
+	const res = await fetch(url, {
+		method: "PUT",
+		body: file,
+		headers: { "Content-Type": file.type },
+	})
+	if (!res.ok) throw new Error(`Upload failed: ${res.status}`)
+	return key
+}
+
 export async function uploadSpaceHostChatImage(file: File, interestId: string): Promise<string> {
 	const { url, key } = await getUploadUrl({
 		context: "SPACE_HOST_CHAT_MEDIA",
