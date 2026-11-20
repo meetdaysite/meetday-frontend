@@ -1544,15 +1544,23 @@ export type SpaceChatSenderType = "SPACE" | "BRAND" | "COMMUNITY"
 export type SpaceInterestRequesterType = "BRAND" | "COMMUNITY"
 export type SpaceChatRole = "BRAND" | "COMMUNITY" | "SPACE"
 
+export type BrandHubInterestType =
+	| "NAMING_RIGHTS"
+	| "PHYSICAL_BRANDING"
+	| "SAMPLING_DEMO"
+	| "POPUPS_EXPERIENCES"
+
 export type SpaceChatThread = {
 	id: string
 	spaceCommunityProfileId: string
+	spaceName?: string | null
 	requesterType: SpaceInterestRequesterType
 	// Raw requester ids — lets a caller cross-reference against the reverse (Space -> Community)
 	// SpaceHostInterest feature to detect an existing channel between the same two parties.
 	hostProfileId?: string | null
 	brandProfileId?: string | null
 	chatStatus: SpaceChatStatus
+	interestType?: BrandHubInterestType | null
 	createdAt: string
 	chatAcceptedAt: string | null
 	lastMessageAt: string | null
@@ -1588,11 +1596,16 @@ export async function markSpaceInterest(
 	spaceCommunityProfileId: string,
 	message?: string,
 	asRole?: "BRAND" | "COMMUNITY",
-): Promise<{ message: string; alreadyInterested: boolean; interestId: string; chatStatus: SpaceChatStatus }> {
+	interestType?: BrandHubInterestType,
+): Promise<{ message: string; alreadyInterested: boolean; interestId: string; chatStatus: SpaceChatStatus; interestType?: BrandHubInterestType }> {
 	const { data } = await apiClient.post<{
 		success: boolean
-		data: { message: string; alreadyInterested: boolean; interestId: string; chatStatus: SpaceChatStatus }
-	}>(`/spaces/community/${spaceCommunityProfileId}/interest`, { ...(message && { message }), ...(asRole && { asRole }) })
+		data: { message: string; alreadyInterested: boolean; interestId: string; chatStatus: SpaceChatStatus; interestType?: BrandHubInterestType }
+	}>(`/spaces/community/${spaceCommunityProfileId}/interest`, {
+		...(message && { message }),
+		...(asRole && { asRole }),
+		...(interestType && { interestType }),
+	})
 	return data.data
 }
 
@@ -1649,9 +1662,11 @@ export async function declineSpaceChatRequest(interestId: string, role?: SpaceCh
 export type SpaceDealStatus = "PENDING_APPROVAL" | "CHANGES_REQUESTED" | "APPROVED"
 
 export type SpaceDealPayload = {
+	collaborationType?: BrandHubInterestType
+	dealData?: any
 	projectName: string
 	goals?: string[] | string
-	venue: string
+	venue?: string
 	time?: string
 	targetAudience?: string[] | string
 	startDate: string
@@ -1666,9 +1681,11 @@ export type SpaceDealPayload = {
 export type SpaceDeal = {
 	id: string
 	spaceInterestId: string
+	collaborationType?: BrandHubInterestType | null
+	dealData?: any
 	projectName: string
 	goals?: string[] | string | null
-	venue: string
+	venue?: string | null
 	time?: string | null
 	targetAudience?: string[] | string | null
 	startDate: string
@@ -1682,6 +1699,7 @@ export type SpaceDeal = {
 	changeRequestNote?: string | null
 	approvedAt?: string | null
 	createdById?: string
+	report?: SpaceDealReport | null
 	createdAt: string
 	updatedAt: string
 }
@@ -1720,6 +1738,7 @@ export type SpaceDealReport = {
 	spaceInterestId?: string
 	projectName?: string
 	eventDate?: string
+	endDate?: string | null
 	venue?: string
 	time?: string | null
 	guestCount?: string | null
@@ -1730,11 +1749,13 @@ export type SpaceDealReport = {
 	status?: "PENDING" | "APPROVED" | "REVISION_REQUESTED" | string
 	revisionNote?: string | null
 	summary: string
+	reportData?: any
 	proofKeys: string[]
 	proofUrls?: string[]
 	notes?: string | null
 	submittedById?: string
 	submittedAt?: string
+	createdAt?: string
 	updatedAt?: string
 }
 
@@ -1752,6 +1773,7 @@ export function isSpaceReportApproved(report?: SpaceDealReport | null): boolean 
 export type SpaceDealReportPayload = {
 	projectName?: string
 	eventDate?: string
+	endDate?: string
 	venue?: string
 	time?: string
 	guestCount?: string
@@ -1762,14 +1784,22 @@ export type SpaceDealReportPayload = {
 	status?: "PENDING" | "APPROVED" | "REVISION_REQUESTED" | string
 	revisionNote?: string
 	summary: string
+	reportData?: any
 	proofKeys?: string[]
 	notes?: string
 }
 
-export async function getSpaceDealReport(interestId: string, role?: SpaceChatRole): Promise<SpaceDealReport | null> {
+export async function getSpaceDealReport(
+	interestId: string,
+	role?: SpaceChatRole,
+	dealId?: string,
+): Promise<SpaceDealReport | null> {
+	const params: Record<string, string> = {}
+	if (role) params.role = role
+	if (dealId) params.dealId = dealId
 	const { data } = await apiClient.get<{ success: boolean; data: SpaceDealReport | null }>(
 		`/spaces/chats/${interestId}/deal/report`,
-		{ params: role ? { role } : undefined }
+		{ params: Object.keys(params).length > 0 ? params : undefined }
 	)
 	return data.data
 }
@@ -1787,12 +1817,27 @@ export async function upsertSpaceDealReport(
 	return data.data
 }
 
-export async function getSpaceDealReportPdfUrl(interestId: string, role?: SpaceChatRole): Promise<string> {
+export async function getSpaceDealReportPdfUrl(
+	interestId: string,
+	role?: SpaceChatRole,
+	dealId?: string,
+): Promise<string> {
+	const params: Record<string, string> = {}
+	if (role) params.role = role
+	if (dealId) params.dealId = dealId
 	const { data } = await apiClient.get<{ success: boolean; data: { url: string } | string }>(
 		`/spaces/chats/${interestId}/deal/report/pdf`,
-		{ params: role ? { role } : undefined }
+		{ params: Object.keys(params).length > 0 ? params : undefined }
 	)
 	return typeof data.data === "string" ? data.data : data.data.url
+}
+
+export async function getPastSpaceDeals(interestId: string, role?: SpaceChatRole): Promise<SpaceDeal[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: SpaceDeal[] }>(
+		`/spaces/chats/${interestId}/deals/archive`,
+		{ params: role ? { role } : undefined }
+	)
+	return data.data
 }
 
 // ─── Space Host Interest (Space Partner <-> Community partnership requests) ─
@@ -1987,6 +2032,7 @@ export type SpaceHostDealReport = {
 	notes?: string | null
 	submittedById?: string
 	submittedAt?: string
+	createdAt?: string
 	updatedAt?: string
 }
 
@@ -2371,6 +2417,17 @@ export async function submitBrandCommunityDealReport(
 		{ params: asRole ? { asRole } : undefined },
 	)
 	return data.data
+}
+
+export async function getBrandCommunityPastDeals(
+	interestId: string,
+	asRole?: "BRAND" | "COMMUNITY",
+): Promise<BrandCommunityCollaborationDeal[]> {
+	const { data } = await apiClient.get<{ success: boolean; data: BrandCommunityCollaborationDeal[] }>(
+		`/brand-community-collaboration/chats/${interestId}/deals/archive`,
+		{ params: asRole ? { asRole } : undefined },
+	)
+	return data.data || []
 }
 
 

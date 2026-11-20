@@ -12,6 +12,7 @@ import {
 	type SpaceChatRole,
 	type SpaceDealReport,
 	type SpaceDealReportPayload,
+	type BrandHubInterestType,
 	isSpaceReportApproved,
 	createSpaceDeal,
 	updateSpaceDeal,
@@ -25,6 +26,21 @@ import {
 import { uploadSpaceDealReportImage } from "@/lib/uploadMedia"
 import { PdfViewerModal } from "@/components/ui/PdfViewerModal"
 import { ImageLightbox } from "@/components/ui/ImageLightbox"
+import { useSpaceStore } from "@/store/spaceStore"
+
+export const BRAND_HUB_CATEGORIES: { value: BrandHubInterestType; label: string }[] = [
+	{ value: "NAMING_RIGHTS", label: "Naming Rights" },
+	{ value: "PHYSICAL_BRANDING", label: "Physical Branding" },
+	{ value: "SAMPLING_DEMO", label: "Sampling & Demos" },
+	{ value: "POPUPS_EXPERIENCES", label: "Pop-ups & Experiences" },
+]
+
+export const BRAND_HUB_CATEGORY_LABELS: Record<BrandHubInterestType, string> = {
+	NAMING_RIGHTS: "Naming Rights",
+	PHYSICAL_BRANDING: "Physical Branding",
+	SAMPLING_DEMO: "Sampling & Demos",
+	POPUPS_EXPERIENCES: "Pop-ups & Experiences",
+}
 
 const STATUS_LABEL: Record<SpaceDealStatus, string> = {
 	PENDING_APPROVAL: "Pending Approval",
@@ -38,8 +54,17 @@ const STATUS_COLOR: Record<SpaceDealStatus, string> = {
 	APPROVED: "bg-black text-white",
 }
 
-function formatAmount(amount: string | number) {
+function formatAmount(amount: string | number | null | undefined) {
+	if (!amount) return "₹0"
 	return `₹${Number(amount || 0).toLocaleString("en-IN")}`
+}
+
+function getTodayDateString(): string {
+	const now = new Date()
+	const year = now.getFullYear()
+	const month = String(now.getMonth() + 1).padStart(2, "0")
+	const day = String(now.getDate()).padStart(2, "0")
+	return `${year}-${month}-${day}`
 }
 
 function Field({
@@ -103,9 +128,21 @@ export function SpaceDealBanner({
 	report?: SpaceDealReport | null
 }) {
 	const isSpace = role === "SPACE"
+	const isClosed = isSpaceReportApproved(report)
 
 	if (!deal) {
-		if (!isSpace) return null
+		if (!isSpace) {
+			return (
+				<div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-[#FFFBEB] flex items-center justify-between gap-3 shrink-0">
+					<div className="flex items-center gap-2">
+						<span className="size-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+						<p className="text-xs font-bold text-black/60">
+							Awaiting the hub partner to submit the agreed deal terms.
+						</p>
+					</div>
+				</div>
+			)
+		}
 		return (
 			<div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-[#FFFBEB] flex items-center justify-between gap-3 shrink-0">
 				<div className="flex items-center gap-2">
@@ -129,7 +166,9 @@ export function SpaceDealBanner({
 		)
 	}
 
-	const isClosed = isSpaceReportApproved(report)
+	const categoryLabel = deal.collaborationType
+		? BRAND_HUB_CATEGORY_LABELS[deal.collaborationType as BrandHubInterestType] || deal.collaborationType
+		: null
 
 	return (
 		<div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-neutral-50 flex items-center justify-between gap-2 sm:gap-3 shrink-0 min-w-0">
@@ -154,7 +193,7 @@ export function SpaceDealBanner({
 					)}
 				</span>
 				<p className="text-xs font-black text-black truncate min-w-0">
-					{deal.projectName} · {formatAmount(deal.sponsorshipAmount)}
+					{deal.projectName} {categoryLabel ? `· ${categoryLabel}` : `· ${formatAmount(deal.sponsorshipAmount)}`}
 				</p>
 			</div>
 			<div className="flex items-center gap-2 shrink-0">
@@ -223,24 +262,12 @@ export function SpaceDealBanner({
 
 // ─── Space Deal Form Modal (Lock/Edit Deal) ───────────────────────────────────
 
-const EMPTY_FORM: SpaceDealPayload = {
-	projectName: "",
-	goals: "",
-	venue: "",
-	time: "",
-	targetAudience: "",
-	startDate: "",
-	endDate: "",
-	sponsorshipAmount: 0,
-	barterElements: "",
-	deliverables: "",
-	otherTerms: "",
-}
-
 export function SpaceDealFormModal({
 	interestId,
+	thread,
 	deal,
 	role,
+	hubName,
 	onClose,
 	onSaved,
 }: {
@@ -248,50 +275,142 @@ export function SpaceDealFormModal({
 	thread?: SpaceChatThread | null
 	deal: SpaceDeal | null
 	role?: SpaceChatRole
+	hubName?: string
 	onClose: () => void
 	onSaved: (deal: SpaceDeal) => void
 }) {
-	const [form, setForm] = useState<SpaceDealPayload>(
-		deal
-			? {
-					projectName: deal.projectName || "",
-					goals: Array.isArray(deal.goals) ? deal.goals.join(", ") : (deal.goals ?? ""),
-					venue: deal.venue || "",
-					time: deal.time ?? "",
-					targetAudience: Array.isArray(deal.targetAudience) ? deal.targetAudience.join(", ") : (deal.targetAudience ?? ""),
-					startDate: deal.startDate ? deal.startDate.slice(0, 10) : "",
-					endDate: deal.endDate ? deal.endDate.slice(0, 10) : "",
-					sponsorshipAmount: Number(deal.sponsorshipAmount || 0),
-					barterElements: deal.barterElements ?? "",
-					deliverables: deal.deliverables ?? "",
-					otherTerms: deal.otherTerms ?? "",
-				}
-			: EMPTY_FORM
+	const spaceProfile = useSpaceStore((s) => s.profile)
+
+	const initialCategory: BrandHubInterestType =
+		(deal?.collaborationType as BrandHubInterestType) ||
+		(thread?.interestType as BrandHubInterestType) ||
+		"NAMING_RIGHTS"
+
+	const [collaborationType, setCollaborationType] = useState<BrandHubInterestType>(initialCategory)
+
+	const existingData = (deal?.dealData as any) || {}
+
+	// Determine autofilled Hub Name
+	const resolvedHubName =
+		deal?.projectName ||
+		hubName ||
+		(thread as any)?.spaceName ||
+		(thread as any)?.spaceCommunityProfile?.name ||
+		(thread as any)?.space?.name ||
+		spaceProfile?.businessName ||
+		(role !== "SPACE" ? (thread as any)?.counterpartName : "") ||
+		""
+
+	// Common Fields
+	const [projectName, setProjectName] = useState(resolvedHubName)
+
+	useEffect(() => {
+		if (!projectName) {
+			const autoName =
+				deal?.projectName ||
+				hubName ||
+				(thread as any)?.spaceName ||
+				(thread as any)?.spaceCommunityProfile?.name ||
+				(thread as any)?.space?.name ||
+				spaceProfile?.businessName ||
+				(role !== "SPACE" ? (thread as any)?.counterpartName : "") ||
+				""
+			if (autoName) setProjectName(autoName)
+		}
+	}, [deal?.projectName, hubName, thread, spaceProfile?.businessName, role, projectName])
+
+	const [startDate, setStartDate] = useState(deal?.startDate ? deal.startDate.slice(0, 10) : "")
+	const [endDate, setEndDate] = useState(deal?.endDate ? deal.endDate.slice(0, 10) : "")
+	const [deliverables, setDeliverables] = useState(deal?.deliverables || "")
+
+	// Category Specific:
+	// Naming Rights: Project Cost
+	// Physical Branding: Branding Inventory, Project Cost
+	// Sampling & Demos: Cities, Sampling Elements, Sampling Cost
+	// Pop-ups & Experiences: Cities, Sampling Elements, Sampling Cost
+	const [projectCost, setProjectCost] = useState(
+		deal?.sponsorshipAmount
+			? String(deal.sponsorshipAmount)
+			: existingData.projectCost
+				? String(existingData.projectCost)
+				: ""
 	)
+	const [brandingInventory, setBrandingInventory] = useState(
+		existingData.brandingInventory || deal?.venue || ""
+	)
+	const [cities, setCities] = useState(existingData.cities || deal?.venue || "")
+	const [samplingElements, setSamplingElements] = useState(
+		existingData.samplingElements || deal?.barterElements || ""
+	)
+	const [samplingCost, setSamplingCost] = useState(
+		deal?.sponsorshipAmount
+			? String(deal.sponsorshipAmount)
+			: existingData.samplingCost
+				? String(existingData.samplingCost)
+				: ""
+	)
+
 	const [saving, setSaving] = useState(false)
 
-	const isValid =
-		form.projectName.trim() &&
-		(typeof form.goals === "string" ? form.goals.trim() : (form.goals && form.goals.length > 0)) &&
-		form.venue.trim() &&
-		form.startDate &&
-		form.sponsorshipAmount !== undefined &&
-		!isNaN(Number(form.sponsorshipAmount)) &&
-		Number(form.sponsorshipAmount) >= 0 &&
-		form.deliverables.trim()
+	const todayStr = getTodayDateString()
+
+	// Validation per Category
+	let isValid = false
+	if (collaborationType === "NAMING_RIGHTS") {
+		isValid = Boolean(
+			projectName.trim() &&
+			startDate &&
+			endDate &&
+			projectCost.trim() &&
+			Number(projectCost) >= 0 &&
+			deliverables.trim()
+		)
+	} else if (collaborationType === "PHYSICAL_BRANDING") {
+		isValid = Boolean(
+			projectName.trim() &&
+			startDate &&
+			endDate &&
+			brandingInventory.trim() &&
+			projectCost.trim() &&
+			Number(projectCost) >= 0 &&
+			deliverables.trim()
+		)
+	} else if (collaborationType === "SAMPLING_DEMO" || collaborationType === "POPUPS_EXPERIENCES") {
+		isValid = Boolean(
+			projectName.trim() &&
+			startDate &&
+			endDate &&
+			cities.trim() &&
+			samplingElements.trim() &&
+			samplingCost.trim() &&
+			Number(samplingCost) >= 0 &&
+			deliverables.trim()
+		)
+	}
 
 	function getMissingFieldLabels(): string[] {
 		const missing: string[] = []
-		if (!form.projectName.trim()) missing.push("Campaign Name")
-		if (typeof form.goals === "string" ? !form.goals.trim() : !(form.goals && form.goals.length > 0)) missing.push("Campaign Goals")
-		if (!form.venue.trim()) missing.push("City / Region")
-		if (!form.startDate) missing.push("Start Date")
-		if (form.sponsorshipAmount === undefined || isNaN(Number(form.sponsorshipAmount)) || Number(form.sponsorshipAmount) < 0) missing.push("Cash Amount")
-		if (!form.deliverables.trim()) missing.push("Key Deliverables")
+		if (!projectName.trim()) missing.push("Hub Name")
+		if (!startDate) missing.push("Start Date")
+		if (!endDate) missing.push("End Date")
+
+		if (collaborationType === "NAMING_RIGHTS") {
+			if (!projectCost.trim() || Number(projectCost) < 0) missing.push("Project Cost")
+		} else if (collaborationType === "PHYSICAL_BRANDING") {
+			if (!brandingInventory.trim()) missing.push("Branding Inventory")
+			if (!projectCost.trim() || Number(projectCost) < 0) missing.push("Project Cost")
+		} else if (collaborationType === "SAMPLING_DEMO" || collaborationType === "POPUPS_EXPERIENCES") {
+			if (!cities.trim()) missing.push("Cities")
+			if (!samplingElements.trim()) missing.push("Sampling Elements")
+			if (!samplingCost.trim() || Number(samplingCost) < 0) missing.push("Sampling Cost")
+		}
+
+		if (!deliverables.trim()) missing.push("Deliverables")
 		return missing
 	}
 
-	async function handleSubmit() {
+	async function handleSubmit(e?: React.FormEvent) {
+		if (e) e.preventDefault()
 		if (!isValid) {
 			const missing = getMissingFieldLabels()
 			toast.error(missing.length ? `Please fill in: ${missing.join(", ")}.` : "Please fill in all required fields.")
@@ -299,19 +418,45 @@ export function SpaceDealFormModal({
 		}
 		setSaving(true)
 		try {
-			const rawAmount = Number(form.sponsorshipAmount)
-			const sponsorshipAmount = isNaN(rawAmount) || rawAmount < 0 ? 0 : rawAmount
-			const payload: SpaceDealPayload = {
-				...form,
-				sponsorshipAmount,
-				startDate: new Date(form.startDate).toISOString(),
-				endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
+			let costAmount = 0
+			let venueValue = ""
+			let barterElementsValue: string | null = null
+
+			if (collaborationType === "NAMING_RIGHTS") {
+				costAmount = Number(projectCost) || 0
+				venueValue = "Naming Rights"
+			} else if (collaborationType === "PHYSICAL_BRANDING") {
+				costAmount = Number(projectCost) || 0
+				venueValue = brandingInventory.trim()
+			} else if (collaborationType === "SAMPLING_DEMO" || collaborationType === "POPUPS_EXPERIENCES") {
+				costAmount = Number(samplingCost) || 0
+				venueValue = cities.trim()
+				barterElementsValue = samplingElements.trim()
 			}
+
+			const payload: SpaceDealPayload = {
+				collaborationType,
+				projectName: projectName.trim(),
+				startDate: new Date(startDate).toISOString(),
+				endDate: endDate ? new Date(endDate).toISOString() : undefined,
+				venue: venueValue,
+				sponsorshipAmount: costAmount,
+				barterElements: barterElementsValue || undefined,
+				deliverables: deliverables.trim(),
+				dealData: {
+					brandingInventory: collaborationType === "PHYSICAL_BRANDING" ? brandingInventory.trim() : undefined,
+					cities: (collaborationType === "SAMPLING_DEMO" || collaborationType === "POPUPS_EXPERIENCES") ? cities.trim() : undefined,
+					samplingElements: (collaborationType === "SAMPLING_DEMO" || collaborationType === "POPUPS_EXPERIENCES") ? samplingElements.trim() : undefined,
+					projectCost: (collaborationType === "NAMING_RIGHTS" || collaborationType === "PHYSICAL_BRANDING") ? costAmount : undefined,
+					samplingCost: (collaborationType === "SAMPLING_DEMO" || collaborationType === "POPUPS_EXPERIENCES") ? costAmount : undefined,
+				},
+			}
+
 			const saved = deal
 				? await updateSpaceDeal(interestId, payload, role)
 				: await createSpaceDeal(interestId, payload, role)
 
-			toast.success(deal ? "Deal updated." : "Deal locked — waiting for counterpart approval.")
+			toast.success(deal ? "Deal updated successfully." : "Deal locked — waiting for brand approval.")
 			onSaved(saved)
 			onClose()
 		} catch (err: any) {
@@ -331,148 +476,204 @@ export function SpaceDealFormModal({
 			}}
 		>
 			<div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg flex flex-col max-h-[90vh]">
-				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0">
-					<p className="text-lg font-black text-black">
-						{deal ? "Edit Hub Deal" : "Lock Hub Deal"}
-					</p>
+				{/* Modal Header */}
+				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0 bg-neutral-50 rounded-t-[21px]">
+					<div>
+						<p className="text-lg font-black text-black">
+							{deal ? "Edit Hub Deal" : "Lock Hub Deal"}
+						</p>
+						<p className="text-xs font-semibold text-black/50">
+							Define agreed deliverables and terms for brand review.
+						</p>
+					</div>
 					<button
 						onClick={onClose}
-						className="text-xl font-black text-black/40 hover:text-black transition-colors"
+						className="text-2xl font-black text-black/40 hover:text-black transition-colors"
 						aria-label="Close"
 					>
 						×
 					</button>
 				</div>
 
-				<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-3.5">
-					<Field label="Campaign Name" required>
-						<input
-							value={form.projectName}
-							onChange={(e) => setForm((f) => ({ ...f, projectName: e.target.value }))}
-							className={inputClass}
-							placeholder="e.g. Summer Hub Activation"
-						/>
-					</Field>
-
-					<Field label="Campaign Goals" required hint="e.g. *Brand Activation, *Event, *Branding">
-						<input
-							value={typeof form.goals === "string" ? form.goals : (form.goals?.join(", ") ?? "")}
-							onChange={(e) => setForm((f) => ({ ...f, goals: e.target.value }))}
-							className={inputClass}
-							placeholder="e.g. Brand Activation, Event, Branding"
-						/>
-					</Field>
-
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-						<Field label="City / Region" required>
-							<input
-								value={form.venue}
-								onChange={(e) => setForm((f) => ({ ...f, venue: e.target.value }))}
-								className={inputClass}
-								placeholder="e.g. Bengaluru, Indiranagar"
-							/>
-						</Field>
-						<Field label="Time" hint="Optional">
-							<input
-								value={form.time}
-								onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
-								className={inputClass}
-								placeholder="e.g. 6:00 PM onwards"
-							/>
-						</Field>
+				<form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-4">
+					{/* Category Selector Tabs */}
+					<div className="flex flex-col gap-1.5">
+						<label className="text-xs font-black uppercase tracking-wider text-black">
+							Collaboration Type <span className="text-[#EE2C2C]">*</span>
+						</label>
+						<div className="grid grid-cols-2 gap-2">
+							{BRAND_HUB_CATEGORIES.map((cat) => {
+								const isSelected = collaborationType === cat.value
+								return (
+									<button
+										key={cat.value}
+										type="button"
+										onClick={() => setCollaborationType(cat.value)}
+										className={clsx(
+											"py-2 px-2.5 border-2 border-black rounded-xl text-xs font-black transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] select-none cursor-pointer text-center truncate",
+											isSelected
+												? "bg-[#EE2C2C] text-white shadow-none translate-x-[2px] translate-y-[2px]"
+												: "bg-white hover:bg-neutral-100 text-black hover:translate-x-[1px] hover:translate-y-[1px]"
+										)}
+									>
+										{cat.label}
+									</button>
+								)
+							})}
+						</div>
 					</div>
 
-					<Field label="Target Audience" hint="Optional">
+					{/* Common: Hub Name */}
+					<Field label="Hub Name" required>
 						<input
-							value={typeof form.targetAudience === "string" ? form.targetAudience : (form.targetAudience?.join(", ") ?? "")}
-							onChange={(e) => setForm((f) => ({ ...f, targetAudience: e.target.value }))}
+							value={projectName}
+							onChange={(e) => setProjectName(e.target.value)}
 							className={inputClass}
-							placeholder="e.g. Tech Founders, Creators, College Students"
+							placeholder="e.g. Indiranagar Creative Hub"
+							required
 						/>
 					</Field>
 
+					{/* Common: Start Date and End Date */}
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 						<Field label="Start Date" required>
 							<input
 								type="date"
-								value={form.startDate}
-								onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
+								min={todayStr}
+								value={startDate}
+								onChange={(e) => {
+									setStartDate(e.target.value)
+									if (endDate && e.target.value > endDate) {
+										setEndDate("")
+									}
+								}}
 								className={inputClass}
+								required
 							/>
 						</Field>
-						<Field label="End Date" hint="Optional / Multi-day">
+						<Field label="End Date" required>
 							<input
 								type="date"
-								value={form.endDate}
-								min={form.startDate || undefined}
-								onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
+								min={startDate || todayStr}
+								value={endDate}
+								onChange={(e) => setEndDate(e.target.value)}
 								className={inputClass}
+								required
 							/>
 						</Field>
 					</div>
 
-					<Field label="Cash Amount (₹)" required hint="Agreed monetary amount in INR (≥ 0)">
-						<input
-							type="number"
-							min="0"
-							value={form.sponsorshipAmount === 0 ? "" : form.sponsorshipAmount}
-							onChange={(e) => setForm((f) => ({ ...f, sponsorshipAmount: e.target.value === "" ? 0 : Number(e.target.value) }))}
-							className={inputClass}
-							placeholder="₹ 0"
-						/>
-					</Field>
+					{/* 1. Naming Rights Specific */}
+					{collaborationType === "NAMING_RIGHTS" && (
+						<Field label="Project Cost (₹)" required hint="Agreed amount in INR">
+							<input
+								type="number"
+								min="0"
+								value={projectCost}
+								onChange={(e) => setProjectCost(e.target.value)}
+								className={inputClass}
+								placeholder="e.g. 150000"
+								required
+							/>
+						</Field>
+					)}
 
-					<Field label="Barter Elements" hint="Optional">
-						<input
-							value={form.barterElements}
-							onChange={(e) => setForm((f) => ({ ...f, barterElements: e.target.value }))}
-							className={inputClass}
-							placeholder="e.g. Gifting, vouchers, sample products, etc."
-						/>
-					</Field>
+					{/* 2. Physical Branding Specific */}
+					{collaborationType === "PHYSICAL_BRANDING" && (
+						<>
+							<Field label="Branding Inventory" required hint="e.g. Wall vinyls, entrance arch, standees">
+								<input
+									value={brandingInventory}
+									onChange={(e) => setBrandingInventory(e.target.value)}
+									className={inputClass}
+									placeholder="e.g. Main entrance banner, café counter standees, meeting room wall"
+									required
+								/>
+							</Field>
+							<Field label="Project Cost (₹)" required hint="Agreed amount in INR">
+								<input
+									type="number"
+									min="0"
+									value={projectCost}
+									onChange={(e) => setProjectCost(e.target.value)}
+									className={inputClass}
+									placeholder="e.g. 50000"
+									required
+								/>
+							</Field>
+						</>
+					)}
 
-					<Field label="Key Deliverables" required hint="Agreed deliverables">
+					{/* 3 & 4. Sampling & Demos OR Pop-ups & Experiences Specific */}
+					{(collaborationType === "SAMPLING_DEMO" || collaborationType === "POPUPS_EXPERIENCES") && (
+						<>
+							<Field label="Cities" required hint="e.g. Bengaluru, Mumbai, Delhi">
+								<input
+									value={cities}
+									onChange={(e) => setCities(e.target.value)}
+									className={inputClass}
+									placeholder="e.g. Bengaluru, Mumbai"
+									required
+								/>
+							</Field>
+							<Field label="Sampling Elements" required hint="e.g. Samples, kiosk setup, staff">
+								<textarea
+									rows={2}
+									value={samplingElements}
+									onChange={(e) => setSamplingElements(e.target.value)}
+									className={`${inputClass} resize-none`}
+									placeholder="e.g. 500 beverage cans, branded kiosk, 2 promoters"
+									required
+								/>
+							</Field>
+							<Field label="Sampling Cost (₹)" required hint="Agreed amount in INR">
+								<input
+									type="number"
+									min="0"
+									value={samplingCost}
+									onChange={(e) => setSamplingCost(e.target.value)}
+									className={inputClass}
+									placeholder="e.g. 35000"
+									required
+								/>
+							</Field>
+						</>
+					)}
+
+					{/* Common: Deliverables */}
+					<Field label="Deliverables" required hint="Detailed deliverables agreed with brand">
 						<textarea
 							rows={3}
-							value={form.deliverables}
-							onChange={(e) => setForm((f) => ({ ...f, deliverables: e.target.value }))}
+							value={deliverables}
+							onChange={(e) => setDeliverables(e.target.value)}
 							className={`${inputClass} resize-none`}
-							placeholder="e.g. Dedicated hub access for 50 attendees, banner display, projector setup, etc."
+							placeholder="Specify each agreed deliverable on a new line..."
+							required
 						/>
 					</Field>
 
-					<Field label="Other Information / Remarks" hint="Optional">
-						<textarea
-							rows={2}
-							value={form.otherTerms}
-							onChange={(e) => setForm((f) => ({ ...f, otherTerms: e.target.value }))}
-							className={`${inputClass} resize-none`}
-							placeholder="Payment terms, milestones, or any other agreed conditions."
-						/>
-					</Field>
-				</div>
-
-				<div className="flex items-center justify-end gap-3 px-6 py-4 border-t-[3px] border-black shrink-0 bg-neutral-50">
-					<button
-						type="button"
-						onClick={onClose}
-						className="px-4 py-2 rounded-xl text-black/60 hover:text-black font-extrabold text-xs transition-colors cursor-pointer"
-					>
-						Cancel
-					</button>
-					<button
-						type="button"
-						onClick={handleSubmit}
-						disabled={saving}
-						className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
-					>
-						<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-							<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-							<path d="M7 11V7a5 5 0 0 1 10 0v4" />
-						</svg>
-						<span>{saving ? "Saving…" : deal ? "Save Changes" : "Submit & Lock Deal"}</span>
-					</button>
-				</div>
+					{/* Footer Actions */}
+					<div className="flex items-center justify-end gap-3 pt-3 border-t-[2.5px] border-black/10 shrink-0">
+						<button
+							type="button"
+							onClick={onClose}
+							className="px-4 py-2 rounded-xl text-black/60 hover:text-black font-extrabold text-xs transition-colors cursor-pointer"
+						>
+							Cancel
+						</button>
+						<button
+							type="submit"
+							disabled={saving || !isValid}
+							className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-[#EE2C2C] hover:bg-[#d42525] text-white font-black text-xs border-[2.5px] border-black shadow-[2.5px_2.5px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1.5px] hover:translate-y-[1.5px] active:translate-x-[2.5px] active:translate-y-[2.5px] active:shadow-none transition-all cursor-pointer select-none disabled:opacity-50"
+						>
+							<svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+								<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+								<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+							</svg>
+							<span>{saving ? "Saving…" : deal ? "Save Changes" : "Submit & Lock Deal"}</span>
+						</button>
+					</div>
+				</form>
 			</div>
 		</div>
 	)
@@ -497,8 +698,10 @@ export function SpaceDealDetailsModal({
 	const [note, setNote] = useState("")
 	const [busy, setBusy] = useState(false)
 
-	// Counterpart (Brand or Community) can approve / request changes.
+	// Counterpart (Brand) can approve / request changes.
 	const canApproveOrRequestChanges = role !== "SPACE"
+	const dealData = (deal.dealData as any) || {}
+	const category = deal.collaborationType as BrandHubInterestType | undefined
 
 	async function handleApprove() {
 		setBusy(true)
@@ -557,7 +760,8 @@ export function SpaceDealDetailsModal({
 			}}
 		>
 			<div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg flex flex-col max-h-[90vh]">
-				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0">
+				{/* Modal Header */}
+				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0 bg-neutral-50 rounded-t-[21px]">
 					<div className="flex items-center gap-2">
 						<p className="text-lg font-black text-black">Hub Deal Details</p>
 						<span
@@ -571,7 +775,7 @@ export function SpaceDealDetailsModal({
 					</div>
 					<button
 						onClick={onClose}
-						className="text-xl font-black text-black/40 hover:text-black transition-colors"
+						className="text-2xl font-black text-black/40 hover:text-black transition-colors"
 						aria-label="Close"
 					>
 						×
@@ -592,33 +796,59 @@ export function SpaceDealDetailsModal({
 						</div>
 					)}
 
-					<Row label="Campaign / Hub Name" value={deal.projectName} />
-					{deal.goals && <Row label="Campaign Goals" value={typeof deal.goals === "string" ? deal.goals : deal.goals.join(", ")} />}
-					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-						<Row label="City / Region" value={deal.venue} />
-						{deal.time && <Row label="Time" value={deal.time} />}
-					</div>
-					{deal.targetAudience && (
-						<Row
-							label="Target Audience"
-							value={typeof deal.targetAudience === "string" ? deal.targetAudience : deal.targetAudience.join(", ")}
-						/>
+					{/* Collaboration Category Pill */}
+					{category && (
+						<div className="p-3 bg-neutral-50 rounded-xl border-2 border-black flex items-center justify-between">
+							<span className="font-bold text-black/60 uppercase text-xs">Collaboration Type</span>
+							<span className="font-black text-sm text-[#EE2C2C]">
+								{BRAND_HUB_CATEGORY_LABELS[category] || category}
+							</span>
+						</div>
 					)}
+
+					<Row label="Hub Name" value={deal.projectName} />
+
 					<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 						<Row
 							label="Start Date"
 							value={deal.startDate ? new Date(deal.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : null}
 						/>
-						{deal.endDate && (
-							<Row
-								label="End Date"
-								value={new Date(deal.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-							/>
-						)}
+						<Row
+							label="End Date"
+							value={deal.endDate ? new Date(deal.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : null}
+						/>
 					</div>
-					<Row label="Cash Amount" value={formatAmount(deal.sponsorshipAmount)} />
-					{deal.barterElements && <Row label="Barter Elements" value={deal.barterElements} />}
-					<Row label="Key Deliverables" value={deal.deliverables} />
+
+					{/* Category specific rows */}
+					{category === "NAMING_RIGHTS" && (
+						<Row label="Project Cost" value={formatAmount(deal.sponsorshipAmount || dealData.projectCost)} />
+					)}
+
+					{category === "PHYSICAL_BRANDING" && (
+						<>
+							<Row label="Branding Inventory" value={dealData.brandingInventory || deal.venue} />
+							<Row label="Project Cost" value={formatAmount(deal.sponsorshipAmount || dealData.projectCost)} />
+						</>
+					)}
+
+					{(category === "SAMPLING_DEMO" || category === "POPUPS_EXPERIENCES") && (
+						<>
+							<Row label="Cities" value={dealData.cities || deal.venue} />
+							<Row label="Sampling Elements" value={dealData.samplingElements || deal.barterElements} />
+							<Row label="Sampling Cost" value={formatAmount(deal.sponsorshipAmount || dealData.samplingCost)} />
+						</>
+					)}
+
+					{/* Fallback for legacy deals with no category */}
+					{!category && (
+						<>
+							{deal.venue && <Row label="Venue / Location" value={deal.venue} />}
+							{deal.sponsorshipAmount ? <Row label="Cost Amount" value={formatAmount(deal.sponsorshipAmount)} /> : null}
+							{deal.barterElements && <Row label="Barter Elements" value={deal.barterElements} />}
+						</>
+					)}
+
+					<Row label="Deliverables" value={deal.deliverables} />
 					{deal.otherTerms && <Row label="Other Information / Remarks" value={deal.otherTerms} />}
 
 					{/* Changes Request Input box */}
@@ -630,7 +860,7 @@ export function SpaceDealDetailsModal({
 								value={note}
 								onChange={(e) => setNote(e.target.value)}
 								className={`${inputClass} resize-none bg-white`}
-								placeholder="e.g. Please adjust the event start time to 7:00 PM and specify projector access in deliverables."
+								placeholder="e.g. Please update the start date and clarify the branding inventory deliverables."
 								autoFocus
 							/>
 							<div className="flex items-center justify-end gap-2">
@@ -654,7 +884,8 @@ export function SpaceDealDetailsModal({
 					)}
 				</div>
 
-				<div className="flex items-center justify-between gap-3 px-6 py-4 border-t-[3px] border-black shrink-0 bg-neutral-50">
+				{/* Modal Footer */}
+				<div className="flex items-center justify-between gap-3 px-6 py-4 border-t-[3px] border-black shrink-0 bg-neutral-50 rounded-b-[21px]">
 					<button
 						type="button"
 						onClick={onClose}
@@ -696,32 +927,43 @@ export function SpaceDealDetailsModal({
 export function SpaceDealReportModal({
 	interestId,
 	role,
+	deal: initialDeal,
+	report: initialReport,
 	onClose,
 	onReportUpdated,
 }: {
 	interestId: string
 	role: SpaceChatRole
+	deal?: SpaceDeal | null
+	report?: SpaceDealReport | null
 	onClose: () => void
 	onReportUpdated?: (report: SpaceDealReport) => void
 }) {
 	const [loading, setLoading] = useState(true)
-	const [report, setReport] = useState<SpaceDealReport | null>(null)
-	const [deal, setDeal] = useState<SpaceDeal | null>(null)
+	const [report, setReport] = useState<SpaceDealReport | null>(initialReport || null)
+	const [deal, setDeal] = useState<SpaceDeal | null>(initialDeal || null)
 
-	// Editing Mode State
+	// Mode State
 	const [isEditing, setIsEditing] = useState(false)
 
-	// Report Fields
+	// Common Report Fields
 	const [projectName, setProjectName] = useState("")
-	const [date, setDate] = useState("")
-	const [venue, setVenue] = useState("")
-	const [time, setTime] = useState("")
-	const [guestCount, setGuestCount] = useState("")
-	const [ageRange, setAgeRange] = useState("")
+	const [startDate, setStartDate] = useState("")
+	const [endDate, setEndDate] = useState("")
+
+	// Naming Rights: Deliverables Checklist
 	const [deliverablesList, setDeliverablesList] = useState<{ text: string; checked: boolean }[]>([])
+
+	// Proof Photos (Up to 5)
+	const [images, setImages] = useState<{ key?: string; url: string; file?: File }[]>([])
+
+	// Video Links & Social Media Links
 	const [videoLinks, setVideoLinks] = useState<string[]>([])
 	const [socialLinks, setSocialLinks] = useState<string[]>([])
-	const [images, setImages] = useState<{ key?: string; url: string; file?: File }[]>([])
+
+	// Sampling & Demos specific fields:
+	const [totalSamplesDistributed, setTotalSamplesDistributed] = useState("")
+	const [membersData, setMembersData] = useState("")
 
 	// Reviewer Actions & Status
 	const [reportStatus, setReportStatus] = useState<"PENDING" | "APPROVED" | "REVISION_REQUESTED">("PENDING")
@@ -735,13 +977,18 @@ export function SpaceDealReportModal({
 	const [uploading, setUploading] = useState(false)
 
 	const isSpace = role === "SPACE"
+	const isBrand = role === "BRAND"
+	const isApproved = isSpaceReportApproved(report)
+
+	const category: BrandHubInterestType =
+		(deal?.collaborationType as BrandHubInterestType) || "NAMING_RIGHTS"
 
 	function formatDateForInput(isoString?: string | null): string {
 		if (!isoString) return ""
 		try {
 			const d = new Date(isoString)
-			if (isNaN(d.getTime())) return isoString
-			return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+			if (isNaN(d.getTime())) return isoString.slice(0, 10)
+			return isoString.slice(0, 10)
 		} catch {
 			return isoString
 		}
@@ -750,56 +997,94 @@ export function SpaceDealReportModal({
 	function parseDeliverables(raw?: string | null): { text: string; checked: boolean }[] {
 		if (!raw) return []
 		return raw
-			.split(/\r?\n|,/)
+			.split(/\r?\n/)
 			.map((s) => s.replace(/^[-*•\d.]\s*/, "").trim())
 			.filter(Boolean)
 			.map((text) => ({ text, checked: false }))
 	}
 
 	useEffect(() => {
+		const targetDealId = initialDeal?.id
 		Promise.all([
-			getSpaceDealReport(interestId, role).catch(() => null),
-			getSpaceDeal(interestId).catch(() => null),
+			initialReport
+				? Promise.resolve(initialReport)
+				: getSpaceDealReport(interestId, role, targetDealId).catch(() => null),
+			initialDeal
+				? Promise.resolve(initialDeal)
+				: getSpaceDeal(interestId).catch(() => null),
 		])
 			.then(([r, d]) => {
 				setDeal(d)
 				setReport(r)
+
+				const dDeliverables = parseDeliverables(d?.deliverables)
+				const existingReportData = (r?.reportData as any) || {}
+
 				if (r) {
 					setIsEditing(false)
+					let data: any = {}
 					try {
-						const data = typeof r.summary === "string" ? JSON.parse(r.summary) : (r.summary || {})
-						setProjectName(data.projectName || r.projectName || d?.projectName || "")
-						setDate(data.date || r.eventDate || formatDateForInput(d?.startDate) || "")
-						setVenue(data.venue || r.venue || d?.venue || "")
-						setTime(data.time || r.time || d?.time || "")
-						setGuestCount(data.guestCount || r.guestCount || "")
-						setAgeRange(data.ageRange || r.ageRange || (Array.isArray(d?.targetAudience) ? d.targetAudience.join(", ") : (d?.targetAudience ?? "")))
-						setDeliverablesList(data.deliverables || (Array.isArray(r.deliverables) ? r.deliverables : parseDeliverables(d?.deliverables)))
-						setVideoLinks(data.videoLinks || r.videoLinks || [])
-						setSocialLinks(data.socialLinks || r.socialLinks || [])
-						setReportStatus((r.status || data.status || "PENDING") as "PENDING" | "APPROVED" | "REVISION_REQUESTED")
-						setRevisionNote(r.revisionNote || data.revisionNote || "")
+						data = typeof r.summary === "string" ? JSON.parse(r.summary) : (r.summary || {})
 					} catch {
-						setProjectName(r.projectName || d?.projectName || "")
-						setDate(r.eventDate || formatDateForInput(d?.startDate) || "")
-						setVenue(r.venue || d?.venue || "")
-						setTime(r.time || d?.time || "")
-						setGuestCount(r.guestCount || "")
-						setAgeRange(r.ageRange || (Array.isArray(d?.targetAudience) ? d.targetAudience.join(", ") : (d?.targetAudience ?? "")))
-						setDeliverablesList(Array.isArray(r.deliverables) ? r.deliverables : parseDeliverables(d?.deliverables))
-						setReportStatus((r.status || "PENDING") as "PENDING" | "APPROVED" | "REVISION_REQUESTED")
-						setRevisionNote(r.revisionNote || "")
+						data = {}
 					}
-					setImages((r.proofKeys || []).map((key, i) => ({ key, url: r.proofUrls?.[i] ?? "" })))
+
+					setProjectName(data.projectName || r.projectName || existingReportData.projectName || d?.projectName || "")
+					setStartDate(data.startDate || r.eventDate || existingReportData.startDate || formatDateForInput(d?.startDate) || "")
+					setEndDate(data.endDate || r.endDate || existingReportData.endDate || formatDateForInput(d?.endDate) || "")
+
+					// Checklist
+					const rawList: { text: string; checked: boolean }[] =
+						Array.isArray(data.deliverables) && data.deliverables.length > 0
+							? data.deliverables
+							: Array.isArray(r.deliverables) && r.deliverables.length > 0
+								? r.deliverables
+								: Array.isArray(existingReportData.deliverablesChecklist)
+									? existingReportData.deliverablesChecklist
+									: dDeliverables
+
+					if (rawList.length === 0) {
+						setDeliverablesList(dDeliverables)
+					} else {
+						const checkMap = new Map(rawList.map((item) => [item.text.trim().toLowerCase(), item.checked]))
+						setDeliverablesList(
+							dDeliverables.length > 0
+								? dDeliverables.map((item) => ({
+									text: item.text,
+									checked: checkMap.get(item.text.trim().toLowerCase()) ?? false,
+								}))
+								: rawList
+						)
+					}
+
+					// Video & Social Links
+					setVideoLinks(data.videoLinks || r.videoLinks || existingReportData.videoLinks || [])
+					setSocialLinks(data.socialLinks || r.socialLinks || existingReportData.socialLinks || [])
+
+					// Sampling & Demos
+					setTotalSamplesDistributed(
+						data.totalSamplesDistributed ||
+						existingReportData.totalSamplesDistributed ||
+						r.guestCount ||
+						""
+					)
+					setMembersData(
+						data.membersData ||
+						existingReportData.membersData ||
+						(typeof r.summary === "string" && !r.summary.startsWith("{") ? r.summary : "") ||
+						""
+					)
+
+					setReportStatus((r.status || data.status || "PENDING") as "PENDING" | "APPROVED" | "REVISION_REQUESTED")
+					setRevisionNote(r.revisionNote || data.revisionNote || "")
+					setImages((r.proofKeys || []).map((key, i) => ({ key, url: r.proofUrls?.[i] ?? key })))
 				} else {
 					setIsEditing(true)
 					// Pre-populate from locked deal
 					setProjectName(d?.projectName || "")
-					setDate(formatDateForInput(d?.startDate) || "")
-					setVenue(d?.venue || "")
-					setTime(d?.time || "")
-					setAgeRange(Array.isArray(d?.targetAudience) ? d.targetAudience.join(", ") : (d?.targetAudience ?? ""))
-					setDeliverablesList(parseDeliverables(d?.deliverables))
+					setStartDate(formatDateForInput(d?.startDate) || "")
+					setEndDate(formatDateForInput(d?.endDate) || "")
+					setDeliverablesList(dDeliverables)
 				}
 			})
 			.catch(() => {
@@ -811,7 +1096,7 @@ export function SpaceDealReportModal({
 	async function handleDownloadPdf() {
 		setDownloadingPdf(true)
 		try {
-			const url = await getSpaceDealReportPdfUrl(interestId, role)
+			const url = await getSpaceDealReportPdfUrl(interestId, role, deal?.id || initialDeal?.id)
 			setPdfUrl(url)
 		} catch {
 			toast.error("Failed to generate the report PDF.")
@@ -833,6 +1118,7 @@ export function SpaceDealReportModal({
 		try {
 			const key = await uploadSpaceDealReportImage(file, interestId)
 			setImages((prev) => [...prev, { key, url: URL.createObjectURL(file) }])
+			toast.success("Photo uploaded successfully!")
 		} catch {
 			toast.error("Failed to upload image.")
 		} finally {
@@ -844,51 +1130,76 @@ export function SpaceDealReportModal({
 		setImages((prev) => prev.filter((_, i) => i !== index))
 	}
 
-	const isValid = projectName.trim().length > 0 && date.trim().length > 0 && venue.trim().length > 0
+	// Validation
+	let isValid = Boolean(projectName.trim() && startDate && endDate)
+	if (category === "SAMPLING_DEMO") {
+		isValid = Boolean(isValid && totalSamplesDistributed.trim() && membersData.trim())
+	}
 
 	async function handleSubmit() {
 		if (!isValid) {
-			toast.error("Please fill in Project Name, Date, and Venue.")
+			if (!projectName.trim() || !startDate || !endDate) {
+				toast.error("Please fill in Hub Name, Start Date, and End Date.")
+			} else if (category === "SAMPLING_DEMO" && (!totalSamplesDistributed.trim() || !membersData.trim())) {
+				toast.error("Please provide Total Samples Distributed and Members Data.")
+			} else {
+				toast.error("Please fill in all required report fields.")
+			}
 			return
 		}
+
 		setSaving(true)
 		try {
+			const cleanVideoLinks = videoLinks.map((v) => v.trim()).filter(Boolean)
+			const cleanSocialLinks = socialLinks.map((s) => s.trim()).filter(Boolean)
+			const proofKeys = images.map((img) => img.key).filter((k): k is string => !!k)
+
+			const reportDataPayload: any = {
+				projectName: projectName.trim(),
+				startDate,
+				endDate,
+				category,
+				deliverablesChecklist: category === "NAMING_RIGHTS" ? deliverablesList : undefined,
+				totalSamplesDistributed: category === "SAMPLING_DEMO" ? totalSamplesDistributed.trim() : undefined,
+				membersData: category === "SAMPLING_DEMO" ? membersData.trim() : undefined,
+				videoLinks: cleanVideoLinks,
+				socialLinks: cleanSocialLinks,
+				proofKeys,
+			}
+
 			const summaryData = JSON.stringify({
 				projectName: projectName.trim(),
-				date: date.trim(),
-				venue: venue.trim(),
-				time: time.trim(),
-				guestCount: guestCount.trim(),
-				ageRange: ageRange.trim(),
-				deliverables: deliverablesList,
-				videoLinks: videoLinks.filter(Boolean),
-				socialLinks: socialLinks.filter(Boolean),
+				startDate,
+				endDate,
+				category,
+				deliverables: category === "NAMING_RIGHTS" ? deliverablesList : undefined,
+				totalSamplesDistributed: category === "SAMPLING_DEMO" ? totalSamplesDistributed.trim() : undefined,
+				membersData: category === "SAMPLING_DEMO" ? membersData.trim() : undefined,
+				videoLinks: cleanVideoLinks,
+				socialLinks: cleanSocialLinks,
 				status: "PENDING",
 				revisionNote: "",
 			})
 
-			const saved = await upsertSpaceDealReport(
-				interestId,
-				{
-					projectName: projectName.trim(),
-					eventDate: date.trim(),
-					venue: venue.trim(),
-					time: time.trim(),
-					guestCount: guestCount.trim(),
-					ageRange: ageRange.trim(),
-					deliverables: deliverablesList,
-					videoLinks: videoLinks.filter(Boolean),
-					socialLinks: socialLinks.filter(Boolean),
-					status: "PENDING",
-					revisionNote: "",
-					summary: summaryData,
-					notes: "",
-					proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
-				},
-				role
-			)
+			const payload: SpaceDealReportPayload = {
+				projectName: projectName.trim() || deal?.projectName,
+				eventDate: startDate,
+				endDate: endDate,
+				venue: deal?.venue || "",
+				deliverables: category === "NAMING_RIGHTS" ? deliverablesList : [],
+				guestCount: category === "SAMPLING_DEMO" ? totalSamplesDistributed.trim() || undefined : undefined,
+				summary: summaryData,
+				reportData: reportDataPayload,
+				videoLinks: cleanVideoLinks,
+				socialLinks: cleanSocialLinks,
+				proofKeys,
+				status: "PENDING",
+				revisionNote: "",
+			}
 
-			toast.success(report ? "Report resubmitted for review." : "Report submitted for review.")
+			const saved = await upsertSpaceDealReport(interestId, payload, role)
+
+			toast.success(report ? "Report resubmitted for brand review." : "Report submitted for brand review.")
 			setReport(saved)
 			setReportStatus("PENDING")
 			setRevisionNote("")
@@ -906,43 +1217,57 @@ export function SpaceDealReportModal({
 		setSaving(true)
 		try {
 			const note = status === "REVISION_REQUESTED" ? revisionNote.trim() : ""
+			const cleanVideoLinks = videoLinks.map((v) => v.trim()).filter(Boolean)
+			const cleanSocialLinks = socialLinks.map((s) => s.trim()).filter(Boolean)
+			const proofKeys = images.map((img) => img.key).filter((k): k is string => !!k)
+
+			const reportDataPayload: any = {
+				projectName: projectName.trim(),
+				startDate,
+				endDate,
+				category,
+				deliverablesChecklist: category === "NAMING_RIGHTS" ? deliverablesList : undefined,
+				totalSamplesDistributed: category === "SAMPLING_DEMO" ? totalSamplesDistributed.trim() : undefined,
+				membersData: category === "SAMPLING_DEMO" ? membersData.trim() : undefined,
+				videoLinks: cleanVideoLinks,
+				socialLinks: cleanSocialLinks,
+				proofKeys,
+			}
+
 			const summaryData = JSON.stringify({
 				projectName: projectName.trim(),
-				date: date.trim(),
-				venue: venue.trim(),
-				time: time.trim(),
-				guestCount: guestCount.trim(),
-				ageRange: ageRange.trim(),
-				deliverables: deliverablesList,
-				videoLinks: videoLinks.filter(Boolean),
-				socialLinks: socialLinks.filter(Boolean),
+				startDate,
+				endDate,
+				category,
+				deliverables: category === "NAMING_RIGHTS" ? deliverablesList : undefined,
+				totalSamplesDistributed: category === "SAMPLING_DEMO" ? totalSamplesDistributed.trim() : undefined,
+				membersData: category === "SAMPLING_DEMO" ? membersData.trim() : undefined,
+				videoLinks: cleanVideoLinks,
+				socialLinks: cleanSocialLinks,
 				status,
 				revisionNote: note,
 			})
 
-			const saved = await upsertSpaceDealReport(
-				interestId,
-				{
-					projectName: projectName.trim(),
-					eventDate: date.trim(),
-					venue: venue.trim(),
-					time: time.trim(),
-					guestCount: guestCount.trim(),
-					ageRange: ageRange.trim(),
-					deliverables: deliverablesList,
-					videoLinks: videoLinks.filter(Boolean),
-					socialLinks: socialLinks.filter(Boolean),
-					status,
-					revisionNote: note,
-					summary: summaryData,
-					notes: note,
-					proofKeys: images.map((img) => img.key).filter((k): k is string => !!k),
-				},
-				role
-			)
+			const payload: SpaceDealReportPayload = {
+				projectName: projectName.trim() || deal?.projectName,
+				eventDate: startDate,
+				endDate: endDate,
+				venue: deal?.venue || "",
+				deliverables: category === "NAMING_RIGHTS" ? deliverablesList : [],
+				guestCount: category === "SAMPLING_DEMO" ? totalSamplesDistributed.trim() || undefined : undefined,
+				summary: summaryData,
+				reportData: reportDataPayload,
+				videoLinks: cleanVideoLinks,
+				socialLinks: cleanSocialLinks,
+				proofKeys,
+				status,
+				revisionNote: note,
+			}
+
+			const saved = await upsertSpaceDealReport(interestId, payload, role)
 
 			if (status === "APPROVED") {
-				// Trigger confetti sparkle animation locally in the chat canvas
+				// Trigger confetti
 				const canvas = document.getElementById("space-chat-confetti-canvas") as HTMLCanvasElement | null
 				if (canvas) {
 					const myConfetti = confetti.create(canvas, {
@@ -957,22 +1282,22 @@ export function SpaceDealReportModal({
 				}
 			}
 
-			toast.success(status === "APPROVED" ? "Report approved, deal is closed!" : "Revision request sent.")
+			toast.success(status === "APPROVED" ? "🎉 Report approved! Deal is officially closed." : "Revision request sent.")
 			setReport(saved)
 			setReportStatus(status)
 			onReportUpdated?.(saved)
 			onClose()
 		} catch {
-			toast.error("Failed to update status.")
+			toast.error("Failed to update report status.")
 		} finally {
 			setSaving(false)
 		}
 	}
 
 	const STATUS_BADGES = {
-		PENDING: { label: "Pending Approval", color: "bg-amber-50 text-amber-700 border-amber-300" },
-		APPROVED: { label: "Approved", color: "bg-green-50 text-green-700 border-green-300" },
-		REVISION_REQUESTED: { label: "Revision Requested", color: "bg-red-50 text-red-700 border-red-300" },
+		PENDING: { label: "Pending Review", color: "bg-amber-100 text-amber-900 border-amber-900" },
+		APPROVED: { label: "Approved", color: "bg-emerald-100 text-emerald-900 border-emerald-900" },
+		REVISION_REQUESTED: { label: "Revision Requested", color: "bg-rose-100 text-rose-900 border-rose-900" },
 	}
 
 	return (
@@ -983,11 +1308,22 @@ export function SpaceDealReportModal({
 			}}
 		>
 			<div className="bg-white rounded-[24px] border-[3px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg flex flex-col max-h-[90vh]">
+				{/* Modal Header */}
 				<div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black shrink-0 bg-neutral-50 rounded-t-[21px]">
-					<div className="flex items-center gap-3">
-						<p className="text-lg font-black text-black">Deliverables Report</p>
+					<div className="flex items-center gap-2.5">
+						<div>
+							<p className="text-lg font-black text-black">Deliverables Report</p>
+							<p className="text-xs font-semibold text-black/50">
+								{deal?.projectName} · {BRAND_HUB_CATEGORY_LABELS[category] || category}
+							</p>
+						</div>
 						{report && (
-							<span className={clsx("px-2 py-0.5 border-2 rounded-full text-[9px] font-black uppercase tracking-wide", STATUS_BADGES[reportStatus]?.color)}>
+							<span
+								className={clsx(
+									"px-2.5 py-0.5 border-2 rounded-full text-[10px] font-black uppercase tracking-wide",
+									STATUS_BADGES[reportStatus]?.color
+								)}
+							>
 								{STATUS_BADGES[reportStatus]?.label}
 							</span>
 						)}
@@ -1003,7 +1339,11 @@ export function SpaceDealReportModal({
 								{downloadingPdf ? "…" : "Download PDF"}
 							</button>
 						)}
-						<button onClick={onClose} className="text-xl font-black text-black/40 hover:text-black" aria-label="Close">
+						<button
+							onClick={onClose}
+							className="text-2xl font-black text-black/40 hover:text-black leading-none"
+							aria-label="Close"
+						>
 							×
 						</button>
 					</div>
@@ -1018,6 +1358,7 @@ export function SpaceDealReportModal({
 				) : (
 					<>
 						<div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-4">
+							{/* Revision Note Banner */}
 							{reportStatus === "REVISION_REQUESTED" && revisionNote && (
 								<div className="bg-red-50 border-2 border-red-300 rounded-xl p-3 text-xs font-semibold text-red-800">
 									<p className="font-bold text-red-900 mb-0.5">Revision Requested:</p>
@@ -1025,78 +1366,44 @@ export function SpaceDealReportModal({
 								</div>
 							)}
 
+							{/* Common: Hub Name */}
+							<Field label="Hub Name" required>
+								<input
+									value={projectName}
+									disabled={!isSpace || !isEditing}
+									onChange={(e) => setProjectName(e.target.value)}
+									className={inputClass}
+									placeholder="Hub Name"
+								/>
+							</Field>
+
+							{/* Common: Start Date & End Date */}
 							<div className="grid grid-cols-2 gap-3">
-								<Field label="Project Name" required>
+								<Field label="Start Date" required>
 									<input
-										value={projectName}
-										maxLength={255}
+										type="date"
+										value={startDate}
 										disabled={!isSpace || !isEditing}
-										onChange={(e) => setProjectName(e.target.value)}
+										onChange={(e) => setStartDate(e.target.value)}
 										className={inputClass}
-										placeholder="Project Name"
 									/>
 								</Field>
-								<Field label="Date" required>
+								<Field label="End Date" required>
 									<input
-										value={date}
-										maxLength={255}
+										type="date"
+										value={endDate}
+										min={startDate || undefined}
 										disabled={!isSpace || !isEditing}
-										onChange={(e) => setDate(e.target.value)}
+										onChange={(e) => setEndDate(e.target.value)}
 										className={inputClass}
-										placeholder="e.g. Oct 24, 2026"
 									/>
 								</Field>
 							</div>
 
-							<div className="grid grid-cols-2 gap-3">
-								<Field label="Venue" required>
-									<input
-										value={venue}
-										maxLength={1000}
-										disabled={!isSpace || !isEditing}
-										onChange={(e) => setVenue(e.target.value)}
-										className={inputClass}
-										placeholder="Venue"
-									/>
-								</Field>
-								<Field label="Time" hint="Optional">
-									<input
-										value={time}
-										maxLength={100}
-										disabled={!isSpace || !isEditing}
-										onChange={(e) => setTime(e.target.value)}
-										className={inputClass}
-										placeholder="e.g. 9 AM - 5 PM"
-									/>
-								</Field>
-							</div>
-
-							<div className="grid grid-cols-2 gap-3">
-								<Field label="Guest Count" hint="Optional">
-									<input
-										value={guestCount}
-										maxLength={50}
-										disabled={!isSpace || !isEditing}
-										onChange={(e) => setGuestCount(e.target.value)}
-										className={inputClass}
-										placeholder="e.g. 500+"
-									/>
-								</Field>
-								<Field label="Age (Range)" hint="Optional">
-									<input
-										value={ageRange}
-										maxLength={50}
-										disabled={!isSpace || !isEditing}
-										onChange={(e) => setAgeRange(e.target.value)}
-										className={inputClass}
-										placeholder="e.g. 18-25"
-									/>
-								</Field>
-							</div>
-
-							{deliverablesList.length > 0 && (
-								<Field label="Deliverables Met" hint="Interactive checklist">
-									<div className="flex flex-col gap-2 bg-neutral-50 p-3 rounded-xl border-[3px] border-black">
+							{/* 1. Naming Rights: Deliverables Checklist */}
+							{category === "NAMING_RIGHTS" && deliverablesList.length > 0 && (
+								<Field label="Deliverables Checklist" hint="Interactive checklist">
+									<div className="flex flex-col gap-2 bg-neutral-50 p-3 rounded-xl border-[2.5px] border-black">
 										{deliverablesList.map((item, idx) => (
 											<label key={idx} className="flex items-center gap-2.5 cursor-pointer select-none">
 												<input
@@ -1117,6 +1424,34 @@ export function SpaceDealReportModal({
 								</Field>
 							)}
 
+							{/* 3. Sampling & Demos: Total Samples Distributed & Members Data */}
+							{category === "SAMPLING_DEMO" && (
+								<>
+									<Field label="Total Samples Distributed" required hint="e.g. 500 units">
+										<input
+											value={totalSamplesDistributed}
+											disabled={!isSpace || !isEditing}
+											onChange={(e) => setTotalSamplesDistributed(e.target.value)}
+											className={inputClass}
+											placeholder="e.g. 500 cans"
+											required
+										/>
+									</Field>
+									<Field label="Members Data" required hint="Demographics, feedback, or participant overview">
+										<textarea
+											rows={3}
+											value={membersData}
+											disabled={!isSpace || !isEditing}
+											onChange={(e) => setMembersData(e.target.value)}
+											className={`${inputClass} resize-none`}
+											placeholder="e.g. 450 tech workers and designers engaged, 85% positive product feedback"
+											required
+										/>
+									</Field>
+								</>
+							)}
+
+							{/* Proof Photos: Common to all 4 categories */}
 							<Field label="Proof Photos" hint="Up to 5 photos">
 								<div className="flex flex-wrap items-center gap-2">
 									{images.map((img, i) => (
@@ -1159,106 +1494,113 @@ export function SpaceDealReportModal({
 								</div>
 							</Field>
 
-							<Field label="Video Links" hint="Up to 5 URLs">
-								<div className="flex flex-col gap-2">
-									{videoLinks.map((link, idx) => (
-										<div key={idx} className="flex items-center gap-2">
-											<input
-												value={link}
-												disabled={!isSpace || !isEditing}
-												onChange={(e) => {
-													const updated = [...videoLinks]
-													updated[idx] = e.target.value
-													setVideoLinks(updated)
-												}}
-												placeholder="https://youtube.com/... or Google Drive"
-												className={inputClass}
-											/>
-											{(!isEditing || !isSpace) && link.trim() && (
-												<a
-													href={link.startsWith("http") ? link : `https://${link}`}
-													target="_blank"
-													rel="noopener noreferrer"
-													className="px-2.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 border-2 border-black text-black font-bold text-xs shrink-0 flex items-center justify-center"
-													title="Open link"
-												>
-													↗
-												</a>
-											)}
-											{isSpace && isEditing && (
-												<button
-													type="button"
-													onClick={() => setVideoLinks((prev) => prev.filter((_, i) => i !== idx))}
-													className="px-2 py-1 bg-red-100 border-2 border-black rounded-lg text-red-600 font-bold hover:bg-red-200 shrink-0 cursor-pointer"
-												>
-													✕
-												</button>
-											)}
-										</div>
-									))}
-									{isSpace && isEditing && videoLinks.length < 5 && (
-										<button
-											type="button"
-											onClick={() => setVideoLinks((prev) => [...prev, ""])}
-											className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-50 text-black font-black text-xs border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer select-none w-fit"
-										>
-											+ Add Video Link
-										</button>
-									)}
-								</div>
-							</Field>
+							{/* Video Links: Naming Rights, Physical Branding, Pop-ups & Experiences */}
+							{category !== "SAMPLING_DEMO" && (
+								<Field label="Video Links" hint="Up to 5 URLs">
+									<div className="flex flex-col gap-2">
+										{videoLinks.map((link, idx) => (
+											<div key={idx} className="flex items-center gap-2">
+												<input
+													value={link}
+													disabled={!isSpace || !isEditing}
+													onChange={(e) => {
+														const updated = [...videoLinks]
+														updated[idx] = e.target.value
+														setVideoLinks(updated)
+													}}
+													placeholder="https://youtube.com/... or Google Drive"
+													className={inputClass}
+												/>
+												{(!isEditing || !isSpace) && link.trim() && (
+													<a
+														href={link.startsWith("http") ? link : `https://${link}`}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="px-2.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 border-2 border-black text-black font-bold text-xs shrink-0 flex items-center justify-center"
+														title="Open link"
+													>
+														↗
+													</a>
+												)}
+												{isSpace && isEditing && (
+													<button
+														type="button"
+														onClick={() => setVideoLinks((prev) => prev.filter((_, i) => i !== idx))}
+														className="px-2 py-1 bg-red-100 border-2 border-black rounded-lg text-red-600 font-bold hover:bg-red-200 shrink-0 cursor-pointer"
+													>
+														✕
+													</button>
+												)}
+											</div>
+										))}
+										{isSpace && isEditing && videoLinks.length < 5 && (
+											<button
+												type="button"
+												onClick={() => setVideoLinks((prev) => [...prev, ""])}
+												className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-50 text-black font-black text-xs border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer select-none w-fit"
+											>
+												+ Add Video Link
+											</button>
+										)}
+									</div>
+								</Field>
+							)}
 
-							<Field label="Social Links" hint="Up to 5 URLs">
-								<div className="flex flex-col gap-2">
-									{socialLinks.map((link, idx) => (
-										<div key={idx} className="flex items-center gap-2">
-											<input
-												value={link}
-												disabled={!isSpace || !isEditing}
-												onChange={(e) => {
-													const updated = [...socialLinks]
-													updated[idx] = e.target.value
-													setSocialLinks(updated)
-												}}
-												placeholder="https://instagram.com/... or LinkedIn"
-												className={inputClass}
-											/>
-											{(!isEditing || !isSpace) && link.trim() && (
-												<a
-													href={link.startsWith("http") ? link : `https://${link}`}
-													target="_blank"
-													rel="noopener noreferrer"
-													className="px-2.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 border-2 border-black text-black font-bold text-xs shrink-0 flex items-center justify-center"
-													title="Open link"
-												>
-													↗
-												</a>
-											)}
-											{isSpace && isEditing && (
-												<button
-													type="button"
-													onClick={() => setSocialLinks((prev) => prev.filter((_, i) => i !== idx))}
-													className="px-2 py-1 bg-red-100 border-2 border-black rounded-lg text-red-600 font-bold hover:bg-red-200 shrink-0 cursor-pointer"
-												>
-													✕
-												</button>
-											)}
-										</div>
-									))}
-									{isSpace && isEditing && socialLinks.length < 5 && (
-										<button
-											type="button"
-											onClick={() => setSocialLinks((prev) => [...prev, ""])}
-											className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-50 text-black font-black text-xs border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer select-none w-fit"
-										>
-											+ Add Social Link
-										</button>
-									)}
-								</div>
-							</Field>
+							{/* Social Media Links: Naming Rights, Physical Branding, Pop-ups & Experiences */}
+							{category !== "SAMPLING_DEMO" && (
+								<Field label="Social Media Links" hint="Up to 5 URLs">
+									<div className="flex flex-col gap-2">
+										{socialLinks.map((link, idx) => (
+											<div key={idx} className="flex items-center gap-2">
+												<input
+													value={link}
+													disabled={!isSpace || !isEditing}
+													onChange={(e) => {
+														const updated = [...socialLinks]
+														updated[idx] = e.target.value
+														setSocialLinks(updated)
+													}}
+													placeholder="https://instagram.com/... or LinkedIn"
+													className={inputClass}
+												/>
+												{(!isEditing || !isSpace) && link.trim() && (
+													<a
+														href={link.startsWith("http") ? link : `https://${link}`}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="px-2.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 border-2 border-black text-black font-bold text-xs shrink-0 flex items-center justify-center"
+														title="Open link"
+													>
+														↗
+													</a>
+												)}
+												{isSpace && isEditing && (
+													<button
+														type="button"
+														onClick={() => setSocialLinks((prev) => prev.filter((_, i) => i !== idx))}
+														className="px-2 py-1 bg-red-100 border-2 border-black rounded-lg text-red-600 font-bold hover:bg-red-200 shrink-0 cursor-pointer"
+													>
+														✕
+													</button>
+												)}
+											</div>
+										))}
+										{isSpace && isEditing && socialLinks.length < 5 && (
+											<button
+												type="button"
+												onClick={() => setSocialLinks((prev) => [...prev, ""])}
+												className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-50 text-black font-black text-xs border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer select-none w-fit"
+											>
+												+ Add Social Link
+											</button>
+										)}
+									</div>
+								</Field>
+							)}
 						</div>
 
-						{isSpace && reportStatus !== "APPROVED" && (
+						{/* Space Partner Submit/Edit Actions */}
+						{isSpace && !isApproved && (
 							<div className="px-6 py-4 border-t-[3px] border-black flex justify-end gap-3 shrink-0 bg-neutral-50 rounded-b-[21px]">
 								{isEditing ? (
 									<>
@@ -1298,7 +1640,8 @@ export function SpaceDealReportModal({
 							</div>
 						)}
 
-						{!isSpace && reportStatus !== "APPROVED" && (
+						{/* Brand Review Actions (Approve / Request Revision) */}
+						{isBrand && !isApproved && report && (
 							<div className="px-6 py-4 border-t-[3px] border-black flex flex-col gap-3 shrink-0 bg-neutral-50 rounded-b-[21px]">
 								{showRevisionInput ? (
 									<div className="flex flex-col gap-2">
@@ -1365,6 +1708,140 @@ export function SpaceDealReportModal({
 
 			{pdfUrl && <PdfViewerModal url={pdfUrl} title="Deliverables Report" onClose={() => setPdfUrl(null)} />}
 			{viewingImage && <ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />}
+		</div>
+	)
+}
+
+export function SpaceDealsArchiveView({
+	counterpartName,
+	counterpartAvatarUrl,
+	counterpartType,
+	deals,
+	loading,
+	onBack,
+	onViewDeal,
+	onViewReport,
+}: {
+	counterpartName: string
+	counterpartAvatarUrl?: string | null
+	counterpartType?: string
+	deals: SpaceDeal[]
+	loading?: boolean
+	onBack: () => void
+	onViewDeal: (deal: SpaceDeal) => void
+	onViewReport: (deal: SpaceDeal) => void
+}) {
+	return (
+		<div className="flex-1 flex flex-col min-h-0 bg-[#FFFDFC] overflow-hidden">
+			{/* Archive Content */}
+			<div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 min-h-0">
+				{loading ? (
+					<div className="m-auto text-center py-12">
+						<span className="size-3 rounded-full bg-black animate-ping inline-block mb-3" />
+						<p className="text-xs font-bold text-black/50">Loading past deals archive…</p>
+					</div>
+				) : deals.length === 0 ? (
+					<div className="m-auto text-center max-w-sm p-6 bg-white border-[3px] border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+						<div className="size-12 rounded-2xl bg-[#FFC940] border-2 border-black flex items-center justify-center mx-auto mb-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xl">
+							📦
+						</div>
+						<h4 className="text-sm font-black text-black font-heading mb-1">No Completed Deals Yet</h4>
+						<p className="text-xs font-semibold text-black/50 leading-relaxed mb-4">
+							When you and {counterpartName} finish a collaboration and the deliverables report is approved, it will automatically be archived here.
+						</p>
+						<button
+							type="button"
+							onClick={onBack}
+							className="px-4 py-2 rounded-xl bg-[#EE2C2C] hover:bg-[#d12525] text-white font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
+						>
+							Return to Chat
+						</button>
+					</div>
+				) : (
+					deals.map((d) => {
+						const dealData = (d.dealData as any) || {}
+						const amount = d.sponsorshipAmount || dealData.projectCost || dealData.samplingCost
+						const formattedStartDate = d.startDate
+							? new Date(d.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+							: "—"
+						const formattedEndDate = d.endDate
+							? new Date(d.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+							: "—"
+						const category = (d.collaborationType as BrandHubInterestType) || "NAMING_RIGHTS"
+						const categoryLabel = BRAND_HUB_CATEGORY_LABELS[category] || d.collaborationType || "Collaboration"
+
+						return (
+							<div
+								key={d.id}
+								className="bg-white border-[3px] border-black rounded-2xl p-4 sm:p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-3.5 transition-all"
+							>
+								{/* Card Header */}
+								<div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-black/10 pb-3">
+									<div className="flex items-center gap-2">
+										<span
+											className={clsx(
+												"px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider border-2 border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]",
+												category === "NAMING_RIGHTS" && "bg-[#FFC940] text-black",
+												category === "PHYSICAL_BRANDING" && "bg-[#38BDF8] text-black",
+												category === "SAMPLING_DEMO" && "bg-[#EE2C2C] text-white",
+												category === "POPUPS_EXPERIENCES" && "bg-[#A78BFA] text-black"
+											)}
+										>
+											{categoryLabel}
+										</span>
+										<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-900 border border-emerald-900">
+											<span className="size-1.5 rounded-full bg-emerald-600" />
+											Deal Completed & Archived
+										</span>
+									</div>
+									<span className="text-[11px] font-bold text-black/40">
+										Completed {d.report?.createdAt || d.report?.updatedAt ? new Date(d.report?.createdAt || d.report?.updatedAt || "").toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}
+									</span>
+								</div>
+
+								{/* Deal Details Grid */}
+								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+									<div className="min-w-0">
+										<h4 className="text-sm sm:text-base font-black text-black font-heading truncate">
+											{d.projectName}
+										</h4>
+										<div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-bold text-black/60 mt-1">
+											<span>📅 {formattedStartDate} – {formattedEndDate}</span>
+											{amount ? <span>💰 {formatAmount(amount)}</span> : null}
+											{dealData.brandingInventory && (
+												<span>🏷️ {dealData.brandingInventory}</span>
+											)}
+											{dealData.cities && (
+												<span>📍 {dealData.cities}</span>
+											)}
+										</div>
+									</div>
+
+									{/* Action Buttons */}
+									<div className="flex items-center gap-2 shrink-0">
+										<button
+											type="button"
+											onClick={() => onViewDeal(d)}
+											className="px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-100 text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
+										>
+											View Terms
+										</button>
+										{d.report && (
+											<button
+												type="button"
+												onClick={() => onViewReport(d)}
+												className="px-3 py-1.5 rounded-xl bg-[#FFC940] hover:bg-[#ffbe1a] text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
+											>
+												View Report
+											</button>
+										)}
+									</div>
+								</div>
+							</div>
+						)
+					})
+				)}
+			</div>
 		</div>
 	)
 }

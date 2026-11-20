@@ -48,6 +48,7 @@ import {
 	sendSpaceChatMessage,
 	getSpaceDeal,
 	getSpaceDealReport,
+	getPastSpaceDeals,
 	getSpaceHostChatMessages,
 	sendSpaceHostChatMessage,
 	getSpaceHostDeal,
@@ -62,6 +63,7 @@ import {
 	SpaceDealFormModal,
 	SpaceDealDetailsModal,
 	SpaceDealReportModal,
+	SpaceDealsArchiveView,
 } from "@/components/spaces/SpaceDealPanel"
 import {
 	SpaceHostDealBanner,
@@ -78,6 +80,7 @@ import {
 	getBrandCommunityCollaborationChatMessages,
 	sendBrandCommunityCollaborationMessage,
 	getBrandCommunityDeal,
+	getBrandCommunityPastDeals,
 	type BrandCommunityCollaborationDeal,
 	type BrandCommunityCollaborationDealReport,
 } from "@/lib/api"
@@ -86,6 +89,7 @@ import {
 	BrandCommunityDealFormModal,
 	BrandCommunityDealDetailsModal,
 	BrandCommunityDealReportModal,
+	BrandCommunityDealsArchiveView,
 } from "@/components/community/BrandCommunityDealPanel"
 import { uploadCommunityCollaborationChatImage } from "@/lib/uploadMedia"
 import { useChatTyping } from "@/hooks/useChatTyping"
@@ -568,6 +572,10 @@ function ActiveConversationPane({
 	const [spaceDeal, setSpaceDeal] = useState<SpaceDeal | null>(null)
 	const [spaceReport, setSpaceReport] = useState<SpaceDealReport | null>(null)
 	const [spaceModal, setSpaceModal] = useState<"form" | "details" | "report" | null>(null)
+	const [pastSpaceDeals, setPastSpaceDeals] = useState<SpaceDeal[]>([])
+	const [loadingPastSpaceDeals, setLoadingPastSpaceDeals] = useState(false)
+	const [inspectingHistoricalSpaceDeal, setInspectingHistoricalSpaceDeal] = useState<SpaceDeal | null>(null)
+	const [inspectingHistoricalSpaceReport, setInspectingHistoricalSpaceReport] = useState<SpaceDealReport | null>(null)
 
 	const [spaceHostDeal, setSpaceHostDeal] = useState<SpaceHostDeal | null>(null)
 	const [spaceHostReport, setSpaceHostReport] = useState<SpaceHostDealReport | null>(null)
@@ -576,6 +584,11 @@ function ActiveConversationPane({
 	const [brandCommunityDeal, setBrandCommunityDeal] = useState<BrandCommunityCollaborationDeal | null>(null)
 	const [brandCommunityReport, setBrandCommunityReport] = useState<BrandCommunityCollaborationDealReport | null>(null)
 	const [brandCommunityModal, setBrandCommunityModal] = useState<"form" | "details" | "report" | null>(null)
+	const [activeSubView, setActiveSubView] = useState<"chat" | "archive">("chat")
+	const [pastDeals, setPastDeals] = useState<BrandCommunityCollaborationDeal[]>([])
+	const [loadingPastDeals, setLoadingPastDeals] = useState(false)
+	const [inspectingHistoricalDeal, setInspectingHistoricalDeal] = useState<BrandCommunityCollaborationDeal | null>(null)
+	const [inspectingHistoricalReport, setInspectingHistoricalReport] = useState<BrandCommunityCollaborationDealReport | null>(null)
 
 	// Community Collab sender role tracker
 	const [collabMySenderType, setCollabMySenderType] = useState<"REQUESTER" | "TARGET" | null>(
@@ -635,11 +648,12 @@ function ActiveConversationPane({
 				setSponsorshipReport(repRes)
 			} else if (thread.kind === "SPACE_INTEREST") {
 				const apiRole = role === "COMMUNITY" ? "COMMUNITY" : role === "BRAND" ? "BRAND" : "SPACE"
-				const [msgRes, dealRes] = await Promise.all([
+				const [msgRes, dealRes, pastDealsRes] = await Promise.all([
 					getSpaceChatMessages(thread.id, apiRole),
 					getSpaceDeal(thread.id).catch(() => null),
+					getPastSpaceDeals(thread.id, apiRole).catch(() => []),
 				])
-				const repRes = dealRes ? await getSpaceDealReport(thread.id, apiRole).catch(() => null) : null
+				const repRes = dealRes ? await getSpaceDealReport(thread.id, apiRole, dealRes.id).catch(() => null) : null
 
 				if (prevMsgCountRef.current > 0 && msgRes.messages.length > prevMsgCountRef.current) {
 					const newest = msgRes.messages[msgRes.messages.length - 1]
@@ -652,6 +666,7 @@ function ActiveConversationPane({
 				setMessages(msgRes.messages)
 				setSpaceDeal(dealRes)
 				setSpaceReport(repRes)
+				setPastSpaceDeals(pastDealsRes || [])
 			} else if (thread.kind === "SPACE_HOST") {
 				const spaceHostRole = role === "SPACE" ? "SPACE" : "HOST"
 				const [msgRes, dealRes] = await Promise.all([
@@ -674,13 +689,16 @@ function ActiveConversationPane({
 			} else if (thread.kind === "COMMUNITY_COLLAB") {
 				const isBrandCommunity = thread.rawThread?.collaborationType === "BRAND_COMMUNITY"
 				const asRole = role === "BRAND" ? "BRAND" : "COMMUNITY"
-				const [res, dealRes] = await Promise.all([
+				const [res, dealRes, pastDealsRes] = await Promise.all([
 					isBrandCommunity
 						? getBrandCommunityCollaborationChatMessages(thread.id, asRole)
 						: getCommunityCollaborationChatMessages(thread.id),
 					isBrandCommunity
 						? getBrandCommunityDeal(thread.id, asRole).catch(() => null)
 						: Promise.resolve(null),
+					isBrandCommunity
+						? getBrandCommunityPastDeals(thread.id, asRole).catch(() => [])
+						: Promise.resolve([]),
 				])
 				if (res.mySenderType) {
 					setCollabMySenderType(res.mySenderType)
@@ -696,6 +714,7 @@ function ActiveConversationPane({
 				setMessages(newMessages)
 				setBrandCommunityDeal(dealRes)
 				setBrandCommunityReport(dealRes?.report || null)
+				setPastDeals(pastDealsRes || [])
 			}
 		} catch {
 			// silent poll refresh
@@ -707,11 +726,12 @@ function ActiveConversationPane({
 	useEffect(() => {
 		prevMsgCountRef.current = 0
 		setLoading(true)
+		setActiveSubView("chat")
 		setCollabMySenderType(thread.rawThread?.mySenderType || null)
 		loadMessagesAndDeals()
 		const interval = setInterval(loadMessagesAndDeals, MESSAGES_POLL_MS)
 		return () => clearInterval(interval)
-	}, [loadMessagesAndDeals, thread.rawThread?.mySenderType])
+	}, [loadMessagesAndDeals, thread.id, thread.rawThread?.mySenderType])
 
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -919,103 +939,184 @@ function ActiveConversationPane({
 			/>
 
 			{/* Conversation Header */}
-			<div className="px-4 sm:px-5 py-3 border-b-[3px] border-black bg-white flex items-center justify-between shrink-0 gap-2">
-				<div className="flex items-center gap-3 min-w-0 flex-1">
-					<button
-						type="button"
-						onClick={onBack}
-						className="sm:hidden p-1.5 -ml-1 text-black/70 hover:text-black hover:bg-neutral-100 rounded-full shrink-0 transition-colors"
-						aria-label="Back to chat list"
-					>
-						<Icon as={AltArrowLeftSvg} size="sm" />
-					</button>
+			{(() => {
+				const isBrandCommunityCollab =
+					thread.kind === "COMMUNITY_COLLAB" &&
+					thread.rawThread?.collaborationType === "BRAND_COMMUNITY"
+				const hasArchive = isBrandCommunityCollab || thread.kind === "SPACE_INTEREST"
 
-					<div className="size-9 rounded-full border border-black/15 overflow-hidden shrink-0 relative bg-neutral-100 flex items-center justify-center font-heading font-black text-xs text-black/60 shadow-xs">
-						{thread.counterpartAvatarUrl ? (
-							<img
-								src={thread.counterpartAvatarUrl}
-								alt={thread.counterpartName}
-								className="w-full h-full object-cover"
-							/>
-						) : (
-							thread.counterpartName.charAt(0).toUpperCase()
-						)}
-					</div>
-
-					<div className="min-w-0 flex-1">
-						<div className="flex items-center gap-2">
-							<p className="text-xs sm:text-sm font-black text-black truncate leading-tight">
-								{thread.counterpartName}
-							</p>
-							{thread.counterpartType && (
-								<span className="px-1.5 py-0.2 rounded-md text-[9px] font-black uppercase bg-black/10 text-black/60">
-									{thread.counterpartType}
-								</span>
+				return (
+					<div className="px-4 sm:px-5 py-3 border-b-[3px] border-black bg-white flex items-center justify-between shrink-0 gap-2">
+						<div className="flex items-center gap-2.5 min-w-0 flex-1">
+							{/* Small icon to the left of the profile picture */}
+							{activeSubView === "archive" ? (
+								<button
+									type="button"
+									onClick={() => setActiveSubView("chat")}
+									className="p-1.5 -ml-1 text-black/70 hover:text-black hover:bg-neutral-100 rounded-full shrink-0 transition-colors cursor-pointer"
+									aria-label="Back to chat"
+									title="Back to chat"
+								>
+									<Icon as={AltArrowLeftSvg} size="sm" />
+								</button>
+							) : (
+								<button
+									type="button"
+									onClick={onBack}
+									className="sm:hidden p-1.5 -ml-1 text-black/70 hover:text-black hover:bg-neutral-100 rounded-full shrink-0 transition-colors"
+									aria-label="Back to chat list"
+								>
+									<Icon as={AltArrowLeftSvg} size="sm" />
+								</button>
 							)}
+
+							<div
+								className={clsx(
+									"flex items-center gap-3 min-w-0 flex-1",
+									hasArchive && "cursor-pointer group select-none"
+								)}
+								onClick={
+									hasArchive
+										? () => setActiveSubView((prev) => (prev === "archive" ? "chat" : "archive"))
+										: undefined
+								}
+								role={hasArchive ? "button" : undefined}
+								tabIndex={hasArchive ? 0 : undefined}
+								title={
+									hasArchive
+										? activeSubView === "archive"
+											? "Back to chat"
+											: "View deal archive"
+										: undefined
+								}
+							>
+								<div className="size-9 rounded-full border border-black/15 overflow-hidden shrink-0 relative bg-neutral-100 flex items-center justify-center font-heading font-black text-xs text-black/60 shadow-xs group-hover:ring-2 group-hover:ring-black transition-all">
+									{thread.counterpartAvatarUrl ? (
+										<img
+											src={thread.counterpartAvatarUrl}
+											alt={thread.counterpartName}
+											className="w-full h-full object-cover"
+										/>
+									) : (
+										thread.counterpartName.charAt(0).toUpperCase()
+									)}
+								</div>
+
+								<div className="min-w-0 flex-1">
+									<div className="flex items-center gap-2">
+										<p className="text-xs sm:text-sm font-black text-black truncate leading-tight group-hover:underline">
+											{thread.counterpartName}
+										</p>
+										{thread.counterpartType && (
+											<span className="px-1.5 py-0.2 rounded-md text-[9px] font-black uppercase bg-black/10 text-black/60">
+												{thread.counterpartType}
+											</span>
+										)}
+									</div>
+									<p className="text-[10px] sm:text-[11px] font-semibold text-black/40 truncate">
+										{thread.title}
+									</p>
+								</div>
+							</div>
 						</div>
-						<p className="text-[10px] sm:text-[11px] font-semibold text-black/40 truncate">
-							{thread.title}
-						</p>
 					</div>
-				</div>
-			</div>
+				)
+			})()}
 
-			{/* Deal Banner (For Sponsorships & Spaces) */}
-			{(thread.kind === "SPONSORSHIP" || thread.kind === "CAMPAIGN") && (
-				<DealBanner
-					deal={sponsorshipDeal}
-					role={role === "COMMUNITY" ? "HOST" : role === "BRAND" ? "BRAND" : "SPACE"}
-					onLock={() => setSponsorshipModal("form")}
-					onEdit={() => setSponsorshipModal("form")}
-					onView={() => setSponsorshipModal("details")}
-					onReport={() => setSponsorshipModal("report")}
-					hasReport={!!sponsorshipReport}
-					report={sponsorshipReport}
-					isCampaign={thread.kind === "CAMPAIGN"}
+			{activeSubView === "archive" &&
+			thread.kind === "COMMUNITY_COLLAB" &&
+			thread.rawThread?.collaborationType === "BRAND_COMMUNITY" ? (
+				<BrandCommunityDealsArchiveView
+					counterpartName={thread.counterpartName}
+					counterpartAvatarUrl={thread.counterpartAvatarUrl}
+					counterpartType={thread.counterpartType}
+					deals={pastDeals}
+					loading={loadingPastDeals}
+					onBack={() => setActiveSubView("chat")}
+					onViewDeal={(d) => {
+						setInspectingHistoricalDeal(d)
+						setInspectingHistoricalReport(null)
+					}}
+					onViewReport={(d) => {
+						setInspectingHistoricalDeal(d)
+						setInspectingHistoricalReport(d.report || null)
+					}}
 				/>
-			)}
-
-			{thread.kind === "SPACE_INTEREST" && (
-				<SpaceDealBanner
-					deal={spaceDeal}
-					role={role === "COMMUNITY" ? "COMMUNITY" : role === "BRAND" ? "BRAND" : "SPACE"}
-					onLock={() => setSpaceModal("form")}
-					onEdit={() => setSpaceModal("form")}
-					onView={() => setSpaceModal("details")}
-					onReport={() => setSpaceModal("report")}
-					hasReport={Boolean(spaceReport)}
-					report={spaceReport}
+			) : activeSubView === "archive" && thread.kind === "SPACE_INTEREST" ? (
+				<SpaceDealsArchiveView
+					counterpartName={thread.counterpartName}
+					counterpartAvatarUrl={thread.counterpartAvatarUrl}
+					counterpartType={thread.counterpartType}
+					deals={pastSpaceDeals}
+					loading={loadingPastSpaceDeals}
+					onBack={() => setActiveSubView("chat")}
+					onViewDeal={(d) => {
+						setInspectingHistoricalSpaceDeal(d)
+						setInspectingHistoricalSpaceReport(null)
+					}}
+					onViewReport={(d) => {
+						setInspectingHistoricalSpaceDeal(d)
+						setInspectingHistoricalSpaceReport(d.report || null)
+					}}
 				/>
-			)}
+			) : (
+				<>
+					{/* Deal Banner (For Sponsorships & Spaces) */}
+					{(thread.kind === "SPONSORSHIP" || thread.kind === "CAMPAIGN") && (
+						<DealBanner
+							deal={sponsorshipDeal}
+							role={role === "COMMUNITY" ? "HOST" : role === "BRAND" ? "BRAND" : "SPACE"}
+							onLock={() => setSponsorshipModal("form")}
+							onEdit={() => setSponsorshipModal("form")}
+							onView={() => setSponsorshipModal("details")}
+							onReport={() => setSponsorshipModal("report")}
+							hasReport={!!sponsorshipReport}
+							report={sponsorshipReport}
+							isCampaign={thread.kind === "CAMPAIGN"}
+						/>
+					)}
 
-			{thread.kind === "SPACE_HOST" && (
-				<SpaceHostDealBanner
-					deal={spaceHostDeal}
-					role={role === "SPACE" ? "SPACE" : "HOST"}
-					onLock={() => setSpaceHostModal("form")}
-					onEdit={() => setSpaceHostModal("form")}
-					onView={() => setSpaceHostModal("details")}
-					onReport={() => setSpaceHostModal("report")}
-					hasReport={Boolean(spaceHostReport)}
-					report={spaceHostReport}
-				/>
-			)}
+					{thread.kind === "SPACE_INTEREST" && (
+						<SpaceDealBanner
+							deal={spaceDeal}
+							role={role === "COMMUNITY" ? "COMMUNITY" : role === "BRAND" ? "BRAND" : "SPACE"}
+							onLock={() => setSpaceModal("form")}
+							onEdit={() => setSpaceModal("form")}
+							onView={() => setSpaceModal("details")}
+							onReport={() => setSpaceModal("report")}
+							hasReport={Boolean(spaceReport)}
+							report={spaceReport}
+						/>
+					)}
 
-			{thread.kind === "COMMUNITY_COLLAB" && thread.rawThread?.collaborationType === "BRAND_COMMUNITY" && (
-				<BrandCommunityDealBanner
-					deal={brandCommunityDeal}
-					role={role === "BRAND" ? "BRAND" : "COMMUNITY"}
-					onLock={() => setBrandCommunityModal("form")}
-					onEdit={() => setBrandCommunityModal("form")}
-					onView={() => setBrandCommunityModal("details")}
-					onReport={() => setBrandCommunityModal("report")}
-					hasReport={Boolean(brandCommunityReport)}
-					report={brandCommunityReport}
-				/>
-			)}
+					{thread.kind === "SPACE_HOST" && (
+						<SpaceHostDealBanner
+							deal={spaceHostDeal}
+							role={role === "SPACE" ? "SPACE" : "HOST"}
+							onLock={() => setSpaceHostModal("form")}
+							onEdit={() => setSpaceHostModal("form")}
+							onView={() => setSpaceHostModal("details")}
+							onReport={() => setSpaceHostModal("report")}
+							hasReport={Boolean(spaceHostReport)}
+							report={spaceHostReport}
+						/>
+					)}
 
-			{/* Message Feed Scroll Area */}
-			<div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 flex flex-col gap-3 min-h-0">
+					{thread.kind === "COMMUNITY_COLLAB" && thread.rawThread?.collaborationType === "BRAND_COMMUNITY" && (
+						<BrandCommunityDealBanner
+							deal={brandCommunityDeal}
+							role={role === "BRAND" ? "BRAND" : "COMMUNITY"}
+							onLock={() => setBrandCommunityModal("form")}
+							onEdit={() => setBrandCommunityModal("form")}
+							onView={() => setBrandCommunityModal("details")}
+							onReport={() => setBrandCommunityModal("report")}
+							hasReport={Boolean(brandCommunityReport)}
+							report={brandCommunityReport}
+						/>
+					)}
+
+					{/* Message Feed Scroll Area */}
+					<div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 flex flex-col gap-3 min-h-0">
 				{loading ? (
 					<p className="text-xs font-semibold text-black/40 text-center py-8">Loading messages…</p>
 				) : messages.length === 0 ? (
@@ -1394,6 +1495,8 @@ function ActiveConversationPane({
 					</Button>
 				</div>
 			</div>
+			</>
+			)}
 
 			{/* Lightbox Modal */}
 			{viewingImage && (
@@ -1440,6 +1543,12 @@ function ActiveConversationPane({
 					deal={spaceDeal}
 					role={role === "COMMUNITY" ? "COMMUNITY" : role === "BRAND" ? "BRAND" : "SPACE"}
 					thread={thread.rawThread}
+					hubName={
+						(thread.rawThread as any)?.spaceName ||
+						(thread.rawThread as any)?.spaceCommunityProfile?.name ||
+						(thread.rawThread as any)?.space?.name ||
+						(role === "SPACE" ? ownName : thread.counterpartName)
+					}
 					onClose={() => setSpaceModal(null)}
 					onSaved={(saved) => {
 						setSpaceDeal(saved)
@@ -1548,6 +1657,72 @@ function ActiveConversationPane({
 					onClose={() => setBrandCommunityModal(null)}
 					onSaved={(saved) => {
 						setBrandCommunityReport(saved)
+						loadMessagesAndDeals()
+						onRefreshThreads?.()
+					}}
+				/>
+			)}
+
+			{/* Historical / Past Deals Modals from Archive */}
+			{inspectingHistoricalDeal && !inspectingHistoricalReport && (
+				<BrandCommunityDealDetailsModal
+					interestId={thread.id}
+					deal={inspectingHistoricalDeal}
+					role={role === "BRAND" ? "BRAND" : "COMMUNITY"}
+					onClose={() => setInspectingHistoricalDeal(null)}
+					onUpdated={(updated) => {
+						setInspectingHistoricalDeal(updated)
+						loadMessagesAndDeals()
+						onRefreshThreads?.()
+					}}
+				/>
+			)}
+
+			{inspectingHistoricalDeal && inspectingHistoricalReport && (
+				<BrandCommunityDealReportModal
+					interestId={thread.id}
+					deal={inspectingHistoricalDeal}
+					report={inspectingHistoricalReport}
+					role={role === "BRAND" ? "BRAND" : "COMMUNITY"}
+					onClose={() => {
+						setInspectingHistoricalDeal(null)
+						setInspectingHistoricalReport(null)
+					}}
+					onSaved={(saved) => {
+						setInspectingHistoricalReport(saved)
+						loadMessagesAndDeals()
+						onRefreshThreads?.()
+					}}
+				/>
+			)}
+
+			{/* Historical / Past Space Deals Modals from Archive */}
+			{inspectingHistoricalSpaceDeal && !inspectingHistoricalSpaceReport && (
+				<SpaceDealDetailsModal
+					interestId={thread.id}
+					deal={inspectingHistoricalSpaceDeal}
+					role={role === "COMMUNITY" ? "COMMUNITY" : role === "BRAND" ? "BRAND" : "SPACE"}
+					onClose={() => setInspectingHistoricalSpaceDeal(null)}
+					onUpdated={(updated) => {
+						setInspectingHistoricalSpaceDeal(updated)
+						loadMessagesAndDeals()
+						onRefreshThreads?.()
+					}}
+				/>
+			)}
+
+			{inspectingHistoricalSpaceDeal && inspectingHistoricalSpaceReport && (
+				<SpaceDealReportModal
+					interestId={thread.id}
+					deal={inspectingHistoricalSpaceDeal}
+					report={inspectingHistoricalSpaceReport}
+					role={role === "COMMUNITY" ? "COMMUNITY" : role === "BRAND" ? "BRAND" : "SPACE"}
+					onClose={() => {
+						setInspectingHistoricalSpaceDeal(null)
+						setInspectingHistoricalSpaceReport(null)
+					}}
+					onReportUpdated={(saved) => {
+						setInspectingHistoricalSpaceReport(saved)
 						loadMessagesAndDeals()
 						onRefreshThreads?.()
 					}}

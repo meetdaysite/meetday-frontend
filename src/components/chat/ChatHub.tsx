@@ -42,6 +42,7 @@ import {
 	type CommunityCollaborationThread,
 	type BrandCommunityCollaborationThread,
 	type BrandCommunityInterestDomain,
+	type BrandHubInterestType,
 } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 
@@ -57,6 +58,22 @@ function getDomainLabel(domain?: BrandCommunityInterestDomain | string | null): 
 		case "SPONSORSHIP":
 		default:
 			return "Sponsorship"
+	}
+}
+
+export function getHubTypeLabel(type?: BrandHubInterestType | string | null): string {
+	if (!type) return "Hub"
+	switch (type.toUpperCase()) {
+		case "NAMING_RIGHTS":
+			return "Naming Rights"
+		case "PHYSICAL_BRANDING":
+			return "Physical Branding"
+		case "SAMPLING_DEMO":
+			return "Sampling & Demo"
+		case "POPUPS_EXPERIENCES":
+			return "Pop-ups & Experiences"
+		default:
+			return "Hub"
 	}
 }
 
@@ -245,6 +262,9 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 		spaceThreads.forEach((t) => {
 			if (t.chatStatus !== "ACCEPTED") return
 
+			const hubType = t.interestType ? getHubTypeLabel(t.interestType) : null
+			const displayTitle = hubType ? `${hubType} Collaboration` : (t.counterpartName || "Hub Booking")
+
 			if (role === "SPACE") {
 				// In Space role: split into Communities and Brands
 				const catKey: ChatCategoryKey = t.requesterType === "BRAND" ? "brands" : "communities"
@@ -255,7 +275,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 					counterpartName: t.counterpartName,
 					counterpartAvatarUrl: t.counterpartAvatarUrl,
 					counterpartType: t.requesterType,
-					title: t.counterpartName || "Hub Booking",
+					title: displayTitle,
 					subtitle: t.counterpartName,
 					lastMessagePreview: t.lastMessagePreview,
 					lastMessageAt: t.lastMessageAt,
@@ -272,7 +292,7 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 					counterpartName: t.counterpartName,
 					counterpartAvatarUrl: t.counterpartAvatarUrl,
 					counterpartType: "SPACE",
-					title: t.counterpartName || "Hub Booking",
+					title: displayTitle,
 					subtitle: t.counterpartName,
 					lastMessagePreview: t.lastMessagePreview,
 					lastMessageAt: t.lastMessageAt,
@@ -421,6 +441,12 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			// - Sent: Community sent inquiry to Space
 			spaceThreads.forEach((t) => {
 				if (t.chatStatus === "REQUESTED") {
+					const hubType = t.interestType ? getHubTypeLabel(t.interestType) : null
+					const title = hubType ? `${hubType} Collaboration` : (t.counterpartName || "Hub Booking")
+					const description = hubType
+						? `You sent a ${hubType.toLowerCase()} collaboration request to this hub.`
+						: "You sent a booking inquiry to this hub."
+
 					list.push({
 						id: t.id,
 						category: "spaces",
@@ -430,8 +456,8 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 						counterpartName: t.counterpartName,
 						counterpartAvatarUrl: t.counterpartAvatarUrl,
 						counterpartType: "SPACE",
-						title: t.counterpartName || "Hub Booking",
-						description: "You sent a booking inquiry to this hub.",
+						title,
+						description,
 						createdAt: t.createdAt,
 						lastMessagePreview: t.lastMessagePreview,
 						isIncoming: false,
@@ -537,6 +563,12 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			spaceThreads.forEach((t) => {
 				if (t.chatStatus === "REQUESTED") {
 					const catKey: ChatCategoryKey = t.requesterType === "BRAND" ? "brands" : "communities"
+					const hubType = t.interestType ? getHubTypeLabel(t.interestType) : null
+					const title = hubType ? `${hubType} Collaboration` : (t.counterpartName || "Hub Inquiry")
+					const description = hubType
+						? `${t.counterpartName} is interested in ${hubType.toLowerCase()} with your hub.`
+						: `${t.counterpartName} requested to book or partner with your hub.`
+
 					list.push({
 						id: t.id,
 						category: catKey,
@@ -546,8 +578,8 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 						counterpartName: t.counterpartName,
 						counterpartAvatarUrl: t.counterpartAvatarUrl,
 						counterpartType: t.requesterType,
-						title: t.counterpartName || "Hub Inquiry",
-						description: `${t.counterpartName} requested to book or partner with your hub.`,
+						title,
+						description,
 						createdAt: t.createdAt,
 						lastMessagePreview: t.lastMessagePreview,
 						isIncoming: true,
@@ -614,6 +646,12 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 			// 2. Spaces (Sent requests by Brand)
 			spaceThreads.forEach((t) => {
 				if (t.chatStatus === "REQUESTED") {
+					const hubType = t.interestType ? getHubTypeLabel(t.interestType) : null
+					const title = hubType ? `${hubType} Collaboration` : (t.counterpartName || "Hub Inquiry")
+					const description = hubType
+						? `You sent a ${hubType.toLowerCase()} collaboration request to this hub.`
+						: "You sent an inquiry to this hub partner."
+
 					list.push({
 						id: t.id,
 						category: "spaces",
@@ -623,8 +661,8 @@ export function ChatHub({ role, defaultCategory }: ChatHubProps) {
 						counterpartName: t.counterpartName,
 						counterpartAvatarUrl: t.counterpartAvatarUrl,
 						counterpartType: "SPACE",
-						title: t.counterpartName || "Hub Inquiry",
-						description: "You sent an inquiry to this hub partner.",
+						title,
+						description,
 						createdAt: t.createdAt,
 						lastMessagePreview: t.lastMessagePreview,
 						isIncoming: false,

@@ -37,6 +37,14 @@ function formatAmount(amount?: number | string | null): string {
 	return `₹${num.toLocaleString("en-IN")}`
 }
 
+function getTodayDateString(): string {
+	const now = new Date()
+	const year = now.getFullYear()
+	const month = String(now.getMonth() + 1).padStart(2, "0")
+	const day = String(now.getDate()).padStart(2, "0")
+	return `${year}-${month}-${day}`
+}
+
 export function BrandCommunityDealBanner({
 	deal,
 	role,
@@ -241,6 +249,7 @@ export function BrandCommunityDealFormModal({
 	)
 
 	const [saving, setSaving] = useState(false)
+	const todayStr = getTodayDateString()
 
 	// Validation by category
 	let isValid = false
@@ -364,8 +373,12 @@ export function BrandCommunityDealFormModal({
 								<Field label="Start Date" required>
 									<input
 										type="date"
+										min={todayStr}
 										value={startDate}
-										onChange={(e) => setStartDate(e.target.value)}
+										onChange={(e) => {
+											setStartDate(e.target.value)
+											if (endDate && e.target.value > endDate) setEndDate("")
+										}}
 										className={inputClass}
 										required
 									/>
@@ -373,6 +386,7 @@ export function BrandCommunityDealFormModal({
 								<Field label="End Date" required>
 									<input
 										type="date"
+										min={startDate || todayStr}
 										value={endDate}
 										onChange={(e) => setEndDate(e.target.value)}
 										className={inputClass}
@@ -423,8 +437,12 @@ export function BrandCommunityDealFormModal({
 								<Field label="Start Date" required>
 									<input
 										type="date"
+										min={todayStr}
 										value={startDate}
-										onChange={(e) => setStartDate(e.target.value)}
+										onChange={(e) => {
+											setStartDate(e.target.value)
+											if (endDate && e.target.value > endDate) setEndDate("")
+										}}
 										className={inputClass}
 										required
 									/>
@@ -432,6 +450,7 @@ export function BrandCommunityDealFormModal({
 								<Field label="End Date" required>
 									<input
 										type="date"
+										min={startDate || todayStr}
 										value={endDate}
 										onChange={(e) => setEndDate(e.target.value)}
 										className={inputClass}
@@ -493,8 +512,12 @@ export function BrandCommunityDealFormModal({
 								<Field label="Start Date" required>
 									<input
 										type="date"
+										min={todayStr}
 										value={startDate}
-										onChange={(e) => setStartDate(e.target.value)}
+										onChange={(e) => {
+											setStartDate(e.target.value)
+											if (endDate && e.target.value > endDate) setEndDate("")
+										}}
 										className={inputClass}
 										required
 									/>
@@ -502,6 +525,7 @@ export function BrandCommunityDealFormModal({
 								<Field label="End Date" required>
 									<input
 										type="date"
+										min={startDate || todayStr}
 										value={endDate}
 										onChange={(e) => setEndDate(e.target.value)}
 										className={inputClass}
@@ -982,6 +1006,7 @@ export function BrandCommunityDealReportModal({
 	)
 
 	const [saving, setSaving] = useState(false)
+	const todayStr = getTodayDateString()
 
 	async function handleUploadPhoto(file: File) {
 		if (!file.type.startsWith("image/")) {
@@ -1662,6 +1687,137 @@ export function BrandCommunityDealReportModal({
 			{viewingImage && (
 				<ImageLightbox url={viewingImage} onClose={() => setViewingImage(null)} />
 			)}
+		</div>
+	)
+}
+
+export function BrandCommunityDealsArchiveView({
+	counterpartName,
+	counterpartAvatarUrl,
+	counterpartType,
+	deals,
+	loading,
+	onBack,
+	onViewDeal,
+	onViewReport,
+}: {
+	counterpartName: string
+	counterpartAvatarUrl?: string | null
+	counterpartType?: string
+	deals: BrandCommunityCollaborationDeal[]
+	loading?: boolean
+	onBack: () => void
+	onViewDeal: (deal: BrandCommunityCollaborationDeal) => void
+	onViewReport: (deal: BrandCommunityCollaborationDeal) => void
+}) {
+	return (
+		<div className="flex-1 flex flex-col min-h-0 bg-[#FFFDFC] overflow-hidden">
+			{/* Archive Content */}
+			<div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 min-h-0">
+				{loading ? (
+					<div className="m-auto text-center py-12">
+						<span className="size-3 rounded-full bg-black animate-ping inline-block mb-3" />
+						<p className="text-xs font-bold text-black/50">Loading past deals archive…</p>
+					</div>
+				) : deals.length === 0 ? (
+					<div className="m-auto text-center max-w-sm p-6 bg-white border-[3px] border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+						<div className="size-12 rounded-2xl bg-[#FFC940] border-2 border-black flex items-center justify-center mx-auto mb-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xl">
+							📦
+						</div>
+						<h4 className="text-sm font-black text-black font-heading mb-1">No Completed Deals Yet</h4>
+						<p className="text-xs font-semibold text-black/50 leading-relaxed mb-4">
+							When you and {counterpartName} finish a collaboration and the deliverables report is approved, it will automatically be archived here.
+						</p>
+						<button
+							type="button"
+							onClick={onBack}
+							className="px-4 py-2 rounded-xl bg-[#EE2C2C] hover:bg-[#d12525] text-white font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
+						>
+							Return to Chat
+						</button>
+					</div>
+				) : (
+					deals.map((d) => {
+						const dealData = (d.dealData as any) || {}
+						const amount = d.sponsorshipAmount || dealData.projectCost || dealData.samplingCost || dealData.sponsorshipCost
+						const formattedStartDate = d.startDate
+							? new Date(d.startDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+							: "—"
+						const formattedEndDate = d.endDate
+							? new Date(d.endDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+							: "—"
+
+						return (
+							<div
+								key={d.id}
+								className="bg-white border-[3px] border-black rounded-2xl p-4 sm:p-5 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col gap-3.5 transition-all"
+							>
+								{/* Card Header */}
+								<div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-black/10 pb-3">
+									<div className="flex items-center gap-2">
+										<span
+											className={clsx(
+												"px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider border-2 border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]",
+												d.collaborationType === "SPONSORSHIP" && "bg-[#EE2C2C] text-white",
+												d.collaborationType === "BRANDED_CONTENT" && "bg-[#7C3AED] text-white",
+												d.collaborationType === "SAMPLING" && "bg-[#FFC940] text-black"
+											)}
+										>
+											{d.collaborationType}
+										</span>
+										<span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-900 border border-emerald-900">
+											<span className="size-1.5 rounded-full bg-emerald-600" />
+											Deal Completed & Archived
+										</span>
+									</div>
+									<span className="text-[11px] font-bold text-black/40">
+										Completed {d.report?.createdAt ? new Date(d.report.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}
+									</span>
+								</div>
+
+								{/* Deal Details Grid */}
+								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+									<div className="min-w-0">
+										<h4 className="text-sm sm:text-base font-black text-black font-heading truncate">
+											{d.projectName}
+										</h4>
+										<div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-bold text-black/60 mt-1">
+											<span>📅 {formattedStartDate} – {formattedEndDate}</span>
+											{amount ? <span>💰 {formatAmount(amount)}</span> : null}
+											{d.collaborationType === "BRANDED_CONTENT" && dealData.platforms && (
+												<span>📱 {dealData.platforms}</span>
+											)}
+											{d.collaborationType === "SAMPLING" && dealData.cities && (
+												<span>📍 {dealData.cities}</span>
+											)}
+										</div>
+									</div>
+
+									{/* Action Buttons */}
+									<div className="flex items-center gap-2 shrink-0">
+										<button
+											type="button"
+											onClick={() => onViewDeal(d)}
+											className="px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-100 text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
+										>
+											View Terms
+										</button>
+										{d.report && (
+											<button
+												type="button"
+												onClick={() => onViewReport(d)}
+												className="px-3 py-1.5 rounded-xl bg-[#FFC940] hover:bg-[#ffbe1a] text-black font-black text-xs border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all cursor-pointer"
+											>
+												View Report
+											</button>
+										)}
+									</div>
+								</div>
+							</div>
+						)
+					})
+				)}
+			</div>
 		</div>
 	)
 }

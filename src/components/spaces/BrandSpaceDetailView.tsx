@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import clsx from "clsx"
-import type { Category, PastEvent, BrandWorkedWith } from "@/lib/api"
+import type { Category, PastEvent, BrandWorkedWith, BrandHubInterestType, SpaceChatStatus } from "@/lib/api"
 
 export type SpaceDetailData = {
 	id: string
@@ -49,6 +49,12 @@ export interface BrandSpaceDetailViewProps {
 	backLabel?: string
 	isBrandPreview?: boolean
 	onCollaborateClick?: () => void
+	onInterestType?: (type: BrandHubInterestType) => void
+	interestTypeSending?: BrandHubInterestType | null
+	sentInterestType?: BrandHubInterestType | null
+	chatStatus?: SpaceChatStatus | null
+	chatId?: string | null
+	onGoToChannel?: (chatId: string) => void
 }
 
 export function BrandSpaceDetailView({
@@ -57,6 +63,12 @@ export function BrandSpaceDetailView({
 	backLabel = "Back to Profile",
 	isBrandPreview = false,
 	onCollaborateClick,
+	onInterestType,
+	interestTypeSending = null,
+	sentInterestType = null,
+	chatStatus = null,
+	chatId = null,
+	onGoToChannel,
 }: BrandSpaceDetailViewProps) {
 	const [isPosterEnlarged, setIsPosterEnlarged] = useState(false)
 	const [enlargedImageUrl, setEnlargedImageUrl] = useState<string | null>(null)
@@ -202,21 +214,78 @@ export function BrandSpaceDetailView({
 					) : (
 						<>
 							<div>
-								<div className="flex items-center justify-between gap-3 mb-3">
+								<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
 									<h2 className="text-xl font-heading font-black text-black">Community Hub Details</h2>
-									{isBrandPreview ? (
-										<div className="flex items-center gap-2">
-											<span className="text-xs font-bold text-black/50 hidden sm:inline">Brand Interaction CTA:</span>
-											<button
-												type="button"
-												disabled
-												className="shrink-0 text-xs font-black px-4 py-2.5 rounded-xl uppercase tracking-wider border-2 border-black bg-[#EE2C2C] text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] opacity-90 cursor-not-allowed select-none"
-												title="This is the collaborate button brands will see"
-											>
-												Collaborate
-											</button>
+									{chatStatus === "ACCEPTED" && chatId && onGoToChannel ? (
+										<button
+											type="button"
+											onClick={() => onGoToChannel(chatId)}
+											className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white border-2 border-black rounded-xl text-xs font-black uppercase tracking-wide shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center gap-1.5 cursor-pointer shrink-0 select-none"
+										>
+											<span>Go to Channel</span>
+											<span>➔</span>
+										</button>
+									) : isBrandPreview ? (
+										<div className="flex items-center gap-2 flex-wrap">
+											{(
+												[
+													{ label: "Naming Rights" },
+													{ label: "Physical Branding" },
+													{ label: "Sampling & Demo" },
+													{ label: "Pop-ups & Experiences" },
+												] as const
+											).map(({ label }) => (
+												<button
+													key={label}
+													type="button"
+													disabled
+													className="px-3.5 py-1.5 border-2 border-black rounded-xl text-xs font-black uppercase tracking-wide bg-[#EE2C2C] text-white opacity-90 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-not-allowed select-none"
+													title="This is one of the 4 collaboration options brands can select"
+												>
+													{label}
+												</button>
+											))}
 										</div>
-									) : (
+									) : onInterestType ? (
+										<div className="flex items-center gap-2 flex-wrap">
+											{(
+												[
+													{ type: "NAMING_RIGHTS" as const, label: "Naming Rights" },
+													{ type: "PHYSICAL_BRANDING" as const, label: "Physical Branding" },
+													{ type: "SAMPLING_DEMO" as const, label: "Sampling & Demo" },
+													{ type: "POPUPS_EXPERIENCES" as const, label: "Pop-ups & Experiences" },
+												] as const
+											).map(({ type, label }) => {
+												const isCurrentSent = sentInterestType === type
+												const isAnotherSent = sentInterestType && sentInterestType !== type
+												const isSendingThis = interestTypeSending === type
+												const isSendingAny = !!interestTypeSending
+
+												return (
+													<button
+														key={type}
+														type="button"
+														onClick={() => onInterestType(type)}
+														disabled={isSendingAny || isCurrentSent || !!isAnotherSent}
+														className={clsx(
+															"px-3.5 py-1.5 border-2 border-black rounded-xl text-xs font-black uppercase tracking-wide transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] select-none",
+															isCurrentSent
+																? "bg-emerald-100 text-emerald-800 border-emerald-900 cursor-default"
+																: isAnotherSent
+																? "bg-neutral-100 text-black/40 border-black/40 cursor-not-allowed opacity-60"
+																: "bg-[#EE2C2C] hover:bg-[#D12525] text-white hover:translate-x-[1px] hover:translate-y-[1px] cursor-pointer active:translate-x-[2px] active:translate-y-[2px]"
+														)}
+													>
+														{isSendingThis
+															? "Sending…"
+															: isCurrentSent
+															? `${label} Sent ✓`
+															: label}
+													</button>
+												)
+											})}
+										</div>
+									) : onCollaborateClick ? (
 										<button
 											type="button"
 											onClick={onCollaborateClick}
@@ -224,7 +293,7 @@ export function BrandSpaceDetailView({
 										>
 											Collaborate
 										</button>
-									)}
+									) : null}
 								</div>
 
 								{/* Grid to place details card and poster side-by-side */}

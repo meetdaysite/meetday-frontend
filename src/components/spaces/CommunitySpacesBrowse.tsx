@@ -15,6 +15,7 @@ import {
 	type SpaceChatThread,
 	type SpaceHostChatThread,
 	type Category,
+	type BrandHubInterestType,
 } from "@/lib/api"
 import { getApiErrorMessage } from "@/lib/errors"
 import { toast } from "@/lib/toast"
@@ -194,6 +195,7 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 	const [spaceChatThreads, setSpaceChatThreads] = useState<SpaceChatThread[]>([])
 	const [spaceHostChatThreads, setSpaceHostChatThreads] = useState<SpaceHostChatThread[]>([])
 	const [sendingInterestId, setSendingInterestId] = useState<string | null>(null)
+	const [interestTypeSending, setInterestTypeSending] = useState<BrandHubInterestType | null>(null)
 
 	useEffect(() => {
 		if (urlSpaceId && spaces && spaces.length > 0) {
@@ -233,6 +235,55 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 			toast.error(getApiErrorMessage(e))
 		} finally {
 			setSendingInterestId(null)
+		}
+	}
+
+	async function handleMarkInterestType(type: BrandHubInterestType) {
+		if (!selectedSpace || interestTypeSending) return
+		setInterestTypeSending(type)
+		try {
+			const res = await markSpaceInterest(selectedSpace.id, undefined, viewerRole, type)
+			const typeLabels: Record<BrandHubInterestType, string> = {
+				NAMING_RIGHTS: "Naming Rights",
+				PHYSICAL_BRANDING: "Physical Branding",
+				SAMPLING_DEMO: "Sampling & Demo",
+				POPUPS_EXPERIENCES: "Pop-ups & Experiences",
+			}
+			toast.success(`Interest sent for ${typeLabels[type]}! We've notified the hub.`)
+			setSpaceChatThreads((prev) => {
+				const existingIdx = prev.findIndex((t) => t.id === res.interestId || t.spaceCommunityProfileId === selectedSpace.id)
+				if (existingIdx >= 0) {
+					const copy = [...prev]
+					copy[existingIdx] = {
+						...copy[existingIdx],
+						chatStatus: res.chatStatus,
+						interestType: res.interestType || type,
+					}
+					return copy
+				}
+				return [
+					...prev,
+					{
+						id: res.interestId,
+						spaceCommunityProfileId: selectedSpace.id,
+						requesterType: viewerRole || "BRAND",
+						chatStatus: res.chatStatus,
+						interestType: res.interestType || type,
+						createdAt: new Date().toISOString(),
+						chatAcceptedAt: null,
+						lastMessageAt: null,
+						lastMessagePreview: null,
+						unreadCount: 0,
+						counterpartName: selectedSpace.name,
+						counterpartAvatarUrl: selectedSpace.logoUrl || null,
+					},
+				]
+			})
+			fetchConnectedThreads()
+		} catch (e) {
+			toast.error(getApiErrorMessage(e))
+		} finally {
+			setInterestTypeSending(null)
 		}
 	}
 
@@ -514,19 +565,74 @@ export function CommunitySpacesBrowse({ viewerRole }: { viewerRole?: "BRAND" | "
 							) : (
 								<>
 									<div>
-										<div className="flex items-center justify-between gap-3 mb-3">
+										<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
 											<h2 className="text-xl font-heading font-black text-black">Community Hub Details</h2>
 												{(() => {
 													const existingSpaceThread = spaceChatThreads.find((t) => t.spaceCommunityProfileId === selectedSpace.id)
 													const existingSpaceHostThread = spaceHostChatThreads.find((t) => t.spaceProfileId === selectedSpace.spaceProfileId)
 													const existingThread = existingSpaceThread || existingSpaceHostThread
-													const hasExistingChannel = Boolean(existingThread)
 
+													if (viewerRole === "BRAND") {
+														const isAccepted = existingThread?.chatStatus === "ACCEPTED"
+														const sentType = existingSpaceThread?.interestType || null
+
+														if (isAccepted && existingThread) {
+															return (
+																<Link
+																	href={`/brand/dashboard/chats?category=spaces&threadId=${existingThread.id}&view=active`}
+																	className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white border-2 border-black rounded-xl text-xs font-black uppercase tracking-wide shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center gap-1.5 cursor-pointer shrink-0 select-none"
+																>
+																	<span>Go to Channel</span>
+																	<span>➔</span>
+																</Link>
+															)
+														}
+
+														return (
+															<div className="flex items-center gap-2 flex-wrap">
+																{(
+																	[
+																		{ type: "NAMING_RIGHTS" as const, label: "Naming Rights" },
+																		{ type: "PHYSICAL_BRANDING" as const, label: "Physical Branding" },
+																		{ type: "SAMPLING_DEMO" as const, label: "Sampling & Demo" },
+																		{ type: "POPUPS_EXPERIENCES" as const, label: "Pop-ups & Experiences" },
+																	] as const
+																).map(({ type, label }) => {
+																	const isCurrentSent = sentType === type
+																	const isAnotherSent = sentType && sentType !== type
+																	const isSendingThis = interestTypeSending === type
+																	const isSendingAny = !!interestTypeSending
+
+																	return (
+																		<button
+																			key={type}
+																			type="button"
+																			onClick={() => handleMarkInterestType(type)}
+																			disabled={isSendingAny || isCurrentSent || !!isAnotherSent}
+																			className={clsx(
+																				"px-3.5 py-1.5 border-2 border-black rounded-xl text-xs font-black uppercase tracking-wide transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] select-none",
+																				isCurrentSent
+																					? "bg-emerald-100 text-emerald-800 border-emerald-900 cursor-default"
+																					: isAnotherSent
+																					? "bg-neutral-100 text-black/40 border-black/40 cursor-not-allowed opacity-60"
+																					: "bg-[#EE2C2C] hover:bg-[#D12525] text-white hover:translate-x-[1px] hover:translate-y-[1px] cursor-pointer active:translate-x-[2px] active:translate-y-[2px]"
+																			)}
+																		>
+																			{isSendingThis
+																				? "Sending…"
+																				: isCurrentSent
+																				? `${label} Sent ✓`
+																				: label}
+																		</button>
+																	)
+																})}
+															</div>
+														)
+													}
+
+													const hasExistingChannel = Boolean(existingThread)
 													if (hasExistingChannel) {
-														const redirectHref =
-															viewerRole === "BRAND"
-																? `/brand/dashboard/space-chats?threadId=${existingThread!.id}`
-																: `/community/dashboard/space-chats?threadId=${existingThread!.id}`
+														const redirectHref = `/community/dashboard/chats?category=spaces&threadId=${existingThread!.id}&view=active`
 
 														return (
 															<div className="flex flex-col items-end gap-1.5">

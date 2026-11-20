@@ -98,6 +98,14 @@ function formatAmount(amount: string | number) {
 	return `₹${Number(amount).toLocaleString("en-IN")}`
 }
 
+function getTodayDateString(): string {
+	const now = new Date()
+	const year = now.getFullYear()
+	const month = String(now.getMonth() + 1).padStart(2, "0")
+	const day = String(now.getDate()).padStart(2, "0")
+	return `${year}-${month}-${day}`
+}
+
 // Computed client-side from the raw paymentStatus + expiry so it's always fresh, no polling needed.
 export type DealPaymentDisplayStatus = "PENDING" | "PAID" | "EXPIRED"
 
@@ -500,16 +508,25 @@ export function DealFormModal({
 						<Field label="Start Date">
 							<input
 								type="date"
+								min={isCampaignDeal ? undefined : getTodayDateString()}
 								value={form.startDate}
 								disabled={isCampaignDeal}
 								readOnly={isCampaignDeal}
-								onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
+								onChange={(e) => {
+									const val = e.target.value
+									setForm((f) => ({
+										...f,
+										startDate: val,
+										endDate: f.endDate && val > f.endDate ? "" : f.endDate,
+									}))
+								}}
 								className={clsx(inputClass, isCampaignDeal && "bg-neutral-100 text-black/60 cursor-not-allowed")}
 							/>
 						</Field>
 						<Field label="End Date">
 							<input
 								type="date"
+								min={isCampaignDeal ? undefined : (form.startDate || getTodayDateString())}
 								value={form.endDate}
 								disabled={isCampaignDeal}
 								readOnly={isCampaignDeal}

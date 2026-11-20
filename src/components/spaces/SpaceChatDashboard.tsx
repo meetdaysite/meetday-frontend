@@ -10,11 +10,13 @@ import {
 	sendSpaceChatMessage,
 	getSpaceDeal,
 	getSpaceDealReport,
+	getPastSpaceDeals,
 	type SpaceChatMessage,
 	type SpaceChatRole,
 	type SpaceChatThread,
 	type SpaceDeal,
 	type SpaceDealReport,
+	type BrandHubInterestType,
 	acceptSpaceHostChatRequest,
 	declineSpaceHostChatRequest,
 	getMySpaceHostChats,
@@ -36,6 +38,7 @@ import {
 	SpaceDealFormModal,
 	SpaceDealDetailsModal,
 	SpaceDealReportModal,
+	SpaceDealsArchiveView,
 } from "./SpaceDealPanel"
 import {
 	SpaceHostDealBanner,
@@ -64,6 +67,17 @@ function timeAgo(iso: string | null): string {
 	const hours = Math.floor(mins / 60)
 	if (hours < 24) return `${hours}h`
 	return `${Math.floor(hours / 24)}d`
+}
+
+function getHubTypeLabel(type?: BrandHubInterestType | string | null): string {
+	if (!type) return "Hub"
+	switch (type.toUpperCase()) {
+		case "NAMING_RIGHTS": return "Naming Rights"
+		case "PHYSICAL_BRANDING": return "Physical Branding"
+		case "SAMPLING_DEMO": return "Sampling & Demo"
+		case "POPUPS_EXPERIENCES": return "Pop-ups & Experiences"
+		default: return "Hub"
+	}
 }
 
 export type SpaceChatSubTab = "ACCEPTED" | "REQUESTS" | "SENT_REQUESTS"
@@ -123,6 +137,11 @@ export function SpaceChatDashboard({
 	const [showDealModal, setShowDealModal] = useState(false)
 	const [showDetailsModal, setShowDetailsModal] = useState(false)
 	const [showReportModal, setShowReportModal] = useState(false)
+	const [pastDeals, setPastDeals] = useState<SpaceDeal[]>([])
+	const [loadingPastDeals, setLoadingPastDeals] = useState(false)
+	const [activeSubView, setActiveSubView] = useState<"chat" | "archive">("chat")
+	const [inspectingHistoricalDeal, setInspectingHistoricalDeal] = useState<SpaceDeal | null>(null)
+	const [inspectingHistoricalReport, setInspectingHistoricalReport] = useState<SpaceDealReport | null>(null)
 	const [uploadingImage, setUploadingImage] = useState(false)
 	const [viewingImage, setViewingImage] = useState<string | null>(null)
 	const [replyingTo, setReplyingTo] = useState<SpaceChatMessage | SpaceHostChatMessage | null>(null)
@@ -294,11 +313,16 @@ export function SpaceChatDashboard({
 
 	// Poll deal & report
 	useEffect(() => {
+		setActiveSubView("chat")
+		setInspectingHistoricalDeal(null)
+		setInspectingHistoricalReport(null)
+
 		if (!selectedThreadId || !selectedThread || selectedThread.chatStatus !== "ACCEPTED") {
 			setDeal(null)
 			setReport(null)
 			setHostDeal(null)
 			setHostReport(null)
+			setPastDeals([])
 			return
 		}
 		let cancelled = false
@@ -323,6 +347,11 @@ export function SpaceChatDashboard({
 				getSpaceDealReport(selectedThreadId!, role)
 					.then((r) => {
 						if (!cancelled) setReport(r)
+					})
+					.catch(() => {})
+				getPastSpaceDeals(selectedThreadId!, role)
+					.then((p) => {
+						if (!cancelled) setPastDeals(p || [])
 					})
 					.catch(() => {})
 			}
@@ -576,6 +605,11 @@ export function SpaceChatDashboard({
 										<div className="flex items-center justify-between gap-2">
 											<div className="flex items-center gap-1.5 min-w-0">
 												<p className="text-sm font-black text-black truncate">{t.counterpartName}</p>
+												{t.rawSpaceThread?.interestType && (
+													<span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-[#FFC940] text-black border border-black/20">
+														{getHubTypeLabel(t.rawSpaceThread.interestType)}
+													</span>
+												)}
 												{t.isDealClosed ? (
 													<span className="shrink-0 inline-flex items-center justify-center size-4 rounded-full bg-[#10B981] text-white" title="Deal Closed">
 														<svg className="size-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -647,27 +681,67 @@ export function SpaceChatDashboard({
 						<>
 							<div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b-[3px] border-black bg-white flex items-center justify-between shrink-0 gap-2">
 								<div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-									<button
-										type="button"
-										onClick={() => setSelectedThreadId(null)}
-										className="sm:hidden p-1.5 -ml-1 text-black/70 hover:text-black hover:bg-neutral-100 rounded-full shrink-0 transition-colors"
-										aria-label="Back to chat list"
-									>
-										<svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-											<path d="m15 18-6-6 6-6" />
-										</svg>
-									</button>
-									<div className="w-8 h-8 rounded-full border border-black/15 overflow-hidden shrink-0 relative bg-neutral-100 flex items-center justify-center">
-										{selectedThread.counterpartAvatarUrl ? (
-											<img src={selectedThread.counterpartAvatarUrl} alt={selectedThread.counterpartName} className="w-full h-full object-cover" />
-										) : (
-											<span className="font-heading font-black text-xs text-black/60">
-												{selectedThread.counterpartName.charAt(0).toUpperCase()}
-											</span>
+									{activeSubView === "archive" ? (
+										<button
+											type="button"
+											onClick={() => setActiveSubView("chat")}
+											className="p-1.5 -ml-1 text-black/70 hover:text-black hover:bg-neutral-100 rounded-full shrink-0 transition-colors cursor-pointer"
+											aria-label="Back to chat"
+											title="Back to chat"
+										>
+											<svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+												<path d="m15 18-6-6 6-6" />
+											</svg>
+										</button>
+									) : (
+										<button
+											type="button"
+											onClick={() => setSelectedThreadId(null)}
+											className="sm:hidden p-1.5 -ml-1 text-black/70 hover:text-black hover:bg-neutral-100 rounded-full shrink-0 transition-colors"
+											aria-label="Back to chat list"
+										>
+											<svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+												<path d="m15 18-6-6 6-6" />
+											</svg>
+										</button>
+									)}
+									<div
+										className={clsx(
+											"flex items-center gap-2 sm:gap-3 min-w-0 flex-1",
+											selectedThread.kind !== "SPACE_HOST_INTEREST" && "cursor-pointer group select-none"
 										)}
-									</div>
-									<div className="min-w-0 flex-1">
-										<p className="text-xs sm:text-sm font-black text-black truncate leading-tight">{selectedThread.counterpartName}</p>
+										onClick={
+											selectedThread.kind !== "SPACE_HOST_INTEREST"
+												? () => setActiveSubView((prev) => (prev === "archive" ? "chat" : "archive"))
+												: undefined
+										}
+										role={selectedThread.kind !== "SPACE_HOST_INTEREST" ? "button" : undefined}
+										tabIndex={selectedThread.kind !== "SPACE_HOST_INTEREST" ? 0 : undefined}
+										title={
+											selectedThread.kind !== "SPACE_HOST_INTEREST"
+												? activeSubView === "archive"
+													? "Back to chat"
+													: "View deal archive"
+												: undefined
+										}
+									>
+										<div className="w-8 h-8 rounded-full border border-black/15 overflow-hidden shrink-0 relative bg-neutral-100 flex items-center justify-center font-heading font-black text-xs text-black/60 shadow-xs group-hover:ring-2 group-hover:ring-black transition-all">
+											{selectedThread.counterpartAvatarUrl ? (
+												<img src={selectedThread.counterpartAvatarUrl} alt={selectedThread.counterpartName} className="w-full h-full object-cover" />
+											) : (
+												<span className="font-heading font-black text-xs text-black/60">
+													{selectedThread.counterpartName.charAt(0).toUpperCase()}
+												</span>
+											)}
+										</div>
+										<div className="min-w-0 flex-1">
+											<p className="text-xs sm:text-sm font-black text-black truncate leading-tight group-hover:underline">{selectedThread.counterpartName}</p>
+											{selectedThread.rawSpaceThread?.interestType && (
+												<p className="text-[10px] sm:text-[11px] font-semibold text-black/50 truncate">
+													{getHubTypeLabel(selectedThread.rawSpaceThread.interestType)} Collaboration
+												</p>
+											)}
+										</div>
 									</div>
 								</div>
 								{selectedThread.chatStatus === "REQUESTED" && selectedThread.direction === "INCOMING" && (
@@ -689,6 +763,25 @@ export function SpaceChatDashboard({
 									</div>
 								)}
 							</div>
+
+							{activeSubView === "archive" ? (
+								<SpaceDealsArchiveView
+									counterpartName={selectedThread.counterpartName}
+									counterpartAvatarUrl={selectedThread.counterpartAvatarUrl}
+									deals={pastDeals}
+									loading={loadingPastDeals}
+									onBack={() => setActiveSubView("chat")}
+									onViewDeal={(d) => {
+										setInspectingHistoricalDeal(d)
+										setInspectingHistoricalReport(null)
+									}}
+									onViewReport={(d) => {
+										setInspectingHistoricalDeal(d)
+										setInspectingHistoricalReport(d.report || null)
+									}}
+								/>
+							) : (
+								<>
 
 							{/* Deal Banner */}
 							{selectedThread.chatStatus === "ACCEPTED" && (
@@ -919,6 +1012,8 @@ export function SpaceChatDashboard({
 									</div>
 								</div>
 							)}
+								</>
+							)}
 						</>
 					)}
 				</div>
@@ -941,6 +1036,11 @@ export function SpaceChatDashboard({
 						thread={selectedThread.rawSpaceThread!}
 						deal={deal}
 						role={role}
+						hubName={
+							(selectedThread.rawSpaceThread as any)?.spaceName ||
+							(selectedThread.rawSpaceThread as any)?.spaceCommunityProfile?.name ||
+							(role === "SPACE" ? undefined : selectedThread.counterpartName)
+						}
 						onClose={() => setShowDealModal(false)}
 						onSaved={(saved) => setDeal(saved)}
 					/>
@@ -985,6 +1085,35 @@ export function SpaceChatDashboard({
 						onReportUpdated={(updated) => setReport(updated)}
 					/>
 				)
+			)}
+
+			{/* Historical Deal & Report Inspection Modals */}
+			{inspectingHistoricalDeal && selectedThread && !inspectingHistoricalReport && (
+				<SpaceDealDetailsModal
+					interestId={selectedThread.id}
+					deal={inspectingHistoricalDeal}
+					role={role}
+					onClose={() => setInspectingHistoricalDeal(null)}
+					onUpdated={(updated) => {
+						setInspectingHistoricalDeal(updated)
+					}}
+				/>
+			)}
+
+			{inspectingHistoricalDeal && selectedThread && inspectingHistoricalReport && (
+				<SpaceDealReportModal
+					interestId={selectedThread.id}
+					deal={inspectingHistoricalDeal}
+					report={inspectingHistoricalReport}
+					role={role}
+					onClose={() => {
+						setInspectingHistoricalDeal(null)
+						setInspectingHistoricalReport(null)
+					}}
+					onReportUpdated={(updated) => {
+						setInspectingHistoricalReport(updated)
+					}}
+				/>
 			)}
 
 			<canvas id="space-chat-confetti-canvas" className="fixed inset-0 pointer-events-none z-50 w-full h-full" />

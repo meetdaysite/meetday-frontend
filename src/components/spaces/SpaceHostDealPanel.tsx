@@ -39,6 +39,14 @@ function formatAmount(amount: string | number) {
 	return `₹${Number(amount || 0).toLocaleString("en-IN")}`
 }
 
+function getTodayDateString(): string {
+	const now = new Date()
+	const year = now.getFullYear()
+	const month = String(now.getMonth() + 1).padStart(2, "0")
+	const day = String(now.getDate()).padStart(2, "0")
+	return `${year}-${month}-${day}`
+}
+
 function Field({
 	label,
 	required,
@@ -392,8 +400,16 @@ export function SpaceHostDealFormModal({
 						<Field label="Start Date" required>
 							<input
 								type="date"
+								min={getTodayDateString()}
 								value={form.startDate}
-								onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
+								onChange={(e) => {
+									const val = e.target.value
+									setForm((f) => ({
+										...f,
+										startDate: val,
+										endDate: f.endDate && val > f.endDate ? "" : f.endDate,
+									}))
+								}}
 								className={inputClass}
 							/>
 						</Field>
@@ -401,7 +417,7 @@ export function SpaceHostDealFormModal({
 							<input
 								type="date"
 								value={form.endDate}
-								min={form.startDate || undefined}
+								min={form.startDate || getTodayDateString()}
 								onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
 								className={inputClass}
 							/>
