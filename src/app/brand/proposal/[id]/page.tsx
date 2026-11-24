@@ -120,16 +120,41 @@ export default function SharedProposalPage() {
 
 							<div className="flex flex-col gap-6">
 								<div className="bg-surface-card-muted border border-border-default rounded-action p-4 w-full grid grid-cols-2 gap-4">
-									{proposal.eventDate && (
-										<div>
-											<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Start</p>
-											<div className="mt-1">
-												<span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
-													{new Date(proposal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-												</span>
+									{/* Start Date / Date */}
+									{(() => {
+										const startDisplay = proposal.eventDate ? new Date(proposal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+										const endDisplay = proposal.eventEndDate ? new Date(proposal.eventEndDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+										const isSingleDay = !endDisplay || endDisplay === startDisplay;
+										const label = isSingleDay ? "Date" : "Start";
+
+										return startDisplay ? (
+											<div>
+												<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">{label}</p>
+												<div className="mt-1">
+													<span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+														{startDisplay}
+													</span>
+												</div>
 											</div>
-										</div>
-									)}
+										) : null;
+									})()}
+
+									{/* End Date (shown when multi-day) */}
+									{(() => {
+										const startDisplay = proposal.eventDate ? new Date(proposal.eventDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+										const endDisplay = proposal.eventEndDate ? new Date(proposal.eventEndDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "";
+										return endDisplay && endDisplay !== startDisplay ? (
+											<div>
+												<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">End</p>
+												<div className="mt-1">
+													<span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]">
+														{endDisplay}
+													</span>
+												</div>
+											</div>
+										) : null;
+									})()}
+
 									{proposal.guestCount && (
 										<div>
 											<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Guests</p>
@@ -140,26 +165,37 @@ export default function SharedProposalPage() {
 											</div>
 										</div>
 									)}
-									<div className="col-span-2">
-										<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue &amp; City</p>
-										<div className="flex flex-col gap-2 mt-1">
-											{(proposal.venues && proposal.venues.length > 0 ? proposal.venues : [proposal.venue || ""])
-												.map((v, idx) => {
-													const c = proposal.venueCities?.[idx] || (idx === 0 ? proposal.city : undefined)
-													if (!v || !v.trim()) return null
-													return (
-														<div key={idx} className="flex flex-row flex-wrap items-center gap-2">
-															{c && (
-																<span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap">
-																	{c}
-																</span>
-															)}
-															<span className="text-xs font-semibold text-text-secondary">{v}</span>
-														</div>
-													)
-												})}
-										</div>
-									</div>
+
+									{/* Venue & City — full width */}
+									{(() => {
+										const rawVenues = proposal.venues && proposal.venues.length > 0 ? proposal.venues : [proposal.venue || ""];
+										const venuePairs = rawVenues
+											.map((v, idx) => {
+												const c = proposal.venueCities?.[idx] || (idx === 0 ? proposal.city : undefined);
+												return { venue: v?.trim() || "", city: c?.trim() || "" };
+											})
+											.filter(p => p.venue || p.city);
+
+										if (venuePairs.length === 0) return null;
+
+										return (
+											<div className="col-span-2">
+												<p className="text-[11px] text-text-tertiary font-bold uppercase tracking-wider">Venue &amp; City</p>
+												<div className="flex flex-wrap items-center gap-2 mt-1">
+													{venuePairs.map((p, idx) => (
+														<span
+															key={idx}
+															className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+														>
+															{p.venue && <span className="font-normal">{p.venue}</span>}
+															{p.venue && p.city && <span className="font-normal">,&nbsp;</span>}
+															{p.city && <span className="font-black">{p.city}</span>}
+														</span>
+													))}
+												</div>
+											</div>
+										);
+									})()}
 								</div>
 
 								{proposal.about && (

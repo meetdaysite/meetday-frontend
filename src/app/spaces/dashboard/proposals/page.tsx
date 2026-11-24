@@ -570,21 +570,29 @@ export default function SpaceProposalsPage() {
 										/>
 									)}
 									<div className="flex-1 bg-slate-50 border border-black/10 rounded-action p-4 w-full flex flex-col gap-3 min-w-0">
-										<div>
-											<p className="text-[11px] text-black/40 font-bold uppercase tracking-wider">Venue &amp; City</p>
-											<div className="flex flex-col gap-1 mt-1">
-												{selectedProposal.venues.map((v, idx) => (
-													<div key={idx} className="flex items-center gap-2">
-														{selectedProposal.venueCities[idx] && (
-															<span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-[#EE2C2C] text-white border border-black">
-																{selectedProposal.venueCities[idx]}
+										{(() => {
+											const venuePairs = selectedProposal.venues
+												.map((v, idx) => ({ venue: v.trim(), city: (selectedProposal.venueCities[idx] || "").trim() }))
+												.filter(p => p.venue || p.city);
+											if (venuePairs.length === 0) return null;
+											return (
+												<div>
+													<p className="text-[11px] text-black/40 font-bold uppercase tracking-wider">Venue &amp; City</p>
+													<div className="flex flex-wrap items-center gap-2 mt-1">
+														{venuePairs.map((p, idx) => (
+															<span
+																key={idx}
+																className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-[#EE2C2C] text-white border border-black shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)]"
+															>
+																{p.venue && <span className="font-normal">{p.venue}</span>}
+																{p.venue && p.city && <span className="font-normal">,&nbsp;</span>}
+																{p.city && <span className="font-black">{p.city}</span>}
 															</span>
-														)}
-														<span className="text-xs font-semibold text-black/70">{v}</span>
+														))}
 													</div>
-												))}
-											</div>
-										</div>
+												</div>
+											);
+										})()}
 										<div className="grid grid-cols-2 gap-4">
 											<div>
 												<p className="text-[11px] text-black/40 font-bold uppercase tracking-wider">Guests</p>
